@@ -1,0 +1,47 @@
+{
+  "kind": "collectionType",
+  "collectionName": "exam_sessions",
+  "info": {
+    "singularName": "exam-session",
+    "pluralName": "exam-sessions",
+    "displayName": "Exam Session",
+    "description": "Schema for Exam Session"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "startDate": {
+      "type": "date",
+      "required": true
+    },
+    "endDate": {
+      "type": "date",
+      "required": true
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": [
+        "Upcoming",
+        "Active",
+        "Completed"
+      ],
+      "default": "Upcoming"
+    },
+    "academic_year": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::academic-year.academic-year"
+    },
+    "academic_term": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::academic-term.academic-term"
+    }
+  }
+}

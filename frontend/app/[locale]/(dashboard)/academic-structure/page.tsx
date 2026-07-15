@@ -1,0 +1,219 @@
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import {
+  Layers, Building2, Calendar, BookOpen, CheckCircle2,
+  Users, RefreshCw, Plus, ArrowRight
+} from 'lucide-react';
+import { erpService } from '@/services/erp.service';
+import type { AcademicYear, Campus, Section } from '@/types/erp.types';
+import { StatusBadge } from '@/components/erp/StatusBadge';
+import { RelationshipChip } from '@/components/erp/RelationshipChip';
+
+export default function AcademicStructurePage() {
+  const [academicYears, setAcademicYears] = useState<AcademicYear[]>([]);
+  const [campuses, setCampuses] = useState<Campus[]>([]);
+  const [sections, setSections] = useState<Section[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'years' | 'campuses' | 'sections'>('sections');
+
+  useEffect(() => {
+    async function loadStructure() {
+      setLoading(true);
+      try {
+        const [yrRes, campRes, secRes] = await Promise.all([
+          erpService.getAcademicYears(),
+          erpService.getCampuses(),
+          erpService.getSections(),
+        ]);
+        setAcademicYears(yrRes);
+        setCampuses(campRes);
+        setSections(secRes);
+      } catch (err) {
+        console.error('Failed loading academic structure:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadStructure();
+  }, []);
+
+  return (
+    <div className="p-6 md:p-8 space-y-8 max-w-7xl mx-auto">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-slate-800">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-black text-slate-100 flex items-center gap-2.5">
+            <Layers className="w-8 h-8 text-sky-400" />
+            <span>Unified Academic Structure Console</span>
+          </h1>
+          <p className="text-xs md:text-sm text-slate-400 mt-1">
+            Configure school campuses, active academic calendars, terms, and multi-track class sections.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => window.location.reload()}
+            className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
+            title="Refresh Structure"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-sky-400' : ''}`} />
+          </button>
+        </div>
+      </div>
+
+      <div className="flex gap-2 border-b border-slate-800 pb-3">
+        {[
+          { id: 'sections', label: `Academic Sections (${sections.length})`, icon: Layers },
+          { id: 'years', label: `Calendar & Terms (${academicYears.length})`, icon: Calendar },
+          { id: 'campuses', label: `Campuses & Facilities (${campuses.length})`, icon: Building2 },
+        ].map((t) => {
+          const Icon = t.icon;
+          const active = activeTab === t.id;
+          return (
+            <button
+              key={t.id}
+              onClick={() => setActiveTab(t.id as any)}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs transition-all ${
+                active
+                  ? 'bg-sky-600 text-white shadow-lg shadow-sky-600/30'
+                  : 'bg-slate-900/80 border border-slate-800/80 text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+              }`}
+            >
+              <Icon className="w-4 h-4" />
+              <span>{t.label}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {loading ? (
+        <div className="py-16 text-center text-slate-400 text-sm animate-pulse">Loading school infrastructure...</div>
+      ) : activeTab === 'sections' ? (
+        <div className="space-y-6">
+          <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-5 flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-bold text-slate-100">Multi-Track Class Section Architecture</h3>
+              <p className="text-xs text-slate-400">Students and teachers can be linked to multiple sections across grade levels and Tahfidz groups simultaneously.</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {sections.map((sec) => (
+              <div key={sec.id} className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 shadow-xl hover:border-sky-500/50 transition-all flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="font-mono text-xs font-bold text-sky-400 px-2 py-0.5 rounded bg-sky-950 border border-sky-800">
+                      {sec.code}
+                    </span>
+                    <span className="text-[11px] font-mono text-slate-400">Capacity: {sec.capacity || 30}</span>
+                  </div>
+
+                  <h3 className="text-lg font-bold text-white mb-1">{sec.name}</h3>
+                  <p className="text-xs text-slate-400 mb-4">{sec.description || 'Academic class section'}</p>
+
+                  <div className="space-y-2 border-t border-slate-800/80 pt-3 text-xs">
+                    {sec.department && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-500">Department:</span>
+                        <span className="font-bold text-slate-300">{sec.department.name || 'Core'}</span>
+                      </div>
+                    )}
+                    {sec.program && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-500">Program:</span>
+                        <span className="font-bold text-sky-300">{sec.program.name || 'High School'}</span>
+                      </div>
+                    )}
+                    {sec.academicYear && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-500">Academic Year:</span>
+                        <span className="font-mono text-emerald-400 font-bold">{sec.academicYear.name}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
+                  <span>Linked Teachers: <strong className="text-slate-200">{sec.teachers?.length || 0}</strong></span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : activeTab === 'years' ? (
+        <div className="space-y-6">
+          {academicYears.map((yr) => (
+            <div key={yr.id} className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 shadow-xl">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-xl font-black text-white">{yr.name}</span>
+                    {yr.isCurrent && (
+                      <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-bold uppercase tracking-wider">
+                        Current Active Year
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs font-mono text-slate-400">
+                    Duration: {yr.startDate} to {yr.endDate}
+                  </p>
+                </div>
+                <StatusBadge status={yr.status} size="lg" />
+              </div>
+
+              <div className="mt-6">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Academic Terms Schedule</h4>
+                {yr.terms && yr.terms.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    {yr.terms.map((t) => (
+                      <div key={t.id} className="p-4 rounded-xl bg-slate-950 border border-slate-800 flex flex-col justify-between">
+                        <div>
+                          <div className="flex items-center justify-between mb-1.5">
+                            <h5 className="text-sm font-bold text-slate-100">{t.name}</h5>
+                            {t.active && (
+                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                                Active Term
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[11px] font-mono text-slate-400">Start: {t.startDate}</p>
+                          <p className="text-[11px] font-mono text-slate-400">End: {t.endDate}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-500 italic">No terms configured under this academic year.</p>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {campuses.map((camp) => (
+            <div key={camp.id} className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 shadow-xl space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div>
+                  <span className="font-mono text-xs font-bold text-emerald-400 px-2 py-0.5 rounded bg-emerald-950 border border-emerald-800">
+                    Code: {camp.code}
+                  </span>
+                  <h3 className="text-lg font-bold text-white mt-1">{camp.name}</h3>
+                </div>
+                <StatusBadge status={camp.status} size="md" />
+              </div>
+
+              <div className="space-y-2 text-xs text-slate-300">
+                <p>Address: <span className="font-medium text-slate-100">{camp.address || 'Main Campus Ground'}</span></p>
+                {camp.phone && <p>Phone: <span className="font-mono text-slate-200">{camp.phone}</span></p>}
+                {camp.email && <p>Email: <span className="font-mono text-slate-200">{camp.email}</span></p>}
+                {camp.principalName && <p>Head / Principal: <span className="font-bold text-emerald-300">{camp.principalName}</span></p>}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}

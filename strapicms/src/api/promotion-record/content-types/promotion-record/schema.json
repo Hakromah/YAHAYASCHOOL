@@ -1,0 +1,59 @@
+{
+  "kind": "collectionType",
+  "collectionName": "promotion-records",
+  "info": {
+    "singularName": "promotion-record",
+    "pluralName": "promotion-records",
+    "displayName": "Promotion Record",
+    "description": "Permanent ledger of promotion decisions"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {
+    "i18n": {
+      "localized": true
+    }
+  },
+  "attributes": {
+    "student": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::student.student"
+    },
+    "fromYear": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::academic-year.academic-year"
+    },
+    "fromSection": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::section.section"
+    },
+    "toYear": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::academic-year.academic-year"
+    },
+    "toSection": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::section.section"
+    },
+    "decision": {
+      "type": "enumeration",
+      "enum": [
+        "Promoted",
+        "Conditionally Promoted",
+        "Repeat Class",
+        "Graduated",
+        "Transferred",
+        "Withdrawn"
+      ]
+    },
+    "remarks": {
+      "type": "text"
+    }
+  }
+}

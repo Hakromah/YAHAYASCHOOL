@@ -1,0 +1,84 @@
+{
+  "kind": "collectionType",
+  "collectionName": "curriculums",
+  "info": {
+    "singularName": "curriculum",
+    "pluralName": "curriculums",
+    "displayName": "Curriculum"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "title": {
+      "type": "string",
+      "required": true
+    },
+    "version": {
+      "type": "string",
+      "required": true
+    },
+    "description": {
+      "type": "text"
+    },
+    "objectives": {
+      "type": "text"
+    },
+    "learningOutcomes": {
+      "type": "text"
+    },
+    "estimatedDuration": {
+      "type": "string"
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": [
+        "Active",
+        "Draft",
+        "Archived"
+      ],
+      "default": "Draft"
+    },
+    "subject": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::subject.subject"
+    },
+    "academicYear": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::academic-year.academic-year"
+    },
+    "program": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::program.program"
+    },
+    "department": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::department.department"
+    },
+    "section": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::section.section"
+    },
+    "topics": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::topic.topic",
+      "mappedBy": "curriculum"
+    },
+    "attachments": {
+      "type": "media",
+      "multiple": true,
+      "allowedTypes": [
+        "files",
+        "images",
+        "videos",
+        "audios"
+      ]
+    }
+  }
+}

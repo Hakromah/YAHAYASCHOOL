@@ -1,0 +1,52 @@
+{
+  "kind": "collectionType",
+  "collectionName": "academic-certificates",
+  "info": {
+    "singularName": "academic-certificate",
+    "pluralName": "academic-certificates",
+    "displayName": "Academic Certificate",
+    "description": "Issued certificates linked to students"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {
+    "i18n": {
+      "localized": true
+    }
+  },
+  "attributes": {
+    "student": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::student.student"
+    },
+    "template": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::academic-certificate-template.academic-certificate-template"
+    },
+    "serialNumber": {
+      "type": "string",
+      "unique": true
+    },
+    "verificationID": {
+      "type": "string",
+      "unique": true
+    },
+    "achievementName": {
+      "type": "string"
+    },
+    "issueDate": {
+      "type": "date"
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": [
+        "Valid",
+        "Revoked"
+      ],
+      "default": "Valid"
+    }
+  }
+}

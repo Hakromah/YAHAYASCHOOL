@@ -1,0 +1,24 @@
+{
+  "kind": "collectionType",
+  "collectionName": "assessment_categories",
+  "info": {
+    "singularName": "assessment-category",
+    "pluralName": "assessment-categories",
+    "displayName": "Assessment Category",
+    "description": "Schema for Assessment Category"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "name": {
+      "type": "string",
+      "unique": true,
+      "required": true
+    },
+    "description": {
+      "type": "text"
+    }
+  }
+}

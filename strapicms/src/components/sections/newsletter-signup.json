@@ -1,0 +1,27 @@
+{
+  "collectionName": "components_sections_newsletter_signups",
+  "info": {
+    "displayName": "Newsletter Signup Block",
+    "icon": "envelop",
+    "description": "Email newsletter subscription prompt section"
+  },
+  "options": {},
+  "attributes": {
+    "title": {
+      "type": "string",
+      "default": "Subscribe to Our Newsletter"
+    },
+    "subtitle": {
+      "type": "string",
+      "default": "Receive academic updates, Islamic reminders, and school news directly in your inbox."
+    },
+    "placeholderText": {
+      "type": "string",
+      "default": "Enter your email address..."
+    },
+    "buttonText": {
+      "type": "string",
+      "default": "Subscribe"
+    }
+  }
+}

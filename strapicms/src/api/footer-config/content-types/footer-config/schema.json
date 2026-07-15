@@ -1,0 +1,51 @@
+{
+  "kind": "singleType",
+  "collectionName": "footer_configs",
+  "info": {
+    "singularName": "footer-config",
+    "pluralName": "footer-configs",
+    "displayName": "Footer Configuration",
+    "description": "Dynamic website footer columns, copyright, and newsletter links"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {
+    "i18n": {
+      "localized": true
+    }
+  },
+  "attributes": {
+    "quickLinks": {
+      "pluginOptions": { "i18n": { "localized": true } },
+      "type": "json"
+    },
+    "departmentsColumn": {
+      "pluginOptions": { "i18n": { "localized": true } },
+      "type": "json"
+    },
+    "programsColumn": {
+      "pluginOptions": { "i18n": { "localized": true } },
+      "type": "json"
+    },
+    "contactText": {
+      "pluginOptions": { "i18n": { "localized": true } },
+      "type": "text"
+    },
+    "copyrightText": {
+      "pluginOptions": { "i18n": { "localized": true } },
+      "type": "string",
+      "default": "© 2026 YAHAYASCOOL — Yahaya International Islamic and English High School. All rights reserved."
+    },
+    "newsletterHeading": {
+      "pluginOptions": { "i18n": { "localized": true } },
+      "type": "string",
+      "default": "Stay Connected"
+    },
+    "newsletterSubheading": {
+      "pluginOptions": { "i18n": { "localized": true } },
+      "type": "string",
+      "default": "Subscribe for weekly updates and reminders."
+    }
+  }
+}
