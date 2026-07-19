@@ -248,7 +248,7 @@ function registerERPLifecycles(strapi: Core.Strapi): void {
         const { data } = event.params;
         if (!data[item.idField]) {
           try {
-            const count = await strapi.db.query(item.model as any).count();
+            const count = await strapi.db.query(item.model as any).count({});
             const seq = String(count + 1).padStart(3, '0');
             data[item.idField] = `${item.prefix}${seq}`;
             if (item.admPrefix && !data.admissionNumber) {
@@ -304,10 +304,6 @@ async function seedPublicPermissions(strapi: Core.Strapi): Promise<void> {
       'api::academic-term.academic-term',
       'api::campus.campus',
       'api::section.section',
-      'api::student.student',
-      'api::parent.parent',
-      'api::teacher.teacher',
-      'api::worker.worker',
       // LMS Phase 3A
       'api::subject.subject',
       'api::curriculum.curriculum',
@@ -412,7 +408,17 @@ async function seedPublicPermissions(strapi: Core.Strapi): Promise<void> {
     // Give the Authenticated role access to Dashboard APIs
     const authRole = await strapi.db.query('plugin::users-permissions.role').findOne({ where: { type: 'authenticated' } });
     if (authRole) {
-      for (const action of ['getAdminDashboard', 'getTeacherDashboard', 'getStudentDashboard', 'getParentDashboard']) {
+      for (const action of [
+        'getAdminDashboard',
+        'getDirectorDashboard',
+        'getTeacherDashboard',
+        'getStudentDashboard',
+        'getParentDashboard',
+        'getAccountantDashboard',
+        'getAccountLeadDashboard',
+        'getWorkerDashboard',
+        'getDriverDashboard',
+      ]) {
         const actionName = `api::dashboard.dashboard.${action}`;
         const existingAuth = await strapi.db.query('plugin::users-permissions.permission').findOne({
           where: { action: actionName, role: authRole.id },
@@ -438,9 +444,11 @@ async function seedERPData(strapi: Core.Strapi): Promise<void> {
   strapi.log.info('[YAHAYASCOOL] Checking and seeding Core School ERP data...');
   try {
     // 1. Campus
+    strapi.log.info('[YAHAYASCOOL] Checking Campus...');
     const campuses = await strapi.db.query('api::campus.campus').findMany({ limit: 1 });
     let mainCampusId = campuses[0]?.id;
     if (campuses.length === 0) {
+      strapi.log.info('[YAHAYASCOOL] Creating Campus...');
       const created = await strapi.db.query('api::campus.campus').create({
         data: {
           name: 'Main Islamic & Sciences Campus',
@@ -457,9 +465,11 @@ async function seedERPData(strapi: Core.Strapi): Promise<void> {
     }
 
     // 2. Academic Year
+    strapi.log.info('[YAHAYASCOOL] Checking Academic Year...');
     const years = await strapi.db.query('api::academic-year.academic-year').findMany({ limit: 1 });
     let currentYearId = years[0]?.id;
     if (years.length === 0) {
+      strapi.log.info('[YAHAYASCOOL] Creating Academic Year...');
       const created = await strapi.db.query('api::academic-year.academic-year').create({
         data: {
           name: '2026/2027 Academic Year',
@@ -474,8 +484,10 @@ async function seedERPData(strapi: Core.Strapi): Promise<void> {
     }
 
     // 3. Academic Terms
+    strapi.log.info('[YAHAYASCOOL] Checking Academic Terms...');
     const terms = await strapi.db.query('api::academic-term.academic-term').findMany({ limit: 1 });
     if (terms.length === 0 && currentYearId) {
+      strapi.log.info('[YAHAYASCOOL] Creating Academic Terms...');
       const termData = [
         { name: 'First Term', startDate: '2026-09-01', endDate: '2026-12-15', active: true },
         { name: 'Second Term', startDate: '2027-01-10', endDate: '2027-04-05', active: false },
@@ -496,8 +508,10 @@ async function seedERPData(strapi: Core.Strapi): Promise<void> {
     }
 
     // 4. Sections
+    strapi.log.info('[YAHAYASCOOL] Checking Sections...');
     const sections = await strapi.db.query('api::section.section').findMany({ limit: 1 });
     if (sections.length === 0 && currentYearId) {
+      strapi.log.info('[YAHAYASCOOL] Creating Sections...');
       const secData = [
         { name: 'Grade 6A - Tahfidz Honors', code: 'G6A-TH', capacity: 35 },
         { name: 'Grade 6B - STEM Excellence', code: 'G6B-SE', capacity: 35 },
@@ -520,6 +534,7 @@ async function seedERPData(strapi: Core.Strapi): Promise<void> {
     }
 
     // 5. Teachers
+    strapi.log.info('[YAHAYASCOOL] Checking Teachers...');
     const teachers = await strapi.db.query('api::teacher.teacher').findMany({ limit: 1 });
     if (teachers.length === 0) {
       const tData = [
@@ -533,21 +548,24 @@ async function seedERPData(strapi: Core.Strapi): Promise<void> {
         { name: 'Ustadh Bilal Al-Habashi', schoolId: 'TCH-2026-008', qualifications: 'B.A. Islamic History', specializations: 'Seerah, Islamic Civilization', phone: '+2348011111108', email: 'bilal@yahayaschool.edu', salaryGrade: 'Grade B2' },
       ];
       for (const t of tData) {
-        await strapi.db.query('api::teacher.teacher').create({
+        await strapi.documents('api::teacher.teacher').create({
           data: {
             ...t,
             gender: t.name.includes('Dr. Fatima') || t.name.includes('Amina') || t.name.includes('Zainab') ? 'female' : 'male',
             employmentStatus: 'active',
             experienceYears: 7,
           },
+          status: 'published'
         });
       }
       strapi.log.info('[YAHAYASCOOL] ✅ Seeded 8 Teachers.');
     }
 
     // 6. Parents
+    strapi.log.info('[YAHAYASCOOL] Checking Parents...');
     const parents = await strapi.db.query('api::parent.parent').findMany({ limit: 1 });
     if (parents.length === 0) {
+      strapi.log.info('[YAHAYASCOOL] Creating Parents...');
       const pData = [
         { name: 'Sheikh Tariq Al-Mansoor Senior', schoolId: 'PR-2026-001', relationship: 'father', phone: '+2348022222201', email: 'tariq.parent@gmail.com', occupation: 'Merchant & Scholar' },
         { name: 'Dr. Fatima Abdullah Senior', schoolId: 'PR-2026-002', relationship: 'mother', phone: '+2348022222202', email: 'fatima.parent@gmail.com', occupation: 'Pediatric Surgeon' },
@@ -556,20 +574,24 @@ async function seedERPData(strapi: Core.Strapi): Promise<void> {
         { name: 'Engineer Ali Al-Qasimi', schoolId: 'PR-2026-005', relationship: 'father', phone: '+2348022222205', email: 'ali.parent@gmail.com', occupation: 'Civil Architect' },
       ];
       for (const p of pData) {
-        await strapi.db.query('api::parent.parent').create({
+        await strapi.documents('api::parent.parent').create({
           data: {
             ...p,
+            relationship: p.relationship as any,
             preferredLanguage: 'en',
             religion: 'Islam',
           },
+          status: 'published'
         });
       }
       strapi.log.info('[YAHAYASCOOL] ✅ Seeded 5 Parents.');
     }
 
     // 7. Workers
+    strapi.log.info('[YAHAYASCOOL] Checking Workers...');
     const workers = await strapi.db.query('api::worker.worker').findMany({ limit: 1 });
     if (workers.length === 0) {
+      strapi.log.info('[YAHAYASCOOL] Creating Workers...');
       const wData = [
         { name: 'Captain Khalid Al-Saud', schoolId: 'WRK-2026-001', role: 'Chief Security Officer', phone: '+2348033333301', email: 'khalid@yahayaschool.edu', salaryGrade: 'Grade W1' },
         { name: 'Chef Rashid Al-Mahmoud', schoolId: 'WRK-2026-002', role: 'Campus Head Chef', phone: '+2348033333302', email: 'rashid@yahayaschool.edu', salaryGrade: 'Grade W2' },
@@ -579,19 +601,22 @@ async function seedERPData(strapi: Core.Strapi): Promise<void> {
         { name: 'Mrs. Hawa Al-Tijani', schoolId: 'WRK-2026-006', role: 'Campus Head Nurse', phone: '+2348033333306', email: 'hawa@yahayaschool.edu', salaryGrade: 'Grade W1' },
       ];
       for (const w of wData) {
-        await strapi.db.query('api::worker.worker').create({
+        await strapi.documents('api::worker.worker').create({
           data: {
             ...w,
             employmentStatus: 'active',
           },
+          status: 'published'
         });
       }
       strapi.log.info('[YAHAYASCOOL] ✅ Seeded 6 Support Workers.');
     }
 
     // 8. Students
+    strapi.log.info('[YAHAYASCOOL] Checking Students...');
     const students = await strapi.db.query('api::student.student').findMany({ limit: 1 });
     if (students.length === 0) {
+      strapi.log.info('[YAHAYASCOOL] Creating Students...');
       const sNames = [
         { f: 'Ahmed', l: 'Al-Mansoor', g: 'male', id: 'ST-2026-001', adm: 'ADM/2026/0101' },
         { f: 'Mariam', l: 'Abdullah', g: 'female', id: 'ST-2026-002', adm: 'ADM/2026/0102' },
@@ -611,7 +636,7 @@ async function seedERPData(strapi: Core.Strapi): Promise<void> {
       ];
 
       for (const st of sNames) {
-        await strapi.db.query('api::student.student').create({
+        await strapi.documents('api::student.student').create({
           data: {
             schoolId: st.id,
             admissionNumber: st.adm,
@@ -632,12 +657,13 @@ async function seedERPData(strapi: Core.Strapi): Promise<void> {
               { teacherName: 'Ustadh Ibrahim Al-Maliki', date: '2026-10-12', level: 'green', category: 'Qur\'an Memorization Excellence', description: '<p>Demonstrated outstanding focus and memorized 5 extra pages of Surah Al-Baqarah during weekend review.</p>', recommendation: 'Commended in morning assembly.' }
             ],
           },
+          status: 'published'
         });
       }
       strapi.log.info('[YAHAYASCOOL] ✅ Seeded 15 Student Profiles with Timeline & Behavior records.');
     }
   } catch (error: any) {
-    strapi.log.error('[YAHAYASCOOL] Error seeding ERP data:', error?.message ?? error);
+    strapi.log.error('[YAHAYASCOOL] Error seeding ERP data:', error);
   }
 }
 
@@ -650,213 +676,252 @@ async function seedSampleContent(strapi: Core.Strapi): Promise<void> {
 
   try {
     // 1. Seed Homepage if not exists
-    const existingHomepage = await strapi.db.query('api::homepage.homepage').findMany({ limit: 1 });
-    if (existingHomepage.length === 0) {
-      await strapi.db.query('api::homepage.homepage').create({
-        data: {
-          title: 'Welcome to YAHAYASCOOL',
-          sections: [
-            {
-              __component: 'sections.hero',
-              badge: 'Bismillah ir-Rahman ir-Rahim',
-              title: 'Yahaya International Islamic & English High School',
-              subtitle: 'Empowering future Muslim leaders with world-class Western sciences, rigorous Islamic scholarship, and exemplary Qur\'anic moral excellence.',
-              primaryCtaText: 'Online Admissions Application',
-              primaryCtaUrl: '/online-registration',
-              secondaryCtaText: 'Explore Our Programs',
-              secondaryCtaUrl: '/programs',
-            },
-            {
-              __component: 'sections.stats',
-              title: 'Academic & Moral Excellence in Numbers',
-              subtitle: 'A track record of distinction and integrity',
-              statsList: [
-                { number: '100%', label: 'University Acceptance', icon: 'graduation-cap' },
-                { number: '1,200+', label: 'Active Students', icon: 'users' },
-                { number: '30+', label: 'Hafiz Qur\'an Graduates Annually', icon: 'book-open' },
-                { number: '1:12', label: 'Teacher to Student Ratio', icon: 'award' },
-              ],
-            },
-            {
-              __component: 'sections.principal-welcome',
-              sectionBadge: 'Principal\'s Welcome',
-              title: 'Nurturing Academic Excellence & Moral Integrity',
-              principalName: 'Sheikh Dr. Yahaya Al-Hassan',
-              principalTitle: 'Director General & Principal',
-              message: 'At Yahaya International Islamic and English High School, we believe that true education is the harmonization of intellectual brilliance with spiritual depth. Our mission is to raise a disciplined, innovative, and God-fearing generation capable of leading global institutions while embodying the timeless ethical virtues of Islam.',
-              quote: 'Knowledge without character is like a tree without fruit.',
-            },
-            {
-              __component: 'sections.programs-grid',
-              title: 'Our Academic Programs',
-              subtitle: 'Excellence across Islamic Sciences and Western Disciplines',
-              limit: 6,
-              showFeaturedOnly: false,
-            },
-            {
-              __component: 'sections.departments-grid',
-              title: 'Specialized Departments',
-              subtitle: 'Dedicated faculties ensuring comprehensive subject mastery',
-              limit: 4,
-            },
-            {
-              __component: 'sections.news-grid',
-              title: 'Latest News & Updates',
-              subtitle: 'Stay connected with campus announcements and achievements',
-              limit: 3,
-            },
-            {
-              __component: 'sections.events-grid',
-              title: 'Upcoming Calendar Events',
-              subtitle: 'Join our academic symposiums, Islamic gatherings, and parent days',
-              limit: 3,
-            },
-            {
-              __component: 'sections.donation-banner',
-              badge: 'Sadaqah Jariyah & Waqf',
-              title: 'Support School Development & Islamic Endowment',
-              description: 'Your continuous charity (Sadaqah Jariyah) directly builds science research laboratories, campus mosques, and full tuition scholarships for talented orphans.',
-              buttonText: 'Contribute to Our Waqf Fund',
-              buttonUrl: '/donations',
-            },
-            {
-              __component: 'sections.cta-banner',
-              title: 'Ready to Join the YAHAYASCOOL Community?',
-              description: 'Applications for the upcoming 2026/2027 academic year are now open. Secure your child\'s future today.',
-              buttonText: 'Start Online Application',
-              buttonUrl: '/online-registration',
-              themeStyle: 'emerald',
-            },
-          ],
-        },
-      });
-      strapi.log.info('[YAHAYASCOOL] ✅ Seeded initial Homepage with 9 dynamic sections.');
+    strapi.log.info('[YAHAYASCOOL] Checking Homepage...');
+    try {
+      const existingHomepage = await strapi.db.query('api::homepage.homepage').findMany({ limit: 1 });
+      if (existingHomepage.length === 0) {
+        strapi.log.info('[YAHAYASCOOL] Creating Homepage...');
+        await strapi.documents('api::homepage.homepage').create({
+          data: {
+            title: 'Welcome to YAHAYASCOOL',
+            sections: [
+              {
+                __component: 'sections.hero',
+                badge: 'Bismillah ir-Rahman ir-Rahim',
+                title: 'Yahaya International Islamic & English High School',
+                subtitle: 'Empowering future Muslim leaders with world-class Western sciences, rigorous Islamic scholarship, and exemplary Qur\'anic moral excellence.',
+                primaryCtaText: 'Online Admissions Application',
+                primaryCtaUrl: '/online-registration',
+                secondaryCtaText: 'Explore Our Programs',
+                secondaryCtaUrl: '/programs',
+              },
+              {
+                __component: 'sections.stats',
+                title: 'Academic & Moral Excellence in Numbers',
+                subtitle: 'A track record of distinction and integrity',
+                statsList: [
+                  { number: '100%', label: 'University Acceptance', icon: 'graduation-cap' },
+                  { number: '1,200+', label: 'Active Students', icon: 'users' },
+                  { number: '30+', label: 'Hafiz Qur\'an Graduates Annually', icon: 'book-open' },
+                  { number: '1:12', label: 'Teacher to Student Ratio', icon: 'award' },
+                ],
+              },
+              {
+                __component: 'sections.principal-welcome',
+                sectionBadge: 'Principal\'s Welcome',
+                title: 'Nurturing Academic Excellence & Moral Integrity',
+                principalName: 'Sheikh Dr. Yahaya Al-Hassan',
+                principalTitle: 'Director General & Principal',
+                message: 'At Yahaya International Islamic and English High School, we believe that true education is the harmonization of intellectual brilliance with spiritual depth. Our mission is to raise a disciplined, innovative, and God-fearing generation capable of leading global institutions while embodying the timeless ethical virtues of Islam.',
+                quote: 'Knowledge without character is like a tree without fruit.',
+              },
+              {
+                __component: 'sections.programs-grid',
+                title: 'Our Academic Programs',
+                subtitle: 'Excellence across Islamic Sciences and Western Disciplines',
+                limit: 6,
+                showFeaturedOnly: false,
+              },
+              {
+                __component: 'sections.departments-grid',
+                title: 'Specialized Departments',
+                subtitle: 'Dedicated faculties ensuring comprehensive subject mastery',
+                limit: 4,
+              },
+              {
+                __component: 'sections.news-grid',
+                title: 'Latest News & Updates',
+                subtitle: 'Stay connected with campus announcements and achievements',
+                limit: 3,
+              },
+              {
+                __component: 'sections.events-grid',
+                title: 'Upcoming Calendar Events',
+                subtitle: 'Join our academic symposiums, Islamic gatherings, and parent days',
+                limit: 3,
+              },
+              {
+                __component: 'sections.donation-banner',
+                badge: 'Sadaqah Jariyah & Waqf',
+                title: 'Support School Development & Islamic Endowment',
+                description: 'Your continuous charity (Sadaqah Jariyah) directly builds science research laboratories, campus mosques, and full tuition scholarships for talented orphans.',
+                buttonText: 'Contribute to Our Waqf Fund',
+                buttonUrl: '/donations',
+              },
+              {
+                __component: 'sections.cta-banner',
+                title: 'Ready to Join the YAHAYASCOOL Community?',
+                description: 'Applications for the upcoming 2026/2027 academic year are now open. Secure your child\'s future today.',
+                buttonText: 'Start Online Application',
+                buttonUrl: '/online-registration',
+                themeStyle: 'emerald',
+              },
+            ],
+          },
+          status: 'published'
+        });
+        strapi.log.info('[YAHAYASCOOL] ✅ Seeded initial Homepage with 9 dynamic sections.');
+      }
+    } catch (e: any) {
+      strapi.log.error('[YAHAYASCOOL] Error seeding Homepage:', e.message);
     }
 
     // 2. Seed Contact Info if not exists
-    const existingContact = await strapi.db.query('api::contact-info.contact-info').findMany({ limit: 1 });
-    if (existingContact.length === 0) {
-      await strapi.db.query('api::contact-info.contact-info').create({
-        data: {
-          address: 'Plot 18, Education District, Islamic Knowledge Avenue, West Africa',
-          phone: '+234 (0) 800-YAHAYA-S',
-          email: 'admissions@yahayaschool.edu',
-          officeHours: 'Monday - Thursday: 7:30 AM - 4:00 PM | Friday: 7:30 AM - 12:30 PM',
-          googleMapUrl: 'https://maps.google.com/?q=Yahaya+International+School',
-        },
-      });
-      strapi.log.info('[YAHAYASCOOL] ✅ Seeded Contact Info.');
+    try {
+      const existingContact = await strapi.db.query('api::contact-info.contact-info').findMany({ limit: 1 });
+      if (existingContact.length === 0) {
+        await strapi.documents('api::contact-info.contact-info').create({
+          data: {
+            address: 'Plot 18, Education District, Islamic Knowledge Avenue, West Africa',
+            phone: '+234 (0) 800-YAHAYA-S',
+            email: 'admissions@yahayaschool.edu',
+            officeHours: 'Monday - Thursday: 7:30 AM - 4:00 PM | Friday: 7:30 AM - 12:30 PM',
+            googleMapUrl: 'https://maps.google.com/?q=Yahaya+International+School',
+          },
+          status: 'published'
+        });
+        strapi.log.info('[YAHAYASCOOL] ✅ Seeded Contact Info.');
+      }
+    } catch (e: any) {
+      strapi.log.error('[YAHAYASCOOL] Error seeding Contact Info:', e.message);
     }
 
     // 3. Seed Footer Config if not exists
-    const existingFooter = await strapi.db.query('api::footer-config.footer-config').findMany({ limit: 1 });
-    if (existingFooter.length === 0) {
-      await strapi.db.query('api::footer-config.footer-config').create({
-        data: {
-          quickLinks: [
-            { title: 'About Us', url: '/about' },
-            { title: 'Admissions & Fees', url: '/admissions' },
-            { title: 'Online Registration', url: '/online-registration' },
-            { title: 'Campus Gallery', url: '/gallery' },
-            { title: 'Frequently Asked Questions', url: '/faq' },
-          ],
-          departmentsColumn: [
-            { title: 'Islamic & Qur\'an Department', url: '/departments/islamic-studies' },
-            { title: 'Science & Technology', url: '/departments/sciences' },
-            { title: 'Languages & Linguistics', url: '/departments/languages' },
-            { title: 'Humanities & Commerce', url: '/departments/humanities' },
-          ],
-          programsColumn: [
-            { title: 'Tahfidz Al-Qur\'an (Memorization)', url: '/programs/quran-memorization' },
-            { title: 'Advanced Arabic Immersion', url: '/programs/arabic-immersion' },
-            { title: 'STEM & Robotics Excellence', url: '/programs/stem-robotics' },
-            { title: 'Intensive Summer Academy', url: '/programs/summer-academy' },
-          ],
-          contactText: 'Empowering future Muslim leaders through holistic Islamic and English education.',
-          copyrightText: '© 2026 YAHAYASCOOL — Yahaya International Islamic and English High School. All rights reserved.',
-          newsletterHeading: 'Stay Informed',
-          newsletterSubheading: 'Receive official school circulars and academic reminders directly.',
-        },
-      });
-      strapi.log.info('[YAHAYASCOOL] ✅ Seeded Footer Config.');
+    try {
+      const existingFooter = await strapi.db.query('api::footer-config.footer-config').findMany({ limit: 1 });
+      strapi.log.info('[DEBUG] existingFooter: ' + JSON.stringify(existingFooter));
+      
+      if (existingFooter.length === 0) {
+        const createdFooter = await strapi.documents('api::footer-config.footer-config').create({
+          data: {
+            quickLinks: [
+              { title: 'About Us', url: '/about' },
+              { title: 'Admissions & Fees', url: '/admissions' },
+              { title: 'Online Registration', url: '/online-registration' },
+              { title: 'Campus Gallery', url: '/gallery' },
+              { title: 'Frequently Asked Questions', url: '/faq' },
+            ],
+            departmentsColumn: [
+              { title: 'Islamic & Qur\'an Department', url: '/departments/islamic-studies' },
+              { title: 'Science & Technology', url: '/departments/sciences' },
+              { title: 'Languages & Linguistics', url: '/departments/languages' },
+              { title: 'Humanities & Commerce', url: '/departments/humanities' },
+            ],
+            programsColumn: [
+              { title: 'Tahfidz Al-Qur\'an (Memorization)', url: '/programs/quran-memorization' },
+              { title: 'Advanced Arabic Immersion', url: '/programs/arabic-immersion' },
+              { title: 'STEM & Robotics Excellence', url: '/programs/stem-robotics' },
+              { title: 'Intensive Summer Academy', url: '/programs/summer-academy' },
+            ],
+            contactText: 'Empowering future Muslim leaders through holistic Islamic and English education.',
+            copyrightText: '© 2026 YAHAYASCOOL — Yahaya International Islamic and English High School. All rights reserved.',
+            newsletterHeading: 'Stay Informed',
+            newsletterSubheading: 'Receive official school circulars and academic reminders directly.',
+          },
+          status: 'published'
+        });
+        strapi.log.info('[YAHAYASCOOL] ✅ Seeded Footer Config. Created: ' + JSON.stringify(createdFooter));
+      } else {
+        strapi.log.info('[DEBUG] Footer Config already exists, skipping creation.');
+      }
+    } catch (e: any) {
+      strapi.log.error('[YAHAYASCOOL] Error seeding Footer Config:', e.message);
     }
 
     // 4. Seed Navigation Menus if not exists
-    const existingHeaderMenu = await strapi.db.query('api::navigation-menu.navigation-menu').findMany({ where: { location: 'header' }, limit: 1 });
-    if (existingHeaderMenu.length === 0) {
-      await strapi.db.query('api::navigation-menu.navigation-menu').create({
-        data: {
-          name: 'Main Navigation Header',
-          slug: 'main-header-menu',
-          location: 'header',
-          items: [
-            { title: 'Home', url: '/', order: 1, target: '_self', isVisible: true },
-            { title: 'About Us', url: '/about', order: 2, target: '_self', isVisible: true },
-            { title: 'Programs', url: '/programs', order: 3, target: '_self', isVisible: true },
-            { title: 'Departments', url: '/departments', order: 4, target: '_self', isVisible: true },
-            { title: 'Admissions', url: '/admissions', order: 5, target: '_self', isVisible: true },
-            { title: 'News & Events', url: '/news', order: 6, target: '_self', isVisible: true },
-            { title: 'Donations & Waqf', url: '/donations', order: 7, target: '_self', isVisible: true },
-            { title: 'Contact', url: '/contact', order: 8, target: '_self', isVisible: true },
-          ],
-        },
-      });
-      strapi.log.info('[YAHAYASCOOL] ✅ Seeded Main Header Menu.');
+    try {
+      const existingHeaderMenu = await strapi.db.query('api::navigation-menu.navigation-menu').findMany({ where: { location: 'header' }, limit: 1 });
+      if (existingHeaderMenu.length === 0) {
+        await strapi.documents('api::navigation-menu.navigation-menu').create({
+          data: {
+            name: 'Main Navigation Header',
+            slug: 'main-header-menu',
+            location: 'header',
+            items: [
+              { title: 'Home', url: '/', order: 1, target: '_self', isVisible: true },
+              { title: 'About Us', url: '/about', order: 2, target: '_self', isVisible: true },
+              { title: 'Programs', url: '/programs', order: 3, target: '_self', isVisible: true },
+              { title: 'Departments', url: '/departments', order: 4, target: '_self', isVisible: true },
+              { title: 'Admissions', url: '/admissions', order: 5, target: '_self', isVisible: true },
+              { title: 'News & Events', url: '/news', order: 6, target: '_self', isVisible: true },
+              { title: 'Donations & Waqf', url: '/donations', order: 7, target: '_self', isVisible: true },
+              { title: 'Contact', url: '/contact', order: 8, target: '_self', isVisible: true },
+            ],
+          },
+          status: 'published'
+        });
+        strapi.log.info('[YAHAYASCOOL] ✅ Seeded Main Header Menu.');
+      }
+    } catch (e: any) {
+      strapi.log.error('[YAHAYASCOOL] Error seeding Header Menu:', e.message);
     }
 
     // 5. Seed sample Programs if empty
-    const existingPrograms = await strapi.db.query('api::program.program').findMany({ limit: 1 });
-    if (existingPrograms.length === 0) {
-      await strapi.db.query('api::program.program').create({
-        data: {
-          title: 'Tahfidz Al-Qur\'an & Tajweed Mastery',
-          slug: 'quran-memorization',
-          description: 'A dedicated, structured 3-year memorization track guiding students to memorize the entire Holy Qur\'an with flawless Tajweed alongside standard high school coursework.',
-          duration: '3 Academic Years',
-          isFeatured: true,
-        },
-      });
-      await strapi.db.query('api::program.program').create({
-        data: {
-          title: 'Advanced Arabic Language & Rhetoric Immersion',
-          slug: 'arabic-immersion',
-          description: 'Immersive Classical and Modern Standard Arabic curriculum designed to foster fluency, classical text analysis, and eloquence in speech.',
-          duration: 'Full High School Track',
-          isFeatured: true,
-        },
-      });
-      await strapi.db.query('api::program.program').create({
-        data: {
-          title: 'STEM & Robotics Honors Track',
-          slug: 'stem-robotics',
-          description: 'Rigorous Western science preparation in Physics, Chemistry, Biology, and Advanced Computing, preparing graduates for top global engineering and medical universities.',
-          duration: '4 Academic Years',
-          isFeatured: true,
-        },
-      });
-      strapi.log.info('[YAHAYASCOOL] ✅ Seeded 3 Sample Academic Programs.');
+    try {
+      const existingPrograms = await strapi.db.query('api::program.program').findMany({ limit: 1 });
+      if (existingPrograms.length === 0) {
+        await strapi.documents('api::program.program').create({
+          data: {
+            title: 'Tahfidz Al-Qur\'an & Tajweed Mastery',
+            slug: 'quran-memorization',
+            description: 'A dedicated, structured 3-year memorization track guiding students to memorize the entire Holy Qur\'an with flawless Tajweed alongside standard high school coursework.',
+            duration: '3 Academic Years',
+            isFeatured: true,
+          },
+          status: 'published'
+        });
+        await strapi.documents('api::program.program').create({
+          data: {
+            title: 'Advanced Arabic Language & Rhetoric Immersion',
+            slug: 'arabic-immersion',
+            description: 'Immersive Classical and Modern Standard Arabic curriculum designed to foster fluency, classical text analysis, and eloquence in speech.',
+            duration: 'Full High School Track',
+            isFeatured: true,
+          },
+          status: 'published'
+        });
+        await strapi.documents('api::program.program').create({
+          data: {
+            title: 'STEM & Robotics Honors Track',
+            slug: 'stem-robotics',
+            description: 'Rigorous Western science preparation in Physics, Chemistry, Biology, and Advanced Computing, preparing graduates for top global engineering and medical universities.',
+            duration: '4 Academic Years',
+            isFeatured: true,
+          },
+          status: 'published'
+        });
+        strapi.log.info('[YAHAYASCOOL] ✅ Seeded 3 Sample Academic Programs.');
+      }
+    } catch (e: any) {
+      strapi.log.error('[YAHAYASCOOL] Error seeding Programs:', e.message);
     }
 
     // 6. Seed sample Departments if empty
-    const existingDepts = await strapi.db.query('api::department.department').findMany({ limit: 1 });
-    if (existingDepts.length === 0) {
-      await strapi.db.query('api::department.department').create({
-        data: {
-          title: 'Faculty of Islamic Sciences & Qur\'an',
-          slug: 'islamic-studies',
-          headOfDepartment: 'Ustadh Ibrahim Al-Maliki',
-          description: '<p>Dedicated to Qur\'anic studies, Hadith, Fiqh, and Islamic Ethics.</p>',
-        },
-      });
-      await strapi.db.query('api::department.department').create({
-        data: {
-          title: 'Faculty of Pure & Applied Sciences',
-          slug: 'sciences',
-          headOfDepartment: 'Dr. Fatima Abdullah',
-          description: '<p>Comprising Biology, Chemistry, Physics, and Mathematics laboratories.</p>',
-        },
-      });
-      strapi.log.info('[YAHAYASCOOL] ✅ Seeded 2 Sample Departments.');
+    try {
+      const existingDepts = await strapi.db.query('api::department.department').findMany({ limit: 1 });
+      if (existingDepts.length === 0) {
+        await strapi.documents('api::department.department').create({
+          data: {
+            title: 'Faculty of Islamic Sciences & Qur\'an',
+            slug: 'islamic-studies',
+            headOfDepartment: 'Ustadh Ibrahim Al-Maliki',
+            description: '<p>Dedicated to Qur\'anic studies, Hadith, Fiqh, and Islamic Ethics.</p>',
+          },
+          status: 'published'
+        });
+        await strapi.documents('api::department.department').create({
+          data: {
+            title: 'Faculty of Pure & Applied Sciences',
+            slug: 'sciences',
+            headOfDepartment: 'Dr. Fatima Abdullah',
+            description: '<p>Comprising Biology, Chemistry, Physics, and Mathematics laboratories.</p>',
+          },
+          status: 'published'
+        });
+        strapi.log.info('[YAHAYASCOOL] ✅ Seeded 2 Sample Departments.');
+      }
+    } catch (e: any) {
+      strapi.log.error('[YAHAYASCOOL] Error seeding Departments:', e.message);
     }
   } catch (error) {
     strapi.log.error('[YAHAYASCOOL] Error seeding sample content:', error);
@@ -881,11 +946,12 @@ async function seedLmsData(strapi: Core.Strapi): Promise<void> {
       ];
       
       for (const s of sData) {
-        await strapi.db.query('api::subject.subject').create({
+        await strapi.documents('api::subject.subject').create({
           data: {
-            ...s,
+            ...(s as any),
             activeStatus: true,
-          }
+          },
+          status: 'published'
         });
       }
       strapi.log.info('[YAHAYASCOOL] ✅ Seeded 5 Academic Subjects.');
@@ -897,24 +963,146 @@ async function seedLmsData(strapi: Core.Strapi): Promise<void> {
       const mainCampusId = campuses[0]?.id;
 
       const cData = [
-        { name: 'Al-Khawarizmi Lab', code: 'RM-101', capacity: 30, building: 'Science Block', floor: '1st Floor', roomType: 'Laboratory', resources: { projector: true, smartBoard: true } },
-        { name: 'Imam Malik Hall', code: 'RM-102', capacity: 50, building: 'Islamic Block', floor: 'Ground Floor', roomType: 'Lecture Room', resources: { projector: false, smartBoard: false, airConditioning: true } },
-        { name: 'Ibn Sina Computing Center', code: 'RM-103', capacity: 40, building: 'Technology Block', floor: '2nd Floor', roomType: 'Laboratory', resources: { computers: 40, smartBoard: true } }
+        { name: 'Al-Khawarizmi Lab', code: 'RM-101', capacity: 30, building: 'Science Block', floor: '1st Floor', roomType: 'Laboratory', resources: { projector: true, smartBoard: true } as any },
+        { name: 'Imam Malik Hall', code: 'RM-102', capacity: 50, building: 'Islamic Block', floor: 'Ground Floor', roomType: 'Lecture Room', resources: { projector: false, smartBoard: false, airConditioning: true } as any },
+        { name: 'Ibn Sina Computing Center', code: 'RM-103', capacity: 40, building: 'Technology Block', floor: '2nd Floor', roomType: 'Laboratory', resources: { computers: 40, smartBoard: true } as any }
       ];
 
       for (const c of cData) {
-        await strapi.db.query('api::classroom.classroom').create({
+        await strapi.documents('api::classroom.classroom').create({
           data: {
-            ...c,
+            ...(c as any),
             status: 'Active',
             campus: mainCampusId
-          }
+          },
+          status: 'published'
         });
       }
       strapi.log.info('[YAHAYASCOOL] ✅ Seeded 3 Classrooms.');
     }
   } catch (error) {
     strapi.log.error('[YAHAYASCOOL] Error seeding LMS data:', error);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Bootstrap: Seed Finance Permissions
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function seedFinancePermissions(strapi: Core.Strapi): Promise<void> {
+  strapi.log.info('[YAHAYASCOOL] Seeding Finance permissions...');
+  try {
+    const knex = strapi.db.connection;
+    const roles = await knex('up_roles').select('id', 'type');
+    // SECURITY FIX: Only grant finance permissions to authenticated role, NEVER public
+    const targetRoles = roles.filter((r: any) => r.type === 'authenticated');
+    const financeApis = [
+      'finance-accounting-period', 'finance-budget', 'finance-currency', 'finance-exchange-rate', 
+      'finance-expense', 'finance-hold', 'finance-invoice', 
+      'finance-journal-entry', 'finance-ledger-entry', 'finance-payroll', 
+      'finance-receipt', 'finance-scholarship', 'finance-sequence-counter'
+    ];
+    // SECURITY FIX: Exclude delete from general authenticated permissions
+    const actions = ['find', 'findOne', 'create', 'update'];
+    const now = new Date();
+    const crypto = require('crypto');
+
+    for (const api of financeApis) {
+      for (const action of actions) {
+        const actionStr = `api::${api}.${api}.${action}`;
+        let existing = await knex('up_permissions').where('action', actionStr).first();
+        let permId;
+        if (!existing) {
+          const docId = crypto.randomBytes(12).toString('hex');
+          const [result] = await knex('up_permissions').insert({
+            document_id: docId,
+            action: actionStr,
+            created_at: now,
+            updated_at: now,
+            published_at: now
+          }).returning('id');
+          permId = typeof result === 'object' ? result.id : result;
+          strapi.log.info(`[YAHAYASCOOL] Created permission ${actionStr} (${permId})`);
+        } else {
+          permId = existing.id;
+        }
+        for (const role of targetRoles) {
+          const linkExist = await knex('up_permissions_role_lnk').where({ permission_id: permId, role_id: role.id }).first();
+          if (!linkExist) {
+            await knex('up_permissions_role_lnk').insert({ permission_id: permId, role_id: role.id });
+          }
+        }
+      }
+    }
+    strapi.log.info('[YAHAYASCOOL] ✅ Finance permissions seeded (authenticated only).');
+  } catch (error) {
+    strapi.log.error('[YAHAYASCOOL] Error seeding Finance permissions:', error);
+  }
+}
+
+async function reconcileInvoiceBalances(strapi: Core.Strapi): Promise<void> {
+  strapi.log.info('[YAHAYASCOOL] Running startup invoice settlement reconciliation...');
+  try {
+    let page = 1;
+    const pageSize = 500;
+    let receipts: any[] = [];
+    let fetchMore = true;
+
+    while (fetchMore) {
+      const batch = await strapi.documents('api::finance-receipt.finance-receipt').findMany({
+        populate: ['invoice', 'student'],
+        pagination: { page, pageSize }
+      });
+      receipts = receipts.concat(batch);
+      if (batch.length < pageSize) {
+        fetchMore = false;
+      } else {
+        page++;
+      }
+    }
+    
+    // Group payments by invoice ID
+    const paymentsByInvoice: Record<string, number> = {};
+    for (const r of receipts) {
+      if (r.invoice) {
+        const invoiceDocId = r.invoice.documentId || String(r.invoice.id || r.invoice);
+        const paymentAmountInInvoiceCurrency = Number(r.paymentAmount || 0) * Number(r.exchangeRateToInvoice || 1);
+        paymentsByInvoice[invoiceDocId] = (paymentsByInvoice[invoiceDocId] || 0) + paymentAmountInInvoiceCurrency;
+      }
+    }
+
+    // Update each invoice
+    for (const [invoiceDocId, paidAmount] of Object.entries(paymentsByInvoice)) {
+      try {
+        const invoice = await strapi.documents('api::finance-invoice.finance-invoice').findOne({
+          documentId: invoiceDocId
+        });
+        if (invoice) {
+          const totalAmount = Number(invoice.totalAmount || 0);
+          const remainingBalance = Math.max(0, totalAmount - paidAmount);
+          let newStatus = invoice.status;
+          if (remainingBalance <= 0) {
+            newStatus = 'paid';
+          } else if (paidAmount > 0) {
+            newStatus = 'partially_paid';
+          }
+          
+          await strapi.documents('api::finance-invoice.finance-invoice').update({
+            documentId: invoiceDocId,
+            data: {
+              paidAmount,
+              remainingBalance,
+              status: newStatus as any
+            }
+          });
+          strapi.log.info(`[YAHAYASCOOL] Reconciled invoice ${invoice.invoiceNumber || invoice.id}: Paid=${paidAmount}, Remaining=${remainingBalance}`);
+        }
+      } catch (err: any) {
+        strapi.log.error(`[YAHAYASCOOL] Failed to reconcile invoice docId ${invoiceDocId}:`, err.message);
+      }
+    }
+  } catch (error: any) {
+    strapi.log.error('[YAHAYASCOOL] Error running invoice reconciliation:', error.message);
   }
 }
 
@@ -943,5 +1131,7 @@ export default {
     await seedERPData(strapi);
     await seedSampleContent(strapi);
     await seedLmsData(strapi);
+    await seedFinancePermissions(strapi);
+    await reconcileInvoiceBalances(strapi);
   },
 };

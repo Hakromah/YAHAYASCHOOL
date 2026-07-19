@@ -24,18 +24,34 @@
     },
     "channel": {
       "type": "enumeration",
-      "enum": ["dashboard", "email", "sms", "whatsapp", "push"],
+      "enum": [
+        "dashboard",
+        "email",
+        "sms",
+        "whatsapp",
+        "push"
+      ],
       "default": "dashboard",
       "required": true
     },
-    "status": {
+    "recordStatus": {
       "type": "enumeration",
-      "enum": ["pending", "sent", "failed", "read"],
+      "enum": [
+        "pending",
+        "sent",
+        "failed",
+        "read"
+      ],
       "default": "pending"
     },
     "priority": {
       "type": "enumeration",
-      "enum": ["low", "normal", "high", "urgent"],
+      "enum": [
+        "low",
+        "normal",
+        "high",
+        "urgent"
+      ],
       "default": "normal"
     },
     "metadata": {

@@ -128,6 +128,9 @@ export interface DawahActivity {
   description?: string;
   location?: string;
   date: string;
+  photos?: any;
+  teacher?: any;
+  students?: any;
 }
 
 export interface QuranCompetition {

@@ -1,7 +1,8 @@
 'use client';
 
+import { useMemo, useCallback } from 'react';
 import { useAuth } from './useAuth';
-import { can, hasPermission } from '@/lib/permissions';
+import { can as canPermissions, hasPermission } from '@/lib/permissions';
 import type { UserRoleEnum } from '@/types/enums';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -12,21 +13,31 @@ import type { UserRoleEnum } from '@/types/enums';
 export function usePermissions() {
   const { role } = useAuth();
 
-  return {
-    role,
+  const hasRole = useCallback(
+    (...roles: UserRoleEnum[]) => hasPermission(role, roles),
+    [role]
+  );
 
-    /** Check if current user has any of the given roles */
-    hasRole: (...roles: UserRoleEnum[]) => hasPermission(role, roles),
+  const can = useMemo(
+    () => ({
+      manageUsers: canPermissions.manageUsers(role),
+      viewAuditLogs: canPermissions.viewAuditLogs(role),
+      manageSettings: canPermissions.manageSettings(role),
+      accessFinance: canPermissions.accessFinance(role),
+      approveTransactions: canPermissions.approveTransactions(role),
+      teach: canPermissions.teach(role),
+      isAdmin: canPermissions.isAdmin(role),
+    }),
+    [role]
+  );
 
-    /** Check permission categories */
-    can: {
-      manageUsers: can.manageUsers(role),
-      viewAuditLogs: can.viewAuditLogs(role),
-      manageSettings: can.manageSettings(role),
-      accessFinance: can.accessFinance(role),
-      approveTransactions: can.approveTransactions(role),
-      teach: can.teach(role),
-      isAdmin: can.isAdmin(role),
-    },
-  };
+  return useMemo(
+    () => ({
+      role,
+      userRole: role,
+      hasRole,
+      can,
+    }),
+    [role, hasRole, can]
+  );
 }

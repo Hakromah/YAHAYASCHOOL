@@ -1,5 +1,5 @@
-const fs = require('fs');
-const path = require('path');
+const fs = NodeJS.require('fs');
+const path = NodeJS.require('path');
 
 const baseDir = path.join(__dirname, 'app', '[locale]', '(dashboard)', 'llms');
 const pages = [
@@ -18,7 +18,7 @@ fs.mkdirSync(baseDir, { recursive: true });
 pages.forEach(page => {
   const pageDir = path.join(baseDir, page.dir);
   fs.mkdirSync(pageDir, { recursive: true });
-  
+
   const content = `export default function ${page.title.replace(/[^a-zA-Z]/g, '')}Page() {
   return (
     <div className="flex flex-col h-full items-center justify-center space-y-4 p-8">

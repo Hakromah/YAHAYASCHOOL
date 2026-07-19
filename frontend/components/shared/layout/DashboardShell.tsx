@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useMobile } from '@/hooks/useMobile';
 import { Sidebar } from '@/components/shared/layout/Sidebar';
+import { DashboardHeader } from '@/components/shared/layout/DashboardHeader';
 import { STORAGE_KEYS } from '@/lib/constants';
 import { cn } from '@/lib/utils';
 
@@ -20,18 +21,21 @@ export default function DashboardShell({ children }: DashboardShellProps) {
   const isMobile = useMobile();
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex min-h-screen bg-background w-full">
       {/* Sidebar */}
       <Sidebar />
 
       {/* Main Content */}
       <main
         className={cn(
-          'flex flex-col flex-1 min-w-0 transition-all duration-250',
-          isMobile ? 'ml-0' : isCollapsed ? 'ml-[72px]' : 'ml-[280px]'
+          'flex flex-col flex-1 min-w-0 transition-[padding] duration-300 w-full min-h-screen',
+          isMobile ? 'pl-0' : isCollapsed ? 'pl-[72px]' : 'pl-[280px]'
         )}
       >
-        {children}
+        <DashboardHeader />
+        <div className="flex-1 flex flex-col min-h-0">
+          {children}
+        </div>
       </main>
     </div>
   );

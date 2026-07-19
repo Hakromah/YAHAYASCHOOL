@@ -45,6 +45,7 @@ export interface CreateUserPayload {
   roleId: number;
   isActive?: boolean;
   confirmed?: boolean;
+  blocked?: boolean;
 }
 
 /** Payload for updating an existing user */

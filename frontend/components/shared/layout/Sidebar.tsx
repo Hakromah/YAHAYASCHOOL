@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from '@/i18n/routing';
@@ -8,12 +8,17 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, Users, FileText, Settings, ChevronLeft, ChevronRight,
   LogOut, Bell, BookOpen, DollarSign, Home, Calendar, Clipboard, Bus,
-  GraduationCap, UserCheck, Menu, X, Heart,
-  BookCheck, MonitorPlay, Award, PenTool, BarChart, Library, Trophy, ArrowRight
+  GraduationCap, UserCheck, Menu, X, Heart, BookCheck, MonitorPlay, Award,
+  PenTool, BarChart3, Library, Trophy, ArrowRight, Building2, Search, Sun, Moon,
+  Layers, FileSearch, ShieldCheck, Globe, HardDrive, AlignLeft, Megaphone,
+  Key, Flag, LayoutGrid, ChevronDown, ChevronUp, School, MapPin, Car,
+  ClipboardList, Wallet, Receipt, TrendingUp, Package, Boxes, Wrench,
+  MessageSquare, Clock, UserCog, Landmark, ScrollText, BookMarked,
+  HeartHandshake, UsersRound, Cpu, Fuel, AlertTriangle, Presentation,
+  FolderOpen, SquareCheckBig, Star, BadgeCheck, Compass, CreditCard,
+  QrCode, Coins, PiggyBank, Scale, Percent
 } from 'lucide-react';
-import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
-import { Sun, Moon } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { useAuth } from '@/hooks/useAuth';
@@ -27,19 +32,568 @@ import { getUserDisplayName, getUserInitials } from '@/types/user.types';
 import type { AuthUser } from '@/types/auth.types';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Navigation configuration
+// Types
 // ─────────────────────────────────────────────────────────────────────────────
 
 interface NavItem {
   label: string;
   href: string;
   icon: React.ElementType;
-  requiredPermission?: string;
+  badge?: string | number;
 }
 
 interface NavSection {
   title: string;
   items: NavItem[];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Role-specific navigation configurations
+// ─────────────────────────────────────────────────────────────────────────────
+
+function getSuperAdminNav(): NavSection[] {
+  return [
+    {
+      title: 'Overview',
+      items: [
+        { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+      ],
+    },
+    {
+      title: 'Administration',
+      items: [
+        { label: 'Users', href: '/users', icon: Users },
+        { label: 'Roles & Permissions', href: '/settings/roles', icon: ShieldCheck },
+        { label: 'Audit Logs', href: '/audit-logs', icon: FileSearch },
+        { label: 'Notifications', href: '/notifications', icon: Bell },
+        { label: 'Activity Logs', href: '/activity-logs', icon: AlignLeft },
+        { label: 'Login Sessions', href: '/settings/sessions', icon: Key },
+        { label: 'Localization', href: '/settings/languages', icon: Globe },
+        { label: 'Media Library', href: '/media', icon: HardDrive },
+      ],
+    },
+    {
+      title: 'School ERP',
+      items: [
+        { label: 'People Directory', href: '/directory', icon: UsersRound },
+        { label: 'Students', href: '/students', icon: GraduationCap },
+        { label: 'Teachers', href: '/teachers', icon: UserCheck },
+        { label: 'Parents', href: '/parents', icon: Heart },
+        { label: 'Workers', href: '/workers', icon: Clipboard },
+        { label: 'Departments', href: '/academic-structure', icon: Layers },
+        { label: 'Programs', href: '/academic-structure/programs', icon: BookMarked },
+        { label: 'Sections', href: '/academic-structure/sections', icon: Boxes },
+        { label: 'Academic Years', href: '/academic-structure/years', icon: Calendar },
+        { label: 'Academic Terms', href: '/academic-structure/terms', icon: Clock },
+        { label: 'School Calendar', href: '/calendar', icon: Calendar },
+        { label: 'Admissions', href: '/directory/admissions', icon: ScrollText },
+      ],
+    },
+    {
+      title: 'Academic Management',
+      items: [
+        { label: 'Subjects & Curriculum', href: '/lms/subjects', icon: BookOpen },
+        { label: 'Classes & Timetable', href: '/lms/timetables', icon: School },
+        { label: 'Lesson Plans', href: '/lms/lesson-plans', icon: PenTool },
+        { label: 'Homework', href: '/lms/homework', icon: BookCheck },
+        { label: 'Attendance', href: '/lms/attendance', icon: SquareCheckBig },
+        { label: 'Assessments & Gradebook', href: '/lms/gradebook', icon: Award },
+        { label: 'Learning Resources', href: '/lms/resources', icon: Library },
+      ],
+    },
+    {
+      title: "Qur'an Department",
+      items: [
+        { label: 'Programs & Groups', href: '/qms/programs', icon: UsersRound },
+        { label: 'Hifz Tracking', href: '/qms/memorization', icon: BookOpen },
+        { label: 'Muraja\'ah', href: '/qms/revision', icon: Clipboard },
+        { label: 'Tajweed', href: '/qms/tajweed', icon: PenTool },
+        { label: 'Daily Halaqah', href: '/qms/halaqah', icon: BookCheck },
+        { label: "Qur'an Attendance", href: '/qms/attendance', icon: SquareCheckBig },
+        { label: "Da'wah Activities", href: '/qms/dawah', icon: Heart },
+        { label: 'Competitions & Certs', href: '/qms/achievements', icon: Award },
+      ],
+    },
+    {
+      title: 'Language Department',
+      items: [
+        { label: 'Programs & Levels', href: '/llms/programs', icon: UsersRound },
+        { label: 'Placement Tests', href: '/llms/placement', icon: FileText },
+        { label: 'Skill Analytics', href: '/llms/skills', icon: BarChart3 },
+        { label: 'Learning Portfolio', href: '/llms/portfolio', icon: FolderOpen },
+        { label: 'Competitions', href: '/llms/competitions', icon: Trophy },
+        { label: 'Achievements', href: '/llms/achievements', icon: Star },
+      ],
+    },
+    {
+      title: 'Assessment & Exams',
+      items: [
+        { label: 'Assessment Types', href: '/assessment/grading-schemes', icon: Layers },
+        { label: 'Examinations', href: '/assessment/exams', icon: FileText },
+        { label: 'Question Bank', href: '/assessment/question-bank', icon: Library },
+        { label: 'Scheduling', href: '/assessment/scheduling', icon: Calendar },
+        { label: 'Marks Entry', href: '/assessment/marks-entry', icon: PenTool },
+      ],
+    },
+    {
+      title: 'Results & Certification',
+      items: [
+        { label: 'Results Overview', href: '/results', icon: BarChart3 },
+        { label: 'Report Cards', href: '/results/report-cards', icon: FileText },
+        { label: 'Transcripts', href: '/results/transcripts', icon: ScrollText },
+        { label: 'Certificates', href: '/results/certificates', icon: BadgeCheck },
+        { label: 'Promotions', href: '/results/promotions', icon: ArrowRight },
+        { label: 'Rankings', href: '/results/rankings', icon: Trophy },
+      ],
+    },
+    {
+      title: 'Finance ERP (Executive)',
+      items: [
+        { label: 'Executive Dashboard', href: '/finance', icon: DollarSign },
+        { label: 'Chart of Accounts', href: '/finance/accounting/chart', icon: Scale },
+        { label: 'Double-Entry Journals', href: '/finance/accounting/journals', icon: ScrollText },
+        { label: 'General Ledger', href: '/finance/accounting/ledger', icon: BookMarked },
+        { label: 'Bank & Cash Treasury', href: '/finance/accounting/accounts', icon: Landmark },
+        { label: 'Accounting Periods', href: '/finance/accounting/periods', icon: Clock },
+      ],
+    },
+    {
+      title: 'Billing & Cashier Suite',
+      items: [
+        { label: 'Student Invoices', href: '/finance/billing/invoices', icon: FileText },
+        { label: 'Multi-Method Payments', href: '/finance/billing/payments', icon: CreditCard },
+        { label: 'Fee Structures', href: '/finance/billing/structures', icon: Layers },
+        { label: 'Installment Plans', href: '/finance/billing/installments', icon: Percent },
+        { label: 'Scholarships & Aid', href: '/finance/billing/scholarships', icon: Award },
+        { label: 'Discounts & Rules', href: '/finance/billing/discounts', icon: Coins },
+        { label: 'Cashier Sessions', href: '/finance/billing/sessions', icon: PiggyBank },
+      ],
+    },
+    {
+      title: 'Payroll, Expenses & Budgets',
+      items: [
+        { label: 'Staff Payroll Runs', href: '/finance/payroll', icon: Wallet },
+        { label: 'Payroll Approvals', href: '/finance/payroll/approvals', icon: SquareCheckBig },
+        { label: 'Expense Requests', href: '/finance/expenses', icon: Receipt },
+        { label: 'Expense Approvals', href: '/finance/expenses/approvals', icon: SquareCheckBig },
+        { label: 'Department Budgets', href: '/finance/budget', icon: BarChart3 },
+        { label: 'Donation Campaigns', href: '/finance/donations', icon: HeartHandshake },
+      ],
+    },
+    {
+      title: 'Finance Reports & Audit',
+      items: [
+        { label: 'Financial Statements', href: '/finance/reports', icon: TrendingUp },
+        { label: 'Audit Log & Search', href: '/finance/audit', icon: FileSearch },
+        { label: 'Finance Settings', href: '/settings/finance', icon: Settings },
+      ],
+    },
+    {
+      title: 'Events & CMS',
+      items: [
+        { label: 'Events', href: '/cms/events', icon: Calendar },
+        { label: 'Announcements', href: '/announcements', icon: Megaphone },
+        { label: 'Website CMS', href: '/cms', icon: Globe },
+        { label: 'Gallery', href: '/cms/gallery', icon: Package },
+        { label: 'Contact Messages', href: '/cms/contact', icon: MessageSquare },
+      ],
+    },
+    {
+      title: 'System',
+      items: [
+        { label: 'Settings', href: '/settings', icon: Settings },
+        { label: 'School Profile', href: '/settings/school-profile', icon: School },
+        { label: 'Integrations', href: '/settings/integrations', icon: Cpu },
+      ],
+    },
+  ];
+}
+
+function getDirectorNav(): NavSection[] {
+  return [
+    { title: 'Overview', items: [{ label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard }] },
+    {
+      title: 'Academic Management',
+      items: [
+        { label: 'Subjects & Curriculum', href: '/lms/subjects', icon: BookOpen },
+        { label: 'Timetable', href: '/lms/timetables', icon: School },
+        { label: 'Lesson Plans', href: '/lms/lesson-plans', icon: PenTool },
+        { label: 'Homework', href: '/lms/homework', icon: BookCheck },
+        { label: 'Attendance', href: '/lms/attendance', icon: SquareCheckBig },
+        { label: 'Gradebook', href: '/lms/gradebook', icon: Award },
+        { label: 'Resources', href: '/lms/resources', icon: Library },
+      ],
+    },
+    {
+      title: 'People',
+      items: [
+        { label: 'Teachers', href: '/teachers', icon: UserCheck },
+        { label: 'Students', href: '/students', icon: GraduationCap },
+        { label: 'Parents', href: '/parents', icon: Heart },
+        { label: 'Departments', href: '/academic-structure', icon: Layers },
+      ],
+    },
+    {
+      title: "Qur'an Department",
+      items: [
+        { label: 'Programs & Groups', href: '/qms/programs', icon: UsersRound },
+        { label: 'Hifz Progress', href: '/qms/memorization', icon: BookOpen },
+        { label: 'Attendance', href: '/qms/attendance', icon: SquareCheckBig },
+        { label: 'Achievements', href: '/qms/achievements', icon: Award },
+      ],
+    },
+    {
+      title: 'Language Department',
+      items: [
+        { label: 'Programs & Levels', href: '/llms/programs', icon: UsersRound },
+        { label: 'Skill Analytics', href: '/llms/skills', icon: BarChart3 },
+        { label: 'Achievements', href: '/llms/achievements', icon: Star },
+      ],
+    },
+    {
+      title: 'Assessments',
+      items: [
+        { label: 'Examinations', href: '/assessment/exams', icon: FileText },
+        { label: 'Marks Entry', href: '/assessment/marks-entry', icon: PenTool },
+        { label: 'Scheduling', href: '/assessment/scheduling', icon: Calendar },
+      ],
+    },
+    {
+      title: 'Results',
+      items: [
+        { label: 'Report Cards', href: '/results/report-cards', icon: FileText },
+        { label: 'Promotions', href: '/results/promotions', icon: ArrowRight },
+        { label: 'Rankings', href: '/results/rankings', icon: Trophy },
+        { label: 'Certificates', href: '/results/certificates', icon: BadgeCheck },
+      ],
+    },
+    {
+      title: 'Executive Finance (Read-Only)',
+      items: [
+        { label: 'Executive Dashboard', href: '/finance', icon: DollarSign },
+        { label: 'Department Budgets', href: '/finance/budget', icon: BarChart3 },
+        { label: 'Financial Statements', href: '/finance/reports', icon: TrendingUp },
+        { label: 'Waqf Donations', href: '/finance/donations', icon: HeartHandshake },
+      ],
+    },
+    {
+      title: 'System',
+      items: [
+        { label: 'Notifications', href: '/notifications', icon: Bell },
+        { label: 'Events', href: '/cms/events', icon: Calendar },
+        { label: 'Announcements', href: '/announcements', icon: Megaphone },
+        { label: 'Profile', href: '/profile', icon: UserCog },
+      ],
+    },
+  ];
+}
+
+function getTeacherNav(): NavSection[] {
+  return [
+    { title: 'Overview', items: [{ label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard }] },
+    {
+      title: 'My Work',
+      items: [
+        { label: 'My Timetable', href: '/lms/timetables', icon: School },
+        { label: 'My Classes', href: '/lms/subjects', icon: BookOpen },
+        { label: 'My Students', href: '/students', icon: GraduationCap },
+        { label: 'Attendance', href: '/lms/attendance', icon: SquareCheckBig },
+        { label: 'Lesson Plans', href: '/lms/lesson-plans', icon: PenTool },
+        { label: 'Homework', href: '/lms/homework', icon: BookCheck },
+        { label: 'Assessments', href: '/assessment/teacher', icon: FileText },
+        { label: 'Marks Entry', href: '/assessment/marks-entry', icon: Award },
+        { label: 'Gradebook', href: '/lms/gradebook', icon: BarChart3 },
+      ],
+    },
+    {
+      title: "Qur'an",
+      items: [
+        { label: "Qur'an Groups", href: '/qms/programs', icon: UsersRound },
+        { label: 'Hifz Tracking', href: '/qms/memorization', icon: BookOpen },
+        { label: 'Murajaah', href: '/qms/revision', icon: Clipboard },
+        { label: 'Tajweed', href: '/qms/tajweed', icon: PenTool },
+        { label: 'Halaqah', href: '/qms/halaqah', icon: BookCheck },
+        { label: "Qur'an Attendance", href: '/qms/attendance', icon: SquareCheckBig },
+      ],
+    },
+    {
+      title: 'Languages',
+      items: [
+        { label: 'Language Programs', href: '/llms/programs', icon: UsersRound },
+        { label: 'Student Skills', href: '/llms/skills', icon: BarChart3 },
+        { label: 'Portfolio', href: '/llms/portfolio', icon: FolderOpen },
+      ],
+    },
+    {
+      title: 'Communication',
+      items: [
+        { label: 'Messages', href: '/messages', icon: MessageSquare },
+        { label: 'Notifications', href: '/notifications', icon: Bell },
+        { label: 'Announcements', href: '/announcements', icon: Megaphone },
+        { label: 'Events', href: '/cms/events', icon: Calendar },
+      ],
+    },
+    {
+      title: 'Account',
+      items: [
+        { label: 'My Profile', href: '/profile', icon: UserCog },
+        { label: 'Settings', href: '/settings', icon: Settings },
+      ],
+    },
+  ];
+}
+
+function getStudentNav(): NavSection[] {
+  return [
+    { title: 'Overview', items: [{ label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard }] },
+    {
+      title: 'My Academics',
+      items: [
+        { label: 'My Profile', href: '/profile', icon: UserCog },
+        { label: 'My Timetable', href: '/lms/timetables', icon: School },
+        { label: 'My Subjects', href: '/lms/subjects', icon: BookOpen },
+        { label: 'Homework', href: '/lms/homework', icon: BookCheck },
+        { label: 'Attendance', href: '/lms/attendance', icon: SquareCheckBig },
+        { label: 'My Results', href: '/results/report-cards', icon: FileText },
+        { label: 'Certificates', href: '/results/certificates', icon: BadgeCheck },
+        { label: 'Achievements', href: '/results/rankings', icon: Trophy },
+      ],
+    },
+    {
+      title: "Qur'an Progress",
+      items: [
+        { label: 'Hifz Progress', href: '/qms/memorization', icon: BookOpen },
+        { label: 'Murajaah', href: '/qms/revision', icon: Clipboard },
+        { label: 'Achievements', href: '/qms/achievements', icon: Award },
+      ],
+    },
+    {
+      title: 'Language Progress',
+      items: [
+        { label: 'Arabic', href: '/llms/skills', icon: Globe },
+        { label: 'Portfolio', href: '/llms/portfolio', icon: FolderOpen },
+        { label: 'Achievements', href: '/llms/achievements', icon: Star },
+      ],
+    },
+    {
+      title: 'My Fees & Ledger',
+      items: [
+        { label: 'Financial Ledger', href: '/finance/billing/ledger', icon: ScrollText },
+        { label: 'Payment Receipts', href: '/finance/billing/payments', icon: Receipt },
+      ],
+    },
+    {
+      title: 'Communication',
+      items: [
+        { label: 'Messages', href: '/messages', icon: MessageSquare },
+        { label: 'Notifications', href: '/notifications', icon: Bell },
+        { label: 'Events', href: '/cms/events', icon: Calendar },
+        { label: 'Settings', href: '/settings', icon: Settings },
+      ],
+    },
+  ];
+}
+
+function getParentNav(): NavSection[] {
+  return [
+    { title: 'Overview', items: [{ label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard }] },
+    {
+      title: 'My Children',
+      items: [
+        { label: 'Children Overview', href: '/students', icon: GraduationCap },
+        { label: 'Attendance', href: '/lms/attendance', icon: SquareCheckBig },
+        { label: 'Homework', href: '/lms/homework', icon: BookCheck },
+        { label: 'Results', href: '/results/report-cards', icon: FileText },
+        { label: 'Certificates', href: '/results/certificates', icon: BadgeCheck },
+        { label: 'Behavior Reports', href: '/results/rankings', icon: AlertTriangle },
+      ],
+    },
+    {
+      title: 'Progress',
+      items: [
+        { label: "Qur'an Progress", href: '/qms/memorization', icon: BookOpen },
+        { label: 'Language Progress', href: '/llms/skills', icon: Globe },
+        { label: 'Achievements', href: '/llms/achievements', icon: Star },
+      ],
+    },
+    {
+      title: 'Parent Payment Center',
+      items: [
+        { label: 'Payment Center & Balances', href: '/finance/parent-center', icon: DollarSign },
+        { label: 'Invoices & Installments', href: '/finance/billing/invoices', icon: FileText },
+        { label: 'Receipts & Verification', href: '/finance/billing/payments', icon: QrCode },
+      ],
+    },
+    {
+      title: 'Communication & Events',
+      items: [
+        { label: 'Events', href: '/cms/events', icon: Calendar },
+        { label: 'Announcements', href: '/announcements', icon: Megaphone },
+        { label: 'Messages', href: '/messages', icon: MessageSquare },
+        { label: 'Notifications', href: '/notifications', icon: Bell },
+        { label: 'Settings', href: '/settings', icon: Settings },
+      ],
+    },
+  ];
+}
+
+function getAccountantNav(): NavSection[] {
+  return [
+    { title: 'Overview', items: [{ label: 'Finance Dashboard', href: '/finance', icon: LayoutDashboard }] },
+    {
+      title: 'Billing & Cashier Suite',
+      items: [
+        { label: 'Student Invoices', href: '/finance/billing/invoices', icon: FileText },
+        { label: 'Multi-Method Payments', href: '/finance/billing/payments', icon: CreditCard },
+        { label: 'Fee Structures', href: '/finance/billing/structures', icon: Layers },
+        { label: 'Installment Plans', href: '/finance/billing/installments', icon: Percent },
+        { label: 'Scholarships & Aid', href: '/finance/billing/scholarships', icon: Award },
+        { label: 'Discounts & Rules', href: '/finance/billing/discounts', icon: Coins },
+        { label: 'Cashier Sessions', href: '/finance/billing/sessions', icon: PiggyBank },
+      ],
+    },
+    {
+      title: 'Accounting Engine',
+      items: [
+        { label: 'Chart of Accounts', href: '/finance/accounting/chart', icon: Scale },
+        { label: 'Journal Entries', href: '/finance/accounting/journals', icon: ScrollText },
+        { label: 'General Ledger', href: '/finance/accounting/ledger', icon: BookMarked },
+        { label: 'Bank & Cash Treasury', href: '/finance/accounting/accounts', icon: Landmark },
+      ],
+    },
+    {
+      title: 'Operations & Payroll',
+      items: [
+        { label: 'Expense Requisitions', href: '/finance/expenses', icon: Receipt },
+        { label: 'Payroll Runs', href: '/finance/payroll', icon: Wallet },
+        { label: 'Department Budgets', href: '/finance/budget', icon: BarChart3 },
+        { label: 'Donations', href: '/finance/donations', icon: HeartHandshake },
+        { label: 'Financial Reports', href: '/finance/reports', icon: TrendingUp },
+      ],
+    },
+    {
+      title: 'System',
+      items: [
+        { label: 'Notifications', href: '/notifications', icon: Bell },
+        { label: 'Profile', href: '/profile', icon: UserCog },
+      ],
+    },
+  ];
+}
+
+function getAccountLeadNav(): NavSection[] {
+  return [
+    { title: 'Overview', items: [{ label: 'Executive Dashboard', href: '/finance', icon: LayoutDashboard }] },
+    {
+      title: 'Executive Approvals',
+      items: [
+        { label: 'Payroll Approvals', href: '/finance/payroll/approvals', icon: SquareCheckBig },
+        { label: 'Expense Approvals', href: '/finance/expenses/approvals', icon: SquareCheckBig },
+        { label: 'Budget Approvals', href: '/finance/budget/approvals', icon: Landmark },
+        { label: 'Accounting Periods', href: '/finance/accounting/periods', icon: Clock },
+      ],
+    },
+    {
+      title: 'Treasury & Accounting',
+      items: [
+        { label: 'Chart of Accounts', href: '/finance/accounting/chart', icon: Scale },
+        { label: 'Double-Entry Journals', href: '/finance/accounting/journals', icon: ScrollText },
+        { label: 'General Ledger', href: '/finance/accounting/ledger', icon: BookMarked },
+        { label: 'Bank & Cash Treasury', href: '/finance/accounting/accounts', icon: Landmark },
+        { label: 'Cashier Sessions', href: '/finance/billing/sessions', icon: PiggyBank },
+      ],
+    },
+    {
+      title: 'Billing & Aid Suite',
+      items: [
+        { label: 'Student Invoices', href: '/finance/billing/invoices', icon: FileText },
+        { label: 'Multi-Method Payments', href: '/finance/billing/payments', icon: CreditCard },
+        { label: 'Fee Structures', href: '/finance/billing/structures', icon: Layers },
+        { label: 'Scholarships & Aid', href: '/finance/billing/scholarships', icon: Award },
+        { label: 'Discounts & Rules', href: '/finance/billing/discounts', icon: Coins },
+      ],
+    },
+    {
+      title: 'Audit & Reports',
+      items: [
+        { label: 'Financial Statements', href: '/finance/reports', icon: TrendingUp },
+        { label: 'Immutable Audit Trail', href: '/finance/audit', icon: FileSearch },
+      ],
+    },
+    {
+      title: 'System',
+      items: [
+        { label: 'Notifications', href: '/notifications', icon: Bell },
+        { label: 'Profile', href: '/profile', icon: UserCog },
+        { label: 'Settings', href: '/settings/finance', icon: Settings },
+      ],
+    },
+  ];
+}
+
+function getWorkerNav(): NavSection[] {
+  return [
+    { title: 'Overview', items: [{ label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard }] },
+    {
+      title: 'My Work',
+      items: [
+        { label: 'Tasks', href: '/tasks', icon: ClipboardList },
+        { label: 'Attendance', href: '/lms/attendance', icon: SquareCheckBig },
+        { label: 'Leave', href: '/leave', icon: Calendar },
+        { label: 'Salary', href: '/finance/payroll', icon: Wallet },
+        { label: 'Documents', href: '/documents', icon: FolderOpen },
+      ],
+    },
+    {
+      title: 'Communication',
+      items: [
+        { label: 'Messages', href: '/messages', icon: MessageSquare },
+        { label: 'Notifications', href: '/notifications', icon: Bell },
+        { label: 'Profile', href: '/profile', icon: UserCog },
+      ],
+    },
+  ];
+}
+
+function getDriverNav(): NavSection[] {
+  return [
+    { title: 'Overview', items: [{ label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard }] },
+    {
+      title: 'My Routes',
+      items: [
+        { label: 'Routes', href: '/transport/routes', icon: MapPin },
+        { label: 'My Students', href: '/students', icon: GraduationCap },
+        { label: 'Attendance', href: '/lms/attendance', icon: SquareCheckBig },
+        { label: 'Vehicle', href: '/transport/vehicle', icon: Car },
+        { label: 'Maintenance', href: '/transport/maintenance', icon: Wrench },
+        { label: 'Fuel Log', href: '/transport/fuel', icon: Fuel },
+      ],
+    },
+    {
+      title: 'Communication',
+      items: [
+        { label: 'Messages', href: '/messages', icon: MessageSquare },
+        { label: 'Notifications', href: '/notifications', icon: Bell },
+        { label: 'Emergency Contacts', href: '/transport/emergency', icon: AlertTriangle },
+        { label: 'Profile', href: '/profile', icon: UserCog },
+      ],
+    },
+  ];
+}
+
+function getNavForRole(role: string | undefined): NavSection[] {
+  switch (role) {
+    case 'super-administrator': return getSuperAdminNav();
+    case 'director':            return getDirectorNav();
+    case 'teacher':             return getTeacherNav();
+    case 'student':             return getStudentNav();
+    case 'parent':              return getParentNav();
+    case 'accountant':          return getAccountantNav();
+    case 'account-lead':        return getAccountLeadNav();
+    case 'worker':              return getWorkerNav();
+    case 'driver':              return getDriverNav();
+    default:                    return [{ title: 'Overview', items: [{ label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard }] }];
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -51,350 +605,293 @@ interface SidebarProps {
 }
 
 export function Sidebar({ className }: SidebarProps) {
-  const t = useTranslations('navigation');
   const { user, logout } = useAuth();
-  const { can } = usePermissions();
   const { theme, setTheme } = useTheme();
   const pathname = usePathname();
   const isMobile = useMobile();
 
   const [isCollapsed, setIsCollapsed] = useLocalStorage(STORAGE_KEYS.SIDEBAR_COLLAPSED, false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [expandedSections, setExpandedSections] = useLocalStorage<Record<string, boolean>>('sidebar_sections', {});
 
-  // Close mobile sidebar on route change
-  useEffect(() => {
-    setIsMobileOpen(false);
-  }, [pathname]);
+  useEffect(() => { setIsMobileOpen(false); }, [pathname]);
 
-  const navSections: NavSection[] = [
-    {
-      title: t('overview'),
-      items: [
-        { label: t('dashboard'), href: ROUTES.DASHBOARD.ROOT, icon: LayoutDashboard },
-      ],
-    },
-    {
-      title: t('administration'),
-      items: [
-        ...(can.manageUsers ? [{ label: t('users'), href: ROUTES.USERS.LIST, icon: Users }] : []),
-        ...(can.viewAuditLogs ? [{ label: t('auditLogs'), href: ROUTES.AUDIT_LOGS.LIST, icon: FileText }] : []),
-        { label: t('notifications'), href: '/notifications', icon: Bell },
-      ],
-    },
-    {
-      title: 'School ERP Core',
-      items: [
-        { label: 'Core Dashboard', href: '/erp/dashboard', icon: LayoutDashboard },
-        { label: 'People Directory', href: '/directory', icon: Users },
-        { label: 'Student SIS Profiles', href: '/students', icon: GraduationCap },
-        { label: 'Faculty & Sheikhs', href: '/teachers', icon: UserCheck },
-        { label: 'Parents Registry', href: '/parents', icon: Users },
-        { label: 'Support Workers', href: '/workers', icon: Clipboard },
-        { label: 'Academic Structure', href: '/academic-structure', icon: BookOpen },
-      ],
-    },
-    {
-      title: t('academics') + ' (LMS Core)',
-      items: [
-        { label: 'Teacher Dashboard', href: '/lms/teacher', icon: MonitorPlay },
-        { label: 'Student Dashboard', href: '/lms/student', icon: GraduationCap },
-        { label: 'Director Dashboard', href: '/lms/director', icon: BarChart },
-        { label: 'Subjects & Curriculum', href: '/lms/subjects', icon: BookOpen },
-        { label: 'Timetable & Classes', href: '/lms/timetables', icon: Calendar },
-        { label: 'Lesson Planning', href: '/lms/lesson-plans', icon: PenTool },
-        { label: 'Homework & Assignments', href: '/lms/homework', icon: BookCheck },
-        { label: 'Continuous Assessment', href: '/lms/gradebook', icon: Award },
-        { label: 'Attendance Registry', href: '/lms/attendance', icon: Clipboard },
-        { label: 'Resource Library', href: '/lms/resources', icon: Library },
-      ],
-    },
-    {
-      title: "Qur'an Dept (QMS)",
-      items: [
-        { label: 'Teacher Dashboard', href: '/qms/teacher', icon: MonitorPlay },
-        { label: 'Director Analytics', href: '/qms/director', icon: BarChart },
-        { label: 'Programs & Groups', href: '/qms/programs', icon: Users },
-        { label: 'Hifz Tracking', href: '/qms/memorization', icon: BookOpen },
-        { label: 'Murajaah Engine', href: '/qms/revision', icon: Clipboard },
-        { label: 'Tajweed Evaluation', href: '/qms/tajweed', icon: PenTool },
-        { label: 'Daily Halaqah', href: '/qms/halaqah', icon: Users },
-        { label: 'Qur\'an Attendance', href: '/qms/attendance', icon: UserCheck },
-        { label: 'Da\'wah Activities', href: '/qms/dawah', icon: Heart },
-        { label: 'Competitions & Certs', href: '/qms/achievements', icon: Award },
-      ],
-    },
-    {
-      title: 'Languages (LLMS)',
-      items: [
-        { label: 'Teacher Dashboard', href: '/llms/teacher', icon: MonitorPlay },
-        { label: 'Director Analytics', href: '/llms/director', icon: BarChart },
-        { label: 'Programs & Levels', href: '/llms/programs', icon: Users },
-        { label: 'Placement Testing', href: '/llms/placement', icon: FileText },
-        { label: 'Skill Analytics', href: '/llms/skills', icon: BookOpen },
-        { label: 'Learning Portfolio', href: '/llms/portfolio', icon: Library },
-        { label: 'Competitions', href: '/llms/competitions', icon: Trophy },
-        { label: 'Achievements', href: '/llms/achievements', icon: Award },
-      ],
-    },
-    {
-      title: 'Exams & Assessment',
-      items: [
-        { label: 'Teacher Dashboard', href: '/assessment/teacher', icon: MonitorPlay },
-        { label: 'Director Analytics', href: '/assessment/director', icon: BarChart },
-        { label: 'Grading Systems', href: '/assessment/grading-schemes', icon: Settings },
-        { label: 'Examinations', href: '/assessment/exams', icon: FileText },
-        { label: 'Question Bank', href: '/assessment/question-bank', icon: Library },
-        { label: 'Scheduling', href: '/assessment/scheduling', icon: Calendar },
-        { label: 'Marks Entry', href: '/assessment/marks-entry', icon: PenTool },
-      ],
-    },
-    {
-      title: 'Results & Reporting',
-      items: [
-        { label: 'Report Cards', href: '/results/report-cards', icon: BookOpen },
-        { label: 'Transcripts', href: '/results/transcripts', icon: FileText },
-        { label: 'Certificates', href: '/results/certificates', icon: Award },
-        { label: 'Promotions', href: '/results/promotions', icon: ArrowRight },
-        { label: 'Rankings', href: '/results/rankings', icon: Trophy },
-      ],
-    },
-    {
-      title: t('system'),
-      items: [
-        ...(can.accessFinance ? [{ label: t('finance'), href: '/finance', icon: DollarSign }] : []),
-        { label: t('hostel'), href: '/hostel', icon: Home },
-        { label: t('events'), href: '/events', icon: Calendar },
-        ...(can.manageSettings ? [{ label: t('settings'), href: ROUTES.SETTINGS.ROOT, icon: Settings }] : []),
-      ],
-    },
-  ];
+  const role = (user as any)?.role?.type as string | undefined;
+  const navSections = useMemo(() => getNavForRole(role), [role]);
 
-  const role = user?.role?.type;
-  const sections = navSections.filter(section => {
-    if (!role) return false;
-    const isSuper = role === 'super_admin' || role === 'system_admin';
-    const isDirector = role === 'director';
-    const isTeacher = role === 'teacher';
-    const isStudent = role === 'student';
-    const isParent = role === 'parent';
-    const isAccountant = role === 'accountant' || role === 'account_lead';
-
-    if (section.title === t('overview') || section.title === 'Overview') return true; 
-    
-    if (section.title === t('academics') + ' (LMS Core)' || section.title === 'Exams & Assessment' || section.title === 'Results & Reporting') {
-      return isSuper || isDirector || isTeacher || isStudent || isParent;
+  const activeHref = useMemo(() => {
+    let best = '';
+    for (const section of navSections) {
+      for (const item of section.items) {
+        if (pathname === item.href || pathname.startsWith(item.href + '/')) {
+          if (item.href.length > best.length) {
+            best = item.href;
+          }
+        }
+      }
     }
-    
-    if (section.title === t('administration') || section.title === 'School ERP Core') {
-      return isSuper || isDirector || isTeacher;
-    }
-
-    if (section.title === "Qur'an Dept (QMS)" || section.title === 'Languages (LLMS)') {
-      return isSuper || isDirector || isTeacher || isStudent;
-    }
-    
-    if (section.title === t('system')) {
-      return isSuper || isAccountant;
-    }
-
-    return isSuper;
-  });
+    return best;
+  }, [pathname, navSections]);
 
   const isActive = (href: string) => {
-    if (href === ROUTES.DASHBOARD.ROOT) return pathname === href || pathname === '/';
-    return pathname.startsWith(href);
+    // Exact match for top-level pages to prevent them from staying active when on nested routes
+    if (['/dashboard', '/finance', '/settings', '/results', '/directory', '/cms'].includes(href)) {
+      return pathname === href || pathname === `${href}/`;
+    }
+    return href === activeHref;
   };
 
+  const toggleSection = (title: string) => {
+    setExpandedSections(prev => ({ ...prev, [title]: !prev[title] }));
+  };
+
+  const isSectionExpanded = (title: string) => {
+    if (expandedSections[title] === undefined) return true; // default open
+    return expandedSections[title];
+  };
+
+  async function handleLogout() {
+    try {
+      await logout();
+      toast.success('Logged out successfully');
+    } catch {
+      toast.error('Logout failed');
+    }
+  }
+
+  const displayName = user ? getUserDisplayName(user as unknown as Parameters<typeof getUserDisplayName>[0]) : 'User';
+  const initials = user ? getUserInitials(user as unknown as Parameters<typeof getUserInitials>[0]) : '??';
+  const roleLabel = role ? role.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : '';
+  const avatarUrl = user?.avatarUrl || user?.photoUrl || (user as any)?.photo?.url || null;
+
+  const sidebarWidth = isCollapsed ? 72 : 280;
+
   const sidebarContent = (
-    <div className="flex flex-col h-full">
-      {/* ── Logo Area ────────────────────────────────────────── */}
-      <div className={cn(
-        'flex items-center border-b border-sidebar-border transition-all duration-250',
-        isCollapsed ? 'justify-center px-4 py-4' : 'justify-between px-5 py-4'
-      )}>
-        {!isCollapsed && (
-          <Link href={ROUTES.DASHBOARD.ROOT} className="flex items-center gap-3 min-w-0">
-            <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0 border border-primary/20">
-              <Image
-                src="/yahaya-logo.jpeg"
-                alt="YAHAYASCOOL"
-                width={28}
-                height={28}
-                className="rounded-lg object-contain"
-              />
-            </div>
-            <div className="min-w-0">
-              <p className="text-sm font-bold text-sidebar-foreground truncate leading-tight">
+    <aside
+      className={cn(
+        'fixed inset-y-0 left-0 z-40 flex flex-col h-full bg-card border-r border-border',
+        'transition-all duration-300 ease-in-out overflow-hidden',
+        className
+      )}
+      style={{ width: sidebarWidth }}
+    >
+      {/* Header */}
+      <div className={cn('flex items-center border-b border-border flex-shrink-0', isCollapsed ? 'h-16 justify-center px-3' : 'h-16 px-4 gap-3')}>
+        <Link href="/dashboard" className="flex items-center gap-3 min-w-0">
+          <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center flex-shrink-0 text-primary-foreground font-bold text-sm shadow-lg">
+            Y
+          </div>
+          <AnimatePresence>
+            {!isCollapsed && (
+              <motion.span
+                initial={{ opacity: 0, width: 0 }}
+                animate={{ opacity: 1, width: 'auto' }}
+                exit={{ opacity: 0, width: 0 }}
+                className="font-bold text-sm text-foreground truncate"
+              >
                 YAHAYASCOOL
-              </p>
-              <p className="text-[10px] text-sidebar-foreground/50 truncate">
-                School Management
-              </p>
-            </div>
-          </Link>
-        )}
-
-        {isCollapsed && (
-          <Link href={ROUTES.DASHBOARD.ROOT}>
-            <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20">
-              <Image src="/yahaya-logo.jpeg" alt="YAHAYASCOOL" width={28} height={28} className="rounded-lg object-contain" />
-            </div>
-          </Link>
-        )}
-
+              </motion.span>
+            )}
+          </AnimatePresence>
+        </Link>
         {!isMobile && (
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className="p-1.5 rounded-lg hover:bg-sidebar-accent text-sidebar-foreground/50 hover:text-sidebar-foreground transition-colors flex-shrink-0"
-            aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            className={cn('ml-auto p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground flex-shrink-0', isCollapsed && 'ml-0')}
           >
             {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
           </button>
         )}
       </div>
 
-      {/* ── Navigation ───────────────────────────────────────── */}
-      <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-6 scrollbar-thin">
-        {sections.map((section) => {
-          const visibleItems = section.items.filter((item) => item.href);
-          if (visibleItems.length === 0) return null;
+      {/* Navigation */}
+      <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-0.5 scrollbar-thin">
+        {navSections.map((section) => (
+          <div key={section.title} className="mb-1">
+            {/* Section Header */}
+            {!isCollapsed && (
+              <button
+                onClick={() => toggleSection(section.title)}
+                className="w-full flex items-center justify-between px-2 py-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70 hover:text-muted-foreground transition-colors"
+              >
+                <span>{section.title}</span>
+                {isSectionExpanded(section.title)
+                  ? <ChevronUp className="w-3 h-3" />
+                  : <ChevronDown className="w-3 h-3" />}
+              </button>
+            )}
 
-          return (
-            <div key={section.title}>
-              {!isCollapsed && (
-                <p className="text-[10px] font-semibold text-sidebar-foreground/40 uppercase tracking-widest px-2 mb-2">
-                  {section.title}
-                </p>
+            {/* Section Items */}
+            <AnimatePresence initial={false}>
+              {(isCollapsed || isSectionExpanded(section.title)) && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.15 }}
+                  className="space-y-0.5"
+                >
+                  {section.items.map((item) => {
+                    const active = isActive(item.href);
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        title={isCollapsed ? item.label : undefined}
+                        className={cn(
+                          'flex items-center gap-3 rounded-xl transition-all duration-150 group relative',
+                          isCollapsed ? 'h-10 w-10 mx-auto justify-center' : 'px-3 py-2.5',
+                          active
+                            ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20'
+                            : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                        )}
+                      >
+                        <item.icon className={cn('flex-shrink-0 transition-transform', isCollapsed ? 'w-5 h-5' : 'w-4 h-4', active && 'scale-110')} />
+                        <AnimatePresence>
+                          {!isCollapsed && (
+                            <motion.span
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              exit={{ opacity: 0 }}
+                              className="text-sm font-medium truncate"
+                            >
+                              {item.label}
+                            </motion.span>
+                          )}
+                        </AnimatePresence>
+                        {isCollapsed && (
+                          <div className="absolute left-full ml-3 px-2 py-1 rounded-lg bg-popover border border-border shadow-lg text-xs font-medium text-popover-foreground whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50">
+                            {item.label}
+                          </div>
+                        )}
+                        {!isCollapsed && item.badge && (
+                          <span className="ml-auto text-[10px] font-bold bg-primary/20 text-primary px-1.5 py-0.5 rounded-full">
+                            {item.badge}
+                          </span>
+                        )}
+                      </Link>
+                    );
+                  })}
+                </motion.div>
               )}
-              <div className="space-y-0.5">
-                {visibleItems.map((item) => {
-                  const active = isActive(item.href);
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      title={isCollapsed ? item.label : undefined}
-                      className={cn(
-                        'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150',
-                        'group relative',
-                        active
-                          ? 'nav-item-active'
-                          : 'text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground'
-                      )}
-                    >
-                      <item.icon className={cn(
-                        'w-4 h-4 flex-shrink-0 transition-colors',
-                        active ? 'text-primary' : 'text-sidebar-foreground/50 group-hover:text-sidebar-foreground'
-                      )} />
-                      {!isCollapsed && (
-                        <span className="truncate">{item.label}</span>
-                      )}
-                      {active && (
-                        <div className="absolute right-2 w-1.5 h-1.5 rounded-full bg-primary" />
-                      )}
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-          );
-        })}
+            </AnimatePresence>
+          </div>
+        ))}
       </nav>
 
-      {/* ── User + Controls ──────────────────────────────────── */}
-      <div className="border-t border-sidebar-border p-3 space-y-2">
-        {/* Theme toggle */}
+      {/* Footer */}
+      <div className={cn('border-t border-border flex-shrink-0 p-2 space-y-1')}>
+        {/* Theme Toggle */}
         <button
           onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
           className={cn(
-            'flex items-center gap-3 w-full rounded-xl px-3 py-2.5 text-sm',
-            'text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground',
-            'transition-all duration-150'
+            'flex items-center gap-3 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors',
+            isCollapsed ? 'h-10 w-10 mx-auto justify-center' : 'px-3 py-2.5 w-full'
           )}
-          title="Toggle theme"
         >
-          {theme === 'dark' ? (
-            <Sun className="w-4 h-4 flex-shrink-0" />
-          ) : (
-            <Moon className="w-4 h-4 flex-shrink-0" />
-          )}
-          {!isCollapsed && (
-            <span className="text-sm">{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
-          )}
+          {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          {!isCollapsed && <span className="text-sm font-medium">{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>}
         </button>
 
-        {/* User info */}
-        <div className={cn(
-          'flex items-center gap-3 rounded-xl px-3 py-2.5',
-          isCollapsed ? 'justify-center' : ''
-        )}>
-          <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 text-primary text-xs font-bold border border-primary/30">
-            {user ? getUserInitials(user as unknown as Parameters<typeof getUserInitials>[0]) : '?'}
+        {/* User Profile */}
+        <div 
+          className={cn('flex items-center gap-3 rounded-xl p-2 group relative cursor-pointer', !isCollapsed && 'hover:bg-muted transition-colors')}
+          title={isCollapsed ? `${displayName} (${user?.schoolId || user?.username || 'AC000000001'})` : undefined}
+        >
+          <div className="relative shrink-0">
+            {avatarUrl ? (
+              <img
+                src={avatarUrl}
+                alt={displayName}
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                  e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                }}
+                className="w-8 h-8 rounded-full object-cover shadow-sm border border-slate-200 dark:border-slate-700"
+              />
+            ) : null}
+            <div className={cn(
+              "w-8 h-8 rounded-full bg-gradient-to-br from-emerald-600 to-teal-700 flex items-center justify-center text-white text-xs font-bold flex-shrink-0 shadow-sm",
+              avatarUrl && "hidden"
+            )}>
+              {initials}
+            </div>
           </div>
-          {!isCollapsed && user && (
-            <div className="min-w-0 flex-1">
-              <p className="text-xs font-semibold text-sidebar-foreground truncate">
-                {getUserDisplayName(user as unknown as Parameters<typeof getUserDisplayName>[0])}
-              </p>
-              <p className="text-[10px] text-sidebar-foreground/50 truncate capitalize">
-                {user.role?.type?.replace('-', ' ')}
-              </p>
+          {isCollapsed && (
+            <div className="absolute left-full ml-3 px-2.5 py-1.5 rounded-lg bg-popover border border-border shadow-lg text-xs font-medium text-popover-foreground whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50 flex flex-col">
+              <span className="font-bold">{displayName}</span>
+              <span className="text-[10px] font-mono text-emerald-500">{user?.schoolId || user?.username || 'AC000000001'}</span>
             </div>
           )}
-        </div>
-
-        {/* Logout */}
-        <button
-          onClick={() => {
-            logout().catch(() => toast.error('Logout failed'));
-          }}
-          className={cn(
-            'flex items-center gap-3 w-full rounded-xl px-3 py-2.5 text-sm',
-            'text-destructive/70 hover:bg-destructive/10 hover:text-destructive',
-            'transition-all duration-150',
-            isCollapsed && 'justify-center'
+          <AnimatePresence>
+            {!isCollapsed && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="min-w-0 flex-1"
+              >
+                <div className="flex items-center gap-1.5">
+                  <p className="text-xs font-semibold text-foreground truncate">{displayName}</p>
+                  <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-muted text-emerald-600 dark:text-emerald-400">
+                    {user?.schoolId || user?.username || 'AC000000001'}
+                  </span>
+                </div>
+                <p className="text-[10px] text-muted-foreground truncate capitalize mt-0.5">{roleLabel}</p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+          {!isCollapsed && (
+            <button
+              onClick={handleLogout}
+              title="Logout"
+              className="p-1.5 rounded-lg hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-colors flex-shrink-0"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+            </button>
           )}
-          title="Sign out"
-        >
-          <LogOut className="w-4 h-4 flex-shrink-0" />
-          {!isCollapsed && <span>Sign Out</span>}
-        </button>
+        </div>
       </div>
-    </div>
+    </aside>
   );
 
-  // Mobile overlay
   if (isMobile) {
     return (
       <>
-        {/* Mobile trigger (rendered by Header) */}
+        {/* Mobile Trigger */}
+        <button
+          onClick={() => setIsMobileOpen(true)}
+          className="fixed top-4 left-4 z-40 p-2.5 rounded-xl bg-card border border-border shadow-md text-foreground"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+
+        {/* Mobile Drawer */}
         <AnimatePresence>
           {isMobileOpen && (
             <>
-              {/* Backdrop */}
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 onClick={() => setIsMobileOpen(false)}
-                className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+                className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
               />
-              {/* Drawer */}
-              <motion.aside
+              <motion.div
                 initial={{ x: -280 }}
                 animate={{ x: 0 }}
                 exit={{ x: -280 }}
-                transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-                className="fixed inset-y-0 left-0 z-50 w-72 bg-sidebar flex flex-col shadow-2xl"
+                transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                className="fixed inset-y-0 left-0 z-50 w-[280px]"
               >
                 <button
                   onClick={() => setIsMobileOpen(false)}
-                  className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-sidebar-accent text-sidebar-foreground/50"
+                  className="absolute top-4 right-4 p-1.5 rounded-lg bg-muted text-muted-foreground hover:text-foreground transition-colors"
                 >
                   <X className="w-4 h-4" />
                 </button>
                 {sidebarContent}
-              </motion.aside>
+              </motion.div>
             </>
           )}
         </AnimatePresence>
@@ -402,20 +899,5 @@ export function Sidebar({ className }: SidebarProps) {
     );
   }
 
-  return (
-    <motion.aside
-      animate={{ width: isCollapsed ? 72 : 280 }}
-      transition={{ duration: 0.25, ease: 'easeInOut' }}
-      className={cn(
-        'fixed inset-y-0 left-0 z-30 bg-sidebar border-r border-sidebar-border',
-        'flex flex-col overflow-hidden sidebar-transition shadow-sm',
-        className
-      )}
-    >
-      {sidebarContent}
-    </motion.aside>
-  );
+  return sidebarContent;
 }
-
-// Export mobile menu trigger for use in Header
-export { };

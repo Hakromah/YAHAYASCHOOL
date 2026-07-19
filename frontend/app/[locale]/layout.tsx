@@ -1,4 +1,5 @@
-import { NextIntlClientProvider, hasLocale } from 'next-intl';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { NextIntlClientProvider } from 'next-intl';
 import { notFound } from 'next/navigation';
 import { getMessages } from 'next-intl/server';
 import { routing } from '@/i18n/routing';
@@ -46,7 +47,8 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
   const { locale } = await params;
 
   // Validate the incoming locale
-  if (!hasLocale(routing.locales, locale)) {
+  if (!routing.locales.includes(locale as any)) {
+    console.warn(`[LocaleLayout] Invalid locale detected: ${locale}`);
     notFound();
   }
 

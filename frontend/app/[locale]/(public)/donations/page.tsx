@@ -110,8 +110,8 @@ export default async function DonationsPage({ params }: DonationsPageProps) {
                   {/* Progress Bar */}
                   <div className="mb-4">
                     <div className="flex justify-between text-xs font-bold text-gray-700 mb-2 font-mono">
-                      <span>Raised: ${camp.raisedAmount.toLocaleString()}</span>
-                      <span>Target: ${camp.targetAmount.toLocaleString()}</span>
+                      <span>Raised: ${camp.raisedAmount.toLocaleString('en-US')}</span>
+                      <span>Target: ${camp.targetAmount.toLocaleString('en-US')}</span>
                     </div>
                     <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
                       <div

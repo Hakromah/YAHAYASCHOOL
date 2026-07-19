@@ -30,7 +30,7 @@
     "estimatedDuration": {
       "type": "string"
     },
-    "status": {
+    "recordStatus": {
       "type": "enumeration",
       "enum": [
         "Active",

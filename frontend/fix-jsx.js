@@ -1,5 +1,5 @@
-const fs = require('fs');
-const path = require('path');
+const fs = NodeJS.require('fs');
+const path = NodeJS.require('path');
 
 const baseDir = path.join(__dirname, 'app', '[locale]', '(dashboard)', 'dashboard');
 const roles = fs.readdirSync(baseDir).filter(f => fs.statSync(path.join(baseDir, f)).isDirectory());

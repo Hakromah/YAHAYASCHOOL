@@ -59,7 +59,46 @@ export const authService = {
       const { data } = await apiClient.get<AuthUser>('/users/me', {
         params: { populate: ['role', 'avatar'] },
       });
-      return data;
+
+      // Fetch linked profile based on role
+      const roleType = data.role?.type?.toLowerCase();
+      let profile = null;
+
+      try {
+        if (roleType === 'teacher') {
+          const res = await apiClient.get<{ data: any[] }>('/teachers', {
+            params: { filters: { user: { id: data.id } }, populate: '*' }
+          });
+          profile = res.data?.data?.[0] || null;
+        } else if (roleType === 'student') {
+          const res = await apiClient.get<{ data: any[] }>('/students', {
+            params: { filters: { user: { id: data.id } }, populate: '*' }
+          });
+          profile = res.data?.data?.[0] || null;
+        } else if (roleType === 'parent') {
+          const res = await apiClient.get<{ data: any[] }>('/parents', {
+            params: { filters: { user: { id: data.id } }, populate: '*' }
+          });
+          profile = res.data?.data?.[0] || null;
+        } else if (roleType === 'worker' || roleType === 'driver' || roleType === 'accountant') {
+          const res = await apiClient.get<{ data: any[] }>('/workers', {
+            params: { filters: { user: { id: data.id } }, populate: '*' }
+          });
+          profile = res.data?.data?.[0] || null;
+        }
+      } catch (err) {
+        console.warn('Could not fetch linked profile:', err);
+      }
+
+      const schoolIdFallback = data.schoolId || profile?.studentId || profile?.teacherId || profile?.employeeId || profile?.customId || data.username || 'AC000000001';
+      const displayNameFallback = data.displayName || (data.firstName && data.lastName ? `${data.firstName} ${data.lastName}` : null) || profile?.fullName || profile?.name || data.username || 'User';
+
+      return {
+        ...data,
+        schoolId: schoolIdFallback,
+        displayName: displayNameFallback,
+        profile
+      };
     } catch (error) {
       throw normalizeError(error);
     }

@@ -1,5 +1,5 @@
-const fs = require('fs');
-const path = require('path');
+const fs = NodeJS.require('fs');
+const path = NodeJS.require('path');
 
 const baseDir = path.join(__dirname, 'app', '[locale]', '(dashboard)', 'dashboard');
 const roles = ['admin', 'director', 'teacher', 'student', 'parent', 'worker', 'accountant', 'account-lead', 'driver'];
@@ -15,7 +15,7 @@ roles.forEach((role) => {
   if (!fs.existsSync(roleDir)) {
     fs.mkdirSync(roleDir, { recursive: true });
   }
-  
+
   if (role !== 'admin') {
     const pageCode = `'use client';
 import React, { useEffect, useState } from 'react';

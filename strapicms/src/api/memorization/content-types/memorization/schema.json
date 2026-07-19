@@ -8,7 +8,7 @@
     "description": "Schema for Memorization"
   },
   "options": {
-    "draftAndPublish": true
+    "draftAndPublish": false
   },
   "pluginOptions": {},
   "attributes": {
@@ -41,7 +41,7 @@
         "Assessment"
       ]
     },
-    "status": {
+    "recordStatus": {
       "type": "enumeration",
       "enum": [
         "Completed",

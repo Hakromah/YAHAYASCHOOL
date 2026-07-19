@@ -8,7 +8,7 @@
     "description": "Schema for Quran Certificate"
   },
   "options": {
-    "draftAndPublish": true
+    "draftAndPublish": false
   },
   "pluginOptions": {},
   "attributes": {
@@ -28,7 +28,7 @@
       "type": "date",
       "required": true
     },
-    "status": {
+    "recordStatus": {
       "type": "enumeration",
       "enum": [
         "Draft",

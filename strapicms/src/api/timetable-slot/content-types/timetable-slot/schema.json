@@ -34,7 +34,7 @@
     "durationMinutes": {
       "type": "integer"
     },
-    "status": {
+    "recordStatus": {
       "type": "enumeration",
       "enum": [
         "Active",

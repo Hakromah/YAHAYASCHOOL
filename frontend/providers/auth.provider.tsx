@@ -14,6 +14,8 @@ import { ROUTES } from '@/lib/routes';
 import type { AuthUser, LoginCredentials, AuthContextValue, AuthState } from '@/types/auth.types';
 import type { UserRoleEnum } from '@/types/enums';
 
+import { SessionTimeout } from '@/components/shared/SessionTimeout';
+
 // ─────────────────────────────────────────────────────────────────────────────
 // YAHAYASCOOL — Auth Provider
 // ─────────────────────────────────────────────────────────────────────────────
@@ -56,6 +58,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       });
     } catch {
       // Token invalid or expired
+      authService.logout().catch(() => {});
       setState({ ...INITIAL_STATE, isLoading: false });
     }
   }, []);
@@ -67,16 +70,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const login = useCallback(
     async (credentials: LoginCredentials) => {
-      const response = await authService.login(credentials);
-      setState({
-        user: response.user as unknown as AuthUser,
-        token: response.jwt,
-        isAuthenticated: true,
-        isLoading: false,
-        role: (response.user as unknown as AuthUser).role?.type as UserRoleEnum ?? null,
-      });
+      await authService.login(credentials);
+      await refreshUser();
     },
-    []
+    [refreshUser]
   );
 
   const logout = useCallback(async () => {
@@ -102,7 +99,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setUser,
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+      {/* Auto-logout after 10 minutes of inactivity */}
+      <SessionTimeout isAuthenticated={state.isAuthenticated} />
+    </AuthContext.Provider>
+  );
 }
 
 /** Hook to access the auth context */

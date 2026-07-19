@@ -11,6 +11,9 @@ export const routing = defineRouting({
 
   // Only add locale prefix when not the default locale
   localePrefix: 'as-needed',
+
+  // Disable automatic browser language detection so it always defaults to English
+  localeDetection: false,
 });
 
 export type Locale = (typeof routing.locales)[number];

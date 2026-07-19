@@ -8,7 +8,7 @@
     "description": "Comprehensive Student Information System (SIS) profile entity"
   },
   "options": {
-    "draftAndPublish": true
+    "draftAndPublish": false
   },
   "pluginOptions": {
     "i18n": {
@@ -35,16 +35,28 @@
       ]
     },
     "firstName": {
-      "pluginOptions": { "i18n": { "localized": true } },
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      },
       "type": "string",
       "required": true
     },
     "middleName": {
-      "pluginOptions": { "i18n": { "localized": true } },
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      },
       "type": "string"
     },
     "lastName": {
-      "pluginOptions": { "i18n": { "localized": true } },
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      },
       "type": "string",
       "required": true
     },
@@ -60,16 +72,28 @@
       "type": "date"
     },
     "nationality": {
-      "pluginOptions": { "i18n": { "localized": true } },
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      },
       "type": "string"
     },
     "religion": {
-      "pluginOptions": { "i18n": { "localized": true } },
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      },
       "type": "string",
       "default": "Islam"
     },
     "placeOfBirth": {
-      "pluginOptions": { "i18n": { "localized": true } },
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      },
       "type": "string"
     },
     "nationalId": {
@@ -85,19 +109,35 @@
       "type": "email"
     },
     "address": {
-      "pluginOptions": { "i18n": { "localized": true } },
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      },
       "type": "text"
     },
     "city": {
-      "pluginOptions": { "i18n": { "localized": true } },
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      },
       "type": "string"
     },
     "county": {
-      "pluginOptions": { "i18n": { "localized": true } },
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      },
       "type": "string"
     },
     "country": {
-      "pluginOptions": { "i18n": { "localized": true } },
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      },
       "type": "string"
     },
     "admissionDate": {
@@ -106,7 +146,7 @@
     "graduationDate": {
       "type": "date"
     },
-    "status": {
+    "enrollmentStatus": {
       "type": "enumeration",
       "enum": [
         "active",
@@ -121,11 +161,19 @@
       "default": "active"
     },
     "biography": {
-      "pluginOptions": { "i18n": { "localized": true } },
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      },
       "type": "richtext"
     },
     "generalNotes": {
-      "pluginOptions": { "i18n": { "localized": true } },
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      },
       "type": "richtext"
     },
     "emergencyContacts": {
@@ -212,6 +260,21 @@
       "type": "relation",
       "relation": "oneToOne",
       "target": "plugin::users-permissions.user"
+    },
+    "advanceBalance": {
+      "type": "decimal",
+      "default": 0,
+      "description": "Student pre-payment/advance wallet balance. Credited when payment exceeds invoice amount. Applied to future invoices."
+    },
+    "walletTransactions": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::wallet-transaction.wallet-transaction",
+      "mappedBy": "student"
+    },
+    "multiCurrencyWallets": {
+      "type": "json",
+      "description": "Multi-currency wallet balances map, e.g. { USD: 5, GNF: 1000000, LRD: 500 }"
     }
   }
 }

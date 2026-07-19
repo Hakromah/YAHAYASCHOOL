@@ -1,0 +1,19 @@
+{
+  "kind": "collectionType",
+  "collectionName": "finance_payrolls",
+  "info": {
+    "singularName": "finance-payroll",
+    "pluralName": "finance-payrolls",
+    "displayName": "Finance Payroll",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "dummyField": {
+      "type": "string"
+    }
+  }
+}

@@ -8,7 +8,7 @@
     "description": "Schema for Language Certificate"
   },
   "options": {
-    "draftAndPublish": true
+    "draftAndPublish": false
   },
   "pluginOptions": {},
   "attributes": {
@@ -30,7 +30,7 @@
       "type": "date",
       "required": true
     },
-    "status": {
+    "recordStatus": {
       "type": "enumeration",
       "enum": [
         "Draft",

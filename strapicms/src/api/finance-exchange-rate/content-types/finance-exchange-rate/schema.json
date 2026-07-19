@@ -1,0 +1,48 @@
+{
+  "kind": "collectionType",
+  "collectionName": "finance_exchange_rates",
+  "info": {
+    "singularName": "finance-exchange-rate",
+    "pluralName": "finance-exchange-rates",
+    "displayName": "Finance Exchange Rate",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "fromCurrency": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::finance-currency.finance-currency"
+    },
+    "toCurrency": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::finance-currency.finance-currency"
+    },
+    "rate": {
+      "type": "decimal",
+      "required": true
+    },
+    "effectiveDate": {
+      "type": "date",
+      "required": true
+    },
+    "expirationDate": {
+      "type": "date"
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": [
+        "active",
+        "archived"
+      ],
+      "default": "active"
+    },
+    "createdByRole": {
+      "type": "string"
+    }
+  }
+}

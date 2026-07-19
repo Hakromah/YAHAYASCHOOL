@@ -46,10 +46,13 @@ export interface AuthUser extends StrapiEntity {
   gender: 'male' | 'female' | null;
   dateOfBirth: string | null;
   address: string | null;
+  profile?: any;
   preferredLanguage: LanguageEnum;
   isActive: boolean;
   lastLogin: string | null;
   avatar: StrapiMediaFile | null;
+  avatarUrl?: string | null;
+  photoUrl?: string | null;
   role: StrapiRole | null;
 }
 

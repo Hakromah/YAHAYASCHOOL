@@ -44,7 +44,7 @@
     "teacherComment": {
       "type": "text"
     },
-    "status": {
+    "recordStatus": {
       "type": "enumeration",
       "enum": [
         "Draft",

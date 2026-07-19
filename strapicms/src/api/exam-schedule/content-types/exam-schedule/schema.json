@@ -8,7 +8,7 @@
     "description": "Schema for Exam Schedule"
   },
   "options": {
-    "draftAndPublish": true
+    "draftAndPublish": false
   },
   "pluginOptions": {},
   "attributes": {
@@ -20,7 +20,7 @@
       "type": "datetime",
       "required": true
     },
-    "status": {
+    "recordStatus": {
       "type": "enumeration",
       "enum": [
         "Scheduled",

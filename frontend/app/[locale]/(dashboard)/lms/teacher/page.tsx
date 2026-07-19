@@ -20,14 +20,17 @@ export default function TeacherDashboardPage() {
   useEffect(() => {
     async function loadLMS() {
       try {
-        const [subRes, hwRes, ttRes] = await Promise.all([
-          getSubjects(),
-          getHomeworks(),
-          getTimetables()
+        const [subRes, hwRes, ttRes]: any = await Promise.all([
+          getSubjects().catch(() => []),
+          getHomeworks().catch(() => []),
+          getTimetables().catch(() => [])
         ]);
-        setSubjects(subRes.data);
-        setHomeworks(hwRes.data);
-        setTimetables(ttRes.data);
+        const subList = Array.isArray(subRes) ? subRes : Array.isArray(subRes?.data) ? subRes.data : Array.isArray(subRes?.data?.data) ? subRes.data.data : [];
+        const hwList = Array.isArray(hwRes) ? hwRes : Array.isArray(hwRes?.data) ? hwRes.data : Array.isArray(hwRes?.data?.data) ? hwRes.data.data : [];
+        const ttList = Array.isArray(ttRes) ? ttRes : Array.isArray(ttRes?.data) ? ttRes.data : Array.isArray(ttRes?.data?.data) ? ttRes.data.data : [];
+        setSubjects(subList);
+        setHomeworks(hwList);
+        setTimetables(ttList);
       } catch (err) {
         toast.error('Failed to load LMS data');
       } finally {

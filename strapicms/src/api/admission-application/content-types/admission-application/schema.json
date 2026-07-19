@@ -33,7 +33,10 @@
     },
     "gender": {
       "type": "enumeration",
-      "enum": ["male", "female"],
+      "enum": [
+        "male",
+        "female"
+      ],
       "required": true
     },
     "nationality": {
@@ -94,23 +97,37 @@
       "type": "media",
       "multiple": false,
       "required": false,
-      "allowedTypes": ["images"]
+      "allowedTypes": [
+        "images"
+      ]
     },
     "birthCertificate": {
       "type": "media",
       "multiple": false,
       "required": false,
-      "allowedTypes": ["images", "files"]
+      "allowedTypes": [
+        "images",
+        "files"
+      ]
     },
     "supportingDocuments": {
       "type": "media",
       "multiple": true,
       "required": false,
-      "allowedTypes": ["images", "files"]
+      "allowedTypes": [
+        "images",
+        "files"
+      ]
     },
-    "status": {
+    "recordStatus": {
       "type": "enumeration",
-      "enum": ["Pending", "Approved", "Rejected", "Waiting List", "Need More Information"],
+      "enum": [
+        "Pending",
+        "Approved",
+        "Rejected",
+        "Waiting List",
+        "Need More Information"
+      ],
       "default": "Pending"
     },
     "reviewNotes": {

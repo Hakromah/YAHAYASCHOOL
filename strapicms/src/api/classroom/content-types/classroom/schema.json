@@ -44,7 +44,7 @@
     "resources": {
       "type": "json"
     },
-    "status": {
+    "recordStatus": {
       "type": "enumeration",
       "enum": [
         "Active",

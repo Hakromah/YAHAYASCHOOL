@@ -8,7 +8,7 @@
     "description": "School campuses and facilities management"
   },
   "options": {
-    "draftAndPublish": true
+    "draftAndPublish": false
   },
   "pluginOptions": {
     "i18n": {
@@ -17,7 +17,11 @@
   },
   "attributes": {
     "name": {
-      "pluginOptions": { "i18n": { "localized": true } },
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      },
       "type": "string",
       "required": true
     },
@@ -27,7 +31,11 @@
       "unique": true
     },
     "address": {
-      "pluginOptions": { "i18n": { "localized": true } },
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      },
       "type": "text"
     },
     "phone": {
@@ -37,10 +45,14 @@
       "type": "email"
     },
     "principalName": {
-      "pluginOptions": { "i18n": { "localized": true } },
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      },
       "type": "string"
     },
-    "status": {
+    "recordStatus": {
       "type": "enumeration",
       "enum": [
         "active",

@@ -63,7 +63,7 @@ export interface Campus {
   phone?: string;
   email?: string;
   principalName?: string;
-  status: 'active' | 'inactive' | 'under_construction';
+  recordStatus: 'active' | 'inactive' | 'under_construction';
   createdAt?: string;
   updatedAt?: string;
 }
@@ -84,7 +84,7 @@ export interface AcademicYear {
   name: string;
   startDate: string;
   endDate: string;
-  status: 'planned' | 'active' | 'completed';
+  recordStatus: 'planned' | 'active' | 'completed';
   isCurrent: boolean;
   terms?: AcademicTerm[];
   sections?: Section[];
@@ -96,6 +96,11 @@ export interface Section {
   name: string;
   code: string;
   capacity: number;
+  maxCapacity?: number;
+  currentEnrollment?: number;
+  gradeLevel?: string;
+  roomNumber?: string;
+  homeroomTeacher?: any;
   description?: string;
   active: boolean;
   department?: any;
@@ -110,6 +115,8 @@ export interface Parent {
   documentId?: string;
   schoolId?: string;
   name: string;
+  firstName?: string;
+  lastName?: string;
   gender?: 'male' | 'female';
   occupation?: string;
   employer?: string;
@@ -180,6 +187,8 @@ export interface Student {
   firstName: string;
   middleName?: string;
   lastName: string;
+  name?: string;
+  studentId?: string;
   gender: 'male' | 'female';
   dateOfBirth?: string;
   nationality?: string;
@@ -195,7 +204,7 @@ export interface Student {
   country?: string;
   admissionDate?: string;
   graduationDate?: string;
-  status: 'active' | 'inactive' | 'suspended' | 'graduated' | 'transferred' | 'withdrawn' | 'expelled' | 'alumni';
+  enrollmentStatus: 'active' | 'inactive' | 'suspended' | 'graduated' | 'transferred' | 'withdrawn' | 'expelled' | 'alumni';
   biography?: string;
   generalNotes?: string;
   emergencyContacts?: any;
@@ -213,6 +222,7 @@ export interface Student {
   medicalInfo?: MedicalRecord[];
   staffNotes?: StaffNote[];
   documents?: StrapiMedia[];
+  advanceBalance?: number;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -227,6 +237,7 @@ export interface DirectorySearchParams {
   page?: number;
   pageSize?: number;
   sort?: string;
+  limit?: number;
 }
 
 export interface PaginatedERPResponse<T> {

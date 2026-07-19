@@ -1,0 +1,19 @@
+{
+  "kind": "collectionType",
+  "collectionName": "finance_budgets",
+  "info": {
+    "singularName": "finance-budget",
+    "pluralName": "finance-budgets",
+    "displayName": "Finance Budget",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "dummyField": {
+      "type": "string"
+    }
+  }
+}

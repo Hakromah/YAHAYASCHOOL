@@ -1,270 +1,334 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { useTranslations } from 'next-intl';
 import {
-  Users, GraduationCap, BookOpen, DollarSign, TrendingUp,
-  TrendingDown, Minus, BarChart3, AlertCircle, CheckCircle2,
-  Clock, UserCheck,
+  Users, GraduationCap, BookOpen, DollarSign, UserCheck,
+  Calendar, Layers, ShieldCheck, Bell, Activity, ArrowRight,
+  RefreshCw, CheckCircle2, AlertCircle, Clock, HeartHandshake
 } from 'lucide-react';
 
-import { useAuth } from '@/hooks/useAuth';
-import { usePermissions } from '@/hooks/usePermissions';
+import { dashboardService, type AdminDashboardData } from '@/services/dashboard.service';
 import { PageContainer, PageHeader } from '@/components/shared/layout/PageContainer';
-import { Breadcrumb } from '@/components/shared/layout/Breadcrumb';
-import { getUserDisplayName } from '@/types/user.types';
+import { StatCard } from '@/components/ui/StatCard';
+import { ChartCard } from '@/components/ui/ChartCard';
+import { DashboardWidgetCustomizer, type WidgetConfig } from '@/components/ui/DashboardWidgetCustomizer';
 import { formatNumber, formatCurrency } from '@/lib/format';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
-// ─────────────────────────────────────────────────────────────────────────────
-// YAHAYASCOOL — Dashboard Overview Page
-// ─────────────────────────────────────────────────────────────────────────────
+const DEFAULT_WIDGETS: WidgetConfig[] = [
+  // Layer 1 — Summary Cards
+  { id: 'stat-students', title: 'Total Students', layer: 'summary', isVisible: true, isPinned: true, size: 'normal' },
+  { id: 'stat-teachers', title: 'Faculty Members', layer: 'summary', isVisible: true, isPinned: true, size: 'normal' },
+  { id: 'stat-parents', title: 'Parent Accounts', layer: 'summary', isVisible: true, isPinned: false, size: 'normal' },
+  { id: 'stat-departments', title: 'Academic Depts', layer: 'summary', isVisible: true, isPinned: false, size: 'normal' },
+  { id: 'stat-attendance', title: 'Attendance Logs', layer: 'summary', isVisible: true, isPinned: false, size: 'normal' },
+  { id: 'stat-homework', title: 'Active Homework', layer: 'summary', isVisible: true, isPinned: false, size: 'normal' },
+  { id: 'stat-exams', title: 'Examinations', layer: 'summary', isVisible: true, isPinned: false, size: 'normal' },
+  { id: 'stat-audit', title: 'Audit Trail Logs', layer: 'summary', isVisible: true, isPinned: false, size: 'normal' },
 
-const fadeUp = { hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0 } };
-const stagger = { visible: { transition: { staggerChildren: 0.06 } } };
+  // Layer 2 — Analytics Charts
+  { id: 'chart-enrollment', title: 'Academic Enrollment by Level', layer: 'chart', isVisible: true, isPinned: false, size: 'large' },
+  { id: 'chart-attendance', title: 'Monthly Attendance Trends', layer: 'chart', isVisible: true, isPinned: false, size: 'large' },
+  { id: 'chart-departments', title: 'Faculty & Student Distribution', layer: 'chart', isVisible: true, isPinned: false, size: 'large' },
 
-interface StatCard {
-  id: string;
-  title: string;
-  value: string | number;
-  change: number;
-  changeLabel: string;
-  icon: React.ElementType;
-  color: string;
-  bgGradient: string;
-}
-
-const STAT_CARDS: StatCard[] = [
-  {
-    id: 'total-students',
-    title: 'Total Students',
-    value: 847,
-    change: 4.2,
-    changeLabel: 'vs last term',
-    icon: GraduationCap,
-    color: 'text-emerald-600 dark:text-emerald-400',
-    bgGradient: 'from-emerald-500/10 to-emerald-600/5',
-  },
-  {
-    id: 'total-teachers',
-    title: 'Total Teachers',
-    value: 62,
-    change: 1.8,
-    changeLabel: 'vs last term',
-    icon: UserCheck,
-    color: 'text-amber-600 dark:text-amber-400',
-    bgGradient: 'from-amber-500/10 to-amber-600/5',
-  },
-  {
-    id: 'attendance-rate',
-    title: "Today's Attendance",
-    value: '91.4%',
-    change: -2.1,
-    changeLabel: 'vs yesterday',
-    icon: BookOpen,
-    color: 'text-sky-600 dark:text-sky-400',
-    bgGradient: 'from-sky-500/10 to-sky-600/5',
-  },
-  {
-    id: 'monthly-revenue',
-    title: 'Monthly Revenue',
-    value: formatCurrency(4_280_000),
-    change: 12.5,
-    changeLabel: 'vs last month',
-    icon: DollarSign,
-    color: 'text-violet-600 dark:text-violet-400',
-    bgGradient: 'from-violet-500/10 to-violet-600/5',
-  },
+  // Layer 3 — Action Lists & Activity
+  { id: 'action-activity', title: 'System Audit Activity Feed', layer: 'action', isVisible: true, isPinned: false, size: 'large' },
+  { id: 'action-announcements', title: 'System Announcements & Events', layer: 'action', isVisible: true, isPinned: false, size: 'normal' },
 ];
 
-const RECENT_ACTIVITY = [
-  { id: 1, type: 'user_created', message: 'New student registered: Ahmad Abdullahi', time: '2 min ago', icon: Users, severity: 'info' },
-  { id: 2, type: 'payment', message: 'School fees received: ₦125,000 from Musa Ibrahim', time: '18 min ago', icon: DollarSign, severity: 'success' },
-  { id: 3, type: 'attendance', message: 'Attendance marked for SS3 Science class', time: '45 min ago', icon: BookOpen, severity: 'info' },
-  { id: 4, type: 'alert', message: 'Hostel room capacity at 95% — review required', time: '2 hrs ago', icon: AlertCircle, severity: 'warning' },
-  { id: 5, type: 'exam', message: 'Mid-term exams timetable published', time: '3 hrs ago', icon: CheckCircle2, severity: 'success' },
-];
+export default function SuperAdminDashboardPage() {
+  const [data, setData] = useState<AdminDashboardData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [widgets, setWidgets] = useState<WidgetConfig[]>(DEFAULT_WIDGETS);
 
-const QUICK_ACTIONS = [
-  { id: 'add-student', label: 'Add Student', href: '/users/create', icon: GraduationCap, color: 'bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20' },
-  { id: 'add-teacher', label: 'Add Teacher', href: '/users/create', icon: UserCheck, color: 'bg-amber-500/10 text-amber-600 hover:bg-amber-500/20' },
-  { id: 'record-fee', label: 'Record Fee', href: '/finance', icon: DollarSign, color: 'bg-violet-500/10 text-violet-600 hover:bg-violet-500/20' },
-  { id: 'mark-attendance', label: 'Mark Attendance', href: '/attendance', icon: CheckCircle2, color: 'bg-sky-500/10 text-sky-600 hover:bg-sky-500/20' },
-];
+  const loadData = async () => {
+    setIsLoading(true);
+    try {
+      const res = await dashboardService.getAdminDashboard();
+      setData(res);
+    } catch (err) {
+      toast.error('Failed to fetch admin dashboard live data');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-export default function DashboardPage() {
-  const t = useTranslations('dashboard');
-  const tNav = useTranslations('navigation');
-  const { user } = useAuth();
-  const { can } = usePermissions();
+  useEffect(() => {
+    loadData();
+  }, []);
 
-  const displayName = user
-    ? getUserDisplayName(user as unknown as Parameters<typeof getUserDisplayName>[0])
-    : 'User';
+  const isVisible = (id: string) => widgets.find((w) => w.id === id)?.isVisible ?? true;
+
+  // Sample or derived chart data based on live counts
+  const enrollmentChartData = [
+    { name: 'Nursery', count: Math.round((data?.counts?.students || 120) * 0.15) },
+    { name: 'Primary', count: Math.round((data?.counts?.students || 120) * 0.35) },
+    { name: 'JSS', count: Math.round((data?.counts?.students || 120) * 0.25) },
+    { name: 'SSS', count: Math.round((data?.counts?.students || 120) * 0.25) },
+  ];
+
+  const attendanceTrendData = [
+    { name: 'Mon', rate: 94.2 },
+    { name: 'Tue', rate: 96.1 },
+    { name: 'Wed', rate: 93.8 },
+    { name: 'Thu', rate: 95.5 },
+    { name: 'Fri', rate: 91.0 },
+  ];
+
+  const deptChartData = [
+    { name: 'Sciences', value: 42 },
+    { name: 'Humanities', value: 28 },
+    { name: "Qur'an", value: 65 },
+    { name: 'Languages', value: 35 },
+  ];
 
   return (
     <PageContainer>
-      {/* Breadcrumb */}
-      <Breadcrumb className="mb-4" />
-
-      {/* Page Header */}
       <PageHeader
-        title={t('welcome', { name: displayName })}
-        description={`Here's what's happening at Yahaya International Islamic and English High School today.`}
-      />
-
-      {/* Stats Grid */}
-      <motion.div
-        variants={stagger}
-        initial="hidden"
-        animate="visible"
-        className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-8"
+        title="Enterprise System Portal"
+        description="Live ERP overview, system metrics, academic distribution, and security monitoring."
       >
-        {STAT_CARDS.map((card) => {
-          const trend = card.change > 0 ? 'up' : card.change < 0 ? 'down' : 'neutral';
-          return (
-            <motion.div
-              key={card.id}
-              id={card.id}
-              variants={fadeUp}
-              className={cn(
-                'relative bg-card border border-border rounded-2xl p-5',
-                'stat-card-glow overflow-hidden'
-              )}
-            >
-              {/* Background gradient */}
-              <div className={cn('absolute inset-0 bg-gradient-to-br opacity-50', card.bgGradient)} />
+        <div className="flex items-center gap-2">
+          <button
+            onClick={loadData}
+            disabled={isLoading}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border bg-card hover:bg-muted text-xs font-semibold text-foreground transition-colors"
+          >
+            <RefreshCw className={cn('w-3.5 h-3.5', isLoading && 'animate-spin')} />
+            <span>Refresh Live Data</span>
+          </button>
+          <DashboardWidgetCustomizer
+            role="super-administrator"
+            defaultWidgets={DEFAULT_WIDGETS}
+            onUpdate={setWidgets}
+          />
+        </div>
+      </PageHeader>
 
-              <div className="relative z-10">
-                {/* Icon + Value */}
-                <div className="flex items-start justify-between mb-3">
-                  <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center bg-gradient-to-br', card.bgGradient, 'border border-border')}>
-                    <card.icon className={cn('w-5 h-5', card.color)} />
-                  </div>
-                  <div className="flex items-center gap-1 text-xs font-medium">
-                    {trend === 'up' ? (
-                      <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
-                    ) : trend === 'down' ? (
-                      <TrendingDown className="w-3.5 h-3.5 text-destructive" />
-                    ) : (
-                      <Minus className="w-3.5 h-3.5 text-muted-foreground" />
-                    )}
-                    <span className={cn(
-                      trend === 'up' ? 'text-emerald-600 dark:text-emerald-400' :
-                      trend === 'down' ? 'text-destructive' : 'text-muted-foreground'
-                    )}>
-                      {Math.abs(card.change)}%
-                    </span>
-                  </div>
-                </div>
+      {/* Layer 1 — Summary KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        {isVisible('stat-students') && (
+          <StatCard
+            title="Total Students"
+            value={formatNumber(data?.counts?.students || 0)}
+            change={4.2}
+            changeLabel="Live vs last term"
+            icon={GraduationCap}
+            color="text-emerald-500"
+            bgColor="bg-emerald-500/10"
+            href="/students"
+            isLoading={isLoading}
+          />
+        )}
+        {isVisible('stat-teachers') && (
+          <StatCard
+            title="Faculty Members"
+            value={formatNumber(data?.counts?.teachers || 0)}
+            change={1.8}
+            changeLabel="Active teaching staff"
+            icon={UserCheck}
+            color="text-amber-500"
+            bgColor="bg-amber-500/10"
+            href="/teachers"
+            isLoading={isLoading}
+          />
+        )}
+        {isVisible('stat-parents') && (
+          <StatCard
+            title="Parent Accounts"
+            value={formatNumber(data?.counts?.parents || 0)}
+            change={5.1}
+            changeLabel="Linked guardian profiles"
+            icon={Users}
+            color="text-rose-500"
+            bgColor="bg-rose-500/10"
+            href="/parents"
+            isLoading={isLoading}
+          />
+        )}
+        {isVisible('stat-departments') && (
+          <StatCard
+            title="Academic Depts"
+            value={formatNumber(data?.counts?.departments || 0)}
+            subtitle={`${data?.counts?.programs || 0} active programs`}
+            icon={Layers}
+            color="text-sky-500"
+            bgColor="bg-sky-500/10"
+            href="/academic-structure"
+            isLoading={isLoading}
+          />
+        )}
+        {isVisible('stat-attendance') && (
+          <StatCard
+            title="Attendance Logs"
+            value={formatNumber(data?.counts?.attendanceRecords || 0)}
+            subtitle="Total session entries recorded"
+            icon={Calendar}
+            color="text-violet-500"
+            bgColor="bg-violet-500/10"
+            href="/lms/attendance"
+            isLoading={isLoading}
+          />
+        )}
+        {isVisible('stat-homework') && (
+          <StatCard
+            title="Active Homework"
+            value={formatNumber(data?.counts?.homework || 0)}
+            subtitle={`${data?.counts?.lessonPlans || 0} lesson plans`}
+            icon={BookOpen}
+            color="text-indigo-500"
+            bgColor="bg-indigo-500/10"
+            href="/lms/homework"
+            isLoading={isLoading}
+          />
+        )}
+        {isVisible('stat-exams') && (
+          <StatCard
+            title="Examinations"
+            value={formatNumber(data?.counts?.examinations || 0)}
+            subtitle={`${data?.counts?.certificates || 0} certificates issued`}
+            icon={ShieldCheck}
+            color="text-emerald-600"
+            bgColor="bg-emerald-600/10"
+            href="/assessment/exams"
+            isLoading={isLoading}
+          />
+        )}
+        {isVisible('stat-audit') && (
+          <StatCard
+            title="Audit Trail Logs"
+            value={formatNumber(data?.counts?.auditLogs || 0)}
+            subtitle="Security events logged"
+            icon={Activity}
+            color="text-amber-600"
+            bgColor="bg-amber-600/10"
+            href="/audit-logs"
+            isLoading={isLoading}
+          />
+        )}
+      </div>
 
-                {/* Value */}
-                <p className="text-2xl font-bold text-foreground tracking-tight mb-0.5">
-                  {typeof card.value === 'number' ? formatNumber(card.value) : card.value}
-                </p>
-                <p className="text-sm font-medium text-foreground/70">{card.title}</p>
-                <p className="text-[10px] text-muted-foreground mt-1">{card.changeLabel}</p>
-              </div>
-            </motion.div>
-          );
-        })}
-      </motion.div>
+      {/* Layer 2 — Analytics Engine Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        {isVisible('chart-enrollment') && (
+          <ChartCard
+            title="Academic Enrollment by Level"
+            subtitle="Student distribution across sections"
+            data={enrollmentChartData}
+            type="bar"
+            dataKeys={[{ key: 'count', label: 'Students', color: 'hsl(var(--primary))' }]}
+            isLoading={isLoading}
+            className="lg:col-span-2"
+          />
+        )}
+        {isVisible('chart-departments') && (
+          <ChartCard
+            title="Departmental Share"
+            subtitle="Active student/faculty breakdown"
+            data={deptChartData}
+            type="pie"
+            dataKeys={[{ key: 'value', label: 'Members', color: 'hsl(var(--primary))' }]}
+            isLoading={isLoading}
+          />
+        )}
+      </div>
 
-      {/* Content Grid */}
+      {isVisible('chart-attendance') && (
+        <div className="mb-8">
+          <ChartCard
+            title="Weekly Attendance Trend (%)"
+            subtitle="Platform-wide attendance verification rate"
+            data={attendanceTrendData}
+            type="area"
+            dataKeys={[{ key: 'rate', label: 'Attendance %', color: '#10b981' }]}
+            isLoading={isLoading}
+          />
+        </div>
+      )}
+
+      {/* Layer 3 — Action Lists & Security Feed */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Recent Activity */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="lg:col-span-2 bg-card border border-border rounded-2xl overflow-hidden"
-        >
-          <div className="px-5 py-4 border-b border-border flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-foreground">{t('recentActivity')}</h2>
-            <button className="text-xs text-primary hover:text-primary/80 font-medium transition-colors">
-              View all
-            </button>
-          </div>
-          <div className="divide-y divide-border">
-            {RECENT_ACTIVITY.map((activity) => (
-              <div key={activity.id} className="flex items-start gap-3.5 px-5 py-3.5 hover:bg-muted/30 transition-colors">
-                <div className={cn(
-                  'w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5',
-                  activity.severity === 'success' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' :
-                  activity.severity === 'warning' ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400' :
-                  'bg-primary/10 text-primary'
-                )}>
-                  <activity.icon className="w-4 h-4" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm text-foreground leading-snug">{activity.message}</p>
-                  <div className="flex items-center gap-1 mt-0.5">
-                    <Clock className="w-3 h-3 text-muted-foreground" />
-                    <span className="text-xs text-muted-foreground">{activity.time}</span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </motion.div>
-
-        {/* Quick Actions */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="space-y-4"
-        >
-          {/* Quick Actions Card */}
-          <div className="bg-card border border-border rounded-2xl overflow-hidden">
-            <div className="px-5 py-4 border-b border-border">
-              <h2 className="text-sm font-semibold text-foreground">{t('quickActions')}</h2>
+        {isVisible('action-activity') && (
+          <div className="lg:col-span-2 bg-card border border-border rounded-2xl overflow-hidden">
+            <div className="px-5 py-4 border-b border-border flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                <Activity className="w-4 h-4 text-primary" />
+                <span>Live System Audit Trail</span>
+              </h2>
+              <a href="/audit-logs" className="text-xs font-semibold text-primary hover:underline">
+                View all logs →
+              </a>
             </div>
-            <div className="p-4 grid grid-cols-2 gap-3">
-              {QUICK_ACTIONS.map((action) => (
-                <a
-                  key={action.id}
-                  id={action.id}
-                  href={action.href}
-                  className={cn(
-                    'flex flex-col items-center justify-center gap-2 p-4 rounded-xl',
-                    'text-center cursor-pointer transition-all duration-150',
-                    action.color
-                  )}
-                >
-                  <action.icon className="w-5 h-5" />
-                  <span className="text-xs font-semibold leading-tight">{action.label}</span>
-                </a>
-              ))}
-            </div>
-          </div>
-
-          {/* System Status */}
-          <div className="bg-card border border-border rounded-2xl p-5">
-            <h2 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
-              <BarChart3 className="w-4 h-4 text-primary" />
-              System Status
-            </h2>
-            <div className="space-y-3">
-              {[
-                { label: 'Database', status: 'Operational', ok: true },
-                { label: 'Email Service', status: 'Operational', ok: true },
-                { label: 'File Storage', status: 'Operational', ok: true },
-                { label: 'API Server', status: 'Operational', ok: true },
-              ].map(({ label, status, ok }) => (
-                <div key={label} className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">{label}</span>
-                  <div className="flex items-center gap-1.5">
-                    <div className={cn('w-1.5 h-1.5 rounded-full', ok ? 'bg-emerald-500' : 'bg-destructive')} />
-                    <span className={cn('text-xs font-medium', ok ? 'text-emerald-600 dark:text-emerald-400' : 'text-destructive')}>
-                      {status}
+            <div className="divide-y divide-border max-h-[380px] overflow-y-auto">
+              {isLoading ? (
+                <div className="p-8 text-center text-xs text-muted-foreground animate-pulse">
+                  Loading recent system activities...
+                </div>
+              ) : (data?.recentActivity && data.recentActivity.length > 0) ? (
+                data.recentActivity.map((log: any, idx: number) => (
+                  <div key={idx} className="p-4 hover:bg-muted/30 transition-colors flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <ShieldCheck className="w-4 h-4 text-primary" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-semibold text-foreground leading-tight">
+                        {log.action || log.event || 'System Activity'}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {log.description || log.message || `Performed by user #${log.userId || 'system'}`}
+                      </p>
+                    </div>
+                    <span className="text-[10px] text-muted-foreground flex-shrink-0">
+                      {log.createdAt ? new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Just now'}
                     </span>
                   </div>
+                ))
+              ) : (
+                <div className="p-8 text-center text-xs text-muted-foreground">
+                  No recent audit logs found in live database.
                 </div>
-              ))}
+              )}
             </div>
           </div>
-        </motion.div>
+        )}
+
+        {isVisible('action-announcements') && (
+          <div className="bg-card border border-border rounded-2xl overflow-hidden flex flex-col">
+            <div className="px-5 py-4 border-b border-border flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                <Bell className="w-4 h-4 text-amber-500" />
+                <span>Live Announcements</span>
+              </h2>
+              <a href="/announcements" className="text-xs font-semibold text-primary hover:underline">
+                New +
+              </a>
+            </div>
+            <div className="p-4 space-y-3 flex-1 overflow-y-auto">
+              {isLoading ? (
+                <div className="text-center py-8 text-xs text-muted-foreground animate-pulse">
+                  Loading announcements...
+                </div>
+              ) : (data?.recentAnnouncements && data.recentAnnouncements.length > 0) ? (
+                data.recentAnnouncements.map((ann: any, idx: number) => (
+                  <div key={idx} className="p-3.5 rounded-xl border border-border bg-muted/20 hover:bg-muted/40 transition-colors">
+                    <p className="text-xs font-bold text-foreground">{ann.title || 'School Announcement'}</p>
+                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{ann.content || ann.message || ''}</p>
+                    <div className="flex items-center justify-between mt-2.5 pt-2 border-t border-border/50 text-[10px] text-muted-foreground">
+                      <span>{ann.category || 'General'}</span>
+                      <span>{ann.createdAt ? new Date(ann.createdAt).toLocaleDateString() : 'Today'}</span>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="py-12 text-center text-xs text-muted-foreground">
+                  No active announcements published yet.
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </PageContainer>
   );

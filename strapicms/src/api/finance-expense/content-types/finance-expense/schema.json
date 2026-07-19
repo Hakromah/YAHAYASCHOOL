@@ -1,0 +1,19 @@
+{
+  "kind": "collectionType",
+  "collectionName": "finance_expenses",
+  "info": {
+    "singularName": "finance-expense",
+    "pluralName": "finance-expenses",
+    "displayName": "Finance Expense",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "dummyField": {
+      "type": "string"
+    }
+  }
+}

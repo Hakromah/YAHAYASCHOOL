@@ -10,6 +10,7 @@ import {
   GraduationCap, Building2
 } from 'lucide-react';
 import { erpService } from '@/services/erp.service';
+import { Avatar } from '@/components/shared/Avatar';
 import type { Teacher } from '@/types/erp.types';
 import { StatusBadge } from '@/components/erp/StatusBadge';
 import { RelationshipChip } from '@/components/erp/RelationshipChip';
@@ -92,13 +93,12 @@ export default function TeacherProfilePage() {
         <div className="absolute right-0 top-0 w-80 h-80 bg-amber-500/5 rounded-full blur-3xl pointer-events-none" />
 
         <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center gap-6">
-          <div className="relative w-24 h-24 md:w-28 md:h-28 rounded-2xl overflow-hidden border-2 border-amber-500/40 bg-slate-950 flex items-center justify-center flex-shrink-0 shadow-lg">
-            {photoUrl ? (
-              <Image src={photoUrl} alt={teacher.name} fill className="object-cover" />
-            ) : (
-              <UserCheck className="w-12 h-12 text-amber-400/60" />
-            )}
-          </div>
+          <Avatar
+            src={teacher.photo}
+            name={teacher.name}
+            size="2xl"
+            className="border-2 border-amber-500/40 shadow-lg flex-shrink-0"
+          />
 
           <div className="flex-1 min-w-0">
             <div className="flex flex-wrap items-center gap-2 mb-2">

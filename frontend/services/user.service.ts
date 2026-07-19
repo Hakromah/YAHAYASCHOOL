@@ -53,11 +53,23 @@ export const userService = {
 
       // Strapi /users endpoint returns an array directly (not wrapped)
       // Need to handle both formats
-      const users = Array.isArray(data) ? data : data.data ?? [];
-      const total = Array.isArray(data) ? users.length : data.meta?.pagination?.total ?? users.length;
+      const rawUsers = Array.isArray(data) ? data : data.data ?? [];
+      const total = Array.isArray(data) ? rawUsers.length : data.meta?.pagination?.total ?? rawUsers.length;
+
+      const normalizedUsers = rawUsers.map((u: any, idx: number) => {
+        const idVal = u.id || u.documentId || idx + 1;
+        const nameVal = u.displayName || (u.firstName && u.lastName ? `${u.firstName} ${u.lastName}` : null) || u.fullName || u.username || `User #${idVal}`;
+        const schoolIdVal = u.schoolId || u.studentId || u.teacherId || u.employeeId || u.customId || (idVal ? (typeof idVal === 'string' && idVal.startsWith('AC') ? idVal : 'AC' + String(idVal).padStart(8, '0')) : `AC${String(idx + 1).padStart(8, '0')}`);
+        return {
+          ...u,
+          id: idVal,
+          displayName: nameVal,
+          schoolId: schoolIdVal,
+        } as SchoolUser;
+      });
 
       return {
-        data: users as SchoolUser[],
+        data: normalizedUsers,
         pagination: {
           page,
           pageSize,
@@ -78,7 +90,16 @@ export const userService = {
       const { data } = await apiClient.get<SchoolUser>(`/users/${id}`, {
         params: { populate: ['role', 'avatar'] },
       });
-      return data;
+      const u: any = data || {};
+      const idVal = u.id || id;
+      const nameVal = u.displayName || (u.firstName && u.lastName ? `${u.firstName} ${u.lastName}` : null) || u.fullName || u.username || `User #${idVal}`;
+      const schoolIdVal = u.schoolId || u.studentId || u.teacherId || u.employeeId || (idVal ? (typeof idVal === 'string' && idVal.startsWith('AC') ? idVal : 'AC' + String(idVal).padStart(8, '0')) : 'AC000000001');
+      return {
+        ...u,
+        id: idVal,
+        displayName: nameVal,
+        schoolId: schoolIdVal,
+      } as SchoolUser;
     } catch (error) {
       throw normalizeError(error);
     }
@@ -90,7 +111,7 @@ export const userService = {
   async createUser(payload: CreateUserPayload): Promise<SchoolUser> {
     try {
       const { data } = await apiClient.post<SchoolUser>(
-        '/auth/local/register',
+        '/users',
         {
           username: payload.username,
           email: payload.email,
@@ -106,6 +127,7 @@ export const userService = {
           preferredLanguage: payload.preferredLanguage ?? 'en',
           isActive: payload.isActive ?? true,
           confirmed: payload.confirmed ?? true,
+          blocked: payload.blocked ?? false,
           role: payload.roleId,
         }
       );

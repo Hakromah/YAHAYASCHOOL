@@ -12,19 +12,64 @@ import type {
   PaginatedERPResponse,
 } from '../types/erp.types';
 
+// Helper to normalize entities across Strapi v4/v5 format variations
+function normalizeEntity<T>(item: any, idx = 0): T {
+  if (!item || typeof item !== 'object') return item as T;
+  const idVal = item.id || item.documentId || idx + 1;
+  const nameVal = item.name || item.fullName || item.displayName || [item.firstName, item.lastName].filter(Boolean).join(' ') || item.title || item.username;
+  const schoolIdVal = item.schoolId || item.studentId || item.teacherId || item.employeeId || item.admissionNumber || item.code || item.documentId || (idVal ? (typeof idVal === 'string' && idVal.startsWith('AC') ? idVal : 'AC' + String(idVal).padStart(8, '0')) : `AC${String(idx + 1).padStart(8, '0')}`);
+
+  // Resolve media URLs safely
+  let rawPhoto = item.photoUrl || item.avatarUrl || item.photo?.url || item.photo?.data?.attributes?.url || item.photo?.data?.url || item.avatar?.url || item.avatar?.data?.attributes?.url || item.avatar?.data?.url;
+  const baseUrl = process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1339';
+  const resolvedPhotoUrl = rawPhoto ? (rawPhoto.startsWith('http') ? rawPhoto : `${baseUrl}${rawPhoto.startsWith('/') ? '' : '/'}${rawPhoto}`) : null;
+
+  // Normalize nested children / students relations if present
+  const rawChildren = item.children?.data || item.children || item.students?.data || item.students || [];
+  const normalizedChildren = (Array.isArray(rawChildren) ? rawChildren : [rawChildren].filter(Boolean)).map((c: any, i: number) => {
+    if (!c) return { name: `Scholar #${i + 1}` };
+    if (typeof c === 'string') return { name: c };
+    const cName = c.name || c.fullName || c.displayName || c.attributes?.name || [c.firstName || c.attributes?.firstName, c.lastName || c.attributes?.lastName].filter(Boolean).join(' ') || `Scholar #${c.id || i + 1}`;
+    return {
+      ...c,
+      name: cName || `Scholar #${i + 1}`,
+      fullName: cName || `Scholar #${i + 1}`,
+      studentId: c.studentId || c.schoolId || c.attributes?.studentId || c.attributes?.schoolId || `AC${String(c.id || i + 1).padStart(8, '0')}`
+    };
+  });
+
+  return {
+    ...item,
+    id: idVal,
+    name: nameVal || `Entity #${idVal}`,
+    fullName: nameVal || `Entity #${idVal}`,
+    displayName: nameVal || `Entity #${idVal}`,
+    schoolId: schoolIdVal,
+    studentId: item.studentId || schoolIdVal,
+    teacherId: item.teacherId || schoolIdVal,
+    photoUrl: resolvedPhotoUrl,
+    avatarUrl: resolvedPhotoUrl,
+    children: normalizedChildren,
+    students: normalizedChildren,
+  } as T;
+}
+
 // Helper to unwrap Strapi v5 responses which may be `{ data: [...], meta: {...} }` or `[...]`
 function unwrapPaginated<T>(res: unknown): PaginatedERPResponse<T> {
   if (res && typeof res === 'object' && 'data' in res) {
     const response = res as { data: T[]; meta?: any };
+    const rawArr = Array.isArray(response.data) ? response.data : [response.data].filter(Boolean);
+    const normalized = rawArr.map((item, idx) => normalizeEntity<T>(item, idx));
     return {
-      data: Array.isArray(response.data) ? response.data : [response.data].filter(Boolean),
-      meta: response.meta || { pagination: { page: 1, pageSize: 25, pageCount: 1, total: Array.isArray(response.data) ? response.data.length : 1 } },
+      data: normalized,
+      meta: response.meta || { pagination: { page: 1, pageSize: 25, pageCount: 1, total: normalized.length } },
     };
   }
   const arr = Array.isArray(res) ? res : [res].filter(Boolean);
+  const normalized = arr.map((item, idx) => normalizeEntity<T>(item, idx));
   return {
-    data: arr as T[],
-    meta: { pagination: { page: 1, pageSize: arr.length, pageCount: 1, total: arr.length } },
+    data: normalized as T[],
+    meta: { pagination: { page: 1, pageSize: normalized.length, pageCount: 1, total: normalized.length } },
   };
 }
 
@@ -32,10 +77,10 @@ function unwrapSingle<T>(res: unknown): T | null {
   if (!res) return null;
   if (typeof res === 'object' && 'data' in res) {
     const data = (res as { data: any }).data;
-    if (Array.isArray(data)) return data[0] || null;
-    return data || null;
+    if (Array.isArray(data)) return data[0] ? normalizeEntity<T>(data[0]) : null;
+    return data ? normalizeEntity<T>(data) : null;
   }
-  return res as T;
+  return normalizeEntity<T>(res);
 }
 
 export const erpService = {
@@ -66,7 +111,6 @@ export const erpService = {
       const res = await apiClient.get('/students', {
         params: {
           locale,
-          publicationState: 'preview',
           filters: Object.keys(filters).length > 0 ? filters : undefined,
           pagination: {
             page: params.page || 1,
@@ -74,6 +118,7 @@ export const erpService = {
           },
           sort: params.sort || 'schoolId:asc',
           populate: ['photo', 'sections', 'parents', 'timeline', 'behaviorRecords', 'enrollmentHistory', 'departments'],
+          fields: ['id', 'documentId', 'firstName', 'middleName', 'lastName', 'schoolId', 'admissionNumber', 'gender', 'dateOfBirth', 'enrollmentStatus', 'advanceBalance'],
         },
       });
       return unwrapPaginated<Student>(res.data);
@@ -95,6 +140,22 @@ export const erpService = {
     } catch (error) {
       console.warn(`[erpService] Failed to fetch student ${id}:`, error);
       return null;
+    }
+  },
+
+  /** Returns the student's advance wallet balance (pre-credit from overpayments). */
+  async getStudentAdvanceBalance(studentId: string | number): Promise<number> {
+    try {
+      // Use filter-based query so it works with both numeric id and documentId
+      const isDocId = typeof studentId === 'string' && isNaN(Number(studentId));
+      const filterParam = isDocId
+        ? `filters[documentId][$eq]=${studentId}`
+        : `filters[id][$eq]=${studentId}`;
+      const res = await apiClient.get(`/students?${filterParam}&fields[0]=advanceBalance&fields[1]=documentId&fields[2]=id&pagination[limit]=1`);
+      const student = res.data?.data?.[0];
+      return Number(student?.advanceBalance || 0);
+    } catch {
+      return 0;
     }
   },
 
@@ -141,7 +202,6 @@ export const erpService = {
       const res = await apiClient.get('/teachers', {
         params: {
           locale,
-          publicationState: 'preview',
           filters: Object.keys(filters).length > 0 ? filters : undefined,
           pagination: {
             page: params.page || 1,

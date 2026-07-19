@@ -8,7 +8,7 @@
     "description": "Schema for Quran Attendance"
   },
   "options": {
-    "draftAndPublish": true
+    "draftAndPublish": false
   },
   "pluginOptions": {},
   "attributes": {
@@ -16,7 +16,7 @@
       "type": "date",
       "required": true
     },
-    "status": {
+    "recordStatus": {
       "type": "enumeration",
       "enum": [
         "Present",

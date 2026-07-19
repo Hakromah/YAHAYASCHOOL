@@ -18,6 +18,7 @@ const PROTECTED_PREFIXES = [
   '/students',
   '/teachers',
   '/parents',
+  '/workers',
   '/finance',
   '/hostel',
   '/exams',
@@ -27,6 +28,17 @@ const PROTECTED_PREFIXES = [
   '/messages',
   '/notifications',
   '/reports',
+  // Module routes (previously unprotected — security fix)
+  '/erp',
+  '/lms',
+  '/qms',
+  '/llms',
+  '/assessment',
+  '/results',
+  '/directory',
+  '/academic-structure',
+  '/profile',
+  '/admissions',
 ];
 
 /** Routes accessible only when NOT authenticated */
@@ -57,17 +69,21 @@ export default function proxy(request: NextRequest) {
   const jwt = getJWT(request);
   const isAuthenticated = !!jwt;
 
+  // Extract locale prefix if present
+  const localeMatch = pathname.match(/^\/(en|ar|fr|tr)/);
+  const localePrefix = localeMatch ? localeMatch[0] : '';
+
   // ── Auth Guard ────────────────────────────────────────────
   if (isProtectedRoute(pathname) && !isAuthenticated) {
     // Redirect to login, preserving the intended URL
-    const loginUrl = new URL('/login', request.url);
+    const loginUrl = new URL(`${localePrefix}/login`, request.url);
     loginUrl.searchParams.set('callbackUrl', pathname);
     return NextResponse.redirect(loginUrl);
   }
 
   // ── Redirect authenticated users away from auth pages ──
   if (isAuthRoute(pathname) && isAuthenticated) {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
+    return NextResponse.redirect(new URL(`${localePrefix}/dashboard`, request.url));
   }
 
   // ── next-intl locale middleware ───────────────────────────

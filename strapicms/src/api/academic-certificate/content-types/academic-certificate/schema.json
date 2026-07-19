@@ -8,7 +8,7 @@
     "description": "Issued certificates linked to students"
   },
   "options": {
-    "draftAndPublish": true
+    "draftAndPublish": false
   },
   "pluginOptions": {
     "i18n": {
@@ -40,7 +40,7 @@
     "issueDate": {
       "type": "date"
     },
-    "status": {
+    "recordStatus": {
       "type": "enumeration",
       "enum": [
         "Valid",
