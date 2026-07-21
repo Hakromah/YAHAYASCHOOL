@@ -20,6 +20,15 @@ import type {
   AdmissionApplicationPayload,
 } from '../types/cms.types';
 
+// Supported i18n locales to prevent invalid values like 'favicon.ico' from hitting Strapi API
+const SUPPORTED_LOCALES = new Set(['en', 'ar', 'fr', 'tr']);
+function cleanLocale(locale?: string | null): string {
+  if (!locale || typeof locale !== 'string' || !SUPPORTED_LOCALES.has(locale)) {
+    return 'en';
+  }
+  return locale;
+}
+
 // Helper to unwrap Strapi v5 API responses where data can be directly returned or wrapped in `{ data: ... }`
 function unwrapResponse<T>(res: unknown): T | null {
   if (!res) return null;
@@ -37,7 +46,7 @@ export const cmsService = {
     try {
       const res = await apiClient.get('/homepage', {
         params: {
-          locale,
+          locale: cleanLocale(locale),
           populate: {
             seo: { populate: '*' },
             sections: { populate: '*' },
@@ -59,7 +68,7 @@ export const cmsService = {
       const res = await apiClient.get('/pages', {
         params: {
           filters: { slug: { $eq: slug } },
-          locale,
+          locale: cleanLocale(locale),
           populate: {
             seo: { populate: '*' },
             sections: { populate: '*' },
@@ -86,7 +95,7 @@ export const cmsService = {
       const res = await apiClient.get('/programs', {
         params: {
           filters,
-          locale,
+          locale: cleanLocale(locale),
           populate: ['images', 'downloads', 'department'],
           pagination: { limit },
         },
@@ -106,7 +115,7 @@ export const cmsService = {
       const res = await apiClient.get('/programs', {
         params: {
           filters: { slug: { $eq: slug } },
-          locale,
+          locale: cleanLocale(locale),
           populate: ['images', 'downloads', 'department', 'seo'],
         },
       });
@@ -125,7 +134,7 @@ export const cmsService = {
     try {
       const res = await apiClient.get('/departments', {
         params: {
-          locale,
+          locale: cleanLocale(locale),
           populate: ['gallery', 'programs'],
           pagination: { limit },
         },
@@ -145,7 +154,7 @@ export const cmsService = {
       const res = await apiClient.get('/departments', {
         params: {
           filters: { slug: { $eq: slug } },
-          locale,
+          locale: cleanLocale(locale),
           populate: ['gallery', 'programs', 'seo'],
         },
       });
@@ -169,7 +178,7 @@ export const cmsService = {
       const res = await apiClient.get('/articles', {
         params: {
           filters,
-          locale,
+          locale: cleanLocale(locale),
           populate: ['featuredImage', 'category'],
           sort: ['publishDate:desc', 'createdAt:desc'],
           pagination: { page, pageSize },
@@ -192,7 +201,7 @@ export const cmsService = {
       const res = await apiClient.get('/articles', {
         params: {
           filters: { slug: { $eq: slug } },
-          locale,
+          locale: cleanLocale(locale),
           populate: ['featuredImage', 'gallery', 'category', 'seo'],
         },
       });
@@ -211,7 +220,7 @@ export const cmsService = {
     try {
       const res = await apiClient.get('/events', {
         params: {
-          locale,
+          locale: cleanLocale(locale),
           populate: ['banner', 'department'],
           sort: ['startDate:asc'],
           pagination: { limit },
@@ -231,7 +240,7 @@ export const cmsService = {
     try {
       const res = await apiClient.get('/announcements', {
         params: {
-          locale,
+          locale: cleanLocale(locale),
           sort: ['priority:desc', 'createdAt:desc'],
         },
       });
@@ -249,7 +258,7 @@ export const cmsService = {
     try {
       const res = await apiClient.get('/testimonials', {
         params: {
-          locale,
+          locale: cleanLocale(locale),
           populate: ['avatar'],
           pagination: { limit },
         },
@@ -268,7 +277,7 @@ export const cmsService = {
     try {
       const res = await apiClient.get('/gallery-items', {
         params: {
-          locale,
+          locale: cleanLocale(locale),
           populate: ['mediaFile'],
           pagination: { limit },
         },
@@ -287,7 +296,7 @@ export const cmsService = {
     try {
       const res = await apiClient.get('/download-items', {
         params: {
-          locale,
+          locale: cleanLocale(locale),
           populate: ['file'],
         },
       });
@@ -308,7 +317,7 @@ export const cmsService = {
       const res = await apiClient.get('/faqs', {
         params: {
           filters,
-          locale,
+          locale: cleanLocale(locale),
           sort: ['order:asc'],
         },
       });
@@ -325,7 +334,7 @@ export const cmsService = {
   async getContactInfo(locale = 'en'): Promise<ContactInfo | null> {
     try {
       const res = await apiClient.get('/contact-info', {
-        params: { locale },
+        params: { locale: cleanLocale(locale) },
       });
       return unwrapResponse<ContactInfo>(res.data);
     } catch (error) {
@@ -340,7 +349,7 @@ export const cmsService = {
   async getFooterConfig(locale = 'en'): Promise<FooterConfig | null> {
     try {
       const res = await apiClient.get('/footer-config', {
-        params: { locale, populate: '*' },
+        params: { locale: cleanLocale(locale), populate: '*' },
       });
       return unwrapResponse<FooterConfig>(res.data);
     } catch (error) {
@@ -357,7 +366,7 @@ export const cmsService = {
       const res = await apiClient.get('/navigation-menus', {
         params: {
           filters: { location: { $eq: location } },
-          locale,
+          locale: cleanLocale(locale),
           populate: { items: { populate: '*' } },
         },
       });
@@ -376,7 +385,7 @@ export const cmsService = {
     try {
       const res = await apiClient.get('/partners', {
         params: {
-          locale,
+          locale: cleanLocale(locale),
           populate: ['logo'],
           sort: ['order:asc'],
         },
@@ -395,7 +404,7 @@ export const cmsService = {
     try {
       const res = await apiClient.get('/donation-campaigns', {
         params: {
-          locale,
+          locale: cleanLocale(locale),
           populate: ['banner'],
         },
       });

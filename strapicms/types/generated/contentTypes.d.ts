@@ -2001,6 +2001,48 @@ export interface ApiFaqFaq extends Struct.CollectionTypeSchema {
   };
 }
 
+export interface ApiFinanceAccountFinanceAccount
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'finance_accounts';
+  info: {
+    description: 'Standard institutional chart of accounts';
+    displayName: 'Finance Account';
+    pluralName: 'finance-accounts';
+    singularName: 'finance-account';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    accountCode: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique;
+    accountName: Schema.Attribute.String & Schema.Attribute.Required;
+    accountType: Schema.Attribute.Enumeration<
+      ['Asset', 'Liability', 'Equity', 'Revenue', 'Expense']
+    > &
+      Schema.Attribute.Required;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    description: Schema.Attribute.String;
+    isActive: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
+    isControlAccount: Schema.Attribute.Boolean &
+      Schema.Attribute.DefaultTo<false>;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::finance-account.finance-account'
+    > &
+      Schema.Attribute.Private;
+    parentAccountCode: Schema.Attribute.String;
+    publishedAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
 export interface ApiFinanceAccountingPeriodFinanceAccountingPeriod
   extends Struct.CollectionTypeSchema {
   collectionName: 'finance_accounting_periods';
@@ -2154,19 +2196,22 @@ export interface ApiFinanceExpenseFinanceExpense
   extends Struct.CollectionTypeSchema {
   collectionName: 'finance_expenses';
   info: {
-    description: '';
+    description: 'Operating expense vouchers and vendor claims';
     displayName: 'Finance Expense';
     pluralName: 'finance-expenses';
     singularName: 'finance-expense';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
+    amount: Schema.Attribute.Decimal & Schema.Attribute.Required;
+    category: Schema.Attribute.String;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
-    dummyField: Schema.Attribute.String;
+    department: Schema.Attribute.String;
+    invoiceReference: Schema.Attribute.String;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
@@ -2174,6 +2219,50 @@ export interface ApiFinanceExpenseFinanceExpense
     > &
       Schema.Attribute.Private;
     publishedAt: Schema.Attribute.DateTime;
+    receiptUrl: Schema.Attribute.String;
+    requestedBy: Schema.Attribute.String;
+    status: Schema.Attribute.String & Schema.Attribute.DefaultTo<'submitted'>;
+    title: Schema.Attribute.String & Schema.Attribute.Required;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    vendorName: Schema.Attribute.String;
+    voucherNumber: Schema.Attribute.String;
+  };
+}
+
+export interface ApiFinanceFinancialStatementFinanceFinancialStatement
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'finance_financial_statements';
+  info: {
+    description: 'Generated institutional financial statement versions';
+    displayName: 'Finance Financial Statement';
+    pluralName: 'finance-financial-statements';
+    singularName: 'finance-financial-statement';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    academicYear: Schema.Attribute.String;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    generatedBy: Schema.Attribute.String;
+    generationDate: Schema.Attribute.DateTime;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::finance-financial-statement.finance-financial-statement'
+    > &
+      Schema.Attribute.Private;
+    period: Schema.Attribute.String;
+    publishedAt: Schema.Attribute.DateTime;
+    reportData: Schema.Attribute.JSON;
+    reportHash: Schema.Attribute.String;
+    reportType: Schema.Attribute.String;
+    status: Schema.Attribute.Enumeration<['Draft', 'Reviewed', 'Certified']> &
+      Schema.Attribute.DefaultTo<'Draft'>;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -2407,26 +2496,42 @@ export interface ApiFinancePayrollFinancePayroll
   extends Struct.CollectionTypeSchema {
   collectionName: 'finance_payrolls';
   info: {
-    description: '';
+    description: 'Staff Payroll Runs and Compensation Vouchers';
     displayName: 'Finance Payroll';
     pluralName: 'finance-payrolls';
     singularName: 'finance-payroll';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
+    attendanceRate: Schema.Attribute.Decimal & Schema.Attribute.DefaultTo<100>;
+    baseSalary: Schema.Attribute.Decimal & Schema.Attribute.DefaultTo<0>;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
-    dummyField: Schema.Attribute.String;
+    deductionsAmount: Schema.Attribute.Decimal & Schema.Attribute.DefaultTo<0>;
+    department: Schema.Attribute.String;
+    journalEntryId: Schema.Attribute.String;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
       'api::finance-payroll.finance-payroll'
     > &
       Schema.Attribute.Private;
+    netPayable: Schema.Attribute.Decimal & Schema.Attribute.DefaultTo<0>;
+    overtimeAmount: Schema.Attribute.Decimal & Schema.Attribute.DefaultTo<0>;
+    overtimeHours: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<0>;
+    payPeriod: Schema.Attribute.String;
+    payrollNumber: Schema.Attribute.String;
     publishedAt: Schema.Attribute.DateTime;
+    staffId: Schema.Attribute.String;
+    staffName: Schema.Attribute.String;
+    staffRole: Schema.Attribute.String;
+    status: Schema.Attribute.Enumeration<
+      ['draft', 'submitted', 'reviewed', 'approved', 'paid', 'closed']
+    > &
+      Schema.Attribute.DefaultTo<'draft'>;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -6399,11 +6504,13 @@ declare module '@strapi/strapi' {
       'api::exam-session.exam-session': ApiExamSessionExamSession;
       'api::examination.examination': ApiExaminationExamination;
       'api::faq.faq': ApiFaqFaq;
+      'api::finance-account.finance-account': ApiFinanceAccountFinanceAccount;
       'api::finance-accounting-period.finance-accounting-period': ApiFinanceAccountingPeriodFinanceAccountingPeriod;
       'api::finance-budget.finance-budget': ApiFinanceBudgetFinanceBudget;
       'api::finance-currency.finance-currency': ApiFinanceCurrencyFinanceCurrency;
       'api::finance-exchange-rate.finance-exchange-rate': ApiFinanceExchangeRateFinanceExchangeRate;
       'api::finance-expense.finance-expense': ApiFinanceExpenseFinanceExpense;
+      'api::finance-financial-statement.finance-financial-statement': ApiFinanceFinancialStatementFinanceFinancialStatement;
       'api::finance-hold.finance-hold': ApiFinanceHoldFinanceHold;
       'api::finance-invoice.finance-invoice': ApiFinanceInvoiceFinanceInvoice;
       'api::finance-journal-entry.finance-journal-entry': ApiFinanceJournalEntryFinanceJournalEntry;

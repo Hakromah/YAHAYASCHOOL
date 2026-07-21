@@ -1,24 +1,119 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search, X, GraduationCap, UserCheck, Heart, BookOpen,
   FileText, Calendar, DollarSign, Award, Users, ArrowRight,
-  ShieldAlert, Loader2, Layers, Clock
+  ShieldAlert, Loader2, Layers, Clock, LayoutDashboard, Settings,
+  FileSearch, Bell, AlignLeft, Key, Globe, HardDrive, UsersRound,
+  BookMarked, Boxes, ScrollText, School, PenTool, BookCheck,
+  SquareCheckBig, Library, BarChart3, FolderOpen, Trophy, Star,
+  BadgeCheck, Scale, Landmark, CreditCard, Percent, Coins,
+  PiggyBank, Wallet, Receipt, HeartHandshake, TrendingUp,
+  Megaphone, Package, MessageSquare, UserCog, AlertTriangle,
+  FileSpreadsheet, Compass, ShieldCheck, LayoutGrid, Clipboard
 } from 'lucide-react';
 import { usePermissions } from '@/hooks/usePermissions';
+import { erpService } from '@/services/erp.service';
+import { financeService } from '@/services/finance.service';
 import { apiClient } from '@/services/api.service';
 import { cn } from '@/lib/utils';
 
-interface SearchResultItem {
+export interface SearchResultItem {
   id: string | number;
   title: string;
   subtitle?: string;
-  category: 'student' | 'teacher' | 'parent' | 'worker' | 'subject' | 'class' | 'homework' | 'assessment' | 'finance' | 'general';
+  category: 'page' | 'student' | 'teacher' | 'parent' | 'worker' | 'subject' | 'homework' | 'finance' | 'general';
   href: string;
+  keywords?: string[];
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Universal System Navigation Index (Sidebar pages & System modules)
+// ─────────────────────────────────────────────────────────────────────────────
+
+const SYSTEM_NAVIGATION_PAGES: SearchResultItem[] = [
+  // Overview & Dashboards
+  { id: 'nav-dashboard', title: 'Main Dashboard', subtitle: 'System Overview & Analytics', category: 'page', href: '/dashboard', keywords: ['dashboard', 'home', 'main', 'overview', 'stats'] },
+  { id: 'nav-[locale]-dashboard', title: 'Executive Admin Dashboard', subtitle: 'System Administration & Control Center', category: 'page', href: '/dashboard', keywords: ['admin', 'executive', 'director'] },
+
+  // People & Directory
+  { id: 'nav-directory', title: 'People Directory', subtitle: 'Unified Directory of Students, Staff, & Parents', category: 'page', href: '/directory', keywords: ['directory', 'people', 'contacts', 'search'] },
+  { id: 'nav-students', title: 'Students Management', subtitle: 'Student Information & Academic Profiles', category: 'page', href: '/students', keywords: ['students', 'scholars', 'enrolled', 'directory', 'children'] },
+  { id: 'nav-teachers', title: 'Teachers & Faculty', subtitle: 'Academic Faculty Roster & Assignment', category: 'page', href: '/teachers', keywords: ['teachers', 'faculty', 'instructors', 'staff'] },
+  { id: 'nav-parents', title: 'Parents & Guardians', subtitle: 'Guardian Accounts & Family Links', category: 'page', href: '/parents', keywords: ['parents', 'guardians', 'families', 'family'] },
+  { id: 'nav-workers', title: 'Non-Teaching Support Workers', subtitle: 'Support Staff, Drivers & Operations', category: 'page', href: '/workers', keywords: ['workers', 'staff', 'support', 'drivers', 'cleaners', 'janitors'] },
+  { id: 'nav-admissions', title: 'Admission Applications', subtitle: 'New Student Enrollment & Applications', category: 'page', href: '/directory/admissions', keywords: ['admissions', 'enrollment', 'register', 'apply'] },
+
+  // Academic Structure
+  { id: 'nav-departments', title: 'Academic Structure & Departments', subtitle: 'School Departments & Faculties', category: 'page', href: '/academic-structure', keywords: ['departments', 'structure', 'faculties', 'divisions'] },
+  { id: 'nav-programs', title: 'Academic Programs', subtitle: 'Curriculum Degrees & Certifications', category: 'page', href: '/academic-structure/programs', keywords: ['programs', 'courses', 'degrees'] },
+  { id: 'nav-sections', title: 'Class Sections', subtitle: 'Classroom Sections & Student Roster', category: 'page', href: '/academic-structure/sections', keywords: ['sections', 'classes', 'cohorts'] },
+  { id: 'nav-academic-years', title: 'Academic Years', subtitle: 'School Calendar Years & Terms', category: 'page', href: '/academic-structure/years', keywords: ['years', 'sessions', 'calendar'] },
+  { id: 'nav-academic-terms', title: 'Academic Terms', subtitle: 'Semester & Term Periods', category: 'page', href: '/academic-structure/terms', keywords: ['terms', 'semesters', 'quarters'] },
+  { id: 'nav-calendar', title: 'School Calendar', subtitle: 'Events, Exams & Holiday Schedules', category: 'page', href: '/calendar', keywords: ['calendar', 'events', 'holidays', 'schedule'] },
+
+  // LMS (Learning Management System)
+  { id: 'nav-lms-subjects', title: 'Subjects & Curriculum', subtitle: 'Course Offerings & Syllabus Units', category: 'page', href: '/lms/subjects', keywords: ['subjects', 'curriculum', 'courses', 'syllabus'] },
+  { id: 'nav-lms-timetables', title: 'Classes & Timetables', subtitle: 'Weekly Classroom & Slot Schedules', category: 'page', href: '/lms/timetables', keywords: ['timetables', 'schedule', 'classes', 'slots', 'periods'] },
+  { id: 'nav-lms-lesson-plans', title: 'Lesson Plans', subtitle: 'Teaching Material & Curriculum Delivery', category: 'page', href: '/lms/lesson-plans', keywords: ['lesson', 'plans', 'teaching', 'material'] },
+  { id: 'nav-lms-homework', title: 'Homework & Assignments', subtitle: 'Student Homework Assignments & Grading', category: 'page', href: '/lms/homework', keywords: ['homework', 'assignments', 'tasks'] },
+  { id: 'nav-lms-attendance', title: 'Classroom Attendance', subtitle: 'Daily & Period Student Attendance Records', category: 'page', href: '/lms/attendance', keywords: ['attendance', 'rollcall', 'presence', 'absent'] },
+  { id: 'nav-lms-gradebook', title: 'Assessments & Gradebook', subtitle: 'Gradebook Entries & Continuous Assessment', category: 'page', href: '/lms/gradebook', keywords: ['gradebook', 'scores', 'marks', 'assessments'] },
+  { id: 'nav-lms-resources', title: 'Learning Resources', subtitle: 'Digital Textbooks, PDF, & Media Library', category: 'page', href: '/lms/resources', keywords: ['resources', 'books', 'library', 'materials'] },
+
+  // Qur'an Department (QMS)
+  { id: 'nav-qms-programs', title: "Qur'an Programs & Groups", subtitle: "Memorization & Halaqah Groups", category: 'page', href: '/qms/programs', keywords: ['quran', 'hifz', 'halaqah', 'islamic'] },
+  { id: 'nav-qms-memorization', title: 'Hifz Tracking', subtitle: 'Surah & Juz Memorization Progress', category: 'page', href: '/qms/memorization', keywords: ['hifz', 'memorization', 'juz', 'surah'] },
+  { id: 'nav-qms-revision', title: "Muraja'ah Revision", subtitle: 'Qur\'an Revision & Recitation Monitoring', category: 'page', href: '/qms/revision', keywords: ['murajaah', 'revision', 'recitation'] },
+  { id: 'nav-qms-tajweed', title: 'Tajweed Evaluations', subtitle: 'Pronunciation & Rules Assessment', category: 'page', href: '/qms/tajweed', keywords: ['tajweed', 'pronunciation', 'makhraj'] },
+  { id: 'nav-qms-halaqah', title: 'Daily Halaqah Sessions', subtitle: 'Circle Recitation & Teacher Logs', category: 'page', href: '/qms/halaqah', keywords: ['halaqah', 'circle', 'session'] },
+
+  // Language Department (LLMS)
+  { id: 'nav-llms-programs', title: 'Language Programs', subtitle: 'Arabic, English, French & Turkish Courses', category: 'page', href: '/llms/programs', keywords: ['languages', 'arabic', 'english', 'french', 'turkish'] },
+  { id: 'nav-llms-skills', title: 'Language Skill Analytics', subtitle: 'Speaking, Listening, Reading & Writing Scores', category: 'page', href: '/llms/skills', keywords: ['skills', 'fluency', 'analytics'] },
+
+  // Assessment & Exams
+  { id: 'nav-assessment-exams', title: 'Examinations', subtitle: 'Midterm & Final Examination Management', category: 'page', href: '/assessment/exams', keywords: ['exams', 'examinations', 'tests'] },
+  { id: 'nav-assessment-marks', title: 'Marks Entry Data Grid', subtitle: 'Faculty Score Entry & Grade Calculation', category: 'page', href: '/assessment/marks-entry', keywords: ['marks', 'scores', 'entry', 'grades', 'reportcard'] },
+  { id: 'nav-assessment-scheduling', title: 'Exam Scheduling', subtitle: 'Timetables & Exam Room Assignments', category: 'page', href: '/assessment/scheduling', keywords: ['scheduling', 'timetable', 'halls', 'invigilation'] },
+  { id: 'nav-assessment-question-bank', title: 'Question Bank', subtitle: 'Exam Question Repositories & Templates', category: 'page', href: '/assessment/question-bank', keywords: ['questions', 'bank', 'quiz', 'test'] },
+
+  // Results & Certification
+  { id: 'nav-results-cards', title: 'Report Cards', subtitle: 'Certified Terminal Report Cards', category: 'page', href: '/results/report-cards', keywords: ['results', 'report', 'cards', 'grades', 'sheet'] },
+  { id: 'nav-results-transcripts', title: 'Academic Transcripts', subtitle: 'Multi-Year Academic Transcript Ledger', category: 'page', href: '/results/transcripts', keywords: ['transcripts', 'gpa', 'records'] },
+  { id: 'nav-results-certificates', title: 'Academic Certificates', subtitle: 'Graduation & Achievement Certificates', category: 'page', href: '/results/certificates', keywords: ['certificates', 'diplomas', 'awards'] },
+  { id: 'nav-results-promotions', title: 'Student Class Promotions', subtitle: 'Year-End Class Advancement & Rollover', category: 'page', href: '/results/promotions', keywords: ['promotions', 'advancement', 'pass'] },
+  { id: 'nav-results-rankings', title: 'Class Rankings & Merit List', subtitle: 'Top Performers & Honor Roll', category: 'page', href: '/results/rankings', keywords: ['rankings', 'merit', 'honor', 'top'] },
+
+  // Finance ERP Suite
+  { id: 'nav-finance-main', title: 'Finance Executive Dashboard', subtitle: 'Treasury, Revenue, Expenses & Ledger Overview', category: 'page', href: '/finance', keywords: ['finance', 'billing', 'money', 'treasury', 'revenue', 'accounting'] },
+  { id: 'nav-finance-invoices', title: 'Student Invoices', subtitle: 'Tuition Fee Invoices & Payment Demands', category: 'page', href: '/finance/billing/invoices', keywords: ['invoices', 'tuition', 'bills', 'fees'] },
+  { id: 'nav-finance-payments', title: 'Multi-Method Cashier POS', subtitle: 'Cash, Mobile Money & Card Payment Desk', category: 'page', href: '/finance/billing/payments', keywords: ['payments', 'cashier', 'pos', 'receipts', 'billing'] },
+  { id: 'nav-finance-statements', title: 'Student Financial Statements', subtitle: 'Running Account Ledgers & Statements', category: 'page', href: '/finance/billing/statements', keywords: ['statements', 'ledger', 'balance', 'dues'] },
+  { id: 'nav-finance-fee-structures', title: 'Fee Structures', subtitle: 'Academic Fee Rates & Billing Templates', category: 'page', href: '/finance/billing/structures', keywords: ['fees', 'structures', 'rates', 'pricing'] },
+  { id: 'nav-finance-installments', title: 'Installment Plans', subtitle: 'Deferred Tuition Payment Schedules', category: 'page', href: '/finance/billing/installments', keywords: ['installments', 'plans', 'payment-plan'] },
+  { id: 'nav-finance-scholarships', title: 'Scholarships & Aid', subtitle: 'Waqf Grants, Financial Aid & Waivers', category: 'page', href: '/finance/billing/scholarships', keywords: ['scholarships', 'aid', 'waqf', 'grants', 'bursary'] },
+  { id: 'nav-finance-payroll', title: 'Staff Payroll Runs', subtitle: 'Faculty & Worker Monthly Compensation', category: 'page', href: '/finance/payroll', keywords: ['payroll', 'salaries', 'wages', 'compensation', 'pay'] },
+  { id: 'nav-finance-payroll-approvals', title: 'Payroll Approvals', subtitle: 'Executive Payout Authorization Desk', category: 'page', href: '/finance/payroll/approvals', keywords: ['approvals', 'payroll', 'authorize', 'payout'] },
+  { id: 'nav-finance-expenses', title: 'Expense Requisitions', subtitle: 'Campus Operations & Utility Expenses', category: 'page', href: '/finance/expenses', keywords: ['expenses', 'requisitions', 'vendor', 'bills'] },
+  { id: 'nav-finance-budget', title: 'Department Budgets', subtitle: 'Annual Department Allocation & Spending', category: 'page', href: '/finance/budget', keywords: ['budgets', 'allocation', 'forecast'] },
+  { id: 'nav-finance-donations', title: 'Donation Campaigns & Waqf', subtitle: 'Charitable Contributions & Endowment', category: 'page', href: '/finance/donations', keywords: ['donations', 'waqf', 'charity', 'endowment'] },
+  { id: 'nav-finance-reports', title: 'Financial Statements & Reports', subtitle: 'Income Statement & Balance Sheet Reports', category: 'page', href: '/finance/reports', keywords: ['reports', 'balance-sheet', 'income-statement', 'pnl'] },
+  { id: 'nav-finance-chart', title: 'Chart of Accounts', subtitle: 'GL Account Codes & Accounting Categories', category: 'page', href: '/finance/accounting/chart', keywords: ['chart', 'accounts', 'gl', 'ledger-codes'] },
+  { id: 'nav-finance-journals', title: 'Double-Entry Journals', subtitle: 'General Journal Vouchers & Accounting Entries', category: 'page', href: '/finance/accounting/journals', keywords: ['journals', 'entries', 'vouchers', 'double-entry'] },
+
+  // System Administration & Settings
+  { id: 'nav-users', title: 'User Account Management', subtitle: 'User Accounts, Roles & Password Resets', category: 'page', href: '/users', keywords: ['users', 'accounts', 'roles', 'login', 'passwords'] },
+  { id: 'nav-settings', title: 'System Settings', subtitle: 'Platform Configuration & Preferences', category: 'page', href: '/settings', keywords: ['settings', 'config', 'preferences'] },
+  { id: 'nav-roles', title: 'Roles & Permissions', subtitle: 'RBAC Access Control & Module Policies', category: 'page', href: '/settings/roles', keywords: ['roles', 'permissions', 'rbac', 'security'] },
+  { id: 'nav-audit-logs', title: 'System Audit Trail', subtitle: 'Security & Activity Logs', category: 'page', href: '/audit-logs', keywords: ['audit', 'logs', 'security', 'history'] },
+  { id: 'nav-notifications', title: 'Notifications Center', subtitle: 'Alerts, Broadcasts & Reminders', category: 'page', href: '/notifications', keywords: ['notifications', 'alerts', 'announcements'] },
+  { id: 'nav-profile', title: 'User Profile', subtitle: 'Personal Account Information & Credentials', category: 'page', href: '/profile', keywords: ['profile', 'account', 'password', 'me'] },
+];
 
 export function GlobalSearch() {
   const [isOpen, setIsOpen] = useState(false);
@@ -28,7 +123,7 @@ export function GlobalSearch() {
   const [selectedIndex, setSelectedIndex] = useState(0);
 
   const router = useRouter();
-  const { can, userRole } = usePermissions();
+  const { userRole } = usePermissions();
 
   // Keyboard shortcut Ctrl+K / Cmd+K
   useEffect(() => {
@@ -45,7 +140,7 @@ export function GlobalSearch() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen]);
 
-  // Perform search across Strapi endpoints based on permissions
+  // Perform multi-source search (Page index + Live ERP Database API records)
   useEffect(() => {
     if (!query.trim() || query.trim().length < 2) {
       setResults([]);
@@ -56,98 +151,145 @@ export function GlobalSearch() {
     const timer = setTimeout(async () => {
       setIsLoading(true);
       const searchResults: SearchResultItem[] = [];
-      const q = encodeURIComponent(query.trim());
+      const rawQ = query.trim().toLowerCase();
 
+      // 1. Search System Navigation Pages & Sidebar Items First
+      const matchedPages = SYSTEM_NAVIGATION_PAGES.filter(page => {
+        const titleMatch = page.title.toLowerCase().includes(rawQ);
+        const subMatch = page.subtitle?.toLowerCase().includes(rawQ);
+        const kwMatch = page.keywords?.some(k => k.toLowerCase().includes(rawQ));
+        return titleMatch || subMatch || kwMatch;
+      });
+
+      searchResults.push(...matchedPages);
+
+      // 2. Fetch Database Entities in parallel via erpService & financeService
       try {
-        // 1. Students (if permitted or if self/parent)
-        if (userRole === 'super-administrator' || userRole === 'director' || userRole === 'teacher' || (typeof can === 'object' && (can as any)?.manageUsers)) {
-          try {
-            const res = await apiClient.get(`/students?filters[$or][0][firstName][$contains]=${q}&filters[$or][1][lastName][$contains]=${q}&filters[$or][2][admissionNumber][$contains]=${q}&pagination[limit]=5`);
-            const data = res.data?.data || [];
-            data.forEach((item: any) => {
+        const [studentsRes, teachersRes, workersRes, parentsRes, invoicesRes, receiptsRes] = await Promise.allSettled([
+          erpService.getStudents(),
+          erpService.getTeachers(),
+          erpService.getWorkers(),
+          erpService.getParents(),
+          financeService.getInvoices(),
+          financeService.getReceipts(),
+        ]);
+
+        // Process Students
+        if (studentsRes.status === 'fulfilled') {
+          const list = studentsRes.value.data || [];
+          list.forEach((s: any) => {
+            const name = s.name || `${s.firstName || ''} ${s.lastName || ''}`.trim();
+            const sid = s.schoolId || s.studentId || s.admissionNumber || '';
+            if (name.toLowerCase().includes(rawQ) || sid.toLowerCase().includes(rawQ)) {
               searchResults.push({
-                id: `student-${item.id}`,
-                title: `${item.firstName || ''} ${item.lastName || ''}`.trim() || `Student #${item.id}`,
-                subtitle: item.admissionNumber ? `Adm: ${item.admissionNumber}` : 'Student Profile',
+                id: `student-${s.id}`,
+                title: name || `Student #${s.id}`,
+                subtitle: `Student ID: ${sid || 'N/A'} • Section: ${s.sections?.[0]?.sectionCode || 'Assigned'}`,
                 category: 'student',
-                href: `/students/${item.id}`,
+                href: `/students/${s.id}`,
               });
-            });
-          } catch (e) { /* ignore if not permitted */ }
+            }
+          });
         }
 
-        // 2. Teachers (if permitted)
-        if (userRole === 'super-administrator' || userRole === 'director' || (typeof can === 'object' && (can as any)?.manageUsers)) {
-          try {
-            const res = await apiClient.get(`/teachers?filters[$or][0][firstName][$contains]=${q}&filters[$or][1][lastName][$contains]=${q}&filters[$or][2][employeeId][$contains]=${q}&pagination[limit]=5`);
-            const data = res.data?.data || [];
-            data.forEach((item: any) => {
+        // Process Teachers & Faculty
+        if (teachersRes.status === 'fulfilled') {
+          const list = teachersRes.value.data || [];
+          list.forEach((t: any) => {
+            const name = t.name || `${t.firstName || ''} ${t.lastName || ''}`.trim();
+            const tid = t.schoolId || t.teacherId || t.employeeId || '';
+            if (name.toLowerCase().includes(rawQ) || tid.toLowerCase().includes(rawQ)) {
               searchResults.push({
-                id: `teacher-${item.id}`,
-                title: `${item.firstName || ''} ${item.lastName || ''}`.trim() || `Teacher #${item.id}`,
-                subtitle: item.employeeId ? `ID: ${item.employeeId}` : 'Faculty Member',
+                id: `teacher-${t.id}`,
+                title: name || `Faculty #${t.id}`,
+                subtitle: `Staff ID: ${tid || 'N/A'} • Role: ${t.specializations || t.role || 'Faculty'}`,
                 category: 'teacher',
-                href: `/teachers/${item.id}`,
+                href: `/teachers`,
               });
-            });
-          } catch (e) { /* ignore */ }
+            }
+          });
         }
 
-        // 3. Subjects / Curriculum
-        try {
-          const res = await apiClient.get(`/subjects?filters[name][$contains]=${q}&pagination[limit]=5`);
-          const data = res.data?.data || [];
-          data.forEach((item: any) => {
-            searchResults.push({
-              id: `subject-${item.id}`,
-              title: item.name || `Subject #${item.id}`,
-              subtitle: item.code ? `Code: ${item.code}` : 'Academic Subject',
-              category: 'subject',
-              href: `/lms/subjects`,
-            });
-          });
-        } catch (e) { /* ignore */ }
-
-        // 4. Homework / Assessments
-        try {
-          const res = await apiClient.get(`/homeworks?filters[title][$contains]=${q}&pagination[limit]=5`);
-          const data = res.data?.data || [];
-          data.forEach((item: any) => {
-            searchResults.push({
-              id: `homework-${item.id}`,
-              title: item.title || `Homework #${item.id}`,
-              subtitle: item.dueDate ? `Due: ${new Date(item.dueDate).toLocaleDateString()}` : 'Assignment',
-              category: 'homework',
-              href: `/lms/homework`,
-            });
-          });
-        } catch (e) { /* ignore */ }
-
-        // 5. Finance (if Accountant, Lead, or Super Admin)
-        if (userRole === 'super-administrator' || userRole === 'accountant' || userRole === 'account-lead') {
-          try {
-            const res = await apiClient.get(`/donation-campaigns?filters[title][$contains]=${q}&pagination[limit]=5`);
-            const data = res.data?.data || [];
-            data.forEach((item: any) => {
+        // Process Non-Teaching Workers
+        if (workersRes.status === 'fulfilled') {
+          const list = workersRes.value.data || [];
+          list.forEach((w: any) => {
+            const name = w.name || `${w.firstName || ''} ${w.lastName || ''}`.trim();
+            const wid = w.schoolId || w.workerId || w.employeeId || '';
+            if (name.toLowerCase().includes(rawQ) || wid.toLowerCase().includes(rawQ)) {
               searchResults.push({
-                id: `finance-${item.id}`,
-                title: item.title || `Donation Campaign #${item.id}`,
-                subtitle: `Target: ₦${Number(item.targetAmount || 0).toLocaleString()}`,
-                category: 'finance',
-                href: `/finance/donations`,
+                id: `worker-${w.id}`,
+                title: name || `Worker #${w.id}`,
+                subtitle: `Worker ID: ${wid || 'N/A'} • ${w.role || 'Support Staff'}`,
+                category: 'worker',
+                href: `/workers`,
               });
-            });
-          } catch (e) { /* ignore */ }
+            }
+          });
         }
 
-        setResults(searchResults);
-        setSelectedIndex(0);
+        // Process Parents
+        if (parentsRes.status === 'fulfilled') {
+          const list = parentsRes.value.data || [];
+          list.forEach((p: any) => {
+            const name = p.name || `${p.firstName || ''} ${p.lastName || ''}`.trim();
+            const pid = p.parentId || p.schoolId || '';
+            if (name.toLowerCase().includes(rawQ) || pid.toLowerCase().includes(rawQ)) {
+              searchResults.push({
+                id: `parent-${p.id}`,
+                title: name || `Parent #${p.id}`,
+                subtitle: `Parent ID: ${pid || 'N/A'} • Children: ${p.children?.length || 0}`,
+                category: 'parent',
+                href: `/parents`,
+              });
+            }
+          });
+        }
+
+        // Process Invoices
+        if (invoicesRes.status === 'fulfilled') {
+          const list = invoicesRes.value || [];
+          list.forEach((inv: any) => {
+            const invNum = inv.invoiceNumber || '';
+            const stName = inv.student?.name || inv.studentName || '';
+            if (invNum.toLowerCase().includes(rawQ) || stName.toLowerCase().includes(rawQ)) {
+              searchResults.push({
+                id: `invoice-${inv.id}`,
+                title: `Invoice ${invNum || '#' + inv.id}`,
+                subtitle: `Student: ${stName} • Amount: $${Number(inv.totalAmount || 0).toFixed(2)}`,
+                category: 'finance',
+                href: `/finance/billing/invoices`,
+              });
+            }
+          });
+        }
+
+        // Process Receipts
+        if (receiptsRes.status === 'fulfilled') {
+          const list = receiptsRes.value || [];
+          list.forEach((rec: any) => {
+            const recNum = rec.receiptNumber || '';
+            const stName = rec.student?.name || rec.studentName || '';
+            if (recNum.toLowerCase().includes(rawQ) || stName.toLowerCase().includes(rawQ)) {
+              searchResults.push({
+                id: `receipt-${rec.id}`,
+                title: `Receipt ${recNum || '#' + rec.id}`,
+                subtitle: `Paid By: ${stName} • Amount: $${Number(rec.paymentAmount || 0).toFixed(2)}`,
+                category: 'finance',
+                href: `/finance/billing/payments`,
+              });
+            }
+          });
+        }
+
       } catch (err) {
-        console.error('Global search error:', err);
-      } finally {
-        setIsLoading(false);
+        console.warn('Global Search API fetch warning:', err);
       }
-    }, 300);
+
+      setResults(searchResults.slice(0, 20)); // Limit to top 20 relevant items
+      setSelectedIndex(0);
+      setIsLoading(false);
+    }, 250);
 
     return () => clearTimeout(timer);
   }, [query, userRole]);
@@ -179,12 +321,14 @@ export function GlobalSearch() {
 
   const getIcon = (category: SearchResultItem['category']) => {
     switch (category) {
-      case 'student': return <GraduationCap className="w-4 h-4 text-emerald-500" />;
-      case 'teacher': return <UserCheck className="w-4 h-4 text-amber-500" />;
-      case 'parent': return <Heart className="w-4 h-4 text-rose-500" />;
-      case 'subject': return <BookOpen className="w-4 h-4 text-sky-500" />;
-      case 'homework': return <FileText className="w-4 h-4 text-violet-500" />;
-      case 'finance': return <DollarSign className="w-4 h-4 text-emerald-600" />;
+      case 'page': return <LayoutGrid className="w-4 h-4 text-sky-400" />;
+      case 'student': return <GraduationCap className="w-4 h-4 text-emerald-400" />;
+      case 'teacher': return <UserCheck className="w-4 h-4 text-amber-400" />;
+      case 'worker': return <Clipboard className="w-4 h-4 text-indigo-400" />;
+      case 'parent': return <Heart className="w-4 h-4 text-rose-400" />;
+      case 'subject': return <BookOpen className="w-4 h-4 text-cyan-400" />;
+      case 'homework': return <FileText className="w-4 h-4 text-violet-400" />;
+      case 'finance': return <DollarSign className="w-4 h-4 text-emerald-500" />;
       default: return <Search className="w-4 h-4 text-primary" />;
     }
   };
@@ -194,45 +338,45 @@ export function GlobalSearch() {
       {/* Trigger Button */}
       <button
         onClick={() => setIsOpen(true)}
-        className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-border bg-muted/40 hover:bg-muted text-xs text-muted-foreground hover:text-foreground transition-colors w-full max-w-xs justify-between group"
+        className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-border bg-muted/40 hover:bg-muted text-xs text-muted-foreground hover:text-foreground transition-all w-full max-w-xs justify-between group shadow-sm"
       >
         <div className="flex items-center gap-2 truncate">
-          <Search className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
-          <span>Search ERP, LMS, QMS...</span>
+          <Search className="w-3.5 h-3.5 text-muted-foreground group-hover:text-emerald-400 transition-colors" />
+          <span className="font-medium">Search Pages, Students, Staff, Fees...</span>
         </div>
-        <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-semibold bg-background border border-border rounded shadow-sm text-muted-foreground">
-          <span className="text-xs">⌘</span>K
+        <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-mono font-bold bg-background border border-border rounded shadow-sm text-muted-foreground">
+          ⌘K
         </kbd>
       </button>
 
       {/* Modal / Dialog */}
       <AnimatePresence>
         {isOpen && (
-          <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 px-4">
+          <div className="fixed inset-0 z-50 flex items-start justify-center pt-16 px-4">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsOpen(false)}
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+              className="fixed inset-0 bg-black/75 backdrop-blur-md"
             />
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: -10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: -10 }}
               transition={{ duration: 0.15 }}
-              className="relative w-full max-w-2xl bg-card border border-border rounded-2xl shadow-2xl overflow-hidden z-10 flex flex-col max-h-[80vh]"
+              className="relative w-full max-w-2xl bg-card border border-border rounded-3xl shadow-2xl overflow-hidden z-10 flex flex-col max-h-[82vh]"
             >
-              {/* Search Bar */}
-              <div className="flex items-center px-4 py-3.5 border-b border-border bg-muted/20">
-                <Search className="w-5 h-5 text-primary mr-3 flex-shrink-0" />
+              {/* Search Input Bar */}
+              <div className="flex items-center px-4 py-3.5 border-b border-border bg-slate-900/50">
+                <Search className="w-5 h-5 text-emerald-400 mr-3 flex-shrink-0" />
                 <input
                   type="text"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search students, teachers, homework, fees, classes..."
+                  placeholder="Search system pages, students, staff, invoices, payroll..."
                   autoFocus
-                  className="w-full bg-transparent text-sm font-medium text-foreground placeholder:text-muted-foreground focus:outline-none"
+                  className="w-full bg-transparent text-sm font-semibold text-foreground placeholder:text-muted-foreground focus:outline-none"
                 />
                 {query && (
                   <button
@@ -242,40 +386,42 @@ export function GlobalSearch() {
                     <X className="w-4 h-4" />
                   </button>
                 )}
-                {isLoading && <Loader2 className="w-4 h-4 animate-spin text-primary ml-2" />}
+                {isLoading && <Loader2 className="w-4 h-4 animate-spin text-emerald-400 ml-2" />}
               </div>
 
               {/* Results List */}
-              <div className="flex-1 overflow-y-auto p-2 space-y-1">
+              <div className="flex-1 overflow-y-auto p-2.5 space-y-1">
                 {results.length > 0 ? (
                   results.map((item, index) => (
                     <button
-                      key={item.id}
+                      key={`${item.category}-${item.id}`}
                       onClick={() => handleSelect(item)}
                       onMouseEnter={() => setSelectedIndex(index)}
                       className={cn(
-                        'w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-left transition-colors',
+                        'w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-left transition-all',
                         index === selectedIndex
-                          ? 'bg-primary text-primary-foreground shadow-md shadow-primary/10'
-                          : 'hover:bg-muted/50 text-foreground'
+                          ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20 font-bold'
+                          : 'hover:bg-muted/60 text-foreground'
                       )}
                     >
                       <div className="flex items-center gap-3 min-w-0 flex-1">
                         <div
                           className={cn(
-                            'w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0',
-                            index === selectedIndex ? 'bg-primary-foreground/20' : 'bg-muted'
+                            'w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 border',
+                            index === selectedIndex
+                              ? 'bg-white/20 border-white/30 text-white'
+                              : 'bg-muted/80 border-border'
                           )}
                         >
                           {getIcon(item.category)}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="text-sm font-semibold truncate">{item.title}</p>
+                          <p className="text-xs font-extrabold truncate">{item.title}</p>
                           {item.subtitle && (
                             <p
                               className={cn(
-                                'text-xs truncate',
-                                index === selectedIndex ? 'text-primary-foreground/80' : 'text-muted-foreground'
+                                'text-[11px] truncate mt-0.5 font-medium',
+                                index === selectedIndex ? 'text-emerald-100' : 'text-muted-foreground'
                               )}
                             >
                               {item.subtitle}
@@ -286,36 +432,39 @@ export function GlobalSearch() {
                       <div className="flex items-center gap-2 ml-3 flex-shrink-0">
                         <span
                           className={cn(
-                            'text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md',
+                            'text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md border',
                             index === selectedIndex
-                              ? 'bg-primary-foreground/20 text-primary-foreground'
-                              : 'bg-muted text-muted-foreground'
+                              ? 'bg-white/20 text-white border-white/30'
+                              : 'bg-muted text-muted-foreground border-border'
                           )}
                         >
                           {item.category}
                         </span>
-                        <ArrowRight className="w-4 h-4 opacity-70" />
+                        <ArrowRight className="w-4 h-4 opacity-80" />
                       </div>
                     </button>
                   ))
                 ) : query.trim().length >= 2 && !isLoading ? (
-                  <div className="py-12 text-center text-muted-foreground">
-                    <Layers className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                    <p className="text-sm font-medium">No results found for &ldquo;{query}&rdquo;</p>
-                    <p className="text-xs mt-0.5">Try searching with a different term or student ID.</p>
+                  <div className="py-12 text-center text-muted-foreground space-y-2">
+                    <Layers className="w-8 h-8 mx-auto opacity-30 text-emerald-400" />
+                    <p className="text-sm font-bold text-foreground">No matches found for &ldquo;{query}&rdquo;</p>
+                    <p className="text-xs text-muted-foreground">Try searching for a page name (e.g. Payroll, Invoices, Students, Qur an, Attendance) or ID.</p>
                   </div>
                 ) : (
-                  <div className="py-8 px-4 text-center">
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                      Quick Search Suggestions
+                  <div className="py-6 px-4 text-center space-y-3">
+                    <p className="text-[11px] font-extrabold text-emerald-400 uppercase tracking-widest">
+                      Quick Access System Shortcuts
                     </p>
                     <div className="flex flex-wrap justify-center gap-2">
                       {[
-                        { label: 'Students Directory', href: '/students' },
-                        { label: 'Timetables & Classes', href: '/lms/timetables' },
-                        { label: 'Attendance Records', href: '/lms/attendance' },
-                        { label: "Qur'an Programs", href: '/qms/programs' },
-                        { label: 'Fee Collections', href: '/finance' },
+                        { label: '🎓 Students', href: '/students' },
+                        { label: '👨‍🏫 Teachers', href: '/teachers' },
+                        { label: '💰 Staff Payroll', href: '/finance/payroll' },
+                        { label: '📄 Student Invoices', href: '/finance/billing/invoices' },
+                        { label: '📝 Marks Entry', href: '/assessment/marks-entry' },
+                        { label: '📖 Qur\'an Programs', href: '/qms/programs' },
+                        { label: '📊 Financial Statements', href: '/finance/billing/statements' },
+                        { label: '⚙️ System Users', href: '/users' },
                       ].map((s) => (
                         <button
                           key={s.label}
@@ -323,7 +472,7 @@ export function GlobalSearch() {
                             setIsOpen(false);
                             router.push(s.href);
                           }}
-                          className="px-3 py-1.5 rounded-xl border border-border bg-card hover:bg-muted text-xs font-medium text-foreground transition-colors shadow-sm"
+                          className="px-3 py-1.5 rounded-xl border border-border bg-card hover:bg-emerald-950/60 hover:border-emerald-600 text-xs font-bold text-foreground transition-all shadow-sm"
                         >
                           {s.label}
                         </button>
@@ -334,12 +483,12 @@ export function GlobalSearch() {
               </div>
 
               {/* Footer */}
-              <div className="px-4 py-2.5 border-t border-border bg-muted/30 flex items-center justify-between text-xs text-muted-foreground">
+              <div className="px-4 py-2.5 border-t border-border bg-muted/30 flex items-center justify-between text-[11px] text-muted-foreground font-mono">
                 <div className="flex items-center gap-3">
-                  <span><kbd className="px-1 py-0.5 bg-background border border-border rounded">↑</kbd> <kbd className="px-1 py-0.5 bg-background border border-border rounded">↓</kbd> to navigate</span>
-                  <span><kbd className="px-1 py-0.5 bg-background border border-border rounded">Enter</kbd> to select</span>
+                  <span><kbd className="px-1.5 py-0.5 bg-background border border-border rounded font-bold">↑</kbd> <kbd className="px-1.5 py-0.5 bg-background border border-border rounded font-bold">↓</kbd> navigate</span>
+                  <span><kbd className="px-1.5 py-0.5 bg-background border border-border rounded font-bold">Enter</kbd> select</span>
                 </div>
-                <span>Respects your role permissions</span>
+                <span>YAHAYASCOOL Universal Search</span>
               </div>
             </motion.div>
           </div>

@@ -4,12 +4,21 @@
  * CRITICAL: All DB updates run SYNCHRONOUSLY inside afterCreate (no process.nextTick).
  * This ensures invoice balances and student advance wallet are updated BEFORE
  * Strapi returns the HTTP response, so the frontend re-fetch always sees fresh data.
- *
- * Overpayment Logic:
- *   - If paymentAmount > invoice remainingBalance → excess goes to student.advanceBalance
- *   - If no invoice linked → entire amount goes to student.advanceBalance as advance credit
- *   - Advance wallet can be applied to future invoices by the cashier
  */
+
+function extractPrimitiveIdOrDoc(val: any): string | number | null {
+  if (val === null || val === undefined) return null;
+  if (typeof val === 'number') return val;
+  if (typeof val === 'string' && val.trim() !== '') return val;
+  if (typeof val === 'object') {
+    if (val.documentId && typeof val.documentId === 'string') return val.documentId;
+    if (val.id && (typeof val.id === 'number' || typeof val.id === 'string')) return val.id;
+    if (Array.isArray(val.set) && val.set.length > 0) return extractPrimitiveIdOrDoc(val.set[0]);
+    if (Array.isArray(val.connect) && val.connect.length > 0) return extractPrimitiveIdOrDoc(val.connect[0]);
+    if (Array.isArray(val) && val.length > 0) return extractPrimitiveIdOrDoc(val[0]);
+  }
+  return null;
+}
 
 export default {
   async afterCreate(event: any) {
@@ -24,186 +33,184 @@ export default {
       return;
     }
 
-    // Run synchronously — do NOT use process.nextTick so the invoice is updated
-    // before the frontend re-fetches data
     try {
-      const paymentAmount = Number(result.paymentAmount || rawData.paymentAmount || 0);
+      const paymentAmount = Number(result.paymentAmount || rawData.paymentAmount || result.amount || 0);
       const baseAmount = Number(result.baseAmount || rawData.baseAmount || paymentAmount);
       const exchangeRate = Number(result.exchangeRateToInvoice || rawData.exchangeRateToInvoice || 1);
 
       if (paymentAmount <= 0) return;
 
-      // ──────────────────────────────────────────────────────────────────────
-      // 1. Resolve Student ID
-      // ──────────────────────────────────────────────────────────────────────
-      const studentId =
-        rawData.student ||
-        (result.student
-          ? typeof result.student === 'object'
-            ? result.student.id
-            : result.student
-          : null);
-
-      // ──────────────────────────────────────────────────────────────────────
-      // 2. Resolve Invoice — calculate how much covers the invoice vs goes to wallet
-      // ──────────────────────────────────────────────────────────────────────
-      const invoiceIdOrDoc =
-        rawData.invoice ||
-        (result.invoice
-          ? typeof result.invoice === 'object'
-            ? result.invoice.documentId || result.invoice.id
-            : result.invoice
-          : null);
-
-      let amountCoveringInvoice = 0; // amount used to settle invoice (in invoice currency)
-      let overpaymentInPayCurrency = 0; // excess amount in payment currency → goes to wallet
-      let invoiceDocumentId: string | null = null;
-
-      if (invoiceIdOrDoc) {
-        try {
-          const queryField =
-            typeof invoiceIdOrDoc === 'number' || !isNaN(Number(invoiceIdOrDoc))
-              ? 'id'
-              : 'documentId';
-
-          const invoice = await strapi.db
-            .query('api::finance-invoice.finance-invoice')
-            .findOne({
-              where:
-                queryField === 'id'
-                  ? { id: Number(invoiceIdOrDoc) }
-                  : { documentId: String(invoiceIdOrDoc) },
+      // 1. Resolve Student
+      const rawStudent = rawData.student || result.student;
+      const studentRef = extractPrimitiveIdOrDoc(rawStudent);
+      let student: any = null;
+      if (studentRef) {
+        const isNumeric = typeof studentRef === 'number' || (!isNaN(Number(studentRef)) && String(Number(studentRef)) === String(studentRef));
+        if (isNumeric) {
+          student = await strapi.db.query('api::student.student').findOne({
+            where: { id: Number(studentRef) },
+          });
+        } else {
+          student = await strapi.db.query('api::student.student').findOne({
+            where: { documentId: String(studentRef) },
+          });
+          if (!student) {
+            student = await strapi.db.query('api::student.student').findOne({
+              where: { schoolId: String(studentRef) },
             });
-
-          if (invoice) {
-            const invoiceId = (invoice as any).id;  // numeric ID — required by db.query().update()
-            invoiceDocumentId = (invoice as any).documentId;
-
-            const totalAmount = Number((invoice as any).totalAmount || 0);
-            const alreadyPaid = Number((invoice as any).paidAmount || 0);
-            const currentRemaining = Math.max(0, totalAmount - alreadyPaid);
-
-            // Payment in invoice currency (apply exchange rate if different currency)
-            const paymentInInvoiceCurrency = paymentAmount * exchangeRate;
-
-            if (paymentInInvoiceCurrency >= currentRemaining) {
-              // Overpayment or exact payment
-              amountCoveringInvoice = currentRemaining;
-              // Overpayment in payment currency (convert back from invoice currency)
-              const overpaymentInInvoiceCurrency = paymentInInvoiceCurrency - currentRemaining;
-              overpaymentInPayCurrency =
-                exchangeRate > 0 ? overpaymentInInvoiceCurrency / exchangeRate : overpaymentInInvoiceCurrency;
-            } else {
-              // Partial payment
-              amountCoveringInvoice = paymentInInvoiceCurrency;
-              overpaymentInPayCurrency = 0;
-            }
-
-            const newPaidAmount = alreadyPaid + amountCoveringInvoice;
-            const newRemainingBalance = Math.max(0, totalAmount - newPaidAmount);
-
-            let newStatus = (invoice as any).status;
-            if (newRemainingBalance <= 0) {
-              newStatus = 'paid';
-            } else if (newPaidAmount > 0) {
-              newStatus = 'partially_paid';
-            }
-
-            // CRITICAL FIX: db.query().update() requires numeric {id} not {documentId}
-            await strapi.db.query('api::finance-invoice.finance-invoice').update({
-              where: { id: invoiceId },
-              data: {
-                paidAmount: newPaidAmount,
-                remainingBalance: newRemainingBalance,
-                status: newStatus as any,
-              },
-            });
-
-            strapi.log.info(
-              `[Receipt Lifecycle] Invoice ${(invoice as any).invoiceNumber} (id=${invoiceId}) updated: paid=${newPaidAmount}, remaining=${newRemainingBalance}, status=${newStatus}`
-            );
           }
+        }
+      }
+
+      const studentId = student ? student.id : null;
+
+      // 2. Resolve Invoice
+      const rawInvoice = rawData.invoice || result.invoice;
+      const invoiceRef = extractPrimitiveIdOrDoc(rawInvoice);
+      let invoice: any = null;
+      if (invoiceRef) {
+        const isNumeric = typeof invoiceRef === 'number' || (!isNaN(Number(invoiceRef)) && String(Number(invoiceRef)) === String(invoiceRef));
+        if (isNumeric) {
+          invoice = await strapi.db.query('api::finance-invoice.finance-invoice').findOne({
+            where: { id: Number(invoiceRef) },
+          });
+        } else {
+          invoice = await strapi.db.query('api::finance-invoice.finance-invoice').findOne({
+            where: { documentId: String(invoiceRef) },
+          });
+          if (!invoice) {
+            invoice = await strapi.db.query('api::finance-invoice.finance-invoice').findOne({
+              where: { invoiceNumber: String(invoiceRef) },
+            });
+          }
+        }
+      }
+
+      // 3. Link student and invoice to the receipt document if missing
+      if (result.id && (invoice || student)) {
+        try {
+          const receiptUpdate: any = {};
+          if (invoice) receiptUpdate.invoice = invoice.id;
+          if (student) receiptUpdate.student = student.id;
+          await strapi.db.query('api::finance-receipt.finance-receipt').update({
+            where: { id: result.id },
+            data: receiptUpdate,
+          });
         } catch (err: any) {
-          require('fs').appendFileSync('C:\\\\Users\\\\pc\\\\YAHAYASCHOOL\\\\strapicms\\\\invoice-error.log', `[Receipt Lifecycle] Failed to update invoice: ${err?.message || JSON.stringify(err)}\n`);
+          strapi.log.warn('[Receipt Lifecycle] Failed linking receipt relations:', err?.message || err);
+        }
+      }
+
+      let amountCoveringInvoice = 0;
+      let overpaymentInPayCurrency = 0;
+
+      if (invoice) {
+        try {
+          const invoiceId = invoice.id;
+          const totalAmount = Number(invoice.totalAmount || 0);
+          const alreadyPaid = Number(invoice.paidAmount || 0);
+          const currentRemaining = Math.max(0, totalAmount - alreadyPaid);
+
+          const paymentInInvoiceCurrency = paymentAmount * exchangeRate;
+
+          if (paymentInInvoiceCurrency >= currentRemaining) {
+            amountCoveringInvoice = currentRemaining;
+            const overpaymentInInvoiceCurrency = paymentInInvoiceCurrency - currentRemaining;
+            overpaymentInPayCurrency = exchangeRate > 0 ? overpaymentInInvoiceCurrency / exchangeRate : overpaymentInInvoiceCurrency;
+          } else {
+            amountCoveringInvoice = paymentInInvoiceCurrency;
+            overpaymentInPayCurrency = 0;
+          }
+
+          const newPaidAmount = alreadyPaid + amountCoveringInvoice;
+          const newRemainingBalance = Math.max(0, totalAmount - newPaidAmount);
+
+          let newStatus = invoice.status;
+          if (newRemainingBalance <= 0) {
+            newStatus = 'paid';
+          } else if (newPaidAmount > 0) {
+            newStatus = 'partially_paid';
+          }
+
+          await strapi.db.query('api::finance-invoice.finance-invoice').update({
+            where: { id: invoiceId },
+            data: {
+              paidAmount: newPaidAmount,
+              remainingBalance: newRemainingBalance,
+              status: newStatus as any,
+            },
+          });
+
+          strapi.log.info(
+            `[Receipt Lifecycle] Invoice ${invoice.invoiceNumber} (id=${invoiceId}) updated: paid=${newPaidAmount}, remaining=${newRemainingBalance}, status=${newStatus}`
+          );
+        } catch (err: any) {
           strapi.log.error('[Receipt Lifecycle] Failed to update invoice:', err?.message || err);
         }
       } else {
-        // No invoice — entire payment goes to advance wallet
         overpaymentInPayCurrency = paymentAmount;
       }
 
-      // ──────────────────────────────────────────────────────────────────────
-      // 3. Update Student Advance Wallet (Credit Overpayment or Deduct Usage)
-      // ──────────────────────────────────────────────────────────────────────
+      // 4. Update Student Advance Wallet
       const paymentMethod = result.paymentMethod || rawData.paymentMethod;
       let walletDeduction = 0;
       if (paymentMethod === 'Advance Wallet') {
-        walletDeduction = paymentAmount; // This amount was spent from the wallet
+        walletDeduction = paymentAmount;
       }
 
       const netWalletChange = overpaymentInPayCurrency - walletDeduction;
 
       if (studentId && netWalletChange !== 0) {
         try {
-          const student = await strapi.db.query('api::student.student').findOne({
-            where: { id: Number(studentId) },
+          const currentAdvance = Number(student.advanceBalance || 0);
+          const newAdvance = currentAdvance + netWalletChange;
+
+          await strapi.db.query('api::student.student').update({
+            where: { id: studentId },
+            data: { advanceBalance: newAdvance } as any,
           });
 
-          if (student) {
-            const currentAdvance = Number((student as any).advanceBalance || 0);
-            const newAdvance = currentAdvance + netWalletChange;
+          const txType = netWalletChange > 0 ? 'advance_deposit' : 'wallet_used';
+          const changeAmount = Math.abs(netWalletChange);
+          const lastWalletTx = await strapi.db.query('api::wallet-transaction.wallet-transaction').findOne({
+            where: { student: studentId },
+            orderBy: { transactionDate: 'desc' },
+          }) as any;
+          const prevWalletRunning = lastWalletTx ? Number(lastWalletTx.runningBalance || 0) : 0;
+          const newWalletRunning = prevWalletRunning + netWalletChange;
 
-            await strapi.db.query('api::student.student').update({
-              where: { id: Number(studentId) },
-              data: { advanceBalance: newAdvance } as any,
-            });
+          await strapi.db.query('api::wallet-transaction.wallet-transaction').create({
+            data: {
+              student: studentId,
+              transactionType: txType,
+              amount: changeAmount,
+              runningBalance: newWalletRunning,
+              referenceNumber: result.receiptNumber,
+              user: 'System / Lifecycle',
+              reason: txType === 'advance_deposit' ? 'Excess payment credit to wallet' : 'Wallet used to settle invoice',
+              transactionDate: new Date().toISOString(),
+            },
+          });
 
-            // Create Wallet Transaction Entry
-            const txType = netWalletChange > 0 ? 'advance_deposit' : 'wallet_used';
-            const changeAmount = Math.abs(netWalletChange);
-            const lastWalletTx = await strapi.db.query('api::wallet-transaction.wallet-transaction').findOne({
-              where: { student: Number(studentId) },
-              orderBy: { transactionDate: 'desc' },
-            }) as any;
-            const prevWalletRunning = lastWalletTx ? Number(lastWalletTx.runningBalance || 0) : 0;
-            const newWalletRunning = prevWalletRunning + netWalletChange;
-
-            await strapi.db.query('api::wallet-transaction.wallet-transaction').create({
-              data: {
-                student: Number(studentId),
-                transactionType: txType,
-                amount: changeAmount,
-                runningBalance: newWalletRunning,
-                referenceNumber: result.receiptNumber,
-                user: 'System / Lifecycle',
-                reason: txType === 'advance_deposit' ? 'Excess payment credit to wallet' : 'Wallet used to settle invoice',
-                transactionDate: new Date().toISOString(),
-              },
-            });
-
-            strapi.log.info(
-              `[Receipt Lifecycle] Student ${(student as any).schoolId} advance wallet: ${currentAdvance} → ${newAdvance} (change: ${netWalletChange > 0 ? '+' : ''}${netWalletChange})`
-            );
-          }
+          strapi.log.info(
+            `[Receipt Lifecycle] Student ${student.schoolId} advance wallet: ${currentAdvance} → ${newAdvance} (change: ${netWalletChange > 0 ? '+' : ''}${netWalletChange})`
+          );
         } catch (err: any) {
           strapi.log.error('[Receipt Lifecycle] Failed to update student advance wallet:', err?.message || err);
         }
       }
 
-      // ──────────────────────────────────────────────────────────────────────
-      // 4. Student Ledger Entry (running balance tracks total owed)
-      // ──────────────────────────────────────────────────────────────────────
+      // 5. Student Ledger Entry
       if (studentId) {
         try {
           const lastLedger = await strapi.db
             .query('api::finance-ledger-entry.finance-ledger-entry')
             .findOne({
-              where: { student: Number(studentId) },
+              where: { student: studentId },
               orderBy: { transactionDate: 'desc' },
             });
 
           const prevRunning = lastLedger ? Number((lastLedger as any).runningBalance || 0) : 0;
-          // Running balance: increases with invoices (debits), decreases with receipts/payments (credits)
           const newRunningBalance = prevRunning - baseAmount;
 
           const ledgerType = overpaymentInPayCurrency > 0 && amountCoveringInvoice === 0
@@ -219,7 +226,7 @@ export default {
 
           await strapi.db.query('api::finance-ledger-entry.finance-ledger-entry').create({
             data: {
-              student: Number(studentId),
+              student: studentId,
               documentNumber: result.receiptNumber,
               type: ledgerType,
               description,
@@ -233,9 +240,7 @@ export default {
         }
       }
 
-      // ──────────────────────────────────────────────────────────────────────
-      // 5. Double-Entry Journal (Debit Cash, Credit A/R)
-      // ──────────────────────────────────────────────────────────────────────
+      // 6. Double-Entry Journal
       try {
         const entryNumber = `JRN-${Date.now()}`;
         await strapi.db.query('api::finance-journal-entry.finance-journal-entry').create({
@@ -253,7 +258,6 @@ export default {
           } as any,
         });
       } catch (err: any) {
-        // Journal entry is secondary — log but do not block
         strapi.log.warn('[Receipt Lifecycle] Journal entry failed:', err?.message || err);
       }
     } catch (err: any) {

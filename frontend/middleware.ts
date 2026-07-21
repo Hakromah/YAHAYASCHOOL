@@ -64,7 +64,7 @@ function getJWT(request: NextRequest): string | null {
   return request.cookies.get('jwt')?.value ?? null;
 }
 
-export default function proxy(request: NextRequest) {
+export default function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const jwt = getJWT(request);
   const isAuthenticated = !!jwt;

@@ -137,12 +137,20 @@ function CashierPaymentsContent() {
       return;
     }
 
+    const searchLower = payStudentSearch.toLowerCase().trim();
     const matched = liveStudents.find(s => {
-      const fullName = `${s.firstName || ''} ${s.lastName || ''}`.trim();
-      return (s.name || '').toLowerCase() === payStudentSearch.toLowerCase() ||
-        fullName.toLowerCase() === payStudentSearch.toLowerCase() ||
-        s.studentId === payStudentSearch ||
-        s.schoolId === payStudentSearch;
+      const fullName = `${s.firstName || ''} ${s.middleName || ''} ${s.lastName || ''}`.replace(/\s+/g, ' ').trim().toLowerCase();
+      const firstLast = `${s.firstName || ''} ${s.lastName || ''}`.trim().toLowerCase();
+      const sId = (s.schoolId || s.studentId || s.admissionNumber || '').toLowerCase();
+      const docId = (s.documentId || '').toLowerCase();
+      return (
+        fullName === searchLower ||
+        firstLast === searchLower ||
+        (s.name || '').toLowerCase() === searchLower ||
+        (sId && searchLower.includes(sId)) ||
+        (docId && searchLower.includes(docId)) ||
+        searchLower.includes(fullName)
+      );
     });
     
     if (matched) {
@@ -159,7 +167,11 @@ function CashierPaymentsContent() {
           : erpService.getStudentAdvanceBalance(matched.id)
       ]).then(([allInvoices, advBal]) => {
         const theirInvoices = allInvoices.filter(i => 
-          (i.student?.id === matched.id || i.studentId === matched.studentId || i.student?.schoolId === matched.schoolId) && i.status !== 'paid'
+          (i.student?.id === matched.id || 
+           i.studentId === matched.studentId || 
+           i.student?.schoolId === matched.schoolId || 
+           i.student?.documentId === matched.documentId ||
+           (matched.schoolId && i.studentName?.includes(matched.schoolId))) && i.status !== 'paid'
         );
         setStudentInvoices(theirInvoices);
         const debt = theirInvoices.reduce((acc, inv) => acc + (inv.remainingBalance ?? (inv.totalAmount || 0)), 0);
@@ -180,7 +192,7 @@ function CashierPaymentsContent() {
   }, [payStudentSearch, liveStudents]);
 
   const targetInvoice = useMemo(() => {
-    return studentInvoices.find(i => i.invoiceNumber === payInvoiceNumber) || null;
+    return studentInvoices.find(i => i.invoiceNumber === payInvoiceNumber || i.documentId === payInvoiceNumber || String(i.id) === payInvoiceNumber) || null;
   }, [payInvoiceNumber, studentInvoices]);
 
   const filteredReceipts = useMemo(() => {
@@ -228,86 +240,38 @@ function CashierPaymentsContent() {
     }
 
     try {
-      // ── COMBINED / WALLET PAYMENT path: use atomic combined-payment endpoint ──
+      const isMobile = payMethod.includes('Money') || payMethod.includes('Wave') || payMethod.includes('Mobile');
+      
+      const data = await financeService.postCombinedPayment({
+        invoiceId: targetInvoice.documentId || targetInvoice.id,
+        walletAmount: walletApplied,
+        cashAmount: payMethod === 'Cash' || payMethod === 'Stripe Card' ? amountNum : 0,
+        bankAmount: payMethod === 'Bank Transfer' ? amountNum : 0,
+        mobileMoneyAmount: isMobile ? amountNum : 0,
+        chequeAmount: payMethod === 'Cheque' ? amountNum : 0,
+        paymentMethod: payMethod,
+        currency: payCurrency,
+      });
+
+      toast.success(`✅ Receipt ${data.receiptNumber} posted successfully!`);
+      
       if (walletApplied > 0) {
-        const { default: axios } = await import('axios');
-        const strapiUrl = process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1339';
-
-        const res = await axios.post(`${strapiUrl}/api/finance-receipts/combined-payment`, {
-          invoiceId: targetInvoice.documentId || targetInvoice.id,
-          walletAmount: walletApplied,
-          cashAmount: amountNum,
-          paymentMethod: payMethod,
-          currency: payCurrency,
-        });
-
-        const data = res.data;
-        toast.success(`✅ Receipt ${data.receiptNumber} posted successfully!`);
-        
-        if (walletApplied > 0) {
-          toast.success(`💰 Applied $${walletApplied.toFixed(2)} from student's Advance Wallet.`);
-        }
-        if (amountNum > 0) {
-          toast.success(`💵 Received $${amountNum.toFixed(2)} via ${payMethod}.`);
-        }
-
-        setAdvancePaymentBalance(Number(data.newAdvanceBalance ?? 0));
-
-        // Re-fetch invoices and load data
-        const allInvoices = await financeService.getInvoices();
-        const theirInvoices = allInvoices.filter(i =>
-          (i.student?.id === selectedStudent.id || i.student?.schoolId === selectedStudent.schoolId) && i.status !== 'paid'
-        );
-        setStudentInvoices(theirInvoices);
-        const newDebt = theirInvoices.reduce((acc, inv) => acc + (inv.remainingBalance ?? (inv.totalAmount || 0)), 0);
-        setTotalDebt(newDebt);
-
-      } else {
-        // ── Standard payment path (no wallet applied) ─────────────────────────
-        const invoiceCurrency = targetInvoice?.invoiceCurrency?.code || 'USD';
-        const rateToInvoice = payCurrency === invoiceCurrency ? 1 : parseFloat(exchangeRate || '1');
-        const amountInInvoiceCurrency = amountNum * rateToInvoice;
-        const overpaymentInPayCurrency = targetInvoice
-          ? Math.max(0, amountInInvoiceCurrency - invoiceRemaining) / rateToInvoice
-          : amountNum;
-
-        const { receipt } = await financeService.postPaymentReceipt({
-          invoice: targetInvoice ? (targetInvoice.documentId || targetInvoice.id as any) : undefined,
-          student: (selectedStudent.documentId || selectedStudent.id) as any,
-          receiptNumber: `RCP-2026-${Math.floor(Math.random() * 100000)}`,
-          paymentAmount: amountNum,
-          exchangeRateToInvoice: rateToInvoice,
-          exchangeRateToBase: payCurrency === 'USD' ? 1 : 1,
-          baseAmount: amountNum,
-          paymentMethod: payMethod as any,
-          providerTransactionId: payReference,
-          paymentDate: new Date().toISOString() as any,
-          status: 'completed' as any
-        });
-
-        toast.success(`✅ Receipt ${receipt.receiptNumber} posted successfully!`);
-
-        if (overpaymentInPayCurrency > 0.005) {
-          toast.success(
-            `💰 $${overpaymentInPayCurrency.toFixed(2)} excess credited to ${selectedStudent.firstName || 'Student'}'s Advance Payment Wallet!`,
-            { duration: 6000 }
-          );
-        }
-
-        // Re-fetch invoices and wallet balance
-        const [allInvoices, newAdvBal] = await Promise.all([
-          financeService.getInvoices(),
-          erpService.getStudentAdvanceBalance(selectedStudent.id)
-        ]);
-
-        const theirInvoices = allInvoices.filter(i =>
-          (i.student?.id === selectedStudent.id || i.student?.schoolId === selectedStudent.schoolId) && i.status !== 'paid'
-        );
-        setStudentInvoices(theirInvoices);
-        const newDebt = theirInvoices.reduce((acc, inv) => acc + (inv.remainingBalance ?? (inv.totalAmount || 0)), 0);
-        setTotalDebt(newDebt);
-        setAdvancePaymentBalance(newAdvBal);
+        toast.success(`💰 Applied $${walletApplied.toFixed(2)} from student's Advance Wallet.`);
       }
+      if (amountNum > 0) {
+        toast.success(`💵 Received $${amountNum.toFixed(2)} via ${payMethod}.`);
+      }
+
+      setAdvancePaymentBalance(Number(data.newAdvanceBalance ?? 0));
+
+      // Re-fetch invoices and load data
+      const allInvoices = await financeService.getInvoices();
+      const theirInvoices = allInvoices.filter(i =>
+        (i.student?.id === selectedStudent.id || i.student?.schoolId === selectedStudent.schoolId) && i.status !== 'paid'
+      );
+      setStudentInvoices(theirInvoices);
+      const newDebt = theirInvoices.reduce((acc, inv) => acc + (inv.remainingBalance ?? (inv.totalAmount || 0)), 0);
+      setTotalDebt(newDebt);
 
       setShowPayModal(false);
       loadData();

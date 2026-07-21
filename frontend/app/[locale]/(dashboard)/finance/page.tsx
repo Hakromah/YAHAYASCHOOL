@@ -3,10 +3,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import {
-  DollarSign, HeartHandshake, Receipt, Wallet, TrendingUp, ArrowRight,
-  Search, Filter, Download, Plus, Eye, CheckCircle2, AlertTriangle,
-  Clock, Shield, FileText, CreditCard, Landmark, Scale, ScrollText,
-  BarChart3, PiggyBank, Coins, Award, Percent, Building2
+  DollarSign, HeartHandshake, Receipt, Wallet, ArrowRight,
+  Plus, Eye, AlertTriangle, Clock, Shield, FileText, CreditCard,
+  Landmark, Scale, ScrollText, BarChart3
 } from 'lucide-react';
 import { financeService } from '@/services/finance.service';
 import type { ExecutiveFinanceStats } from '@/types/finance.types';
@@ -56,14 +55,8 @@ export default function FinanceOverviewPage() {
       const sumInvoiced = allInvoices.reduce((sum, inv) => sum + Number(inv.totalAmount || 0), 0);
       const sumPaid = allInvoices.reduce((sum, inv) => sum + Number(inv.paidAmount || 0), 0);
       const sumRemaining = allInvoices.reduce((sum, inv) => sum + Number(inv.remainingBalance || 0), 0);
-      
-      // Receipts paymentAmount totals include overpayments credited to wallet liabilities.
-      // Real invoice allocated revenue is sumPaid.
       const sumReceiptsAllocated = allReceipts.reduce((sum, rec) => sum + Number(rec.invoiceAllocation || rec.paymentAmount || rec.amount || 0), 0);
-
       const hasNegativeInvoice = allInvoices.some(inv => Number(inv.remainingBalance || 0) < -0.01 || Number(inv.paidAmount || 0) < -0.01);
-      
-      // Invoiced must equal Allocated Paid + Remaining Outstanding
       const invoiceMismatch = Math.abs(sumInvoiced - (sumPaid + sumRemaining)) > 0.01;
 
       if (invoiceMismatch || hasNegativeInvoice) {
@@ -114,7 +107,7 @@ export default function FinanceOverviewPage() {
         value: `$${stats.kpi.totalRevenueYTD.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
         subtitle: `Collection rate: ${stats.kpi.feeCollectionRate}% (${stats.kpi.activeStudentsCount} active scholars)`,
         trendDirection: 'up',
-        icon: <DollarSign className="w-5 h-5" />,
+        icon: <DollarSign className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />,
         isActive: categoryFilter === 'Tuition Receipt',
         onClick: () => {
           setCategoryFilter(categoryFilter === 'Tuition Receipt' ? 'all' : 'Tuition Receipt');
@@ -137,7 +130,7 @@ export default function FinanceOverviewPage() {
         value: `$${stats.kpi.monthlyExpenses.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
         subtitle: `${stats.kpi.pendingApprovalsCount} requisitions awaiting Account Lead review`,
         trendDirection: 'neutral',
-        icon: <Receipt className="w-5 h-5" />,
+        icon: <Receipt className="w-5 h-5 text-rose-500" />,
         isActive: categoryFilter === 'Expense Disbursement',
         onClick: () => {
           setCategoryFilter(categoryFilter === 'Expense Disbursement' ? 'all' : 'Expense Disbursement');
@@ -150,7 +143,7 @@ export default function FinanceOverviewPage() {
         value: `$${stats.kpi.payrollThisMonth.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
         subtitle: '48 Senior Academic Faculty & Imams',
         trendDirection: 'neutral',
-        icon: <Wallet className="w-5 h-5" />,
+        icon: <Wallet className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />,
         isActive: categoryFilter === 'Payroll Payment',
         onClick: () => {
           setCategoryFilter(categoryFilter === 'Payroll Payment' ? 'all' : 'Payroll Payment');
@@ -169,8 +162,8 @@ export default function FinanceOverviewPage() {
           const tx = row.original;
           return (
             <div className="space-y-0.5">
-              <span className="font-mono text-xs font-black text-emerald-400 block">{tx.documentNumber}</span>
-              <p className="font-bold text-white group-hover:text-emerald-300 transition-colors text-xs sm:text-sm max-w-sm truncate">
+              <span className="font-mono text-xs font-bold text-indigo-600 dark:text-indigo-400 block">{tx.documentNumber}</span>
+              <p className="font-bold text-slate-900 dark:text-white group-hover:text-indigo-600 transition-colors text-xs sm:text-sm max-w-sm truncate">
                 {tx.title}
               </p>
             </div>
@@ -181,11 +174,11 @@ export default function FinanceOverviewPage() {
         accessorKey: 'type',
         header: 'Transaction Category',
         cell: ({ row }) => (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-800 border border-slate-700 text-slate-300 text-xs font-medium">
-            {row.original.type === 'Tuition Receipt' && <DollarSign className="w-3.5 h-3.5 text-emerald-400" />}
-            {row.original.type === 'Expense Disbursement' && <Receipt className="w-3.5 h-3.5 text-rose-400" />}
-            {row.original.type === 'Payroll Payment' && <Wallet className="w-3.5 h-3.5 text-amber-400" />}
-            {row.original.type === 'Waqf Donation' && <HeartHandshake className="w-3.5 h-3.5 text-sky-400" />}
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs font-semibold">
+            {row.original.type === 'Tuition Receipt' && <DollarSign className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />}
+            {row.original.type === 'Expense Disbursement' && <Receipt className="w-3.5 h-3.5 text-rose-500" />}
+            {row.original.type === 'Payroll Payment' && <Wallet className="w-3.5 h-3.5 text-amber-500" />}
+            {row.original.type === 'Waqf Donation' && <HeartHandshake className="w-3.5 h-3.5 text-sky-500" />}
             {row.original.type}
           </span>
         )
@@ -194,7 +187,7 @@ export default function FinanceOverviewPage() {
         accessorKey: 'date',
         header: 'Posting Date',
         cell: ({ row }) => (
-          <span className="font-mono text-xs text-slate-300 font-bold block">{row.original.date}</span>
+          <span className="font-mono text-xs text-slate-600 dark:text-slate-400 font-semibold block">{row.original.date}</span>
         )
       },
       {
@@ -204,10 +197,10 @@ export default function FinanceOverviewPage() {
           const tx = row.original;
           const isIncome = tx.amount > 0;
           return (
-            <span className={`font-mono text-xs sm:text-sm font-black ${
-              isIncome ? 'text-emerald-400' : 'text-rose-400'
+            <span className={`font-mono text-xs sm:text-sm font-extrabold ${
+              isIncome ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400'
             }`}>
-              {isIncome ? '+' : ''}${tx.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+              {isIncome ? '+' : ''}${Math.abs(tx.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
             </span>
           );
         }
@@ -219,17 +212,17 @@ export default function FinanceOverviewPage() {
       },
       {
         id: 'actions',
-        header: 'Inspect',
+        header: 'Actions',
         cell: ({ row }) => (
           <button
             onClick={(e) => {
               e.stopPropagation();
               setSelectedRow(row.original);
             }}
-            className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-emerald-600 text-slate-300 hover:text-white font-bold text-xs transition-all border border-slate-700 hover:border-emerald-500 shadow-sm cursor-pointer"
+            className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs transition-all border border-slate-200 dark:border-slate-700 shadow-2xs cursor-pointer"
           >
             <Eye className="w-3.5 h-3.5" />
-            <span>Voucher</span>
+            <span>Inspect</span>
           </button>
         )
       }
@@ -241,7 +234,7 @@ export default function FinanceOverviewPage() {
       title="Executive Finance & Accounting ERP Dashboard"
       description="SAP S/4HANA-grade financial administration with automated double-entry accounting, budget vs. actual analytics, academic year separation, and multi-method treasury control."
       breadcrumbs={[{ label: 'School ERP' }, { label: 'Finance & Accounting Overview' }]}
-      icon={<Landmark className="w-8 h-8" />}
+      icon={<Landmark className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />}
       recordCount={transactions.length}
       recordLabel="Recent Vouchers"
       activeFilterCount={activeFiltersCount}
@@ -249,9 +242,9 @@ export default function FinanceOverviewPage() {
       headerActions={
         <div className="flex items-center gap-2">
           {/* Academic Year Selector */}
-          <div className="flex items-center gap-2 bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-xl">
-            <Clock className="w-4 h-4 text-emerald-400" />
-            <span className="text-xs font-bold text-slate-400">Academic Year:</span>
+          <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3 py-1.5 rounded-lg shadow-2xs">
+            <Clock className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Academic Year:</span>
             <select
               value={academicYear}
               onChange={(e) => {
@@ -259,25 +252,25 @@ export default function FinanceOverviewPage() {
                 toast.info(`Switched financial partition to Academic Year ${e.target.value}`);
               }}
               aria-label="Select Academic Year"
-              className="bg-transparent text-xs font-black text-white focus:outline-none cursor-pointer"
+              className="bg-transparent text-xs font-bold text-slate-900 dark:text-white focus:outline-none cursor-pointer"
             >
-              <option value="2026-2027" className="bg-slate-900">2026-2027 (Active Term)</option>
-              <option value="2025-2026" className="bg-slate-900">2025-2026 (Archived Period)</option>
+              <option value="2026-2027" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">2026-2027 (Active Term)</option>
+              <option value="2025-2026" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">2025-2026 (Archived Period)</option>
             </select>
           </div>
 
           <Link
             href="/finance/billing/invoices"
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 text-white text-xs font-black transition-all shadow-lg shadow-emerald-600/30 hover:scale-[1.02]"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition-all shadow-sm"
           >
-            <Plus className="w-4 h-4 stroke-[3]" />
+            <Plus className="w-4 h-4 stroke-[2.5]" />
             <span>+ Create Invoice</span>
           </Link>
           <Link
             href="/finance/accounting/journals"
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white text-xs font-bold transition-all"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold transition-all shadow-2xs"
           >
-            <ScrollText className="w-4 h-4 text-emerald-400" />
+            <ScrollText className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
             <span>+ Post Journal</span>
           </Link>
         </div>
@@ -285,30 +278,30 @@ export default function FinanceOverviewPage() {
     >
       {/* Finance Integrity Warning Alert */}
       {reconciliationError && reconciliationDetails && (
-        <div className="bg-amber-950/40 border border-amber-500/40 rounded-3xl p-5 space-y-3 animate-in slide-in-from-top duration-305 mb-4">
-          <div className="flex items-center gap-2 text-amber-400">
-            <AlertTriangle className="w-5 h-5 stroke-[2.5]" />
-            <strong className="text-sm font-black uppercase tracking-wider">{reconciliationError}</strong>
+        <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-2xl p-5 space-y-3 mb-4 shadow-2xs">
+          <div className="flex items-center gap-2 text-amber-800 dark:text-amber-300">
+            <AlertTriangle className="w-5 h-5 stroke-[2]" />
+            <strong className="text-xs font-bold uppercase tracking-wider">{reconciliationError}</strong>
           </div>
-          <p className="text-xs text-slate-300 leading-relaxed">
+          <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-medium">
             The automated financial engine has detected ledger inconsistencies in the active partition:
           </p>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-[11px] font-mono text-slate-400">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono text-slate-600 dark:text-slate-400">
             <div>
               <span>Invoiced Revenue:</span>
-              <strong className="block text-slate-200">${reconciliationDetails.sumInvoiced.toFixed(2)}</strong>
+              <strong className="block text-slate-900 dark:text-slate-100">${reconciliationDetails.sumInvoiced.toFixed(2)}</strong>
             </div>
             <div>
               <span>Paid + Outstanding:</span>
-              <strong className="block text-slate-200">${(reconciliationDetails.sumPaid + reconciliationDetails.sumRemaining).toFixed(2)}</strong>
+              <strong className="block text-slate-900 dark:text-slate-100">${(reconciliationDetails.sumPaid + reconciliationDetails.sumRemaining).toFixed(2)}</strong>
             </div>
             <div>
               <span>Total Receipts:</span>
-              <strong className="block text-slate-200">${reconciliationDetails.sumReceipts.toFixed(2)}</strong>
+              <strong className="block text-slate-900 dark:text-slate-100">${reconciliationDetails.sumReceipts.toFixed(2)}</strong>
             </div>
             <div>
               <span>Status:</span>
-              <strong className={`block ${reconciliationDetails.invoiceMismatch || reconciliationDetails.receiptMismatch ? 'text-rose-400 font-bold' : 'text-emerald-400 font-bold'}`}>
+              <strong className={`block ${reconciliationDetails.invoiceMismatch || reconciliationDetails.receiptMismatch ? 'text-rose-600 font-bold' : 'text-emerald-600 font-bold'}`}>
                 {reconciliationDetails.invoiceMismatch ? 'Invoice Sum Mismatch' : reconciliationDetails.receiptMismatch ? 'Receipt Ledger Drift' : 'Balanced'}
               </strong>
             </div>
@@ -322,54 +315,54 @@ export default function FinanceOverviewPage() {
       {/* Treasury Insights & Runway Panel */}
       {stats && (
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-          <div className="lg:col-span-3 bg-slate-900/80 border border-slate-800 rounded-2xl p-5 space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+          <div className="lg:col-span-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-4 shadow-2xs">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
               <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400">
+                <div className="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400">
                   <Landmark className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-white text-sm">Multi-Currency Bank & Cash Treasury</h3>
-                  <p className="text-xs text-slate-400">Real-time balances across commercial banks, mobile money wallets, and petty cash</p>
+                  <h3 className="font-bold text-slate-900 dark:text-white text-sm">Multi-Currency Bank & Cash Treasury</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Real-time balances across commercial banks, mobile money wallets, and petty cash</p>
                 </div>
               </div>
-              <Link href="/finance/accounting/accounts" className="text-xs font-bold text-emerald-400 hover:underline flex items-center gap-1">
+              <Link href="/finance/accounting/accounts" className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1">
                 <span>Reconcile Treasury</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="bg-slate-950/60 p-4 rounded-xl border border-slate-800/80">
-                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Commercial Bank Accounts (1010)</span>
-                <span className="text-xl font-black font-mono text-emerald-400 block">${stats.treasuryInsights.totalBankBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+              <div className="bg-slate-50/70 dark:bg-slate-950 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
+                <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block mb-1">Commercial Bank Accounts (1010)</span>
+                <span className="text-xl font-extrabold font-mono text-slate-900 dark:text-emerald-400 block">${stats.treasuryInsights.totalBankBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                 <span className="text-xs text-slate-500 mt-1 block">Reconciled with First Islamic Bank</span>
               </div>
-              <div className="bg-slate-950/60 p-4 rounded-xl border border-slate-800/80">
-                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Orange & Mobile Wallets (1020)</span>
-                <span className="text-xl font-black font-mono text-sky-400 block">${stats.treasuryInsights.totalMobileMoney.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+              <div className="bg-slate-50/70 dark:bg-slate-950 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
+                <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block mb-1">Orange & Mobile Wallets (1020)</span>
+                <span className="text-xl font-extrabold font-mono text-slate-900 dark:text-sky-400 block">${stats.treasuryInsights.totalMobileMoney.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                 <span className="text-xs text-slate-500 mt-1 block">Orange Money & MTN Merchant Wallets</span>
               </div>
-              <div className="bg-slate-950/60 p-4 rounded-xl border border-slate-800/80">
-                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Campus Cash Drawer (1030)</span>
-                <span className="text-xl font-black font-mono text-amber-400 block">${stats.treasuryInsights.totalCashInDrawer.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+              <div className="bg-slate-50/70 dark:bg-slate-950 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
+                <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block mb-1">Campus Cash Drawer (1030)</span>
+                <span className="text-xl font-extrabold font-mono text-slate-900 dark:text-amber-400 block">${stats.treasuryInsights.totalCashInDrawer.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                 <span className="text-xs text-slate-500 mt-1 block">Open Cashier Session CSH-2026-088</span>
               </div>
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-emerald-900/40 to-slate-900 border border-emerald-500/30 rounded-2xl p-5 flex flex-col justify-between space-y-4">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 flex flex-col justify-between space-y-4 shadow-2xs">
             <div>
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 font-bold text-[11px] uppercase tracking-wider border border-emerald-500/30 mb-2">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 font-bold text-[11px] uppercase tracking-wider border border-emerald-200 dark:border-emerald-800 mb-2">
                 <Shield className="w-3.5 h-3.5" />
                 <span>Treasury Health</span>
               </span>
-              <h4 className="text-lg font-black text-white">Estimated Runway</h4>
-              <p className="text-3xl font-black font-mono text-emerald-400 mt-1">{stats.treasuryInsights.estimatedRunwayMonths} Months</p>
-              <p className="text-xs text-slate-300 mt-2">Based on current monthly payroll and operating expense burn rate of ${stats.kpi.monthlyExpenses.toLocaleString('en-US', { minimumFractionDigits: 2 })}/mo.</p>
+              <h4 className="text-base font-bold text-slate-900 dark:text-white">Estimated Runway</h4>
+              <p className="text-3xl font-extrabold font-mono text-emerald-700 dark:text-emerald-400 mt-1">{stats.treasuryInsights.estimatedRunwayMonths} Months</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">Based on current monthly payroll and operating expense burn rate of ${stats.kpi.monthlyExpenses.toLocaleString('en-US', { minimumFractionDigits: 2 })}/mo.</p>
             </div>
             <Link
               href="/finance/budget"
-              className="w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs text-center transition-all shadow-md block"
+              className="w-full py-2.5 px-4 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs text-center transition-all shadow-xs block"
             >
               Inspect Department Budgets →
             </Link>
@@ -379,68 +372,68 @@ export default function FinanceOverviewPage() {
 
       {/* Quick Domain Navigation Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        <Link href="/finance/accounting/chart" className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 hover:border-emerald-500 transition-all flex items-center justify-between group shadow-sm">
+        <Link href="/finance/accounting/chart" className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-indigo-500 transition-all flex items-center justify-between group shadow-2xs">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 group-hover:scale-110 transition-transform">
+            <div className="p-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 group-hover:scale-105 transition-transform">
               <Scale className="w-5 h-5" />
             </div>
             <div>
-              <h4 className="font-bold text-white text-sm">Chart of Accounts</h4>
-              <p className="text-xs text-slate-400">Assets, Liabilities, & Equity</p>
+              <h4 className="font-bold text-slate-900 dark:text-white text-sm">Chart of Accounts</h4>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Assets, Liabilities, & Equity</p>
             </div>
           </div>
-          <ArrowRight className="w-4 h-4 text-slate-500 group-hover:text-emerald-400 transition-colors" />
+          <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-indigo-600 transition-colors" />
         </Link>
 
-        <Link href="/finance/billing/invoices" className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 hover:border-emerald-500 transition-all flex items-center justify-between group shadow-sm">
+        <Link href="/finance/billing/invoices" className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-indigo-500 transition-all flex items-center justify-between group shadow-2xs">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-sky-500/10 text-sky-400 group-hover:scale-110 transition-transform">
+            <div className="p-2.5 rounded-xl bg-sky-50 dark:bg-sky-950/50 text-sky-600 dark:text-sky-400 group-hover:scale-105 transition-transform">
               <FileText className="w-5 h-5" />
             </div>
             <div>
-              <h4 className="font-bold text-white text-sm">Student Invoices</h4>
-              <p className="text-xs text-slate-400">Fee billing & installment plans</p>
+              <h4 className="font-bold text-slate-900 dark:text-white text-sm">Student Invoices</h4>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Fee billing & installment plans</p>
             </div>
           </div>
-          <ArrowRight className="w-4 h-4 text-slate-500 group-hover:text-sky-400 transition-colors" />
+          <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-sky-600 transition-colors" />
         </Link>
 
-        <Link href="/finance/billing/payments" className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 hover:border-emerald-500 transition-all flex items-center justify-between group shadow-sm">
+        <Link href="/finance/billing/payments" className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-indigo-500 transition-all flex items-center justify-between group shadow-2xs">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-400 group-hover:scale-110 transition-transform">
+            <div className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 group-hover:scale-105 transition-transform">
               <CreditCard className="w-5 h-5" />
             </div>
             <div>
-              <h4 className="font-bold text-white text-sm">Cashier & Payments</h4>
-              <p className="text-xs text-slate-400">Receipts, POS, & Orange Money</p>
+              <h4 className="font-bold text-slate-900 dark:text-white text-sm">Cashier & Payments</h4>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Receipts, POS, & Orange Money</p>
             </div>
           </div>
-          <ArrowRight className="w-4 h-4 text-slate-500 group-hover:text-amber-400 transition-colors" />
+          <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-amber-600 transition-colors" />
         </Link>
 
-        <Link href="/finance/accounting/journals" className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 hover:border-emerald-500 transition-all flex items-center justify-between group shadow-sm">
+        <Link href="/finance/accounting/journals" className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-indigo-500 transition-all flex items-center justify-between group shadow-2xs">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-rose-500/10 text-rose-400 group-hover:scale-110 transition-transform">
+            <div className="p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 group-hover:scale-105 transition-transform">
               <ScrollText className="w-5 h-5" />
             </div>
             <div>
-              <h4 className="font-bold text-white text-sm">Double-Entry Journals</h4>
-              <p className="text-xs text-slate-400">Debits == Credits compliance</p>
+              <h4 className="font-bold text-slate-900 dark:text-white text-sm">Double-Entry Journals</h4>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Debits == Credits compliance</p>
             </div>
           </div>
-          <ArrowRight className="w-4 h-4 text-slate-500 group-hover:text-rose-400 transition-colors" />
+          <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-rose-600 transition-colors" />
         </Link>
       </div>
 
       {/* Budget vs Actual Variance Table */}
       {stats && (
-        <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-4 shadow-2xs">
+          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
             <div className="flex items-center gap-2">
-              <BarChart3 className="w-5 h-5 text-emerald-400" />
-              <h3 className="font-bold text-white text-sm">Department Budget vs. Actual Utilization (2026-2027)</h3>
+              <BarChart3 className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+              <h3 className="font-bold text-slate-900 dark:text-white text-sm">Department Budget vs. Actual Utilization (2026-2027)</h3>
             </div>
-            <Link href="/finance/budget" className="text-xs font-bold text-emerald-400 hover:underline">
+            <Link href="/finance/budget" className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline">
               Full Budget Console →
             </Link>
           </div>
@@ -449,22 +442,22 @@ export default function FinanceOverviewPage() {
               const percentage = Math.min(100, Math.round((b.spent / b.allocated) * 100));
               const isWarning = percentage > 85;
               return (
-                <div key={idx} className="bg-slate-950/70 border border-slate-800/80 p-4 rounded-xl space-y-2.5">
+                <div key={idx} className="bg-slate-50/70 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-4 rounded-xl space-y-2.5">
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-white text-xs truncate max-w-[180px]">{b.department}</span>
-                    <span className={`text-xs font-black px-2 py-0.5 rounded ${isWarning ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'}`}>
+                    <span className="font-bold text-slate-900 dark:text-white text-xs truncate max-w-[180px]">{b.department}</span>
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded ${isWarning ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'}`}>
                       {percentage}% Used
                     </span>
                   </div>
-                  <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                  <div className="w-full bg-slate-200 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
                     <div
-                      className={`h-full transition-all duration-500 ${isWarning ? 'bg-amber-500' : 'bg-emerald-500'}`}
+                      className={`h-full transition-all duration-500 ${isWarning ? 'bg-amber-500' : 'bg-indigo-600'}`}
                       style={{ width: `${percentage}%` }}
                     />
                   </div>
-                  <div className="flex items-center justify-between font-mono text-xs text-slate-400 pt-1 border-t border-slate-800/60">
-                    <span>Spent: <strong className="text-white">${b.spent.toLocaleString('en-US', { minimumFractionDigits: 2 })}</strong></span>
-                    <span>Allocated: <strong className="text-emerald-400">${b.allocated.toLocaleString('en-US', { minimumFractionDigits: 2 })}</strong></span>
+                  <div className="flex items-center justify-between font-mono text-xs text-slate-500 dark:text-slate-400 pt-1 border-t border-slate-200 dark:border-slate-800">
+                    <span>Spent: <strong className="text-slate-900 dark:text-white">${b.spent.toLocaleString('en-US', { minimumFractionDigits: 2 })}</strong></span>
+                    <span>Allocated: <strong className="text-indigo-600 dark:text-indigo-400">${b.allocated.toLocaleString('en-US', { minimumFractionDigits: 2 })}</strong></span>
                   </div>
                 </div>
               );
@@ -493,7 +486,7 @@ export default function FinanceOverviewPage() {
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
               aria-label="Filter vouchers by type"
-              className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white font-bold focus:outline-none focus:border-emerald-500 shadow-2xs cursor-pointer"
+              className="px-3 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-white font-semibold focus:outline-none focus:border-indigo-500 shadow-2xs cursor-pointer"
             >
               <option value="all">All Voucher Categories</option>
               <option value="Tuition Receipt">Tuition Receipts (RCP)</option>
@@ -535,7 +528,7 @@ export default function FinanceOverviewPage() {
           role: `${selectedRow.type.toUpperCase()}`,
           status: selectedRow.status,
           email: selectedRow.date,
-          balance: `$${selectedRow.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })} (${selectedRow.status.toUpperCase()})`
+          balance: `$${Math.abs(selectedRow.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })} (${selectedRow.status.toUpperCase()})`
         } : null}
         category="finance"
       />
