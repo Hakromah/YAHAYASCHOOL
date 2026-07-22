@@ -3296,6 +3296,781 @@ export interface ApiHonorRollHonorRoll extends Struct.CollectionTypeSchema {
   };
 }
 
+export interface ApiHostelAllocationHostelAllocation
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'hostel_allocations';
+  info: {
+    description: 'Schema for Hostel Allocation';
+    displayName: 'Hostel Allocation';
+    pluralName: 'hostel-allocations';
+    singularName: 'hostel-allocation';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    academicYear: Schema.Attribute.String & Schema.Attribute.Required;
+    allocationNumber: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique;
+    attendanceHistory: Schema.Attribute.JSON;
+    bed: Schema.Attribute.Relation<'manyToOne', 'api::hostel-bed.hostel-bed'>;
+    building: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::hostel-building.hostel-building'
+    >;
+    checkInDate: Schema.Attribute.Date & Schema.Attribute.Required;
+    checkOutDate: Schema.Attribute.Date;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    disciplineRecords: Schema.Attribute.JSON;
+    financialLedger: Schema.Attribute.JSON;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::hostel-allocation.hostel-allocation'
+    > &
+      Schema.Attribute.Private;
+    medicalInfo: Schema.Attribute.JSON;
+    publishedAt: Schema.Attribute.DateTime;
+    room: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::hostel-room.hostel-room'
+    >;
+    securityDeposit: Schema.Attribute.Decimal & Schema.Attribute.Required;
+    status: Schema.Attribute.Enumeration<['active', 'vacated', 'suspended']> &
+      Schema.Attribute.DefaultTo<'active'>;
+    student: Schema.Attribute.Relation<'manyToOne', 'api::student.student'>;
+    termFee: Schema.Attribute.Decimal & Schema.Attribute.Required;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
+export interface ApiHostelAttendanceHostelAttendance
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'hostel_attendances';
+  info: {
+    description: 'Schema for Hostel Attendance';
+    displayName: 'Hostel Attendance';
+    pluralName: 'hostel-attendances';
+    singularName: 'hostel-attendance';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    allocation: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::hostel-allocation.hostel-allocation'
+    >;
+    attendanceStatus: Schema.Attribute.Enumeration<
+      ['present', 'absent', 'late', 'excused']
+    > &
+      Schema.Attribute.Required;
+    checkInTime: Schema.Attribute.String;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    date: Schema.Attribute.Date & Schema.Attribute.Required;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::hostel-attendance.hostel-attendance'
+    > &
+      Schema.Attribute.Private;
+    notes: Schema.Attribute.Text;
+    publishedAt: Schema.Attribute.DateTime;
+    student: Schema.Attribute.Relation<'manyToOne', 'api::student.student'>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
+export interface ApiHostelAuditLogHostelAuditLog
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'hostel_audit_logs';
+  info: {
+    description: 'Schema for Hostel Audit Log';
+    displayName: 'Hostel Audit Log';
+    pluralName: 'hostel-audit-logs';
+    singularName: 'hostel-audit-log';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    action: Schema.Attribute.String & Schema.Attribute.Required;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::hostel-audit-log.hostel-audit-log'
+    > &
+      Schema.Attribute.Private;
+    newValue: Schema.Attribute.JSON;
+    notes: Schema.Attribute.Text;
+    oldValue: Schema.Attribute.JSON;
+    performedBy: Schema.Attribute.String & Schema.Attribute.Required;
+    performedByRole: Schema.Attribute.String;
+    publishedAt: Schema.Attribute.DateTime;
+    timestamp: Schema.Attribute.DateTime & Schema.Attribute.Required;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
+export interface ApiHostelBedHostelBed extends Struct.CollectionTypeSchema {
+  collectionName: 'hostel_beds';
+  info: {
+    description: 'Schema for Hostel Bed';
+    displayName: 'Hostel Bed';
+    pluralName: 'hostel-beds';
+    singularName: 'hostel-bed';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    bedNumber: Schema.Attribute.String & Schema.Attribute.Required;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::hostel-bed.hostel-bed'
+    > &
+      Schema.Attribute.Private;
+    publishedAt: Schema.Attribute.DateTime;
+    room: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::hostel-room.hostel-room'
+    >;
+    status: Schema.Attribute.Enumeration<
+      ['available', 'occupied', 'reserved', 'maintenance', 'blocked']
+    > &
+      Schema.Attribute.DefaultTo<'available'>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
+export interface ApiHostelBuildingHostelBuilding
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'hostel_buildings';
+  info: {
+    description: 'Schema for Hostel Building';
+    displayName: 'Hostel Building';
+    pluralName: 'hostel-buildings';
+    singularName: 'hostel-building';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    campus: Schema.Attribute.String;
+    capacity: Schema.Attribute.Integer;
+    code: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    description: Schema.Attribute.Text;
+    floors: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::hostel-floor.hostel-floor'
+    >;
+    gender: Schema.Attribute.Enumeration<['boys', 'girls', 'mixed']> &
+      Schema.Attribute.Required;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::hostel-building.hostel-building'
+    > &
+      Schema.Attribute.Private;
+    name: Schema.Attribute.String & Schema.Attribute.Required;
+    publishedAt: Schema.Attribute.DateTime;
+    rooms: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::hostel-room.hostel-room'
+    >;
+    status: Schema.Attribute.Enumeration<
+      ['active', 'inactive', 'maintenance']
+    > &
+      Schema.Attribute.DefaultTo<'active'>;
+    type: Schema.Attribute.String;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    wardens: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::hostel-warden.hostel-warden'
+    >;
+  };
+}
+
+export interface ApiHostelDepositRefundHostelDepositRefund
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'hostel_deposit_refunds';
+  info: {
+    description: 'Schema for Hostel Deposit Refund';
+    displayName: 'Hostel Deposit Refund';
+    pluralName: 'hostel-deposit-refunds';
+    singularName: 'hostel-deposit-refund';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    allocation: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::hostel-allocation.hostel-allocation'
+    >;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    damageCharges: Schema.Attribute.Decimal & Schema.Attribute.DefaultTo<0>;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::hostel-deposit-refund.hostel-deposit-refund'
+    > &
+      Schema.Attribute.Private;
+    netRefund: Schema.Attribute.Decimal & Schema.Attribute.Required;
+    publishedAt: Schema.Attribute.DateTime;
+    refundAmount: Schema.Attribute.Decimal & Schema.Attribute.Required;
+    refundDate: Schema.Attribute.Date & Schema.Attribute.Required;
+    status: Schema.Attribute.Enumeration<['pending', 'approved', 'paid']> &
+      Schema.Attribute.DefaultTo<'pending'>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
+export interface ApiHostelFeePlanHostelFeePlan
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'hostel_fee_plans';
+  info: {
+    description: 'Schema for Hostel Fee Plan';
+    displayName: 'Hostel Fee Plan';
+    pluralName: 'hostel-fee-plans';
+    singularName: 'hostel-fee-plan';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    academicYear: Schema.Attribute.String & Schema.Attribute.Required;
+    accommodationFee: Schema.Attribute.Decimal & Schema.Attribute.Required;
+    bed: Schema.Attribute.Relation<'manyToOne', 'api::hostel-bed.hostel-bed'>;
+    building: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::hostel-building.hostel-building'
+    >;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    floor: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::hostel-floor.hostel-floor'
+    >;
+    laundryFee: Schema.Attribute.Decimal & Schema.Attribute.DefaultTo<0>;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::hostel-fee-plan.hostel-fee-plan'
+    > &
+      Schema.Attribute.Private;
+    mealFee: Schema.Attribute.Decimal & Schema.Attribute.DefaultTo<0>;
+    planName: Schema.Attribute.String & Schema.Attribute.Required;
+    publishedAt: Schema.Attribute.DateTime;
+    room: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::hostel-room.hostel-room'
+    >;
+    securityDeposit: Schema.Attribute.Decimal & Schema.Attribute.Required;
+    term: Schema.Attribute.String & Schema.Attribute.Required;
+    transportFee: Schema.Attribute.Decimal & Schema.Attribute.DefaultTo<0>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    utilityFee: Schema.Attribute.Decimal & Schema.Attribute.DefaultTo<0>;
+  };
+}
+
+export interface ApiHostelFloorHostelFloor extends Struct.CollectionTypeSchema {
+  collectionName: 'hostel_floors';
+  info: {
+    description: 'Schema for Hostel Floor';
+    displayName: 'Hostel Floor';
+    pluralName: 'hostel-floors';
+    singularName: 'hostel-floor';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    building: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::hostel-building.hostel-building'
+    >;
+    capacity: Schema.Attribute.Integer;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    floorName: Schema.Attribute.String & Schema.Attribute.Required;
+    floorNumber: Schema.Attribute.Integer & Schema.Attribute.Required;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::hostel-floor.hostel-floor'
+    > &
+      Schema.Attribute.Private;
+    publishedAt: Schema.Attribute.DateTime;
+    rooms: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::hostel-room.hostel-room'
+    >;
+    roomsCount: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<0>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
+export interface ApiHostelGatePassHostelGatePass
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'hostel_gate_passs';
+  info: {
+    description: 'Schema for Hostel Gate Pass';
+    displayName: 'Hostel Gate Pass';
+    pluralName: 'hostel-gate-passs';
+    singularName: 'hostel-gate-pass';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    actualReturnDateTime: Schema.Attribute.DateTime;
+    allocation: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::hostel-allocation.hostel-allocation'
+    >;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    exitDateTime: Schema.Attribute.DateTime;
+    expectedReturnDateTime: Schema.Attribute.DateTime;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::hostel-gate-pass.hostel-gate-pass'
+    > &
+      Schema.Attribute.Private;
+    parentApproval: Schema.Attribute.Enumeration<
+      ['pending', 'approved', 'rejected']
+    > &
+      Schema.Attribute.DefaultTo<'pending'>;
+    publishedAt: Schema.Attribute.DateTime;
+    purpose: Schema.Attribute.Text;
+    requestDate: Schema.Attribute.DateTime & Schema.Attribute.Required;
+    securityValidation: Schema.Attribute.Enumeration<
+      ['pending', 'approved', 'rejected']
+    > &
+      Schema.Attribute.DefaultTo<'pending'>;
+    status: Schema.Attribute.Enumeration<
+      ['pending', 'approved', 'rejected', 'used', 'expired']
+    > &
+      Schema.Attribute.DefaultTo<'pending'>;
+    student: Schema.Attribute.Relation<'manyToOne', 'api::student.student'>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    wardenApproval: Schema.Attribute.Enumeration<
+      ['pending', 'approved', 'rejected']
+    > &
+      Schema.Attribute.DefaultTo<'pending'>;
+  };
+}
+
+export interface ApiHostelInvoiceHostelInvoice
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'hostel_invoices';
+  info: {
+    description: 'Schema for Hostel Invoice';
+    displayName: 'Hostel Invoice';
+    pluralName: 'hostel-invoices';
+    singularName: 'hostel-invoice';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    allocation: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::hostel-allocation.hostel-allocation'
+    >;
+    amount: Schema.Attribute.Decimal & Schema.Attribute.Required;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    dueDate: Schema.Attribute.Date & Schema.Attribute.Required;
+    financeInvoice: Schema.Attribute.String;
+    invoiceNumber: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique;
+    issueDate: Schema.Attribute.Date & Schema.Attribute.Required;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::hostel-invoice.hostel-invoice'
+    > &
+      Schema.Attribute.Private;
+    paidAmount: Schema.Attribute.Decimal & Schema.Attribute.DefaultTo<0>;
+    publishedAt: Schema.Attribute.DateTime;
+    remainingBalance: Schema.Attribute.Decimal & Schema.Attribute.Required;
+    status: Schema.Attribute.Enumeration<
+      ['pending', 'paid', 'partially_paid', 'cancelled']
+    > &
+      Schema.Attribute.DefaultTo<'pending'>;
+    student: Schema.Attribute.Relation<'manyToOne', 'api::student.student'>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
+export interface ApiHostelMaintenanceTicketHostelMaintenanceTicket
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'hostel_maintenance_tickets';
+  info: {
+    description: 'Schema for Hostel Maintenance Ticket';
+    displayName: 'Hostel Maintenance Ticket';
+    pluralName: 'hostel-maintenance-tickets';
+    singularName: 'hostel-maintenance-ticket';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    bed: Schema.Attribute.Relation<'manyToOne', 'api::hostel-bed.hostel-bed'>;
+    building: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::hostel-building.hostel-building'
+    >;
+    cost: Schema.Attribute.Decimal & Schema.Attribute.DefaultTo<0>;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    description: Schema.Attribute.Text & Schema.Attribute.Required;
+    issueType: Schema.Attribute.Enumeration<
+      ['broken_bed', 'water_leakage', 'electrical_fault', 'ac_failure', 'other']
+    > &
+      Schema.Attribute.Required;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::hostel-maintenance-ticket.hostel-maintenance-ticket'
+    > &
+      Schema.Attribute.Private;
+    priority: Schema.Attribute.Enumeration<
+      ['low', 'medium', 'high', 'urgent']
+    > &
+      Schema.Attribute.DefaultTo<'medium'>;
+    publishedAt: Schema.Attribute.DateTime;
+    room: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::hostel-room.hostel-room'
+    >;
+    status: Schema.Attribute.Enumeration<
+      ['open', 'in_progress', 'resolved', 'closed']
+    > &
+      Schema.Attribute.DefaultTo<'open'>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
+export interface ApiHostelPaymentHostelPayment
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'hostel_payments';
+  info: {
+    description: 'Schema for Hostel Payment';
+    displayName: 'Hostel Payment';
+    pluralName: 'hostel-payments';
+    singularName: 'hostel-payment';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    amount: Schema.Attribute.Decimal & Schema.Attribute.Required;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    invoice: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::hostel-invoice.hostel-invoice'
+    >;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::hostel-payment.hostel-payment'
+    > &
+      Schema.Attribute.Private;
+    paymentDate: Schema.Attribute.DateTime & Schema.Attribute.Required;
+    paymentMethod: Schema.Attribute.Enumeration<
+      ['Cash', 'Bank', 'Wallet', 'Scholarship', 'Waiver']
+    > &
+      Schema.Attribute.Required;
+    paymentNumber: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique;
+    publishedAt: Schema.Attribute.DateTime;
+    status: Schema.Attribute.Enumeration<['pending', 'completed', 'failed']> &
+      Schema.Attribute.DefaultTo<'completed'>;
+    student: Schema.Attribute.Relation<'manyToOne', 'api::student.student'>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
+export interface ApiHostelRoomHostelRoom extends Struct.CollectionTypeSchema {
+  collectionName: 'hostel_rooms';
+  info: {
+    description: 'Schema for Hostel Room';
+    displayName: 'Hostel Room';
+    pluralName: 'hostel-rooms';
+    singularName: 'hostel-room';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    beds: Schema.Attribute.Relation<'oneToMany', 'api::hostel-bed.hostel-bed'>;
+    building: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::hostel-building.hostel-building'
+    >;
+    capacity: Schema.Attribute.Integer & Schema.Attribute.Required;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    currentOccupancy: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<0>;
+    floor: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::hostel-floor.hostel-floor'
+    >;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::hostel-room.hostel-room'
+    > &
+      Schema.Attribute.Private;
+    publishedAt: Schema.Attribute.DateTime;
+    roomNumber: Schema.Attribute.String & Schema.Attribute.Required;
+    roomType: Schema.Attribute.Enumeration<
+      ['single', 'double', 'triple', 'quad', 'dormitory', 'vip', 'scholarship']
+    > &
+      Schema.Attribute.Required;
+    status: Schema.Attribute.Enumeration<['available', 'full', 'maintenance']> &
+      Schema.Attribute.DefaultTo<'available'>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
+export interface ApiHostelSettingHostelSetting
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'hostel_settings';
+  info: {
+    description: 'Schema for Hostel Setting';
+    displayName: 'Hostel Setting';
+    pluralName: 'hostel-settings';
+    singularName: 'hostel-setting';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    capacity: Schema.Attribute.Integer;
+    checkInPolicy: Schema.Attribute.Text;
+    checkOutPolicy: Schema.Attribute.Text;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    defaultCurrency: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'USD'>;
+    gatePassRules: Schema.Attribute.Text;
+    genderType: Schema.Attribute.Enumeration<['boys', 'girls', 'mixed']> &
+      Schema.Attribute.Required;
+    hostelCode: Schema.Attribute.String & Schema.Attribute.Required;
+    hostelName: Schema.Attribute.String & Schema.Attribute.Required;
+    lateExitRules: Schema.Attribute.Text;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::hostel-setting.hostel-setting'
+    > &
+      Schema.Attribute.Private;
+    medicalEmergencySettings: Schema.Attribute.Text;
+    publishedAt: Schema.Attribute.DateTime;
+    refundPolicy: Schema.Attribute.Text;
+    securityDepositRules: Schema.Attribute.Text;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    wardenAssignmentRules: Schema.Attribute.Text;
+  };
+}
+
+export interface ApiHostelVacationHostelVacation
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'hostel_vacations';
+  info: {
+    description: 'Schema for Hostel Vacation';
+    displayName: 'Hostel Vacation';
+    pluralName: 'hostel-vacations';
+    singularName: 'hostel-vacation';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    allocation: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::hostel-allocation.hostel-allocation'
+    >;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    damageCharges: Schema.Attribute.Decimal & Schema.Attribute.DefaultTo<0>;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::hostel-vacation.hostel-vacation'
+    > &
+      Schema.Attribute.Private;
+    publishedAt: Schema.Attribute.DateTime;
+    reason: Schema.Attribute.Text;
+    refundAmount: Schema.Attribute.Decimal & Schema.Attribute.DefaultTo<0>;
+    refundStatus: Schema.Attribute.Enumeration<
+      ['pending', 'refunded', 'no_refund']
+    > &
+      Schema.Attribute.DefaultTo<'pending'>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    vacateDate: Schema.Attribute.Date & Schema.Attribute.Required;
+  };
+}
+
+export interface ApiHostelVisitorHostelVisitor
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'hostel_visitors';
+  info: {
+    description: 'Schema for Hostel Visitor';
+    displayName: 'Hostel Visitor';
+    pluralName: 'hostel-visitors';
+    singularName: 'hostel-visitor';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    approval: Schema.Attribute.Enumeration<
+      ['pending', 'approved', 'rejected']
+    > &
+      Schema.Attribute.DefaultTo<'approved'>;
+    assignedRoom: Schema.Attribute.String;
+    bed: Schema.Attribute.Relation<'manyToOne', 'api::hostel-bed.hostel-bed'>;
+    building: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::hostel-building.hostel-building'
+    >;
+    checkIn: Schema.Attribute.DateTime;
+    checkOut: Schema.Attribute.DateTime;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    dailyCharge: Schema.Attribute.Decimal;
+    floor: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::hostel-floor.hostel-floor'
+    >;
+    hostStudent: Schema.Attribute.String;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::hostel-visitor.hostel-visitor'
+    > &
+      Schema.Attribute.Private;
+    nationalId: Schema.Attribute.String;
+    phone: Schema.Attribute.String;
+    publishedAt: Schema.Attribute.DateTime;
+    purpose: Schema.Attribute.Text;
+    room: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::hostel-room.hostel-room'
+    >;
+    securityDeposit: Schema.Attribute.Decimal;
+    student: Schema.Attribute.Relation<'manyToOne', 'api::student.student'>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    visitorName: Schema.Attribute.String & Schema.Attribute.Required;
+  };
+}
+
+export interface ApiHostelWardenHostelWarden
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'hostel_wardens';
+  info: {
+    description: 'Schema for Hostel Warden';
+    displayName: 'Hostel Warden';
+    pluralName: 'hostel-wardens';
+    singularName: 'hostel-warden';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    assignedBuilding: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::hostel-building.hostel-building'
+    >;
+    assignedFloors: Schema.Attribute.JSON;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    emergencyContacts: Schema.Attribute.JSON;
+    employee: Schema.Attribute.String & Schema.Attribute.Required;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::hostel-warden.hostel-warden'
+    > &
+      Schema.Attribute.Private;
+    publishedAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
 export interface ApiLanguageAchievementLanguageAchievement
   extends Struct.CollectionTypeSchema {
   collectionName: 'language_achievements';
@@ -6531,6 +7306,23 @@ declare module '@strapi/strapi' {
       'api::homework-submission.homework-submission': ApiHomeworkSubmissionHomeworkSubmission;
       'api::homework.homework': ApiHomeworkHomework;
       'api::honor-roll.honor-roll': ApiHonorRollHonorRoll;
+      'api::hostel-allocation.hostel-allocation': ApiHostelAllocationHostelAllocation;
+      'api::hostel-attendance.hostel-attendance': ApiHostelAttendanceHostelAttendance;
+      'api::hostel-audit-log.hostel-audit-log': ApiHostelAuditLogHostelAuditLog;
+      'api::hostel-bed.hostel-bed': ApiHostelBedHostelBed;
+      'api::hostel-building.hostel-building': ApiHostelBuildingHostelBuilding;
+      'api::hostel-deposit-refund.hostel-deposit-refund': ApiHostelDepositRefundHostelDepositRefund;
+      'api::hostel-fee-plan.hostel-fee-plan': ApiHostelFeePlanHostelFeePlan;
+      'api::hostel-floor.hostel-floor': ApiHostelFloorHostelFloor;
+      'api::hostel-gate-pass.hostel-gate-pass': ApiHostelGatePassHostelGatePass;
+      'api::hostel-invoice.hostel-invoice': ApiHostelInvoiceHostelInvoice;
+      'api::hostel-maintenance-ticket.hostel-maintenance-ticket': ApiHostelMaintenanceTicketHostelMaintenanceTicket;
+      'api::hostel-payment.hostel-payment': ApiHostelPaymentHostelPayment;
+      'api::hostel-room.hostel-room': ApiHostelRoomHostelRoom;
+      'api::hostel-setting.hostel-setting': ApiHostelSettingHostelSetting;
+      'api::hostel-vacation.hostel-vacation': ApiHostelVacationHostelVacation;
+      'api::hostel-visitor.hostel-visitor': ApiHostelVisitorHostelVisitor;
+      'api::hostel-warden.hostel-warden': ApiHostelWardenHostelWarden;
       'api::language-achievement.language-achievement': ApiLanguageAchievementLanguageAchievement;
       'api::language-certificate.language-certificate': ApiLanguageCertificateLanguageCertificate;
       'api::language-competition.language-competition': ApiLanguageCompetitionLanguageCompetition;

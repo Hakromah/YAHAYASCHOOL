@@ -25,6 +25,9 @@ export interface SchoolUser extends StrapiEntity {
   isActive: boolean;
   lastLogin: string | null;
   avatar: StrapiMediaFile | null;
+  avatarUrl?: string | null;
+  photoUrl?: string | null;
+  photo?: StrapiMediaFile | null;
   role: StrapiRole | null;
 }
 

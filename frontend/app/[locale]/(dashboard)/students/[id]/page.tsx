@@ -167,7 +167,7 @@ export default function StudentSISProfilePage() {
               <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-mono text-xs font-bold">
                 {student.schoolId || student.admissionNumber || `#ST-${student.id}`}
               </span>
-              <StatusBadge status={student.enrollmentStatus} size="md" />
+              <StatusBadge status={student.enrollmentStatus || student.status || 'active'} size="md" />
               <span className="text-xs text-slate-400 font-mono">Enrolled: {student.admissionDate ? new Date(student.admissionDate).toLocaleDateString() : 'Sep 2026'}</span>
             </div>
 

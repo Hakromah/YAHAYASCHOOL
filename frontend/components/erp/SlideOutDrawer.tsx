@@ -56,7 +56,7 @@ export interface SlideOutDrawerProps {
   onClose: () => void;
   record: any | null;
   title?: string;
-  category?: 'student' | 'teacher' | 'parent' | 'worker' | 'directory' | 'finance' | 'event' | 'admissions' | 'generic';
+  category?: 'student' | 'teacher' | 'parent' | 'worker' | 'directory' | 'finance' | 'event' | 'admissions' | 'hostel' | 'transport' | 'library' | 'inventory' | 'asset' | 'procurement' | 'generic';
   quickActions?: SmartQuickAction[];
   customTabsContent?: Partial<Record<DrawerTabId | string, React.ReactNode>>;
   tabsListOverride?: { id: DrawerTabId | string; label: string; icon: React.ReactNode }[];
@@ -98,7 +98,7 @@ export function SlideOutDrawer({
   const roleOrGrade = record.role || record.gradeApplied || record.grade || record.category || record.department || 'General Profile';
   const statusStr = record.status || record.state || 'Active';
   const emailOrPhone = record.email || record.phone || record.contactPhone || 'No Contact Info';
-  const guardianOrSupervisor = record.parentName || record.guardian || record.supervisor || 'N/A';
+  const guardianOrSupervisor = record.parentName || record.guardian || record.supervisor || (category === 'worker' ? 'Sheikh Yahaya Admin' : 'N/A');
   const avatarUrl = record.avatarUrl || record.photoUrl || null;
 
   // Determine status color badge
@@ -142,11 +142,15 @@ export function SlideOutDrawer({
 
   const tabsList = tabsListOverride || [
     { id: 'overview', label: 'Overview', icon: <User className="w-3.5 h-3.5" /> },
-    { id: 'academic', label: 'Academic', icon: <BookOpen className="w-3.5 h-3.5" /> },
+    ...(category !== 'worker' ? [
+      { id: 'academic', label: 'Academic', icon: <BookOpen className="w-3.5 h-3.5" /> }
+    ] : []),
     { id: 'finance', label: 'Finance', icon: <DollarSign className="w-3.5 h-3.5" /> },
     { id: 'attendance', label: 'Attendance', icon: <Calendar className="w-3.5 h-3.5" /> },
-    { id: 'hostel', label: 'Hostel', icon: <Home className="w-3.5 h-3.5" /> },
-    { id: 'quran', label: "Qur'an", icon: <Award className="w-3.5 h-3.5" /> },
+    ...(category !== 'worker' ? [
+      { id: 'hostel', label: 'Hostel', icon: <Home className="w-3.5 h-3.5" /> },
+      { id: 'quran', label: "Qur'an", icon: <Award className="w-3.5 h-3.5" /> }
+    ] : []),
     { id: 'documents', label: 'Documents', icon: <FileText className="w-3.5 h-3.5" /> },
     { id: 'timeline', label: 'Timeline', icon: <Activity className="w-3.5 h-3.5" /> },
     { id: 'audit', label: 'Audit Logs', icon: <History className="w-3.5 h-3.5" /> },
@@ -214,20 +218,40 @@ export function SlideOutDrawer({
                 {/* Quick Status Bar */}
                 <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px]">
                   {statsBarOverride ? statsBarOverride : (
-                    <>
-                      <span className="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-mono font-semibold shadow-2xs">
-                        Balance: <strong className={isRed ? "text-rose-600 dark:text-rose-400" : "text-emerald-600 dark:text-emerald-400"}>{record.balance || '$0.00 (Cleared)'}</strong>
-                      </span>
-                      <span className="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-mono font-semibold shadow-2xs">
-                        Attendance: <strong className="text-sky-600 dark:text-sky-400">{record.attendanceRate || '96.4%'}</strong>
-                      </span>
-                      <span className="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-mono font-semibold shadow-2xs">
-                        GPA: <strong className="text-amber-600 dark:text-amber-400">{record.gpa || '3.84 A-'}</strong>
-                      </span>
-                      <span className="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-semibold flex items-center gap-1 shadow-2xs">
-                        Behavior: <span className="w-2 h-2 rounded-full bg-emerald-600 inline-block" /> <strong className="text-emerald-600 dark:text-emerald-400">Excellent</strong>
-                      </span>
-                    </>
+                    category === 'worker' ? (
+                      <>
+                        <span className="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-mono font-semibold shadow-2xs">
+                          Salary: <strong className="text-emerald-600 dark:text-emerald-400">{record.salaryGrade || 'SG-1'}</strong>
+                        </span>
+                        <span className="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-mono font-semibold shadow-2xs">
+                          Employment: <strong className="text-sky-600 dark:text-sky-400 capitalize">{record.employmentStatus || 'Active'}</strong>
+                        </span>
+                        <span className="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-mono font-semibold shadow-2xs">
+                          Shift: <strong className="text-amber-600 dark:text-amber-400">{record.shift || 'Day Shift'}</strong>
+                        </span>
+                      </>
+                    ) : category === 'finance' || category === 'generic' ? (
+                      <>
+                        <span className="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-mono font-semibold shadow-2xs">
+                          Ledger Status: <strong className="text-emerald-600 dark:text-emerald-400">{record.balance || 'Balanced'}</strong>
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-mono font-semibold shadow-2xs">
+                          Balance: <strong className={isRed ? "text-rose-600 dark:text-rose-400" : "text-emerald-600 dark:text-emerald-400"}>{record.balance || '$0.00 (Cleared)'}</strong>
+                        </span>
+                        <span className="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-mono font-semibold shadow-2xs">
+                          Attendance: <strong className="text-sky-600 dark:text-sky-400">{record.attendanceRate || '96.4%'}</strong>
+                        </span>
+                        <span className="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-mono font-semibold shadow-2xs">
+                          GPA: <strong className="text-amber-600 dark:text-amber-400">{record.gpa || '3.84 A-'}</strong>
+                        </span>
+                        <span className="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-705 dark:text-slate-355 font-semibold flex items-center gap-1 shadow-2xs">
+                          Behavior: <span className="w-2 h-2 rounded-full bg-emerald-600 inline-block" /> <strong className="text-emerald-600 dark:text-emerald-400">Excellent</strong>
+                        </span>
+                      </>
+                    )
                   )}
                 </div>
               </div>
@@ -309,7 +333,7 @@ export function SlideOutDrawer({
                         <p className="font-bold text-emerald-600 dark:text-emerald-400 font-mono text-sm">{idStr}</p>
                       </div>
                       <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800/80 space-y-1 shadow-2xs">
-                        <span className="text-slate-500 dark:text-slate-400 font-mono">Assigned Program / Section</span>
+                        <span className="text-slate-500 dark:text-slate-400 font-mono">{category === 'worker' ? 'Operational Role' : 'Assigned Program / Section'}</span>
                         <p className="font-bold text-slate-900 dark:text-white">{roleOrGrade}</p>
                       </div>
                       <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800/80 space-y-1 shadow-2xs">
@@ -321,6 +345,26 @@ export function SlideOutDrawer({
                       </div>
                     </div>
                   </div>
+
+                  {category === 'worker' && (
+                    <div>
+                      <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider font-mono border-b border-slate-200 dark:border-slate-800 pb-2 mb-3">
+                        Employment Timeline Details
+                      </h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                        <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800/80 space-y-1 shadow-2xs">
+                          <span className="text-slate-500 dark:text-slate-400 font-mono">Employment Date</span>
+                          <p className="font-bold text-slate-900 dark:text-white">
+                            {record.employmentDate ? new Date(record.employmentDate).toLocaleDateString() : 'Active since Onboarding'}
+                          </p>
+                        </div>
+                        <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800/80 space-y-1 shadow-2xs">
+                          <span className="text-slate-500 dark:text-slate-400 font-mono">Base Salary Grade</span>
+                          <p className="font-bold text-slate-900 dark:text-white">{record.salaryGrade || 'SG-1'}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   <div>
                     <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider font-mono border-b border-slate-200 dark:border-slate-800 pb-2 mb-3">
@@ -402,25 +446,40 @@ export function SlideOutDrawer({
                   <h3 className="text-sm font-bold uppercase tracking-wider font-mono border-b border-slate-200 dark:border-slate-800 pb-2">
                     Finance ERP Profile Summary
                   </h3>
-                  <div className="grid grid-cols-2 gap-4 text-xs font-mono">
-                    <div className="bg-slate-50 dark:bg-slate-900/60 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
-                      <span className="text-slate-500 block font-bold mb-1">Wallet Balance</span>
-                      <strong className="text-emerald-500 text-sm font-black">+${Number(record.advanceBalance || 0).toFixed(2)}</strong>
+                  {category === 'worker' ? (
+                    <div className="grid grid-cols-2 gap-4 text-xs font-mono">
+                      <div className="bg-slate-50 dark:bg-slate-900/60 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
+                        <span className="text-slate-500 block font-bold mb-1">Salary Grade</span>
+                        <strong className="text-emerald-500 text-sm font-black">{record.salaryGrade || 'SG-1'}</strong>
+                      </div>
+                      <div className="bg-slate-50 dark:bg-slate-900/60 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
+                        <span className="text-slate-500 block font-bold mb-1">Monthly Payroll</span>
+                        <strong className="text-emerald-500 text-sm font-black">$450.00</strong>
+                      </div>
                     </div>
-                    <div className="bg-slate-50 dark:bg-slate-900/60 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
-                      <span className="text-slate-500 block font-bold mb-1">Outstanding Balance</span>
-                      <strong className="text-rose-500 text-sm font-black">${Number(record.outstandingBalance || record.remainingBalance || 0).toFixed(2)}</strong>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-4 text-xs font-mono">
+                      <div className="bg-slate-50 dark:bg-slate-900/60 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
+                        <span className="text-slate-500 block font-bold mb-1">Wallet Balance</span>
+                        <strong className="text-emerald-500 text-sm font-black">+${Number(record.advanceBalance || 0).toFixed(2)}</strong>
+                      </div>
+                      <div className="bg-slate-50 dark:bg-slate-900/60 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
+                        <span className="text-slate-500 block font-bold mb-1">Outstanding Balance</span>
+                        <strong className="text-rose-500 text-sm font-black">${Number(record.outstandingBalance || record.remainingBalance || 0).toFixed(2)}</strong>
+                      </div>
                     </div>
-                  </div>
-                  <div className="pt-4 text-center">
-                    <Link
-                      href={`/students/${record.documentId || record.id}?tab=finance`}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-all shadow-sm"
-                    >
-                      <ExternalLink className="w-3.5 h-3.5" />
-                      <span>Open Full Billing & Wallet Ledger</span>
-                    </Link>
-                  </div>
+                  )}
+                  {category !== 'worker' && (
+                    <div className="pt-4 text-center">
+                      <Link
+                        href={`/students/${record.documentId || record.id}?tab=finance`}
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-all shadow-sm"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                        <span>Open Full Billing & Wallet Ledger</span>
+                      </Link>
+                    </div>
+                  )}
                 </div>
               ) : activeTab === 'attendance' ? (
                 <div className="space-y-4 animate-in fade-in">
@@ -430,22 +489,24 @@ export function SlideOutDrawer({
                   <div className="grid grid-cols-2 gap-4 text-xs">
                     <div className="bg-slate-50 dark:bg-slate-900/60 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
                       <span className="text-slate-500 block font-bold mb-1">Average Attendance</span>
-                      <strong className="text-emerald-500 font-black">98.2%</strong>
+                      <strong className="text-emerald-500 font-black">{category === 'worker' ? '99.1%' : '98.2%'}</strong>
                     </div>
                     <div className="bg-slate-50 dark:bg-slate-900/60 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
                       <span className="text-slate-500 block font-bold mb-1">Gate Logs Today</span>
-                      <strong className="text-slate-955 dark:text-slate-100 font-bold">Present (07:42 AM)</strong>
+                      <strong className="text-slate-955 dark:text-slate-100 font-bold">{category === 'worker' ? 'Checked In (07:30 AM)' : 'Present (07:42 AM)'}</strong>
                     </div>
                   </div>
-                  <div className="pt-4 text-center">
-                    <Link
-                      href={`/students/${record.documentId || record.id}?tab=attendance`}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-all shadow-sm"
-                    >
-                      <ExternalLink className="w-3.5 h-3.5" />
-                      <span>Open Full Attendance Tracker</span>
-                    </Link>
-                  </div>
+                  {category !== 'worker' && (
+                    <div className="pt-4 text-center">
+                      <Link
+                        href={`/students/${record.documentId || record.id}?tab=attendance`}
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-all shadow-sm"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                        <span>Open Full Attendance Tracker</span>
+                      </Link>
+                    </div>
+                  )}
                 </div>
               ) : activeTab === 'quran' ? (
                 <div className="space-y-4 animate-in fade-in">
@@ -506,17 +567,22 @@ export function SlideOutDrawer({
                   <FileText className="w-8 h-8 text-emerald-600 dark:text-emerald-400 mx-auto" />
                   <h4 className="font-bold text-slate-900 dark:text-white text-sm uppercase font-mono">{activeTab} Summary</h4>
                   <p className="text-xs text-slate-600 dark:text-slate-400 max-w-sm mx-auto">
-                    To view comprehensive transaction files, permission states, behavior reports, and logs, open the student's 360° dossier.
+                    {category === 'worker'
+                      ? `Reviewing worker dossier files, contract records, security credentials, and audit logs.`
+                      : `To view comprehensive transaction files, permission states, behavior reports, and logs, open the student's 360° dossier.`
+                    }
                   </p>
-                  <div className="pt-2">
-                    <Link
-                      href={`/students/${record.documentId || record.id}`}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-all shadow-sm"
-                    >
-                      <ExternalLink className="w-3.5 h-3.5" />
-                      <span>Open Student 360° Dossier</span>
-                    </Link>
-                  </div>
+                  {category !== 'worker' && (
+                    <div className="pt-2">
+                      <Link
+                        href={`/students/${record.documentId || record.id}`}
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-all shadow-sm"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                        <span>Open Student 360° Dossier</span>
+                      </Link>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -535,37 +601,75 @@ export function SlideOutDrawer({
                   </div>
 
                   <div className="space-y-3">
-                    <div className="p-3 rounded-xl bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800/80 text-xs space-y-1 shadow-2xs">
-                      <div className="flex items-center justify-between text-[10px] font-mono text-slate-500 dark:text-slate-400">
-                        <span>Recent Attendance</span>
-                        <span className="text-emerald-600 dark:text-emerald-400 font-bold">Present (Today)</span>
-                      </div>
-                      <p className="text-slate-800 dark:text-slate-300 text-[11px] font-medium truncate">Logged in at Gate 1 Mosque Entrance (07:42 AM)</p>
-                    </div>
+                    {category === 'worker' ? (
+                      <>
+                        <div className="p-3 rounded-xl bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800/80 text-xs space-y-1 shadow-2xs">
+                          <div className="flex items-center justify-between text-[10px] font-mono text-slate-500 dark:text-slate-400">
+                            <span>Duty Attendance</span>
+                            <span className="text-emerald-600 dark:text-emerald-400 font-bold">Checked In</span>
+                          </div>
+                          <p className="text-slate-800 dark:text-slate-300 text-[11px] font-medium truncate">Logged in at Main Campus Shift Checkpoint (07:30 AM)</p>
+                        </div>
 
-                    <div className="p-3 rounded-xl bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800/80 text-xs space-y-1 shadow-2xs">
-                      <div className="flex items-center justify-between text-[10px] font-mono text-slate-500 dark:text-slate-400">
-                        <span>Recent Financial Status</span>
-                        <span className="text-emerald-600 dark:text-emerald-400 font-bold">Cleared</span>
-                      </div>
-                      <p className="text-slate-800 dark:text-slate-300 text-[11px] font-medium truncate">Term 1 Tuition Receipt #INV-8891 verified.</p>
-                    </div>
+                        <div className="p-3 rounded-xl bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800/80 text-xs space-y-1 shadow-2xs">
+                          <div className="flex items-center justify-between text-[10px] font-mono text-slate-500 dark:text-slate-400">
+                            <span>Financial Status</span>
+                            <span className="text-emerald-600 dark:text-emerald-400 font-bold">Paid</span>
+                          </div>
+                          <p className="text-slate-800 dark:text-slate-300 text-[11px] font-medium truncate">Last payroll cycle processed successfully.</p>
+                        </div>
 
-                    <div className="p-3 rounded-xl bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800/80 text-xs space-y-1 shadow-2xs">
-                      <div className="flex items-center justify-between text-[10px] font-mono text-slate-500 dark:text-slate-400">
-                        <span>Recent Academic / Task</span>
-                        <span className="text-sky-600 dark:text-sky-400 font-bold">Surah Al-Mulk</span>
-                      </div>
-                      <p className="text-slate-800 dark:text-slate-300 text-[11px] font-medium truncate">Muraja'ah recitation scored 96% with Tajweed.</p>
-                    </div>
+                        <div className="p-3 rounded-xl bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800/80 text-xs space-y-1 shadow-2xs">
+                          <div className="flex items-center justify-between text-[10px] font-mono text-slate-500 dark:text-slate-400">
+                            <span>Assigned Roster</span>
+                            <span className="text-sky-600 dark:text-sky-400 font-bold">Active</span>
+                          </div>
+                          <p className="text-slate-800 dark:text-slate-300 text-[11px] font-medium truncate">{roleOrGrade} shift assignment is active.</p>
+                        </div>
 
-                    <div className="p-3 rounded-xl bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800/80 text-xs space-y-1 shadow-2xs">
-                      <div className="flex items-center justify-between text-[10px] font-mono text-slate-500 dark:text-slate-400">
-                        <span>Audit Log Entry</span>
-                        <span className="text-amber-600 dark:text-amber-400 font-bold">Updated</span>
-                      </div>
-                      <p className="text-slate-800 dark:text-slate-300 text-[11px] font-medium truncate">Role permissions inspected by Super Admin.</p>
-                    </div>
+                        <div className="p-3 rounded-xl bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800/80 text-xs space-y-1 shadow-2xs">
+                          <div className="flex items-center justify-between text-[10px] font-mono text-slate-500 dark:text-slate-400">
+                            <span>Audit Log Entry</span>
+                            <span className="text-amber-600 dark:text-amber-400 font-bold">Verified</span>
+                          </div>
+                          <p className="text-slate-800 dark:text-slate-300 text-[11px] font-medium truncate">Credentials and role permissions verified.</p>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="p-3 rounded-xl bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800/80 text-xs space-y-1 shadow-2xs">
+                          <div className="flex items-center justify-between text-[10px] font-mono text-slate-500 dark:text-slate-400">
+                            <span>Recent Attendance</span>
+                            <span className="text-emerald-600 dark:text-emerald-400 font-bold">Present (Today)</span>
+                          </div>
+                          <p className="text-slate-800 dark:text-slate-300 text-[11px] font-medium truncate">Logged in at Gate 1 Mosque Entrance (07:42 AM)</p>
+                        </div>
+
+                        <div className="p-3 rounded-xl bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800/80 text-xs space-y-1 shadow-2xs">
+                          <div className="flex items-center justify-between text-[10px] font-mono text-slate-500 dark:text-slate-400">
+                            <span>Recent Financial Status</span>
+                            <span className="text-emerald-600 dark:text-emerald-400 font-bold">Cleared</span>
+                          </div>
+                          <p className="text-slate-800 dark:text-slate-300 text-[11px] font-medium truncate">Term 1 Tuition Receipt #INV-8891 verified.</p>
+                        </div>
+
+                        <div className="p-3 rounded-xl bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800/80 text-xs space-y-1 shadow-2xs">
+                          <div className="flex items-center justify-between text-[10px] font-mono text-slate-500 dark:text-slate-400">
+                            <span>Recent Academic / Task</span>
+                            <span className="text-sky-600 dark:text-sky-400 font-bold">Surah Al-Mulk</span>
+                          </div>
+                          <p className="text-slate-800 dark:text-slate-300 text-[11px] font-medium truncate">Muraja'ah recitation scored 96% with Tajweed.</p>
+                        </div>
+
+                        <div className="p-3 rounded-xl bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800/80 text-xs space-y-1 shadow-2xs">
+                          <div className="flex items-center justify-between text-[10px] font-mono text-slate-500 dark:text-slate-400">
+                            <span>Audit Log Entry</span>
+                            <span className="text-amber-600 dark:text-amber-400 font-bold">Updated</span>
+                          </div>
+                          <p className="text-slate-800 dark:text-slate-300 text-[11px] font-medium truncate">Role permissions inspected by Super Admin.</p>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
 

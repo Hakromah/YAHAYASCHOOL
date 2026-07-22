@@ -20,9 +20,13 @@ function normalizeEntity<T>(item: any, idx = 0): T {
   const schoolIdVal = item.schoolId || item.studentId || item.teacherId || item.employeeId || item.admissionNumber || item.code || item.documentId || (idVal ? (typeof idVal === 'string' && idVal.startsWith('AC') ? idVal : 'AC' + String(idVal).padStart(8, '0')) : `AC${String(idx + 1).padStart(8, '0')}`);
 
   // Resolve media URLs safely
-  let rawPhoto = item.photoUrl || item.avatarUrl || item.photo?.url || item.photo?.data?.attributes?.url || item.photo?.data?.url || item.avatar?.url || item.avatar?.data?.attributes?.url || item.avatar?.data?.url;
+  let rawPhoto = item.photoUrl || item.avatarUrl || 
+    item.photo?.url || item.photo?.data?.attributes?.url || item.photo?.data?.url || 
+    item.avatar?.url || item.avatar?.data?.attributes?.url || item.avatar?.data?.url ||
+    item.user?.avatar?.url || item.user?.avatar?.data?.attributes?.url || item.user?.avatar?.data?.url || item.user?.avatarUrl || item.user?.photoUrl || item.user?.photo?.url;
+
   const baseUrl = process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1339';
-  const resolvedPhotoUrl = rawPhoto ? (rawPhoto.startsWith('http') ? rawPhoto : `${baseUrl}${rawPhoto.startsWith('/') ? '' : '/'}${rawPhoto}`) : null;
+  const resolvedPhotoUrl = rawPhoto ? (rawPhoto.startsWith('http') || rawPhoto.startsWith('data:') ? rawPhoto : `${baseUrl}${rawPhoto.startsWith('/') ? '' : '/'}${rawPhoto}`) : null;
 
   // Normalize nested children / students relations if present
   const rawChildren = item.children?.data || item.children || item.students?.data || item.students || [];
@@ -117,8 +121,7 @@ export const erpService = {
             pageSize: params.pageSize || 12,
           },
           sort: params.sort || 'schoolId:asc',
-          populate: ['photo', 'sections', 'parents', 'timeline', 'behaviorRecords', 'enrollmentHistory', 'departments'],
-          fields: ['id', 'documentId', 'firstName', 'middleName', 'lastName', 'schoolId', 'admissionNumber', 'gender', 'dateOfBirth', 'enrollmentStatus', 'advanceBalance'],
+          populate: ['photo', 'user', 'user.avatar', 'sections', 'parents', 'timeline', 'behaviorRecords', 'enrollmentHistory', 'departments'],
         },
       });
       return unwrapPaginated<Student>(res.data);
@@ -133,7 +136,7 @@ export const erpService = {
       const res = await apiClient.get(`/students/${id}`, {
         params: {
           locale,
-          populate: ['photo', 'sections', 'parents', 'teachers', 'timeline', 'behaviorRecords', 'enrollmentHistory', 'medicalInfo', 'staffNotes', 'documents', 'departments', 'programs', 'academicYears'],
+          populate: ['photo', 'user', 'user.avatar', 'sections', 'parents', 'teachers', 'timeline', 'behaviorRecords', 'enrollmentHistory', 'medicalInfo', 'staffNotes', 'documents', 'departments', 'programs', 'academicYears'],
         },
       });
       return unwrapSingle<Student>(res.data);
@@ -165,7 +168,7 @@ export const erpService = {
         params: {
           locale,
           filters: { schoolId: { $eq: schoolId } },
-          populate: ['photo', 'sections', 'parents', 'teachers', 'timeline', 'behaviorRecords', 'enrollmentHistory', 'medicalInfo', 'staffNotes', 'documents', 'departments', 'programs', 'academicYears'],
+          populate: ['photo', 'user', 'user.avatar', 'sections', 'parents', 'teachers', 'timeline', 'behaviorRecords', 'enrollmentHistory', 'medicalInfo', 'staffNotes', 'documents', 'departments', 'programs', 'academicYears'],
         },
       });
       const paginated = unwrapPaginated<Student>(res.data);
@@ -208,7 +211,7 @@ export const erpService = {
             pageSize: params.pageSize || 12,
           },
           sort: params.sort || 'schoolId:asc',
-          populate: ['photo', 'departments', 'sections', 'programs'],
+          populate: ['photo', 'user', 'user.avatar', 'departments', 'sections', 'programs'],
         },
       });
       return unwrapPaginated<Teacher>(res.data);
@@ -223,7 +226,7 @@ export const erpService = {
       const res = await apiClient.get(`/teachers/${id}`, {
         params: {
           locale,
-          populate: ['photo', 'departments', 'sections', 'programs', 'students', 'documents'],
+          populate: ['photo', 'user', 'user.avatar', 'departments', 'sections', 'programs', 'students', 'documents'],
         },
       });
       return unwrapSingle<Teacher>(res.data);
@@ -239,7 +242,7 @@ export const erpService = {
         params: {
           locale,
           filters: { schoolId: { $eq: schoolId } },
-          populate: ['photo', 'departments', 'sections', 'programs', 'students', 'documents'],
+          populate: ['photo', 'user', 'user.avatar', 'departments', 'sections', 'programs', 'students', 'documents'],
         },
       });
       const paginated = unwrapPaginated<Teacher>(res.data);
@@ -340,6 +343,26 @@ export const erpService = {
       return unwrapSingle<Worker>(res.data);
     } catch (error) {
       console.warn(`[erpService] Failed to fetch worker ${id}:`, error);
+      return null;
+    }
+  },
+  
+  async createWorker(payload: any): Promise<any> {
+    try {
+      const res = await apiClient.post('/workers', { data: payload });
+      return unwrapSingle<any>(res.data);
+    } catch (error) {
+      console.warn('[erpService] Failed to create worker:', error);
+      return null;
+    }
+  },
+
+  async updateWorker(id: string | number, payload: any): Promise<any> {
+    try {
+      const res = await apiClient.put(`/workers/${id}`, { data: payload });
+      return unwrapSingle<any>(res.data);
+    } catch (error) {
+      console.warn(`[erpService] Failed to update worker ${id}:`, error);
       return null;
     }
   },

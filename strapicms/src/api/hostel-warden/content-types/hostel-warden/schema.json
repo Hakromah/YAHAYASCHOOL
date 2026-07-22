@@ -1,0 +1,32 @@
+{
+  "kind": "collectionType",
+  "collectionName": "hostel_wardens",
+  "info": {
+    "singularName": "hostel-warden",
+    "pluralName": "hostel-wardens",
+    "displayName": "Hostel Warden",
+    "description": "Schema for Hostel Warden"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "employee": {
+      "type": "string",
+      "required": true
+    },
+    "assignedBuilding": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::hostel-building.hostel-building",
+      "inversedBy": "wardens"
+    },
+    "assignedFloors": {
+      "type": "json"
+    },
+    "emergencyContacts": {
+      "type": "json"
+    }
+  }
+}

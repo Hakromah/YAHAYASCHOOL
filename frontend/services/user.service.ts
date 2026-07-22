@@ -60,11 +60,21 @@ export const userService = {
         const idVal = u.id || u.documentId || idx + 1;
         const nameVal = u.displayName || (u.firstName && u.lastName ? `${u.firstName} ${u.lastName}` : null) || u.fullName || u.username || `User #${idVal}`;
         const schoolIdVal = u.schoolId || u.studentId || u.teacherId || u.employeeId || u.customId || (idVal ? (typeof idVal === 'string' && idVal.startsWith('AC') ? idVal : 'AC' + String(idVal).padStart(8, '0')) : `AC${String(idx + 1).padStart(8, '0')}`);
+        
+        let rawPhoto = u.avatarUrl || u.photoUrl || 
+          u.avatar?.url || u.avatar?.data?.attributes?.url || u.avatar?.data?.url || 
+          u.photo?.url || u.photo?.data?.attributes?.url || u.photo?.data?.url;
+
+        const baseUrl = process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1339';
+        const resolvedPhotoUrl = rawPhoto ? (rawPhoto.startsWith('http') || rawPhoto.startsWith('data:') ? rawPhoto : `${baseUrl}${rawPhoto.startsWith('/') ? '' : '/'}${rawPhoto}`) : null;
+
         return {
           ...u,
           id: idVal,
           displayName: nameVal,
           schoolId: schoolIdVal,
+          avatarUrl: resolvedPhotoUrl,
+          photoUrl: resolvedPhotoUrl,
         } as SchoolUser;
       });
 
@@ -94,11 +104,21 @@ export const userService = {
       const idVal = u.id || id;
       const nameVal = u.displayName || (u.firstName && u.lastName ? `${u.firstName} ${u.lastName}` : null) || u.fullName || u.username || `User #${idVal}`;
       const schoolIdVal = u.schoolId || u.studentId || u.teacherId || u.employeeId || (idVal ? (typeof idVal === 'string' && idVal.startsWith('AC') ? idVal : 'AC' + String(idVal).padStart(8, '0')) : 'AC000000001');
+      
+      let rawPhoto = u.avatarUrl || u.photoUrl || 
+        u.avatar?.url || u.avatar?.data?.attributes?.url || u.avatar?.data?.url || 
+        u.photo?.url || u.photo?.data?.attributes?.url || u.photo?.data?.url;
+
+      const baseUrl = process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1339';
+      const resolvedPhotoUrl = rawPhoto ? (rawPhoto.startsWith('http') || rawPhoto.startsWith('data:') ? rawPhoto : `${baseUrl}${rawPhoto.startsWith('/') ? '' : '/'}${rawPhoto}`) : null;
+
       return {
         ...u,
         id: idVal,
         displayName: nameVal,
         schoolId: schoolIdVal,
+        avatarUrl: resolvedPhotoUrl,
+        photoUrl: resolvedPhotoUrl,
       } as SchoolUser;
     } catch (error) {
       throw normalizeError(error);

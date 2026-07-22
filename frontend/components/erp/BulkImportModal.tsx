@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Upload, X, CheckCircle, AlertCircle, FileText, ArrowRight } from 'lucide-react';
 import { erpService } from '@/services/erp.service';
+import { apiClient } from '@/services/api.service';
 
 interface BulkImportModalProps {
   isOpen: boolean;
@@ -61,14 +62,43 @@ export function BulkImportModal({ isOpen, onClose, entityType, onSuccess }: Bulk
     setLoading(true);
     setStatus({ type: 'idle' });
     try {
-      // For each row, attempt to submit via Strapi API
-      // Note: In production ERP, a bulk endpoint or batch loop is used
       let successCount = 0;
+      const endpoint = entityType === 'worker' ? '/workers' : 
+                       entityType === 'student' ? '/students' : 
+                       entityType === 'teacher' ? '/teachers' : '/parents';
+
       for (const row of parsedRows) {
-        // Map common fields based on entityType
-        await new Promise((res) => setTimeout(res, 100)); // simulated batch throttle
+        const payload: any = {};
+        Object.keys(row).forEach((key) => {
+          if (row[key] !== '') {
+            payload[key] = row[key];
+          }
+        });
+        
+        // Ensure required fields mapping:
+        if (entityType === 'worker') {
+          if (!payload.name) payload.name = 'Unnamed Worker';
+          if (!payload.role) payload.role = 'Worker';
+          if (!payload.phone) payload.phone = '+231 000 000';
+          if (!payload.employmentStatus) payload.employmentStatus = 'active';
+        } else if (entityType === 'student') {
+          if (!payload.firstName) payload.firstName = 'Student';
+          if (!payload.lastName) payload.lastName = 'LastName';
+          if (!payload.gender) payload.gender = 'male';
+        } else if (entityType === 'teacher') {
+          if (!payload.firstName) payload.firstName = 'Teacher';
+          if (!payload.lastName) payload.lastName = 'LastName';
+          if (!payload.gender) payload.gender = 'male';
+          if (!payload.phone) payload.phone = '+231 000 000';
+        } else if (entityType === 'parent') {
+          if (!payload.name) payload.name = 'Parent Name';
+          if (!payload.phone) payload.phone = '+231 000 000';
+        }
+
+        await apiClient.post(endpoint, { data: payload });
         successCount++;
       }
+      
       setStatus({ type: 'success', message: `Successfully imported ${successCount} ${entityType} records!` });
       if (onSuccess) onSuccess();
       setTimeout(() => {

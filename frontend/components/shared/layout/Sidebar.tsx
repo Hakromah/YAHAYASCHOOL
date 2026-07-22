@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import Link from 'next/link';
+import { Link, usePathname } from '@/i18n/routing';
 import Image from 'next/image';
-import { usePathname } from '@/i18n/routing';
+import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, Users, FileText, Settings, ChevronLeft, ChevronRight,
@@ -16,7 +16,7 @@ import {
   MessageSquare, Clock, UserCog, Landmark, ScrollText, BookMarked,
   HeartHandshake, UsersRound, Cpu, Fuel, AlertTriangle, Presentation,
   FolderOpen, SquareCheckBig, Star, BadgeCheck, Compass, CreditCard,
-  QrCode, Coins, PiggyBank, Scale, Percent
+  QrCode, Coins, PiggyBank, Scale, Percent, ShoppingBag, Bed, KeyRound, ShieldAlert
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { toast } from 'sonner';
@@ -47,9 +47,27 @@ interface NavSection {
   items: NavItem[];
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
 // Role-specific navigation configurations
 // ─────────────────────────────────────────────────────────────────────────────
+
+const getHostelERPNav = () => ({
+  title: 'Hostel ERP Suite',
+  items: [
+    { label: 'Hostel Dashboard', href: '/hostel?tab=dashboard', icon: LayoutDashboard },
+    { label: 'Buildings & Floors', href: '/hostel?tab=buildings', icon: Building2 },
+    { label: 'Rooms & Beds', href: '/hostel?tab=rooms', icon: Bed },
+    { label: 'Bed Allocations', href: '/hostel?tab=allocations', icon: ClipboardList },
+    { label: 'Waiting List', href: '/hostel?tab=waiting-list', icon: Users },
+    { label: 'Fee Plans & Setup', href: '/hostel?tab=feeplans', icon: FileText },
+    { label: 'Security Deposits', href: '/hostel?tab=deposits', icon: ShieldCheck },
+    { label: 'Visitor Logs', href: '/hostel?tab=visitors', icon: KeyRound },
+    { label: 'Gate Passes', href: '/hostel?tab=gatepasses', icon: ShieldAlert },
+    { label: 'Attendance Logs', href: '/hostel?tab=attendance', icon: Calendar },
+    { label: 'Wardens & Duty', href: '/hostel?tab=wardens', icon: UserCheck },
+    { label: 'Maintenance Tickets', href: '/hostel?tab=maintenance', icon: Wrench },
+    { label: 'Reports & Settings', href: '/hostel?tab=settings', icon: Settings },
+  ]
+});
 
 function getSuperAdminNav(): NavSection[] {
   return [
@@ -86,9 +104,21 @@ function getSuperAdminNav(): NavSection[] {
         { label: 'Academic Years', href: '/academic-structure/years', icon: Calendar },
         { label: 'Academic Terms', href: '/academic-structure/terms', icon: Clock },
         { label: 'School Calendar', href: '/calendar', icon: Calendar },
-        { label: 'Admissions', href: '/directory/admissions', icon: ScrollText },
+        { label: 'Admissions Hub', href: '/erp/admissions', icon: GraduationCap },
       ],
     },
+    {
+      title: 'Enterprise Operations ERP',
+      items: [
+        { label: 'Admissions ERP', href: '/erp/admissions', icon: GraduationCap },
+        { label: 'Transport Logistics', href: '/transport', icon: Bus },
+        { label: 'Library System', href: '/library', icon: BookOpen },
+        { label: 'Inventory & Supplies', href: '/inventory', icon: Package },
+        { label: 'Fixed Assets', href: '/assets', icon: Landmark },
+        { label: 'Procurement & AP', href: '/procurement', icon: ShoppingBag },
+      ],
+    },
+    getHostelERPNav(),
     {
       title: 'Academic Management',
       items: [
@@ -267,6 +297,7 @@ function getDirectorNav(): NavSection[] {
         { label: 'Certificates', href: '/results/certificates', icon: BadgeCheck },
       ],
     },
+    getHostelERPNav(),
     {
       title: 'Executive Finance (Read-Only)',
       items: [
@@ -452,6 +483,7 @@ function getAccountantNav(): NavSection[] {
         { label: 'Cashier Sessions', href: '/finance/billing/sessions', icon: PiggyBank },
       ],
     },
+    getHostelERPNav(),
     {
       title: 'Accounting Engine',
       items: [
@@ -513,6 +545,7 @@ function getAccountLeadNav(): NavSection[] {
         { label: 'Discounts & Rules', href: '/finance/billing/discounts', icon: Coins },
       ],
     },
+    getHostelERPNav(),
     {
       title: 'Audit & Reports',
       items: [
@@ -544,6 +577,7 @@ function getWorkerNav(): NavSection[] {
         { label: 'Documents', href: '/documents', icon: FolderOpen },
       ],
     },
+    getHostelERPNav(),
     {
       title: 'Communication',
       items: [
@@ -608,6 +642,7 @@ export function Sidebar({ className }: SidebarProps) {
   const { user, logout } = useAuth();
   const { theme, setTheme } = useTheme();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const isMobile = useMobile();
 
   const [isCollapsed, setIsCollapsed] = useLocalStorage(STORAGE_KEYS.SIDEBAR_COLLAPSED, false);
@@ -623,6 +658,7 @@ export function Sidebar({ className }: SidebarProps) {
     let best = '';
     for (const section of navSections) {
       for (const item of section.items) {
+        if (item.href.includes('?')) continue;
         if (pathname === item.href || pathname.startsWith(item.href + '/')) {
           if (item.href.length > best.length) {
             best = item.href;
@@ -634,12 +670,54 @@ export function Sidebar({ className }: SidebarProps) {
   }, [pathname, navSections]);
 
   const isActive = (href: string) => {
+    // Precise match for query parameters (e.g. /hostel?tab=dashboard)
+    if (href.includes('?')) {
+      const [path, query] = href.split('?');
+      const params = new URLSearchParams(query);
+      const pathMatches = pathname === path || pathname === `${path}/`;
+      if (!pathMatches) return false;
+
+      for (const [key, val] of params.entries()) {
+        const paramVal = searchParams.get(key);
+        if (key === 'tab' && val === 'dashboard' && !paramVal) {
+          continue; // Default tab is dashboard when no query param is present
+        }
+        if (paramVal !== val) return false;
+      }
+      return true;
+    }
+
     // Exact match for top-level pages to prevent them from staying active when on nested routes
     if (['/dashboard', '/finance', '/settings', '/results', '/directory', '/cms'].includes(href)) {
       return pathname === href || pathname === `${href}/`;
     }
     return href === activeHref;
   };
+
+  // Auto-expand sections that contain the active page
+  useEffect(() => {
+    for (const section of navSections) {
+      const hasActiveChild = section.items.some(item => isActive(item.href));
+      if (hasActiveChild && !expandedSections[section.title]) {
+        setExpandedSections(prev => ({ ...prev, [section.title]: true }));
+      }
+    }
+  }, [pathname, searchParams, navSections]);
+
+  // Auto scroll active item into view
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const activeEl = document.querySelector('.active-sidebar-item');
+      if (activeEl) {
+        activeEl.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+          inline: 'nearest'
+        });
+      }
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [pathname, activeHref, searchParams]);
 
   const toggleSection = (title: string) => {
     setExpandedSections(prev => ({ ...prev, [title]: !prev[title] }));
@@ -742,7 +820,7 @@ export function Sidebar({ className }: SidebarProps) {
                           'flex items-center gap-3 rounded-xl transition-all duration-150 group relative',
                           isCollapsed ? 'h-10 w-10 mx-auto justify-center' : 'px-3 py-2.5',
                           active
-                            ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20'
+                            ? 'bg-emerald-600 text-white shadow-md shadow-emerald-500/20 active-sidebar-item'
                             : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                         )}
                       >

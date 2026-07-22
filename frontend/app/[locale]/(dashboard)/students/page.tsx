@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -20,6 +21,7 @@ import { EnterpriseToolbar, type TableDensity } from '@/components/erp/Enterpris
 import { EnterpriseDataGrid, type ColumnDef } from '@/components/erp/EnterpriseDataGrid';
 import { SlideOutDrawer } from '@/components/erp/SlideOutDrawer';
 import { toast } from 'sonner';
+import Image from 'next/image';
 
 export default function StudentsListPage() {
   const [students, setStudents] = useState<Student[]>([]);
@@ -125,11 +127,11 @@ export default function StudentsListPage() {
           const name = st.name || st.fullName || st.displayName || [st.firstName, st.lastName].filter(Boolean).join(' ') || st.username || 'Unnamed Student';
           const rawId = String(st.id || '');
           const idStr = st.studentId || st.schoolId || st.admissionNumber || st.code || (st as any).documentId || (rawId.startsWith('AC') ? rawId : rawId ? 'AC' + rawId.padStart(8, '0') : 'AC000000001');
-          const photo = st.photoUrl || st.avatarUrl || st.photo?.url || st.avatar?.url;
+          const photo = st?.photoUrl || st?.avatarUrl || st?.photo?.url || st?.avatar?.url || (st as any)?.user?.avatar?.url || (st as any)?.user?.avatarUrl || (st as any)?.user?.photoUrl;
 
           return (
             <div className="flex items-center gap-3">
-              <Avatar src={st.photo || photo} name={name} size="sm" />
+              <Avatar src={st?.photo || photo} name={name} size="sm" />
               <div>
                 <p className="font-bold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors text-sm">
                   {name}

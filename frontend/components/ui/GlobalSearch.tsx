@@ -105,6 +105,20 @@ const SYSTEM_NAVIGATION_PAGES: SearchResultItem[] = [
   { id: 'nav-finance-reports', title: 'Financial Statements & Reports', subtitle: 'Income Statement & Balance Sheet Reports', category: 'page', href: '/finance/reports', keywords: ['reports', 'balance-sheet', 'income-statement', 'pnl'] },
   { id: 'nav-finance-chart', title: 'Chart of Accounts', subtitle: 'GL Account Codes & Accounting Categories', category: 'page', href: '/finance/accounting/chart', keywords: ['chart', 'accounts', 'gl', 'ledger-codes'] },
   { id: 'nav-finance-journals', title: 'Double-Entry Journals', subtitle: 'General Journal Vouchers & Accounting Entries', category: 'page', href: '/finance/accounting/journals', keywords: ['journals', 'entries', 'vouchers', 'double-entry'] },
+  { id: 'nav-hostel', title: 'Hostel & Boarding ERP', subtitle: 'Halls, Rooms, Bed Allocations, Visitors & Gate Passes', category: 'page', href: '/hostel', keywords: ['hostel', 'boarding', 'rooms', 'beds', 'allocation', 'gatepass', 'visitor', 'warden', 'curfew'] },
+  { id: 'nav-hostel-dashboard', title: 'Hostel Dashboard', subtitle: 'Hostel Executive & Occupancy Command Center', category: 'page', href: '/hostel?tab=dashboard', keywords: ['hostel', 'dashboard', 'occupancy', 'capacity'] },
+  { id: 'nav-hostel-buildings', title: 'Boarding Buildings & Floors', subtitle: 'Boarding Halls & Floor Inventories', category: 'page', href: '/hostel?tab=buildings', keywords: ['hostel', 'buildings', 'halls', 'floors'] },
+  { id: 'nav-hostel-rooms', title: 'Rooms & Beds Inventory', subtitle: 'Room Categories & Bed Space Registers', category: 'page', href: '/hostel?tab=rooms', keywords: ['hostel', 'rooms', 'beds', 'inventory'] },
+  { id: 'nav-hostel-allocations', title: 'Hostel Bed Allocations', subtitle: 'Resident Student Bed Assignments & Status', category: 'page', href: '/hostel?tab=allocations', keywords: ['hostel', 'allocations', 'assign', 'bed'] },
+  { id: 'nav-hostel-waiting-list', title: 'Hostel Waiting List', subtitle: 'Scholars Queued for Boarding Allocation', category: 'page', href: '/hostel?tab=waiting-list', keywords: ['hostel', 'waitlist', 'waiting', 'queue'] },
+  { id: 'nav-hostel-feeplans', title: 'Boarding Fee Plans & Setup', subtitle: 'Term Charges & Refundable Security Deposit Rates', category: 'page', href: '/hostel?tab=feeplans', keywords: ['hostel', 'fees', 'plans', 'billing'] },
+  { id: 'nav-hostel-deposits', title: 'Hostel Security Deposits', subtitle: 'GL 2050 Deposits Held & Refund Releases', category: 'page', href: '/hostel?tab=deposits', keywords: ['hostel', 'deposits', 'gl 2050', 'refund', 'money'] },
+  { id: 'nav-hostel-visitors', title: 'Hostel Visitor Logs', subtitle: 'Guest Registrations & Short Stay Logs', category: 'page', href: '/hostel?tab=visitors', keywords: ['hostel', 'visitors', 'guests', 'registry'] },
+  { id: 'nav-hostel-gatepasses', title: 'Warden Gate Passes', subtitle: 'Student Curfew Leaves & Gate Entry Permits', category: 'page', href: '/hostel?tab=gatepasses', keywords: ['hostel', 'gate', 'passes', 'curfew', 'leave'] },
+  { id: 'nav-hostel-attendance', title: 'Hostel Attendance Logs', subtitle: 'Student Roll-Call & Curfew Check Registry', category: 'page', href: '/hostel?tab=attendance', keywords: ['hostel', 'attendance', 'checkin', 'rollcall'] },
+  { id: 'nav-hostel-wardens', title: 'Wardens & Duty Roster', subtitle: 'Chief Wardens, Building Assignments & Duty Schedules', category: 'page', href: '/hostel?tab=wardens', keywords: ['hostel', 'wardens', 'duty', 'staff'] },
+  { id: 'nav-hostel-maintenance', title: 'Hostel Maintenance Tickets', subtitle: 'Boarding Room Repair Requests & Resolution Status', category: 'page', href: '/hostel?tab=maintenance', keywords: ['hostel', 'maintenance', 'repair', 'tickets', 'wrench'] },
+  { id: 'nav-hostel-settings', title: 'Hostel Reports & Settings', subtitle: 'Academic Year Policies & Occupancy Limits', category: 'page', href: '/hostel?tab=settings', keywords: ['hostel', 'settings', 'reports', 'policies'] },
 
   // System Administration & Settings
   { id: 'nav-users', title: 'User Account Management', subtitle: 'User Accounts, Roles & Password Resets', category: 'page', href: '/users', keywords: ['users', 'accounts', 'roles', 'login', 'passwords'] },
@@ -139,6 +153,8 @@ export function GlobalSearch() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen]);
+
+
 
   // Perform multi-source search (Page index + Live ERP Database API records)
   useEffect(() => {
@@ -342,7 +358,7 @@ export function GlobalSearch() {
       >
         <div className="flex items-center gap-2 truncate">
           <Search className="w-3.5 h-3.5 text-muted-foreground group-hover:text-emerald-400 transition-colors" />
-          <span className="font-medium">Search Pages, Students, Staff, Fees...</span>
+          <span className="font-medium text-gray-400">Search Pages, Students, Staff, Fees...</span>
         </div>
         <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-mono font-bold bg-background border border-border rounded shadow-sm text-muted-foreground">
           ⌘K
@@ -368,20 +384,20 @@ export function GlobalSearch() {
               className="relative w-full max-w-2xl bg-card border border-border rounded-3xl shadow-2xl overflow-hidden z-10 flex flex-col max-h-[82vh]"
             >
               {/* Search Input Bar */}
-              <div className="flex items-center px-4 py-3.5 border-b border-border bg-slate-900/50">
-                <Search className="w-5 h-5 text-emerald-400 mr-3 flex-shrink-0" />
+              <div className="flex items-center px-5 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60">
+                <Search className="w-5 h-5 text-emerald-500 mr-3 flex-shrink-0" />
                 <input
                   type="text"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Search system pages, students, staff, invoices, payroll..."
                   autoFocus
-                  className="w-full bg-transparent text-sm font-semibold text-foreground placeholder:text-muted-foreground focus:outline-none"
+                  className="w-full bg-transparent text-sm font-bold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none"
                 />
                 {query && (
                   <button
                     onClick={() => setQuery('')}
-                    className="p-1 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground mr-1"
+                    className="p-1 rounded-lg hover:bg-muted text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 mr-1"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -457,6 +473,7 @@ export function GlobalSearch() {
                     </p>
                     <div className="flex flex-wrap justify-center gap-2">
                       {[
+                        { label: '🏢 Hostel ERP', href: '/hostel' },
                         { label: '🎓 Students', href: '/students' },
                         { label: '👨‍🏫 Teachers', href: '/teachers' },
                         { label: '💰 Staff Payroll', href: '/finance/payroll' },
@@ -472,7 +489,7 @@ export function GlobalSearch() {
                             setIsOpen(false);
                             router.push(s.href);
                           }}
-                          className="px-3 py-1.5 rounded-xl border border-border bg-card hover:bg-emerald-950/60 hover:border-emerald-600 text-xs font-bold text-foreground transition-all shadow-sm"
+                          className="px-4 py-2 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900/60 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 hover:border-emerald-500/50 hover:text-emerald-600 dark:hover:text-emerald-400 text-xs font-bold text-slate-700 dark:text-slate-300 transition-all shadow-2xs"
                         >
                           {s.label}
                         </button>

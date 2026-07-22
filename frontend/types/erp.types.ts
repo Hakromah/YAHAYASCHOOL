@@ -205,6 +205,7 @@ export interface Student {
   admissionDate?: string;
   graduationDate?: string;
   enrollmentStatus: 'active' | 'inactive' | 'suspended' | 'graduated' | 'transferred' | 'withdrawn' | 'expelled' | 'alumni';
+  status?: string;
   biography?: string;
   generalNotes?: string;
   emergencyContacts?: any;

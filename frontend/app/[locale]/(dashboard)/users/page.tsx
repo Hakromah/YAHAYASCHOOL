@@ -1,11 +1,14 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import React, { useState, useEffect } from 'react';
 import { Users, Shield, Plus, MoreVertical, Search, ChevronLeft, ChevronRight, Edit2, Trash2 } from 'lucide-react';
 import { userService } from '@/services/user.service';
 import type { SchoolUser } from '@/types/user.types';
+import { Avatar } from '@/components/shared/Avatar';
 import { toast } from 'sonner';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function UsersManagementPage() {
   const [users, setUsers] = useState<SchoolUser[]>([]);
@@ -81,9 +84,9 @@ export default function UsersManagementPage() {
         ) : (
           <div className="flex-1 overflow-x-auto relative">
             {loading && (
-               <div className="absolute inset-0 bg-white/50 dark:bg-slate-900/50 backdrop-blur-[1px] z-10 flex items-center justify-center">
-                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
-               </div>
+              <div className="absolute inset-0 bg-white/50 dark:bg-slate-900/50 backdrop-blur-[1px] z-10 flex items-center justify-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
+              </div>
             )}
             <table className="w-full text-left text-sm">
               <thead className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 sticky top-0">
@@ -100,76 +103,75 @@ export default function UsersManagementPage() {
                   const nameStr = user.displayName || [user.firstName, user.lastName].filter(Boolean).join(' ') || user.username || 'No Name';
                   const rawId = String(user.id || '');
                   const idCode = user.schoolId || (user as any).documentId || (rawId.startsWith('AC') ? rawId : rawId ? 'AC' + rawId.padStart(8, '0') : 'AC000000001');
+                  const avatarPhoto = user?.avatarUrl || user?.photoUrl || (user as any)?.avatar || (user as any)?.photo;
                   return (
-                  <tr key={user.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/25 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex flex-shrink-0 items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold border border-indigo-200 dark:border-indigo-800/50">
-                          {user.firstName?.charAt(0) || user.username.charAt(0)}
-                        </div>
-                        <div>
-                          <p className="font-bold text-slate-900 dark:text-white text-sm">
-                            {nameStr}
-                          </p>
-                          <div className="flex items-center gap-2 mt-0.5">
-                            <span className="font-mono text-xs text-indigo-600 dark:text-indigo-400 font-bold">
-                              {idCode}
-                            </span>
-                            <span className="text-xs text-slate-500 dark:text-slate-400">| {user.email}</span>
+                    <tr key={user.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/25 transition-colors">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <Avatar src={avatarPhoto} name={nameStr} size="sm" />
+                          <div>
+                            <p className="font-bold text-slate-900 dark:text-white text-sm">
+                              {nameStr}
+                            </p>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <span className="font-mono text-xs text-indigo-600 dark:text-indigo-400 font-bold">
+                                {idCode}
+                              </span>
+                              <span className="text-xs text-slate-500 dark:text-slate-400">| {user.email}</span>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 font-medium text-slate-700 dark:text-slate-300">
-                      @{user.username}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="inline-flex px-2.5 py-1 rounded-md text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 capitalize">
-                        {user.role?.name || 'No Role'}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      {user.blocked ? (
-                        <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-rose-100 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400">
-                          <span className="w-1.5 h-1.5 rounded-full bg-rose-500" /> Blocked
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Active
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <Link 
-                          href={`/users/${user.id}/edit`}
-                          className="p-2 text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 rounded-lg transition-colors"
-                          title="Edit User"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </Link>
-                        <button 
-                          onClick={() => {
-                            if(window.confirm('Are you sure you want to delete this user?')) {
-                              // Delete logic placeholder
-                              toast.info('Delete functionality coming soon');
-                            }
-                          }}
-                          className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-lg transition-colors"
-                          title="Delete User"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
+                      </td>
+                      <td className="px-6 py-4 font-medium text-slate-700 dark:text-slate-300">
+                        @{user.username}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="inline-flex px-2.5 py-1 rounded-md text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 capitalize">
+                          {user.role?.name || 'No Role'}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        {user.blocked ? (
+                          <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-rose-100 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400">
+                            <span className="w-1.5 h-1.5 rounded-full bg-rose-500" /> Blocked
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Active
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <Link
+                            href={`/users/${user.id}/edit`}
+                            className="p-2 text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 rounded-lg transition-colors"
+                            title="Edit User"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </Link>
+                          <button
+                            onClick={() => {
+                              if (window.confirm('Are you sure you want to delete this user?')) {
+                                // Delete logic placeholder
+                                toast.info('Delete functionality coming soon');
+                              }
+                            }}
+                            className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-lg transition-colors"
+                            title="Delete User"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
                   );
                 })}
               </tbody>
             </table>
-            </div>
+          </div>
         )}
-        
+
         {/* Pagination */}
         {totalPages > 1 && (
           <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-800/20">
@@ -177,14 +179,14 @@ export default function UsersManagementPage() {
               Page {page} of {totalPages}
             </p>
             <div className="flex gap-2">
-              <button 
+              <button
                 onClick={() => setPage(p => Math.max(1, p - 1))}
                 disabled={page === 1}
                 className="p-2 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-white dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-slate-600 dark:text-slate-300"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
-              <button 
+              <button
                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}
                 className="p-2 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-white dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-slate-600 dark:text-slate-300"

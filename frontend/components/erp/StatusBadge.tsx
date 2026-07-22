@@ -3,12 +3,13 @@
 import React from 'react';
 
 interface StatusBadgeProps {
-  status?: string;
+  status?: string | null;
   size?: 'sm' | 'md' | 'lg';
 }
 
 export function StatusBadge({ status = 'active', size = 'md' }: StatusBadgeProps) {
-  const normalized = status.toLowerCase().replace(/_/g, ' ');
+  const safeStatus = (status && typeof status === 'string' && status.trim() !== '') ? status : 'active';
+  const normalized = safeStatus.toLowerCase().replace(/_/g, ' ');
 
   const getStyle = (s: string) => {
     switch (s) {

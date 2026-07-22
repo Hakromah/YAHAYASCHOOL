@@ -109,6 +109,12 @@ export function EnterpriseDataGrid<TData>({
   });
 
   useEffect(() => {
+    setSorting([]);
+    setRowSelection({});
+    setExpanded({});
+  }, [columns]);
+
+  useEffect(() => {
     if (onSelectionChange) {
       const selectedKeys = Object.keys(rowSelection).filter((k) => rowSelection[k]);
       onSelectionChange(selectedKeys);

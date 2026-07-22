@@ -453,9 +453,13 @@ export const cmsService = {
 /**
  * Helper to resolve Strapi media URL whether absolute or relative
  */
-export function getStrapiMediaUrl(media: { url?: string } | null | undefined): string | null {
-  if (!media || !media.url) return null;
-  if (media.url.startsWith('http://') || media.url.startsWith('https://')) return media.url;
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1339';
-  return `${baseUrl}${media.url.startsWith('/') ? '' : '/'}${media.url}`;
+export function getStrapiMediaUrl(media: any): string | null {
+  if (!media) return null;
+  const rawUrl = typeof media === 'string' 
+    ? media 
+    : (media.url || media.photoUrl || media.avatarUrl || media.data?.attributes?.url || media.data?.url);
+  if (!rawUrl || typeof rawUrl !== 'string') return null;
+  if (rawUrl.startsWith('http://') || rawUrl.startsWith('https://') || rawUrl.startsWith('data:')) return rawUrl;
+  const baseUrl = process.env.NEXT_PUBLIC_STRAPI_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1339';
+  return `${baseUrl}${rawUrl.startsWith('/') ? '' : '/'}${rawUrl}`;
 }
