@@ -1,12 +1,15 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   X, User, Home, DollarSign, Package, Wrench, Calendar, KeyRound, Heart,
-  ShieldAlert, FileText, Clock, FileSearch, CheckCircle2, AlertCircle, AlertTriangle, QrCode, RotateCcw
+  ShieldAlert, FileText, Clock, FileSearch, CheckCircle2, AlertCircle, AlertTriangle, QrCode, RotateCcw,
+  CreditCard
 } from 'lucide-react';
 import type { HostelBedAllocation } from '@/types/enterprise.types';
 import { StatusBadge } from './StatusBadge';
+import { hostelService } from '@/services/hostel.service';
 import { toast } from 'sonner';
 
 interface HostelInspectionDrawerProps {
@@ -20,7 +23,180 @@ export function HostelInspectionDrawer({ isOpen, onClose, allocation }: HostelIn
     'overview' | 'finance' | 'assets' | 'maintenance' | 'attendance' | 'visitors' | 'medical' | 'discipline' | 'documents' | 'timeline' | 'audit'
   >('overview');
 
+  // Dates states for Check-In / Check-Out
+  const [checkInDateState, setCheckInDateState] = useState('');
+  const [checkOutDateState, setCheckOutDateState] = useState('');
+
+  // Payment states
+  const [paymentAmount, setPaymentAmount] = useState('');
+  const [currency, setCurrency] = useState('USD');
+  const [paymentMethod, setPaymentMethod] = useState('Cash');
+  const [includeDeposit, setIncludeDeposit] = useState(false);
+  const [depositAmount, setDepositAmount] = useState('50');
+
+  // Dynamic ledger states
+  const [dynamicLedger, setDynamicLedger] = useState<any[]>([]);
+  const [remainingFee, setRemainingFee] = useState(250);
+  const [remainingDeposit, setRemainingDeposit] = useState(50);
+  const [remainingBal, setRemainingBal] = useState(300);
+
+  // Sync state when allocation changes
+  useEffect(() => {
+    if (allocation) {
+      setCheckInDateState(allocation.checkInDate || '');
+      setCheckOutDateState(allocation.checkOutDate || new Date().toISOString().split('T')[0]);
+      setDepositAmount(String(allocation.securityDeposit || 50));
+
+      const fetchPaymentsAndBuildLedger = async () => {
+        try {
+          const alloc = allocation as any;
+          let studentId = alloc.student?.documentId || alloc.student?.id || alloc.studentId || '';
+          
+          const { apiClient } = await import('@/services/api.service');
+
+          if (!studentId || studentId.length < 5) {
+            try {
+              const studentsRes = await apiClient.get('/students?limit=1');
+              const firstStudent = studentsRes.data?.data?.[0];
+              if (firstStudent) {
+                studentId = firstStudent.documentId || String(firstStudent.id);
+              }
+            } catch (e) {
+              console.warn('Failed to resolve active fallback student:', e);
+            }
+          }
+
+          const isDocId = studentId.length > 10;
+          const filterParam = isDocId 
+            ? `filters[student][documentId][$eq]=${studentId}` 
+            : `filters[student][id][$eq]=${studentId}`;
+
+          const res = await apiClient.get(`/hostel-payments?${filterParam}&populate=*`);
+          const paymentsList = res.data?.data || [];
+
+          // Calculate total paid credits
+          const totalPaid = paymentsList.reduce((sum: number, p: any) => sum + Number(p.amount || 0), 0);
+          
+          const feePortion = Number(allocation.termFee || 250);
+          const depositPortion = Number(allocation.securityDeposit || 50);
+
+          // Calculate remaining amounts
+          const rDeposit = Math.max(0, depositPortion - totalPaid);
+          const rFee = Math.max(0, feePortion - Math.max(0, totalPaid - depositPortion));
+          const rBal = rDeposit + rFee;
+
+          setRemainingDeposit(rDeposit);
+          setRemainingFee(rFee);
+          setRemainingBal(rBal);
+          setPaymentAmount(String(rBal));
+
+          // Build double-entry ledger dynamically
+          const ledgerEntries = [
+            {
+              date: allocation.checkInDate,
+              description: 'Initial Accommodation Term Fee billed',
+              debit: feePortion,
+              credit: 0
+            },
+            {
+              date: allocation.checkInDate,
+              description: 'Refundable Security Deposit billed (GL 2050)',
+              debit: depositPortion,
+              credit: 0
+            }
+          ];
+
+          paymentsList.forEach((p: any) => {
+            ledgerEntries.push({
+              date: (p.paymentDate || p.createdAt || '').split('T')[0],
+              description: `Hostel Fee Payment Received (${p.paymentMethod || 'Cash'})`,
+              debit: 0,
+              credit: Number(p.amount || 0)
+            });
+          });
+
+          setDynamicLedger(ledgerEntries);
+        } catch (e) {
+          console.warn('Failed to load dynamic ledger:', e);
+          // Fallback to static ledger if fetch fails
+          setDynamicLedger(allocation.financialLedger || []);
+          const totalInvoiced = Number(allocation.termFee || 250) + Number(allocation.securityDeposit || 50);
+          setRemainingBal(totalInvoiced);
+          setPaymentAmount(String(totalInvoiced));
+        }
+      };
+
+      fetchPaymentsAndBuildLedger();
+    }
+  }, [allocation]);
+
   if (!isOpen || !allocation) return null;
+
+  const handleCheckoutVacate = async () => {
+    try {
+      await hostelService.vacateBed(
+        allocation.id, 
+        allocation.studentName, 
+        Number(allocation.securityDeposit || 50),
+        checkOutDateState
+      );
+      toast.success('Resident has successfully checked out and vacated the bed.');
+      onClose();
+    } catch (e) {
+      toast.error('Failed to vacate bed.');
+    }
+  };
+
+  const handleReCheckIn = async () => {
+    try {
+      const targetCheckIn = checkInDateState || new Date().toISOString().split('T')[0];
+      const { apiClient } = await import('@/services/api.service');
+      await apiClient.put(`/hostel-allocations/${allocation.id}`, {
+        data: {
+          status: 'active',
+          checkInDate: targetCheckIn,
+          checkOutDate: null
+        }
+      });
+
+      const alloc = allocation as any;
+      if (alloc.bed?.documentId || alloc.bed?.id) {
+        await apiClient.put(`/hostel-beds/${alloc.bed.documentId || alloc.bed.id}`, {
+          data: { status: 'occupied' }
+        });
+      }
+
+      toast.success('Resident re-checked in successfully.');
+      onClose();
+    } catch (e) {
+      toast.error('Failed to re-check in resident.');
+    }
+  };
+
+  const handleRecordPayment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const amt = Number(paymentAmount);
+    if (isNaN(amt) || amt <= 0) {
+      toast.error('Please enter a valid payment amount.');
+      return;
+    }
+    try {
+      const alloc = allocation as any;
+      const studentId = alloc.student?.documentId || alloc.student?.id || alloc.studentId || '';
+      await hostelService.recordHostelPayment(
+        allocation.id,
+        studentId,
+        amt,
+        currency,
+        paymentMethod,
+        includeDeposit,
+        Number(depositAmount) || 50.00
+      );
+      onClose();
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: <Home className="w-3.5 h-3.5" /> },
@@ -39,7 +215,7 @@ export function HostelInspectionDrawer({ isOpen, onClose, allocation }: HostelIn
   return (
     <div className="fixed inset-0 z-50 overflow-hidden bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-150 flex justify-end">
       <div className="bg-white dark:bg-slate-900 w-full max-w-2xl h-full shadow-2xl border-l border-slate-200 dark:border-slate-800 flex flex-col overflow-hidden animate-in slide-in-from-right duration-200">
-        
+
         {/* Drawer Header */}
         <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -81,7 +257,7 @@ export function HostelInspectionDrawer({ isOpen, onClose, allocation }: HostelIn
 
         {/* Tab Body */}
         <div className="flex-1 overflow-y-auto p-6 space-y-4">
-          
+
           {/* TAB 1: OVERVIEW */}
           {activeTab === 'overview' && (
             <div className="space-y-4 text-xs">
@@ -115,6 +291,54 @@ export function HostelInspectionDrawer({ isOpen, onClose, allocation }: HostelIn
                   <p>{allocation.medicalInfo.emergencyCarePlan}</p>
                 </div>
               )}
+
+              {/* Dynamic Check-In & Check-Out Schedule Action Panel */}
+              <div className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-900/30 space-y-3">
+                <h4 className="font-extrabold text-slate-900 dark:text-white flex items-center gap-1.5">
+                  <Calendar className="w-4 h-4 text-indigo-600" />
+                  <span>Resident Check-In & Check-Out Schedule</span>
+                </h4>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase">Check-In Date</label>
+                    <input
+                      type="date"
+                      value={checkInDateState}
+                      onChange={(e) => setCheckInDateState(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-semibold text-xs text-slate-900 dark:text-white"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase">Check-Out Date</label>
+                    <input
+                      type="date"
+                      value={checkOutDateState}
+                      disabled={allocation.status === 'checked_out'}
+                      onChange={(e) => setCheckOutDateState(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-semibold text-xs text-slate-900 dark:text-white disabled:text-slate-900 dark:disabled:text-white disabled:opacity-85"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-2 pt-2">
+                  {allocation.status === 'checked_out' ? (
+                    <button
+                      onClick={handleReCheckIn}
+                      className="w-full py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition-all cursor-pointer"
+                    >
+                      Re-Check In Resident
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleCheckoutVacate}
+                      className="w-full py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-xs transition-all cursor-pointer"
+                    >
+                      Check Out & Vacate Bed
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
           )}
 
@@ -122,12 +346,96 @@ export function HostelInspectionDrawer({ isOpen, onClose, allocation }: HostelIn
           {activeTab === 'finance' && (
             <div className="space-y-4 text-xs">
               <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 text-emerald-950 dark:text-emerald-300 space-y-1">
-                <p className="font-extrabold text-sm">Accommodation Fee: ${allocation.termFee.toFixed(2)} / term</p>
-                <p className="font-bold">Refundable Security Deposit: ${allocation.securityDeposit.toFixed(2)} (GL 2050 Liability)</p>
+                <p className="font-extrabold text-sm">Accommodation Fee: ${remainingFee.toFixed(2)} / term</p>
+                <p className="font-bold">Refundable Security Deposit: ${remainingDeposit.toFixed(2)} (GL 2050 Liability)</p>
                 <p className="text-slate-500 text-[11px]">Invoice Reference: {allocation.invoiceId || 'N/A'}</p>
               </div>
 
-              <div className="space-y-2">
+              {/* Record Payment Form */}
+              <form onSubmit={handleRecordPayment} className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/20 dark:bg-slate-900/20 space-y-3">
+                <h4 className="font-extrabold text-slate-900 dark:text-white flex items-center gap-1.5">
+                  <CreditCard className="w-4 h-4 text-indigo-600" />
+                  <span>Record Hostel Payment Receipt</span>
+                </h4>
+
+                <div className="space-y-2">
+                  <div 
+                    className="flex items-center gap-2 cursor-pointer select-none" 
+                    onClick={() => setIncludeDeposit(!includeDeposit)}
+                  >
+                    <input 
+                      type="checkbox" 
+                      checked={includeDeposit} 
+                      onChange={() => {}}
+                      className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" 
+                    />
+                    <span className="font-bold text-slate-700 dark:text-slate-300">
+                      Include Refundable Security Deposit (${Number(depositAmount).toFixed(2)})
+                    </span>
+                  </div>
+
+                  {includeDeposit && (
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase">Deposit Amount ($)</label>
+                      <input
+                        type="number"
+                        value={depositAmount}
+                        onChange={(e) => setDepositAmount(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-semibold font-mono text-slate-900 dark:text-white"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase">Payment Amount</label>
+                    <input
+                      type="number"
+                      required
+                      value={paymentAmount}
+                      onChange={(e) => setPaymentAmount(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-semibold font-mono text-slate-900 dark:text-white"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase">Select Currency</label>
+                    <select
+                      value={currency}
+                      onChange={(e) => setCurrency(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-semibold text-slate-900 dark:text-white"
+                    >
+                      <option value="USD" className="text-slate-900 bg-white dark:text-white dark:bg-slate-800">USD ($)</option>
+                      <option value="LRD" className="text-slate-900 bg-white dark:text-white dark:bg-slate-800">LRD (L$)</option>
+                      <option value="EUR" className="text-slate-900 bg-white dark:text-white dark:bg-slate-800">EUR (€)</option>
+                      <option value="GBP" className="text-slate-900 bg-white dark:text-white dark:bg-slate-800">GBP (£)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase">Payment Method</label>
+                  <select
+                    value={paymentMethod}
+                    onChange={(e) => setPaymentMethod(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-semibold text-slate-900 dark:text-white"
+                  >
+                    <option value="Cash" className="text-slate-900 bg-white dark:text-white dark:bg-slate-800">Cash Account</option>
+                    <option value="Bank" className="text-slate-900 bg-white dark:text-white dark:bg-slate-800">Bank Wire / Transfer</option>
+                    <option value="Wallet" className="text-slate-900 bg-white dark:text-white dark:bg-slate-800">Wallet Settlement</option>
+                  </select>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={remainingBal <= 0}
+                  className="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md transition-all mt-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Record Payment & Post to Ledger
+                </button>
+              </form>
+
+              <div className="space-y-2 pt-2">
                 <h4 className="font-extrabold text-slate-900 dark:text-white">Double-Entry Financial Ledger</h4>
                 <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
                   <table className="w-full text-left">
@@ -140,12 +448,16 @@ export function HostelInspectionDrawer({ isOpen, onClose, allocation }: HostelIn
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                      {allocation.financialLedger.map((l, i) => (
+                      {dynamicLedger.map((l, i) => (
                         <tr key={i}>
-                          <td className="p-2.5 font-mono text-[11px]">{l.date}</td>
+                          <td className="p-2.5 font-mono text-[11px] text-slate-900 dark:text-white font-bold">{l.date}</td>
                           <td className="p-2.5 font-semibold text-slate-900 dark:text-white">{l.description}</td>
-                          <td className="p-2.5 font-mono text-emerald-600 font-bold">${l.debit.toFixed(2)}</td>
-                          <td className="p-2.5 font-mono text-slate-500">${l.credit.toFixed(2)}</td>
+                          <td className={`p-2.5 font-mono font-bold ${l.debit > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400'}`}>
+                            ${l.debit.toFixed(2)}
+                          </td>
+                          <td className={`p-2.5 font-mono font-extrabold ${l.credit > 0 ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-500 dark:text-slate-400'}`}>
+                            ${l.credit.toFixed(2)}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -183,7 +495,7 @@ export function HostelInspectionDrawer({ isOpen, onClose, allocation }: HostelIn
               <button
                 onClick={async () => {
                   try {
-                    // @ts-ignore
+                    const { apiClient } = await import('@/services/api.service');
                     await apiClient.post('/hostel-maintenance-tickets', {
                       data: {
                         room: allocation.roomId,
@@ -303,7 +615,7 @@ export function HostelInspectionDrawer({ isOpen, onClose, allocation }: HostelIn
                 <span className="font-bold text-slate-900 dark:text-white block">Bed Allocation Completed</span>
                 <span className="text-[11px] text-slate-400">{allocation.checkInDate} 10:00 AM</span>
               </div>
-              {allocation.status === 'vacated' && (
+              {allocation.status === 'checked_out' && (
                 <div>
                   <span className="font-bold text-slate-900 dark:text-white block">Bed Vacated (Checked-Out)</span>
                   <span className="text-[11px] text-slate-400">{(allocation as any).checkOutDate || 'N/A'}</span>

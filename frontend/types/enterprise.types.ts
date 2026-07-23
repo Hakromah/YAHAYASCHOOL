@@ -213,7 +213,7 @@ export interface HostelBedAllocation {
   bedNumber: string;
   checkInDate: string;
   checkOutDate?: string;
-  status: 'active' | 'transferred' | 'vacated';
+  status: 'active' | 'transferred' | 'vacated' | 'checked_out';
   academicYear: string;
   termFee: number;
   securityDeposit: number;

@@ -94,14 +94,16 @@ export default function FinancialStatementsReportsPage() {
   const tuitionRevenue = balances['4010'] || 0;
   const waqfDonations = balances['4020'] || 0;
   const auxiliaryRevenue = balances['4030'] || 0;
-  const totalRevenue = tuitionRevenue + waqfDonations + auxiliaryRevenue;
+  const hostelRevenue = balances['4040'] || 0;
+  const totalRevenue = tuitionRevenue + waqfDonations + auxiliaryRevenue + hostelRevenue;
 
   const facultyExpenses = balances['5010'] || 0;
   const utilityExpenses = balances['5020'] || 0;
   const itExpenses = balances['5030'] || 0;
   const suppliesExpenses = balances['5040'] || 0;
   const maintenanceExpenses = balances['5050'] || 0;
-  const totalExpenses = facultyExpenses + utilityExpenses + itExpenses + suppliesExpenses + maintenanceExpenses;
+  const hostelExpenses = balances['5060'] || 0;
+  const totalExpenses = facultyExpenses + utilityExpenses + itExpenses + suppliesExpenses + maintenanceExpenses + hostelExpenses;
   const netSurplus = totalRevenue - totalExpenses;
 
   // 2. Balance Sheet Calculations
@@ -321,6 +323,10 @@ export default function FinancialStatementsReportsPage() {
                         <span className="text-slate-900 dark:text-slate-100 font-semibold">4030 - Auxiliary Services & Cafeteria Income</span>
                         <span className="font-mono font-bold text-slate-900 dark:text-white">${(auxiliaryRevenue).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                       </div>
+                      <div className="flex justify-between items-center p-3 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+                        <span className="text-slate-900 dark:text-slate-100 font-semibold">4040 - Hostel Room & Boarding Revenue</span>
+                        <span className="font-mono font-bold text-slate-900 dark:text-white">${(hostelRevenue).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                      </div>
                       <div className="flex justify-between items-center p-3 bg-emerald-50/40 dark:bg-emerald-950/20 font-extrabold text-emerald-900 dark:text-emerald-300 text-xs border-t border-emerald-200 dark:border-emerald-800/50">
                         <span>TOTAL OPERATING REVENUE</span>
                         <span className="font-mono text-sm">${(totalRevenue).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
@@ -353,6 +359,10 @@ export default function FinancialStatementsReportsPage() {
                       <div className="flex justify-between items-center p-3 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
                         <span className="text-slate-900 dark:text-slate-100 font-semibold">5050 - Campus Maintenance & Repairs</span>
                         <span className="font-mono font-bold text-slate-900 dark:text-white">${(maintenanceExpenses).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                      </div>
+                      <div className="flex justify-between items-center p-3 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+                        <span className="text-slate-900 dark:text-slate-100 font-semibold">5060 - Hostel Maintenance & Boarding Expenditures</span>
+                        <span className="font-mono font-bold text-slate-900 dark:text-white">${(hostelExpenses).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                       </div>
                       <div className="flex justify-between items-center p-3 bg-rose-50/40 dark:bg-rose-950/20 font-extrabold text-rose-900 dark:text-rose-300 text-xs border-t border-rose-200 dark:border-rose-800/50">
                         <span>TOTAL OPERATING EXPENDITURES</span>

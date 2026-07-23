@@ -9,6 +9,7 @@ import { GuestHostelModal } from '@/components/erp/GuestHostelModal';
 import { HostelAllocationWizardModal } from '@/components/erp/HostelAllocationWizardModal';
 import { HostelCrudModal } from '@/components/erp/HostelCrudModal';
 import { HostelInspectionDrawer } from '@/components/erp/HostelInspectionDrawer';
+import { VisitorInspectionDrawer } from '@/components/erp/VisitorInspectionDrawer';
 import { StatusBadge } from '@/components/erp/StatusBadge';
 import { apiClient } from '@/services/api.service';
 import { hostelService } from '@/services/hostel.service';
@@ -66,6 +67,7 @@ export default function HostelERPPage() {
 
   // Modals & Drawer
   const [selectedAllocation, setSelectedAllocation] = useState<HostelBedAllocation | null>(null);
+  const [selectedVisitor, setSelectedVisitor] = useState<any | null>(null);
   const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [isGuestModalOpen, setIsGuestModalOpen] = useState(false);
   const [isCrudModalOpen, setIsCrudModalOpen] = useState(false);
@@ -509,12 +511,32 @@ export default function HostelERPPage() {
         {
           accessorKey: 'termFee',
           header: 'Hostel Fee & Deposit',
-          cell: ({ row }: any) => (
-            <div>
-              <span className="font-mono text-xs font-extrabold text-emerald-600 dark:text-emerald-400 block">${row.original.termFee.toFixed(2)} / term</span>
-              <span className="text-[11px] text-slate-500 font-semibold">Deposit: ${row.original.securityDeposit.toFixed(2)} (GL 2050)</span>
-            </div>
-          )
+          cell: ({ row }: any) => {
+            const a = row.original;
+            const studentPayments = payments.filter((p: any) => {
+              const pStudentId = p.student?.documentId || p.student?.id || p.studentId;
+              const aStudentId = a.studentId;
+              return String(pStudentId) === String(aStudentId);
+            });
+            const totalPaid = studentPayments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+            const totalDue = Number(a.termFee || 250) + Number(a.securityDeposit || 50);
+            const isPaid = totalPaid >= totalDue;
+
+            return (
+              <div>
+                {isPaid ? (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-extrabold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">
+                    Paid
+                  </span>
+                ) : (
+                  <>
+                    <span className="font-mono text-xs font-extrabold text-emerald-600 dark:text-emerald-400 block">${a.termFee.toFixed(2)} / term</span>
+                    <span className="text-[11px] text-slate-500 font-semibold">Deposit: ${a.securityDeposit.toFixed(2)} (GL 2050)</span>
+                  </>
+                )}
+              </div>
+            );
+          }
         },
         {
           accessorKey: 'status',
@@ -547,16 +569,20 @@ export default function HostelERPPage() {
                 >
                   Damage
                 </button>
-                <button
-                  onClick={async (e) => {
-                    e.stopPropagation();
-                    await hostelService.vacateBed(a.id, a.studentName);
-                    loadData();
-                  }}
-                  className="px-2.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-2xs"
-                >
-                  Vacate
-                </button>
+                {a.status !== 'checked_out' && a.status !== 'vacated' && (
+                  <button
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      if (confirm(`Are you sure you want to check out and vacate the bed for ${a.studentName}?`)) {
+                        await hostelService.vacateBed(a.id, a.studentName);
+                        loadData();
+                      }
+                    }}
+                    className="px-2.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-2xs"
+                  >
+                    Vacate
+                  </button>
+                )}
               </div>
             );
           }
@@ -915,7 +941,52 @@ export default function HostelERPPage() {
             </div>
           )
         },
-        getActionColumn('visitors')
+        {
+          id: 'visitor-actions',
+          header: 'Actions',
+          cell: ({ row }: any) => {
+            const visitor = row.original;
+            return (
+              <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                <button
+                  onClick={() => {
+                    setSelectedVisitor(visitor);
+                  }}
+                  className="px-2 py-1 rounded bg-white hover:bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-semibold text-[10px] border border-slate-200 dark:border-slate-700 shadow-2xs"
+                >
+                  Inspect
+                </button>
+                <button
+                  onClick={() => {
+                    setCrudModalType('visitors');
+                    setSelectedEditItem(visitor);
+                    setIsCrudModalOpen(true);
+                  }}
+                  className="px-2 py-1 rounded bg-slate-100 hover:bg-indigo-50 dark:bg-slate-800 dark:hover:bg-slate-700/60 text-indigo-600 dark:text-indigo-400 font-bold text-[10px] border border-slate-200 dark:border-slate-700"
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={async () => {
+                    if (confirm('Are you sure you want to delete this visitor log?')) {
+                      try {
+                        const docId = visitor.documentId || visitor.id;
+                        await apiClient.delete(`/hostel-visitors/${docId}`);
+                        toast.success('Visitor log deleted successfully.');
+                        loadData();
+                      } catch (err) {
+                        toast.error('Failed to delete visitor log.');
+                      }
+                    }
+                  }}
+                  className="px-2 py-1 rounded bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 dark:hover:bg-rose-900/30 text-rose-600 dark:text-rose-400 font-bold text-[10px] border border-rose-200/50 dark:border-rose-900/30"
+                >
+                  Delete
+                </button>
+              </div>
+            );
+          }
+        }
       ] as ColumnDef<any, any>[];
     }
 
@@ -1245,7 +1316,7 @@ export default function HostelERPPage() {
     }
 
     return [] as ColumnDef<any, any>[];
-  }, [activeTab, stats, buildingSubTab, roomSubTab]);
+  }, [activeTab, stats, buildingSubTab, roomSubTab, payments]);
 
   return (
     <EnterpriseModuleShell
@@ -1264,21 +1335,23 @@ export default function HostelERPPage() {
       onClearFilters={() => setQuery('')}
       headerActions={
         <div className="flex items-center gap-2">
-          {activeTab === 'dashboard' && (
+          {(activeTab === 'dashboard' || activeTab === 'allocations') && (
             <>
-              <button
-                onClick={() => setIsGuestModalOpen(true)}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold shadow-2xs hover:bg-slate-50 transition-colors"
-              >
-                <KeyRound className="w-3.5 h-3.5 text-amber-500" />
-                <span>+ Guest Stay & Gate Pass</span>
-              </button>
+              {activeTab === 'dashboard' && (
+                <button
+                  onClick={() => setIsGuestModalOpen(true)}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold shadow-2xs hover:bg-slate-50 transition-colors"
+                >
+                  <KeyRound className="w-3.5 h-3.5 text-amber-500" />
+                  <span>+ Guest Stay & Gate Pass</span>
+                </button>
+              )}
               <button
                 onClick={() => setIsWizardOpen(true)}
                 className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md transition-all"
               >
                 <Plus className="w-4 h-4 stroke-[2.5]" />
-                <span>+ Allocation Wizard</span>
+                <span>+ Allocate Bed</span>
               </button>
             </>
           )}
@@ -1906,7 +1979,11 @@ export default function HostelERPPage() {
             columns={columns}
             isLoading={loading}
             density={density}
-            onRowInspect={activeTab === 'allocations' ? (row) => setSelectedAllocation(row) : undefined}
+            onRowInspect={
+              activeTab === 'allocations' ? (row) => setSelectedAllocation(row) :
+              activeTab === 'visitors' ? (row) => setSelectedVisitor(row) :
+              undefined
+            }
           />
         </div>
       )}
@@ -1933,8 +2010,22 @@ export default function HostelERPPage() {
       {/* 11-Tab Operational Inspector Drawer */}
       <HostelInspectionDrawer
         isOpen={!!selectedAllocation}
-        onClose={() => setSelectedAllocation(null)}
+        onClose={() => {
+          setSelectedAllocation(null);
+          loadData();
+        }}
         allocation={selectedAllocation}
+      />
+
+      {/* Visitor Profile Inspector Drawer */}
+      <VisitorInspectionDrawer
+        isOpen={!!selectedVisitor}
+        onClose={() => {
+          setSelectedVisitor(null);
+          loadData();
+        }}
+        visitor={selectedVisitor}
+        onSuccess={loadData}
       />
 
       {/* Dynamic CRUD Modal */}

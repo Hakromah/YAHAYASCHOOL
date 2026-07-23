@@ -49,7 +49,8 @@
       "enum": [
         "active",
         "vacated",
-        "suspended"
+        "suspended",
+        "checked_out"
       ],
       "default": "active"
     },

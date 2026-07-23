@@ -9,7 +9,10 @@ interface StatusBadgeProps {
 
 export function StatusBadge({ status = 'active', size = 'md' }: StatusBadgeProps) {
   const safeStatus = (status && typeof status === 'string' && status.trim() !== '') ? status : 'active';
-  const normalized = safeStatus.toLowerCase().replace(/_/g, ' ');
+  let normalized = safeStatus.toLowerCase().replace(/_/g, ' ');
+  if (normalized === 'checked out') {
+    normalized = 'checkedout';
+  }
 
   const getStyle = (s: string) => {
     switch (s) {

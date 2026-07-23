@@ -3339,7 +3339,9 @@ export interface ApiHostelAllocationHostelAllocation
       'api::hostel-room.hostel-room'
     >;
     securityDeposit: Schema.Attribute.Decimal & Schema.Attribute.Required;
-    status: Schema.Attribute.Enumeration<['active', 'vacated', 'suspended']> &
+    status: Schema.Attribute.Enumeration<
+      ['active', 'vacated', 'suspended', 'checked_out']
+    > &
       Schema.Attribute.DefaultTo<'active'>;
     student: Schema.Attribute.Relation<'manyToOne', 'api::student.student'>;
     termFee: Schema.Attribute.Decimal & Schema.Attribute.Required;

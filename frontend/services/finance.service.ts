@@ -214,10 +214,10 @@ export const financeService = {
       const amount = data.totalAmount;
       const quarterAmount = amount / 4;
       data.installments = [
-        { dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), amount: quarterAmount, status: 'pending', remainingBalance: quarterAmount },
-        { dueDate: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(), amount: quarterAmount, status: 'pending', remainingBalance: quarterAmount },
-        { dueDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(), amount: quarterAmount, status: 'pending', remainingBalance: quarterAmount },
-        { dueDate: new Date(Date.now() + 120 * 24 * 60 * 60 * 1000).toISOString(), amount: quarterAmount, status: 'pending', remainingBalance: quarterAmount }
+        { dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), amount: quarterAmount, status: 'pending_payment', remainingBalance: quarterAmount },
+        { dueDate: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(), amount: quarterAmount, status: 'pending_payment', remainingBalance: quarterAmount },
+        { dueDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(), amount: quarterAmount, status: 'pending_payment', remainingBalance: quarterAmount },
+        { dueDate: new Date(Date.now() + 120 * 24 * 60 * 60 * 1000).toISOString(), amount: quarterAmount, status: 'pending_payment', remainingBalance: quarterAmount }
       ];
     }
     try {
@@ -418,12 +418,14 @@ export const financeService = {
   },
 
   async generateFinancialStatement(filters: any): Promise<any> {
-    // 1. Fetch expenses, payroll, invoices, and receipts from Strapi API
-    const [expenses, payrolls, invoices, receipts] = await Promise.all([
+    // 1. Fetch expenses, payroll, invoices, receipts, hostel payments and hostel maintenance costs from Strapi API
+    const [expenses, payrolls, invoices, receipts, hostelPayments, hostelTickets] = await Promise.all([
       this.getExpenses().catch(() => []),
       this.getPayrollRuns().catch(() => []),
       this.getInvoices().catch(() => []),
-      this.getReceipts().catch(() => [])
+      this.getReceipts().catch(() => []),
+      apiClient.get('/hostel-payments?populate=*').then(res => res.data?.data || []).catch(() => []),
+      apiClient.get('/hostel-maintenance-tickets?populate=*').then(res => res.data?.data || []).catch(() => [])
     ]);
 
     // 2. Calculate Real Expenses by GL Category
@@ -499,6 +501,17 @@ export const financeService = {
       }
     });
 
+    // 4.1. Calculate Hostel Revenue & Expenditures
+    let hostelRevenueSum = 0;     // GL 4040
+    let hostelExpendituresSum = 0; // GL 5060
+
+    hostelPayments.forEach((hp: any) => {
+      hostelRevenueSum += Number(hp.amount || 0);
+    });
+    hostelTickets.forEach((ht: any) => {
+      hostelExpendituresSum += Number(ht.cost || 0);
+    });
+
     // 5. Calculate Outstanding Accounts Receivable (GL 1100)
     let arSum = 0;
     invoices.forEach((i: any) => {
@@ -509,8 +522,8 @@ export const financeService = {
 
     const propertyAssets = 0; // GL 1500
 
-    const totalRev = tuitionSum + waqfDonations + auxiliaryRevenue;
-    const totalExp = payrollSum + utilitySum + equipmentSum + suppliesSum + maintenanceSum + otherExpSum;
+    const totalRev = tuitionSum + waqfDonations + auxiliaryRevenue + hostelRevenueSum;
+    const totalExp = payrollSum + utilitySum + equipmentSum + suppliesSum + maintenanceSum + otherExpSum + hostelExpendituresSum;
     const netSurplus = totalRev - totalExp;
 
     const totalAssets = bankCash + mobileCash + rawCash + chequeCash + arSum + propertyAssets;
@@ -529,11 +542,13 @@ export const financeService = {
         '4010': tuitionSum,
         '4020': waqfDonations,
         '4030': auxiliaryRevenue,
+        '4040': hostelRevenueSum,
         '5010': payrollSum,
         '5020': utilitySum,
         '5030': equipmentSum,
         '5040': suppliesSum,
         '5050': maintenanceSum + otherExpSum,
+        '5060': hostelExpendituresSum,
         '1010': bankCash,
         '1020': mobileCash,
         '1030': rawCash,

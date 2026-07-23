@@ -179,43 +179,7 @@ export const hostelService = {
       console.warn('[hostelService] Failed to fetch live allocations:', err);
     }
 
-    return [
-      {
-        id: 'ALLOC-01',
-        allocationNumber: 'HST-2026-0012',
-        studentId: '1',
-        studentName: 'Tariq Ibrahim Mansour',
-        schoolId: 'AC00000001',
-        gender: 'male',
-        programName: 'Grade 9 - Senior STEM',
-        guardianName: 'Ibrahim Mansour',
-        guardianPhone: '+231 886 991 220',
-        buildingId: 'BLD-01',
-        buildingName: 'Al-Farooq Boarding Hall (Boys)',
-        roomId: 'RM-101',
-        roomNumber: '101',
-        bedNumber: 'Bed A',
-        checkInDate: '2026-07-10',
-        status: 'active',
-        academicYear: '2026-2027',
-        termFee: 250.00,
-        securityDeposit: 50.00,
-        invoiceId: 'INV-HST-2026-01',
-        qrCodeUrl: '/qr/hostel/HST-2026-0012',
-        medicalInfo: {
-          allergies: ['Peanuts', 'Dust Mites'],
-          chronicConditions: ['Mild Asthma'],
-          emergencyCarePlan: 'Administer Ventolin Inhaler on acute wheezing. Contact Dr. Toure immediately.',
-          isolationRequired: false,
-          hospitalVisitsCount: 0,
-          doctorContact: '+231 886 900 111 (Dr. Toure)'
-        },
-        disciplineRecords: [],
-        attendanceHistory: [],
-        financialLedger: [],
-        auditTrail: []
-      }
-    ];
+    return [];
   },
 
   /**
@@ -234,6 +198,8 @@ export const hostelService = {
     bedNumber: string;
     termFee: number;
     securityDeposit: number;
+    checkInDate: string;
+    academicYear: string;
     medicalInfo?: any;
   }): Promise<HostelBedAllocation> {
     const allocNum = sequenceService.generateDocumentNumber('HST');
@@ -275,7 +241,7 @@ export const hostelService = {
         totalAmount,
         paidAmount: 0,
         remainingBalance: totalAmount,
-        status: 'pending',
+        status: 'pending_payment',
         issueDate: new Date().toISOString().split('T')[0],
         items: [
           { id: '1', description: `Boarding Accommodation Fee (${payload.buildingName} Room ${payload.roomNumber})`, category: 'Hostel Accommodation', unitAmount: payload.termFee, quantity: 1, totalAmount: payload.termFee },
@@ -325,13 +291,11 @@ export const hostelService = {
       building: buildingDocId || undefined,
       room: roomDocId || undefined,
       bed: bedDocId || undefined,
-      checkInDate: new Date().toISOString().split('T')[0],
+      checkInDate: payload.checkInDate,
       status: 'active',
-      academicYear: '2026-2027',
+      academicYear: payload.academicYear,
       termFee: Number(payload.termFee),
       securityDeposit: Number(payload.securityDeposit),
-      invoiceId,
-      qrCodeUrl: `/qr/hostel/${allocNum}`,
       medicalInfo: payload.medicalInfo || {
         allergies: [],
         chronicConditions: [],
@@ -342,8 +306,7 @@ export const hostelService = {
       },
       disciplineRecords: [],
       attendanceHistory: [],
-      financialLedger,
-      auditTrail
+      financialLedger
     };
 
     let savedAllocation: any = null;
@@ -622,7 +585,7 @@ export const hostelService = {
   /**
    * Vacate Bed & Release Security Deposit
    */
-  async vacateBed(allocationId: string, studentName: string, depositAmountUSD = 50.00): Promise<void> {
+  async vacateBed(allocationId: string, studentName: string, depositAmountUSD = 50.00, customCheckOutDate?: string): Promise<void> {
     try {
       let bedDocId = '';
       let roomDocId = '';
@@ -660,18 +623,20 @@ export const hostelService = {
         ]
       });
 
+      const finalCheckOutDate = customCheckOutDate || new Date().toISOString().split('T')[0];
+
       try {
         await apiClient.put(`/hostel-allocations/${allocationId}`, {
           data: {
-            status: 'vacated',
-            checkOutDate: new Date().toISOString().split('T')[0]
+            status: 'checked_out',
+            checkOutDate: finalCheckOutDate
           }
         });
 
         await apiClient.post('/hostel-vacations', {
           data: {
             allocation: allocationId,
-            vacateDate: new Date().toISOString().split('T')[0],
+            vacateDate: finalCheckOutDate,
             reason: 'Regular Check-Out',
             damageCharges: 0,
             refundAmount: depositAmountUSD,
@@ -718,8 +683,7 @@ export const hostelService = {
       } catch (err) {
         console.warn('Failed to update Strapi records for checkout:', err);
       }
-
-      toast.success(`Finance GL Auto-Posted: Security Deposit Refund of $${depositAmountUSD.toFixed(2)} released from GL 2050 to Cash!`);
+      // toast removed per user request
     } catch (err) {
       console.warn('Failed to post refund journal entry:', err);
     }
@@ -836,5 +800,234 @@ export const hostelService = {
       }
     });
     return res.data?.data;
+  },
+
+  async recordHostelPayment(
+    allocationId: string,
+    studentId: string,
+    amount: number,
+    currency = 'USD',
+    method = 'Cash',
+    includeDeposit = false,
+    depositAmount = 50.00
+  ): Promise<void> {
+    try {
+      let targetStudentId = studentId;
+      if (!studentId || studentId.length < 5) {
+        try {
+          const studentsRes = await apiClient.get('/students?limit=1');
+          const firstStudent = studentsRes.data?.data?.[0];
+          if (firstStudent) {
+            targetStudentId = firstStudent.documentId || String(firstStudent.id);
+          }
+        } catch (e) {
+          console.warn('Failed to resolve active fallback student:', e);
+        }
+      }
+
+      const seq = sequenceService.generateDocumentNumber('HST');
+      await apiClient.post('/hostel-payments', {
+        data: {
+          student: targetStudentId,
+          paymentNumber: seq,
+          amount: Number(amount),
+          paymentMethod: method,
+          paymentDate: new Date().toISOString(),
+          status: 'completed'
+        }
+      });
+
+      const revenueAmount = includeDeposit ? Math.max(0, amount - depositAmount) : amount;
+      const depositEntry = includeDeposit ? Number(depositAmount) : 0;
+      
+      const lines = [
+        { 
+          id: '1', 
+          accountCode: method === 'Cash' ? '1030' : '1010', 
+          accountName: method === 'Cash' ? 'Cash Account' : 'Bank Account (Islamic/Commercial)', 
+          debit: Number(amount), 
+          credit: 0 
+        }
+      ];
+
+      if (revenueAmount > 0) {
+        lines.push({
+          id: '2',
+          accountCode: '4040',
+          accountName: 'Hostel Room & Boarding Revenue',
+          debit: 0,
+          credit: Number(revenueAmount)
+        });
+      }
+
+      if (depositEntry > 0) {
+        lines.push({
+          id: '3',
+          accountCode: '2050',
+          accountName: 'Advance Wallet Liability',
+          debit: 0,
+          credit: Number(depositEntry)
+        });
+      }
+
+      await financeService.postManualJournalEntry({
+        journalNumber: `JRN-${Date.now()}`,
+        title: `Hostel Room Fee Payment - Ref: ${allocationId}`,
+        transactionDate: new Date().toISOString(),
+        sourceModule: 'student_billing',
+        sourceDocumentNumber: `PAY-${allocationId}`,
+        totalDebit: amount,
+        totalCredit: amount,
+        currency: currency,
+        status: 'posted',
+        postedBy: 'Hostel Registrar',
+        postedAt: new Date().toISOString(),
+        lines
+      });
+
+      try {
+        const allocRes = await apiClient.get(`/hostel-allocations/${allocationId}`);
+        const allocation = allocRes.data?.data;
+        if (allocation) {
+          const currentLedger = Array.isArray(allocation.financialLedger) ? allocation.financialLedger : [];
+          const updatedLedger = [
+            ...currentLedger,
+            {
+              date: new Date().toISOString().split('T')[0],
+              description: `Fee Payment Received (${method}) - ${currency}`,
+              debit: 0,
+              credit: Number(amount)
+            }
+          ];
+          await apiClient.put(`/hostel-allocations/${allocationId}`, {
+            data: {
+              financialLedger: updatedLedger
+            }
+          });
+        }
+      } catch (e) {
+        console.warn('Failed to update allocation ledger:', e);
+      }
+
+      toast.success('Hostel payment registered and posted to General Ledger.');
+    } catch (err) {
+      console.error('Failed to record hostel payment:', err);
+      toast.error('Failed to process hostel payment.');
+      throw err;
+    }
+  },
+
+  async recordVisitorCheckIn(visitorId: string, date: string): Promise<void> {
+    try {
+      await apiClient.put(`/hostel-visitors/${visitorId}`, {
+        data: {
+          checkIn: new Date(date).toISOString(),
+          approval: 'approved'
+        }
+      });
+      toast.success('Visitor check-in date updated.');
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to update visitor check-in.');
+    }
+  },
+
+  async recordVisitorCheckOut(visitorId: string, date: string, refundDeposit = true, depositAmount = 30.00): Promise<void> {
+    try {
+      await apiClient.put(`/hostel-visitors/${visitorId}`, {
+        data: {
+          checkOut: new Date(date).toISOString()
+        }
+      });
+
+      if (refundDeposit && depositAmount > 0) {
+        await financeService.postManualJournalEntry({
+          journalNumber: `JRN-${Date.now()}`,
+          title: `Refund Guest Security Deposit - Ref: VST-${visitorId}`,
+          transactionDate: new Date().toISOString(),
+          sourceModule: 'student_billing',
+          sourceDocumentNumber: `REF-VST-${visitorId}`,
+          totalDebit: depositAmount,
+          totalCredit: depositAmount,
+          currency: 'USD',
+          status: 'posted',
+          postedBy: 'Hostel Registrar',
+          postedAt: new Date().toISOString(),
+          lines: [
+            { id: '1', accountCode: '2050', accountName: 'Advance Wallet Liability', debit: depositAmount, credit: 0 },
+            { id: '2', accountCode: '1010', accountName: 'Bank Account (Islamic/Commercial)', debit: 0, credit: depositAmount }
+          ]
+        });
+      }
+
+      toast.success('Visitor check-out completed and security deposit refunded.');
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to complete visitor check-out.');
+    }
+  },
+
+  async recordVisitorPayment(
+    visitorId: string,
+    amount: number,
+    currency = 'USD',
+    method = 'Cash',
+    includeDeposit = false,
+    depositAmount = 30.00
+  ): Promise<void> {
+    try {
+      const revenueAmount = includeDeposit ? Math.max(0, amount - depositAmount) : amount;
+      const depositEntry = includeDeposit ? Number(depositAmount) : 0;
+
+      const lines = [
+        { 
+          id: '1', 
+          accountCode: method === 'Cash' ? '1030' : '1010', 
+          accountName: method === 'Cash' ? 'Cash Account' : 'Bank Account (Islamic/Commercial)', 
+          debit: Number(amount), 
+          credit: 0 
+        }
+      ];
+
+      if (revenueAmount > 0) {
+        lines.push({
+          id: '2',
+          accountCode: '4040',
+          accountName: 'Hostel Room & Boarding Revenue',
+          debit: 0,
+          credit: Number(revenueAmount)
+        });
+      }
+
+      if (depositEntry > 0) {
+        lines.push({
+          id: '3',
+          accountCode: '2050',
+          accountName: 'Advance Wallet Liability',
+          debit: 0,
+          credit: Number(depositEntry)
+        });
+      }
+
+      await financeService.postManualJournalEntry({
+        journalNumber: `JRN-${Date.now()}`,
+        title: `Visitor Lodging Fee Payment - Ref: VST-${visitorId}`,
+        transactionDate: new Date().toISOString(),
+        sourceModule: 'student_billing',
+        sourceDocumentNumber: `PAY-VST-${visitorId}`,
+        totalDebit: amount,
+        totalCredit: amount,
+        currency: currency,
+        status: 'posted',
+        postedBy: 'Hostel Registrar',
+        postedAt: new Date().toISOString(),
+        lines
+      });
+
+      toast.success('Visitor payment registered and posted to General Ledger.');
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to process visitor payment.');
+    }
   }
 };
