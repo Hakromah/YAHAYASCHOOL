@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState } from 'react';
-import Image from 'next/image';
 import { getStrapiMediaUrl } from '@/services/cms.service';
 import { cn } from '@/lib/utils';
 
@@ -62,14 +61,10 @@ export function Avatar({ src, name = 'User', size = 'md', className }: AvatarPro
       )}
     >
       {imageUrl ? (
-        <Image
+        <img
           src={imageUrl}
           alt={name}
-          width={px}
-          height={px}
-          priority={size === 'xl' || size === '2xl'}
           className="object-cover w-full h-full"
-          sizes={`(max-width: 768px) ${px}px, ${px}px`}
           onError={() => setImgError(true)}
         />
       ) : (

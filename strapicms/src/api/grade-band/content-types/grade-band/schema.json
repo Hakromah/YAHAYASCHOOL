@@ -5,12 +5,16 @@
     "singularName": "grade-band",
     "pluralName": "grade-bands",
     "displayName": "Grade Band",
-    "description": "Schema for Grade Band"
+    "description": "Updated grade bands scale maps"
   },
   "options": {
-    "draftAndPublish": true
+    "draftAndPublish": false
   },
-  "pluginOptions": {},
+  "pluginOptions": {
+    "i18n": {
+      "localized": true
+    }
+  },
   "attributes": {
     "minScore": {
       "type": "decimal",

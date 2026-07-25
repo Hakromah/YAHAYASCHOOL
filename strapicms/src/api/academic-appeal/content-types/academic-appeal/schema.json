@@ -1,0 +1,59 @@
+{
+  "kind": "collectionType",
+  "collectionName": "academic_appeals",
+  "info": {
+    "singularName": "academic-appeal",
+    "pluralName": "academic-appeals",
+    "displayName": "Academic Appeal",
+    "description": "Grade and transcript appeals submitted by students"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {
+    "i18n": {
+      "localized": true
+    }
+  },
+  "attributes": {
+    "appealType": {
+      "type": "enumeration",
+      "enum": [
+        "Grade Review",
+        "Transcript Error",
+        "Promotion Review",
+        "Graduation Review",
+        "Certificate Error"
+      ]
+    },
+    "details": {
+      "type": "text"
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": [
+        "Pending",
+        "Under Review",
+        "Approved",
+        "Rejected"
+      ],
+      "default": "Pending"
+    },
+    "response": {
+      "type": "text"
+    },
+    "appealDate": {
+      "type": "date"
+    },
+    "student": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::student.student"
+    },
+    "reviewer": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::teacher.teacher"
+    }
+  }
+}

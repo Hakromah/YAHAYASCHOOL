@@ -3,7 +3,7 @@
 import { QueryProvider } from './query.provider';
 import { AuthProvider } from './auth.provider';
 import { Toaster } from '@/components/ui/sonner';
-import type { ReactNode } from 'react';
+import { type ReactNode, useEffect } from 'react';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // YAHAYASCOOL — Locale Providers Composition
@@ -16,6 +16,40 @@ interface ProvidersProps {
 }
 
 export function Providers({ children }: ProvidersProps) {
+  useEffect(() => {
+    const handleError = (e: ErrorEvent) => {
+      const errorMsg = e.message || '';
+      if (
+        errorMsg.includes('Loading chunk') ||
+        errorMsg.includes('ChunkLoadError') ||
+        errorMsg.includes('Failed to fetch dynamically imported module')
+      ) {
+        console.warn('[ChunkErrorHandler] Chunk load failure detected. Reloading page...');
+        window.location.reload();
+      }
+    };
+
+    const handleRejection = (e: PromiseRejectionEvent) => {
+      const errorMsg = e.reason?.message || e.reason?.toString() || '';
+      if (
+        errorMsg.includes('Loading chunk') ||
+        errorMsg.includes('ChunkLoadError') ||
+        errorMsg.includes('Failed to fetch dynamically imported module')
+      ) {
+        console.warn('[ChunkErrorHandler] Unhandled chunk rejection detected. Reloading page...');
+        window.location.reload();
+      }
+    };
+
+    window.addEventListener('error', handleError, true);
+    window.addEventListener('unhandledrejection', handleRejection);
+
+    return () => {
+      window.removeEventListener('error', handleError);
+      window.removeEventListener('unhandledrejection', handleRejection);
+    };
+  }, []);
+
   return (
     <QueryProvider>
       <AuthProvider>

@@ -15,7 +15,7 @@ import { cn } from '@/lib/utils';
 export interface FormFieldDef {
   name: string;
   label: string;
-  type: 'text' | 'email' | 'number' | 'password' | 'textarea' | 'select' | 'checkbox' | 'date' | 'file' | 'repeatable' | 'i18n-text';
+  type: 'text' | 'email' | 'number' | 'password' | 'textarea' | 'select' | 'checkbox' | 'date' | 'time' | 'file' | 'repeatable' | 'i18n-text';
   placeholder?: string;
   required?: boolean;
   options?: Array<{ label: string; value: string | number }>;

@@ -5,12 +5,16 @@
     "singularName": "grading-scheme",
     "pluralName": "grading-schemes",
     "displayName": "Grading Scheme",
-    "description": "Schema for Grading Scheme"
+    "description": "Updated schema for Grading Scheme container"
   },
   "options": {
-    "draftAndPublish": true
+    "draftAndPublish": false
   },
-  "pluginOptions": {},
+  "pluginOptions": {
+    "i18n": {
+      "localized": true
+    }
+  },
   "attributes": {
     "name": {
       "type": "string",

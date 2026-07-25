@@ -11,15 +11,24 @@ import { cn } from '@/lib/utils';
 
 export function DashboardHeader() {
   const { user, logout } = useAuth();
+  const getStrapiMediaUrlLocal = (media: any) => {
+    if (!media) return null;
+    const rawUrl = typeof media === 'string' ? media : (media.url || media.photoUrl || media.avatarUrl);
+    if (!rawUrl || typeof rawUrl !== 'string') return null;
+    if (rawUrl.startsWith('http://') || rawUrl.startsWith('https://') || rawUrl.startsWith('data:')) return rawUrl;
+    const baseUrl = process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1339';
+    return `${baseUrl}${rawUrl.startsWith('/') ? '' : '/'}${rawUrl}`;
+  };
+
   const displayName = user
     ? getUserDisplayName(user as unknown as Parameters<typeof getUserDisplayName>[0])
     : 'Sheikh Yahaya Camara';
   const schoolId = user?.schoolId || user?.username || 'AC000000001';
   const roleName = user?.role?.name || 'Executive Director';
-  const avatarUrl = user?.avatarUrl || user?.photoUrl || (user as any)?.photo?.url || null;
+  const avatarUrl = user?.avatarUrl || user?.photoUrl || getStrapiMediaUrlLocal(user?.avatar) || getStrapiMediaUrlLocal((user as any)?.photo) || null;
 
   return (
-    <header className="h-16 border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md px-6 flex items-center justify-between gap-4 sticky top-0 z-30 shadow-sm">
+    <header className="h-16 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-6 flex items-center justify-between gap-4 sticky top-0 z-30 shadow-sm">
       <div className="flex items-center gap-4 min-w-0 flex-1">
         <Breadcrumb className="hidden md:flex min-w-0 flex-shrink-0" />
         <div className="flex-1 max-w-md hidden sm:block">

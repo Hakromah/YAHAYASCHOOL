@@ -5,10 +5,10 @@
     "singularName": "promotion-record",
     "pluralName": "promotion-records",
     "displayName": "Promotion Record",
-    "description": "Permanent ledger of promotion decisions"
+    "description": "Updated grade promotion history log"
   },
   "options": {
-    "draftAndPublish": true
+    "draftAndPublish": false
   },
   "pluginOptions": {
     "i18n": {
@@ -16,6 +16,28 @@
     }
   },
   "attributes": {
+    "decision": {
+      "type": "enumeration",
+      "enum": [
+        "Promoted",
+        "Conditionally Promoted",
+        "Repeat Class",
+        "Graduated",
+        "Transferred",
+        "Withdrawn",
+        "Probation",
+        "Dismissed"
+      ]
+    },
+    "remarks": {
+      "type": "text"
+    },
+    "committee": {
+      "type": "string"
+    },
+    "approvalDate": {
+      "type": "date"
+    },
     "student": {
       "type": "relation",
       "relation": "manyToOne",
@@ -40,20 +62,6 @@
       "type": "relation",
       "relation": "manyToOne",
       "target": "api::section.section"
-    },
-    "decision": {
-      "type": "enumeration",
-      "enum": [
-        "Promoted",
-        "Conditionally Promoted",
-        "Repeat Class",
-        "Graduated",
-        "Transferred",
-        "Withdrawn"
-      ]
-    },
-    "remarks": {
-      "type": "text"
     }
   }
 }

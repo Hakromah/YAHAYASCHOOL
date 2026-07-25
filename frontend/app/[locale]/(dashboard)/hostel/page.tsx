@@ -942,6 +942,32 @@ export default function HostelERPPage() {
           )
         },
         {
+          id: 'visitor-status',
+          header: 'Status',
+          cell: ({ row }: any) => {
+            const v = row.original;
+            if (v.checkOut) {
+              return (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700">
+                  <span className="w-1.5 h-1.5 rounded-full bg-slate-400" /> Checked Out
+                </span>
+              );
+            }
+            if (v.checkIn) {
+              return (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-900/30">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Checked In
+                </span>
+              );
+            }
+            return (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200 dark:bg-amber-950/20 dark:text-amber-400 dark:border-amber-900/30">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500" /> Registered
+              </span>
+            );
+          }
+        },
+        {
           id: 'visitor-actions',
           header: 'Actions',
           cell: ({ row }: any) => {

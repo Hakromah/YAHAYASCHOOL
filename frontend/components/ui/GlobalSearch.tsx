@@ -139,6 +139,50 @@ export function GlobalSearch() {
   const router = useRouter();
   const { userRole } = usePermissions();
 
+  const quickAccessShortcuts = useMemo(() => {
+    const roleType = userRole ? String(userRole).toLowerCase() : '';
+    if (roleType === 'teacher') {
+      return [
+        { label: '📅 My Timetable', href: '/lms/timetables' },
+        { label: '📖 My Classes', href: '/lms/subjects' },
+        { label: '🎓 My Students', href: '/students' },
+        { label: '✅ Attendance', href: '/lms/attendance' },
+        { label: '📝 Marks Entry', href: '/assessment/marks-entry' },
+        { label: '🕌 Hifz Tracking', href: '/qms/memorization' },
+        { label: '👤 My Profile', href: '/profile' },
+      ];
+    }
+    if (roleType === 'student') {
+      return [
+        { label: '📅 My Timetable', href: '/lms/timetables' },
+        { label: '📖 My Subjects', href: '/lms/subjects' },
+        { label: '📝 Homework', href: '/lms/homework' },
+        { label: '📊 My Results', href: '/results/report-cards' },
+        { label: '🕌 Hifz Progress', href: '/qms/memorization' },
+        { label: '👤 My Profile', href: '/profile' },
+      ];
+    }
+    if (roleType === 'parent') {
+      return [
+        { label: '🎓 Children Overview', href: '/students' },
+        { label: '✅ Attendance', href: '/lms/attendance' },
+        { label: '📊 Results', href: '/results/report-cards' },
+        { label: '💳 Payments', href: '/finance/parent-center' },
+        { label: '👤 Profile', href: '/profile' },
+      ];
+    }
+    return [
+      { label: '🏢 Hostel ERP', href: '/hostel' },
+      { label: '🎓 Students', href: '/students' },
+      { label: '👨‍🏫 Teachers', href: '/teachers' },
+      { label: '💰 Staff Payroll', href: '/finance/payroll' },
+      { label: '📄 Student Invoices', href: '/finance/billing/invoices' },
+      { label: '📖 Qur\'an Programs', href: '/qms/programs' },
+      { label: '⚙️ System Users', href: '/users' },
+      { label: '🔒 Roles & Permissions', href: '/settings/roles' },
+    ];
+  }, [userRole]);
+
   // Keyboard shortcut Ctrl+K / Cmd+K
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -374,13 +418,13 @@ export function GlobalSearch() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsOpen(false)}
-              className="fixed inset-0 bg-black/75 backdrop-blur-md"
+              className="fixed inset-0 bg-slate-950/70"
             />
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: -10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: -10 }}
-              transition={{ duration: 0.15 }}
+              initial={{ opacity: 0, y: -16 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -16 }}
+              transition={{ duration: 0.15, ease: 'easeOut' }}
               className="relative w-full max-w-2xl bg-card border border-border rounded-3xl shadow-2xl overflow-hidden z-10 flex flex-col max-h-[82vh]"
             >
               {/* Search Input Bar */}
@@ -472,17 +516,7 @@ export function GlobalSearch() {
                       Quick Access System Shortcuts
                     </p>
                     <div className="flex flex-wrap justify-center gap-2">
-                      {[
-                        { label: '🏢 Hostel ERP', href: '/hostel' },
-                        { label: '🎓 Students', href: '/students' },
-                        { label: '👨‍🏫 Teachers', href: '/teachers' },
-                        { label: '💰 Staff Payroll', href: '/finance/payroll' },
-                        { label: '📄 Student Invoices', href: '/finance/billing/invoices' },
-                        { label: '📝 Marks Entry', href: '/assessment/marks-entry' },
-                        { label: '📖 Qur\'an Programs', href: '/qms/programs' },
-                        { label: '📊 Financial Statements', href: '/finance/billing/statements' },
-                        { label: '⚙️ System Users', href: '/users' },
-                      ].map((s) => (
+                      {quickAccessShortcuts.map((s) => (
                         <button
                           key={s.label}
                           onClick={() => {

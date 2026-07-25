@@ -5,7 +5,7 @@
     "singularName": "academic-certificate",
     "pluralName": "academic-certificates",
     "displayName": "Academic Certificate",
-    "description": "Issued certificates linked to students"
+    "description": "Updated student achievements certificates registry"
   },
   "options": {
     "draftAndPublish": false
@@ -16,16 +16,6 @@
     }
   },
   "attributes": {
-    "student": {
-      "type": "relation",
-      "relation": "manyToOne",
-      "target": "api::student.student"
-    },
-    "template": {
-      "type": "relation",
-      "relation": "manyToOne",
-      "target": "api::academic-certificate-template.academic-certificate-template"
-    },
     "serialNumber": {
       "type": "string",
       "unique": true
@@ -40,13 +30,47 @@
     "issueDate": {
       "type": "date"
     },
-    "recordStatus": {
+    "status": {
       "type": "enumeration",
       "enum": [
         "Valid",
         "Revoked"
       ],
       "default": "Valid"
+    },
+    "certificateType": {
+      "type": "enumeration",
+      "enum": [
+        "Enrollment Certificate",
+        "Completion Certificate",
+        "Bonafide Letter",
+        "Good Conduct",
+        "Character Certificate",
+        "Recommendation Letter",
+        "Graduation Diploma",
+        "Transfer Certificate",
+        "Attendance Letter",
+        "Visa Support Letter"
+      ]
+    },
+    "verificationHash": {
+      "type": "string"
+    },
+    "qrCode": {
+      "type": "string"
+    },
+    "digitalSignature": {
+      "type": "string"
+    },
+    "student": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::student.student"
+    },
+    "template": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::academic-certificate-template.academic-certificate-template"
     }
   }
 }

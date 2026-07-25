@@ -4,122 +4,180 @@ import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { getSubjects } from '@/services/lms.service';
 import type { Subject } from '@/types/lms.types';
-import { BookOpen, Plus, Search, Layers, Clock, CheckCircle2, BookMarked } from 'lucide-react';
+import { BookOpen, Plus, Search, Layers, Clock, CheckCircle2, BookMarked, Edit3, Trash2 } from 'lucide-react';
+import { PageContainer, PageHeader } from '@/components/shared/layout/PageContainer';
+import { FormBuilder, type FormFieldDef } from '@/components/ui/FormBuilder';
+import { apiClient } from '@/services/api.service';
+import { usePermissions } from '@/hooks/usePermissions';
+import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 
-const FALLBACK_SUBJECTS: Subject[] = [
-  {
-    id: 1,
-    code: 'QUR-301',
-    name: "Advanced Qur'an Memorization & Hifz Track",
-    subjectType: 'Core',
-    activeStatus: true,
-    color: '#10b981',
-    defaultWeeklyHours: 12,
-    passingScore: 85,
-    creditValue: 6,
-    description: 'Intensive daily Hifz memorization, revision of past Surahs, and practical Tajweed mastery.',
-    createdAt: '2026-01-10T08:00:00Z',
-    updatedAt: '2026-07-15T12:00:00Z'
-  },
-  {
-    id: 2,
-    code: 'TAJ-202',
-    name: 'Tajweed Rules & Phonetic Articulation (Makharij)',
-    subjectType: 'Core',
-    activeStatus: true,
-    color: '#0ea5e9',
-    defaultWeeklyHours: 5,
-    passingScore: 80,
-    creditValue: 4,
-    description: 'Specialized phonetic articulation of Qur\'anic letters, rules of Noon Sakinah, and Madd.',
-    createdAt: '2026-01-10T08:00:00Z',
-    updatedAt: '2026-07-15T12:00:00Z'
-  },
-  {
-    id: 3,
-    code: 'ARB-101',
-    name: 'Classical Arabic Grammar (Nahw & Sarf)',
-    subjectType: 'Core',
-    activeStatus: true,
-    color: '#f59e0b',
-    defaultWeeklyHours: 6,
-    passingScore: 75,
-    creditValue: 5,
-    description: 'Comprehensive study of Arabic morphology, sentence structure, and vocabulary for Qur\'anic comprehension.',
-    createdAt: '2026-01-10T08:00:00Z',
-    updatedAt: '2026-07-15T12:00:00Z'
-  },
-  {
-    id: 4,
-    code: 'SCI-401',
-    name: 'Senior Secondary STEM & General Sciences',
-    subjectType: 'Core',
-    activeStatus: true,
-    color: '#8b5cf6',
-    defaultWeeklyHours: 6,
-    passingScore: 70,
-    creditValue: 4,
-    description: 'Integrated Physics, Chemistry, and Biological foundations aligned with international secondary curriculum.',
-    createdAt: '2026-01-10T08:00:00Z',
-    updatedAt: '2026-07-15T12:00:00Z'
-  },
-  {
-    id: 5,
-    code: 'MAT-302',
-    name: 'Advanced Mathematics & Logical Reasoning',
-    subjectType: 'Core',
-    activeStatus: true,
-    color: '#ec4899',
-    defaultWeeklyHours: 5,
-    passingScore: 70,
-    creditValue: 4,
-    description: 'Algebra, Trigonometry, Calculus introductory modules, and analytical problem-solving methodologies.',
-    createdAt: '2026-01-10T08:00:00Z',
-    updatedAt: '2026-07-15T12:00:00Z'
-  },
-  {
-    id: 6,
-    code: 'ISL-201',
-    name: 'Islamic Jurisprudence (Fiqh) & Ethics (Adab)',
-    subjectType: 'Elective',
-    activeStatus: true,
-    color: '#14b8a6',
-    defaultWeeklyHours: 4,
-    passingScore: 75,
-    creditValue: 3,
-    description: 'Fundamentals of Islamic ethics, daily rituals, and community conduct.',
-    createdAt: '2026-01-10T08:00:00Z',
-    updatedAt: '2026-07-15T12:00:00Z'
-  }
-];
-
 export default function SubjectsPage() {
-  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [subjects, setSubjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<'All' | 'Core' | 'Elective'>('All');
+  const [selectedCategory, setSelectedCategory] = useState<'All' | 'Core' | 'Elective' | 'Extracurricular'>('All');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<any | null>(null);
+
+  const { user } = useAuth();
+  const { userRole } = usePermissions();
+  const canModify = userRole === 'super-administrator' || userRole === 'director';
+
+  // Relation options states
+  const [departmentsOptions, setDepartmentsOptions] = useState<{ label: string; value: string | number }[]>([]);
+  const [programsOptions, setProgramsOptions] = useState<{ label: string; value: string | number }[]>([]);
+  const [sectionsOptions, setSectionsOptions] = useState<{ label: string; value: string | number }[]>([]);
+  const [teachersOptions, setTeachersOptions] = useState<{ label: string; value: string | number }[]>([]);
+
+  const loadSubjects = async () => {
+    setLoading(true);
+    try {
+      const params: any = {};
+      const roleType = userRole ? String(userRole).toLowerCase() : '';
+
+      if (roleType === 'teacher' && user?.profile?.id) {
+        params['filters[teachers][id][$eq]'] = user.profile.id;
+      } else if (roleType === 'student') {
+        const studentSectionIds = user?.profile?.sections?.map((s: any) => s.id) || [];
+        if (studentSectionIds.length > 0) {
+          params['filters[sections][id][$in]'] = studentSectionIds;
+        } else {
+          params['filters[sections][id][$eq]'] = 999999;
+        }
+      } else if (roleType === 'parent') {
+        try {
+          const childRes = await apiClient.get('/students', {
+            params: { filters: { parents: { id: { $eq: user?.profile?.id } } }, populate: ['sections'] }
+          });
+          const kids = childRes.data?.data || [];
+          const sectionIds: number[] = [];
+          kids.forEach((k: any) => {
+            k.sections?.forEach((sec: any) => {
+              if (sec.id) sectionIds.push(sec.id);
+            });
+          });
+          if (sectionIds.length > 0) {
+            params['filters[sections][id][$in]'] = sectionIds;
+          } else {
+            params['filters[sections][id][$eq]'] = 999999;
+          }
+        } catch (e) {
+          params['filters[sections][id][$eq]'] = 999999;
+        }
+      }
+
+      const res = await getSubjects(params);
+      setSubjects(res?.data || []);
+    } catch (err) {
+      toast.error('Failed to load academic subjects');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadOptions = async () => {
+    try {
+      const [depRes, progRes, secRes, teachRes] = await Promise.all([
+        apiClient.get('/departments?pagination[limit]=100'),
+        apiClient.get('/programs?pagination[limit]=100'),
+        apiClient.get('/sections?pagination[limit]=100'),
+        apiClient.get('/teachers?pagination[limit]=100')
+      ]);
+
+      setDepartmentsOptions((depRes.data?.data || []).map((d: any) => ({ label: d.name || `Dept ${d.id}`, value: d.id })));
+      setProgramsOptions((progRes.data?.data || []).map((p: any) => ({ label: p.name || `Program ${p.id}`, value: p.id })));
+      setSectionsOptions((secRes.data?.data || []).map((s: any) => ({ label: s.name || `Section ${s.id}`, value: s.id })));
+      setTeachersOptions((teachRes.data?.data || []).map((t: any) => ({ label: t.firstName ? `${t.firstName} ${t.lastName}` : t.schoolId || `Teacher ${t.id}`, value: t.id })));
+    } catch (e) {
+      console.warn('Failed to load options:', e);
+    }
+  };
 
   useEffect(() => {
-    async function load() {
-      setLoading(true);
-      try {
-        const res: any = await getSubjects();
-        const list = Array.isArray(res) ? res : Array.isArray(res?.data) ? res.data : Array.isArray(res?.data?.data) ? res.data.data : [];
-        if (list && list.length > 0) {
-          setSubjects(list);
-        } else {
-          setSubjects(FALLBACK_SUBJECTS);
-        }
-      } catch (err) {
-        // Fallback gracefully on network or API failure
-        setSubjects(FALLBACK_SUBJECTS);
-      } finally {
-        setLoading(false);
-      }
+    loadSubjects();
+    if (canModify) {
+      loadOptions();
     }
-    load();
-  }, []);
+  }, [user, userRole]);
+
+  const handleSave = async (formData: any) => {
+    const payload = {
+      name: formData.name,
+      code: formData.code,
+      subjectType: formData.subjectType,
+      defaultWeeklyHours: parseInt(formData.defaultWeeklyHours) || 0,
+      passingScore: parseInt(formData.passingScore) || 0,
+      creditValue: parseInt(formData.creditValue) || 0,
+      description: formData.description || '',
+      color: formData.color || 'emerald',
+      icon: formData.icon || 'book',
+      activeStatus: formData.activeStatus !== undefined ? !!formData.activeStatus : true,
+      department: formData.department ? parseInt(formData.department) : null,
+      programs: formData.programs ? [parseInt(formData.programs)] : [],
+      sections: formData.sections ? [parseInt(formData.sections)] : [],
+      teachers: formData.teachers ? [parseInt(formData.teachers)] : [],
+    };
+
+    try {
+      if (editingItem) {
+        await apiClient.put(`/subjects/${editingItem.id}`, { data: payload });
+        toast.success('Subject updated successfully');
+      } else {
+        await apiClient.post('/subjects', { data: payload });
+        toast.success('New subject added to registry');
+      }
+      setIsModalOpen(false);
+      setEditingItem(null);
+      loadSubjects();
+    } catch (err: any) {
+      toast.error('Failed to save subject record');
+    }
+  };
+
+  const handleEditClick = (subject: any) => {
+    setEditingItem({
+      id: subject.id,
+      name: subject.name,
+      code: subject.code,
+      subjectType: subject.subjectType,
+      defaultWeeklyHours: subject.defaultWeeklyHours,
+      passingScore: subject.passingScore,
+      creditValue: subject.creditValue,
+      description: subject.description,
+      color: subject.color,
+      icon: subject.icon,
+      activeStatus: subject.activeStatus,
+      department: subject.department?.id || '',
+      programs: subject.programs?.[0]?.id || '',
+      sections: subject.sections?.[0]?.id || '',
+      teachers: subject.teachers?.[0]?.id || '',
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleDeleteClick = async (id: number | string) => {
+    if (!confirm('Are you sure you want to delete this subject?')) return;
+    try {
+      await apiClient.delete(`/subjects/${id}`);
+      toast.success('Subject deleted successfully');
+      loadSubjects();
+    } catch (e) {
+      toast.error('Failed to delete subject');
+    }
+  };
+
+  const getColorHex = (colorName: string) => {
+    switch (colorName?.toLowerCase()) {
+      case 'emerald': return '#10b981';
+      case 'blue': return '#3b82f6';
+      case 'amber': return '#f59e0b';
+      case 'rose': return '#f43f5e';
+      case 'purple': return '#8b5cf6';
+      case 'indigo': return '#6366f1';
+      default: return colorName || '#10b981';
+    }
+  };
 
   const filtered = subjects.filter(s => {
     if (selectedCategory !== 'All' && s.subjectType !== selectedCategory) return false;
@@ -127,20 +185,150 @@ export default function SubjectsPage() {
     return true;
   });
 
+  const formFields: FormFieldDef[] = [
+    {
+      name: 'name',
+      label: 'Subject Name',
+      type: 'text',
+      required: true,
+      placeholder: 'e.g. Advanced Qur\'an Memorization & Hifz Track',
+    },
+    {
+      name: 'code',
+      label: 'Subject Code',
+      type: 'text',
+      required: true,
+      placeholder: 'e.g. QUR-101',
+    },
+    {
+      name: 'subjectType',
+      label: 'Category Type',
+      type: 'select',
+      required: true,
+      options: [
+        { label: 'Core', value: 'Core' },
+        { label: 'Elective', value: 'Elective' },
+        { label: 'Extracurricular', value: 'Extracurricular' },
+      ],
+    },
+    {
+      name: 'defaultWeeklyHours',
+      label: 'Default Weekly Hours',
+      type: 'number',
+      required: true,
+    },
+    {
+      name: 'passingScore',
+      label: 'Passing Score (%)',
+      type: 'number',
+      required: true,
+    },
+    {
+      name: 'creditValue',
+      label: 'Credit Value',
+      type: 'number',
+      required: true,
+    },
+    {
+      name: 'description',
+      label: 'Track / Syllabus Description',
+      type: 'textarea',
+      placeholder: 'Describe the course syllabus, memorization targets, or core modules...',
+    },
+    {
+      name: 'color',
+      label: 'Display Color Tag',
+      type: 'select',
+      options: [
+        { label: 'Emerald Green', value: 'emerald' },
+        { label: 'Blue Sky', value: 'blue' },
+        { label: 'Amber Orange', value: 'amber' },
+        { label: 'Rose Red', value: 'rose' },
+        { label: 'Purple Violet', value: 'purple' },
+        { label: 'Indigo Navy', value: 'indigo' },
+      ],
+    },
+    {
+      name: 'icon',
+      label: 'Display Icon Name',
+      type: 'select',
+      options: [
+        { label: 'Book', value: 'book' },
+        { label: 'Award / Star', value: 'award' },
+        { label: 'Users', value: 'users' },
+        { label: 'Clock', value: 'clock' },
+        { label: 'Activity', value: 'activity' },
+      ],
+    },
+    {
+      name: 'department',
+      label: 'Assigned Department',
+      type: 'select',
+      options: departmentsOptions,
+    },
+    {
+      name: 'programs',
+      label: 'Linked Academic Program',
+      type: 'select',
+      options: programsOptions,
+    },
+    {
+      name: 'sections',
+      label: 'Assigned Section',
+      type: 'select',
+      options: sectionsOptions,
+    },
+    {
+      name: 'teachers',
+      label: 'Primary Assigned Teacher',
+      type: 'select',
+      options: teachersOptions,
+    },
+    {
+      name: 'activeStatus',
+      label: 'Active & Enrolling',
+      type: 'checkbox',
+    },
+  ];
+
   return (
-    <div className="flex-1 p-6 md:p-8 space-y-6 animate-in fade-in duration-500">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2.5">
-            <BookOpen className="w-7 h-7 text-emerald-600 dark:text-emerald-400" />
-            <span>Academic Subjects & Classes Registry</span>
-          </h1>
-          <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mt-1">
-            Explore active institutional courses, Hifz tracks, weekly credit hours, and assigned curriculum modules.
-          </p>
+    <PageContainer>
+      <PageHeader
+        title="Academic Subjects & Classes Registry"
+        description="Explore active institutional courses, Hifz tracks, weekly credit hours, and assigned curriculum modules."
+      >
+        {canModify && (
+          <button
+            onClick={() => {
+              setEditingItem(null);
+              setIsModalOpen(true);
+            }}
+            className="flex items-center gap-2 bg-primary hover:bg-primary/95 text-primary-foreground px-4 py-2 rounded-xl text-xs font-bold transition shadow-md shadow-primary/20 cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Add New Subject</span>
+          </button>
+        )}
+      </PageHeader>
+
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl border border-border bg-card shadow-2xs">
+        <div className="flex items-center gap-2">
+          {(['All', 'Core', 'Elective', 'Extracurricular'] as const).map(tab => (
+            <button
+              key={tab}
+              onClick={() => setSelectedCategory(tab)}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer ${
+                selectedCategory === tab
+                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  : 'bg-muted hover:bg-muted/80 text-foreground'
+              }`}
+            >
+              {tab === 'All' ? 'All Subjects' : `${tab} Track`}
+            </button>
+          ))}
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-4 text-xs font-bold text-muted-foreground">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input
@@ -151,79 +339,50 @@ export default function SubjectsPage() {
               className="pl-9 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-900 dark:text-white w-64 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
             />
           </div>
-          <button
-            onClick={() => toast.success('New subject wizard opened')}
-            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-xs font-bold transition shadow-sm cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Add New Subject</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Category Tabs & Stats Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs">
-        <div className="flex items-center gap-2">
-          {(['All', 'Core', 'Elective'] as const).map(tab => (
-            <button
-              key={tab}
-              onClick={() => setSelectedCategory(tab)}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer ${
-                selectedCategory === tab
-                  ? 'bg-emerald-600 text-white shadow-sm'
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
-              }`}
-            >
-              {tab === 'All' ? 'All Subjects' : `${tab} Track`}
-            </button>
-          ))}
-        </div>
-
-        <div className="flex items-center gap-4 text-xs font-bold text-slate-600 dark:text-slate-400">
           <span className="flex items-center gap-1.5">
-            <Layers className="w-4 h-4 text-emerald-600" />
-            <span>Total Taught: <strong className="text-slate-900 dark:text-white">{filtered.length} Courses</strong></span>
+            <Layers className="w-4 h-4 text-primary" />
+            <span>Total Taught: <strong className="text-foreground">{filtered.length} Courses</strong></span>
           </span>
           <span className="flex items-center gap-1.5">
-            <Clock className="w-4 h-4 text-emerald-600" />
-            <span>Weekly Workload: <strong className="text-slate-900 dark:text-white">{filtered.reduce((acc, s) => acc + (s.defaultWeeklyHours || 0), 0)} hrs</strong></span>
+            <Clock className="w-4 h-4 text-primary" />
+            <span>Weekly Workload: <strong className="text-foreground">{filtered.reduce((acc, s) => acc + (s.defaultWeeklyHours || 0), 0)} hrs</strong></span>
           </span>
         </div>
       </div>
 
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-2xs">
+      <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-2xs">
         {loading ? (
-          <div className="p-12 text-center text-slate-500 text-xs font-medium">Loading institutional academic subjects...</div>
+          <div className="p-12 text-center text-muted-foreground text-xs font-medium">Loading institutional academic subjects...</div>
         ) : filtered.length === 0 ? (
-          <div className="p-12 text-center text-slate-500 text-xs font-medium">No subjects matched your filter criteria.</div>
+          <div className="p-12 text-center text-muted-foreground text-xs font-medium">No subjects matched your filter criteria.</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800">
+              <thead className="bg-muted/40 border-b border-border">
                 <tr>
-                  <th className="px-6 py-4 font-extrabold text-slate-700 dark:text-slate-300">Course Code</th>
-                  <th className="px-6 py-4 font-extrabold text-slate-700 dark:text-slate-300">Subject Name & Track Description</th>
-                  <th className="px-6 py-4 font-extrabold text-slate-700 dark:text-slate-300">Category</th>
-                  <th className="px-6 py-4 font-extrabold text-slate-700 dark:text-slate-300 text-center">Weekly Hours</th>
-                  <th className="px-6 py-4 font-extrabold text-slate-700 dark:text-slate-300 text-center">Passing Mark</th>
-                  <th className="px-6 py-4 font-extrabold text-slate-700 dark:text-slate-300 text-center">Status</th>
-                  <th className="px-6 py-4 font-extrabold text-slate-700 dark:text-slate-300 text-right">Actions</th>
+                  <th className="px-6 py-4 font-extrabold text-foreground">Course Code</th>
+                  <th className="px-6 py-4 font-extrabold text-foreground">Subject Name & Track Description</th>
+                  <th className="px-6 py-4 font-extrabold text-foreground">Category</th>
+                  <th className="px-6 py-4 font-extrabold text-foreground text-center">Weekly Hours</th>
+                  <th className="px-6 py-4 font-extrabold text-foreground text-center">Passing Mark</th>
+                  <th className="px-6 py-4 font-extrabold text-foreground text-center">Status</th>
+                  <th className="px-6 py-4 font-extrabold text-foreground text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+              <tbody className="divide-y divide-border">
                 {filtered.map(s => (
-                  <tr key={s.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
-                    <td className="px-6 py-4 font-mono font-extrabold text-emerald-600 dark:text-emerald-400">
+                  <tr key={s.id} className="hover:bg-muted/30 transition">
+                    <td className="px-6 py-4 font-mono font-extrabold text-primary">
                       {s.code}
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex flex-col gap-0.5">
                         <div className="flex items-center gap-2.5">
-                          <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: s.color || '#10b981' }}></span>
-                          <span className="font-bold text-slate-900 dark:text-white text-xs">{s.name}</span>
+                          <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: getColorHex(s.color) }}></span>
+                          <span className="font-bold text-foreground text-xs">{s.name}</span>
                         </div>
                         {s.description && (
-                          <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1 pl-5 font-normal">
+                          <p className="text-[11px] text-muted-foreground line-clamp-1 pl-5 font-normal">
                             {s.description}
                           </p>
                         )}
@@ -238,26 +397,48 @@ export default function SubjectsPage() {
                         {s.subjectType}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-center font-bold text-slate-700 dark:text-slate-300">
-                      {s.defaultWeeklyHours || 5} hrs/wk
+                    <td className="px-6 py-4 text-center font-bold text-foreground">
+                      {s.defaultWeeklyHours || 0} hrs/wk
                     </td>
-                    <td className="px-6 py-4 text-center font-mono font-bold text-slate-600 dark:text-slate-400">
-                      {s.passingScore || 70}%
+                    <td className="px-6 py-4 text-center font-mono font-bold text-muted-foreground">
+                      {s.passingScore || 0}%
                     </td>
                     <td className="px-6 py-4 text-center">
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                      <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold ${
+                        s.activeStatus
+                          ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
+                          : 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800'
+                      }`}>
                         <CheckCircle2 className="w-3 h-3" />
-                        <span>Active</span>
+                        <span>{s.activeStatus ? 'Active' : 'Inactive'}</span>
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-right">
+                    <td className="px-6 py-4 text-right space-x-2">
                       <button
                         onClick={() => toast.info(`Viewing curriculum syllabus for ${s.code}: ${s.name}`)}
-                        className="text-emerald-600 dark:text-emerald-400 hover:underline text-xs font-bold inline-flex items-center gap-1 cursor-pointer"
+                        className="text-primary hover:underline text-xs font-bold inline-flex items-center gap-1 cursor-pointer"
                       >
                         <BookMarked className="w-3.5 h-3.5" />
                         <span>Syllabus</span>
                       </button>
+                      {canModify && (
+                        <>
+                          <button
+                            onClick={() => handleEditClick(s)}
+                            className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 p-1 cursor-pointer inline-flex items-center"
+                            title="Edit Subject"
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteClick(s.id)}
+                            className="text-rose-600 dark:text-rose-400 hover:text-rose-700 p-1 cursor-pointer inline-flex items-center"
+                            title="Delete Subject"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -266,6 +447,40 @@ export default function SubjectsPage() {
           </div>
         )}
       </div>
-    </div>
+
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="w-full max-w-lg bg-card border border-border rounded-2xl shadow-2xl p-6 relative max-h-[90vh] overflow-y-auto">
+            <h3 className="text-lg font-bold text-foreground mb-1">
+              {editingItem ? 'Edit Subject Details' : 'Add New Subject'}
+            </h3>
+            <p className="text-xs text-muted-foreground mb-5">
+              Define course attributes, credit weights, and map institutional relations below.
+            </p>
+            <FormBuilder
+              fields={formFields}
+              initialValues={editingItem || { 
+                subjectType: 'Core', 
+                defaultWeeklyHours: 5,
+                passingScore: 70,
+                creditValue: 3,
+                activeStatus: true,
+                color: 'emerald',
+                icon: 'book'
+              }}
+              onSubmit={handleSave}
+              draftKey="subject_form"
+              submitLabel={editingItem ? 'Update Subject' : 'Add Subject'}
+            />
+            <button
+              onClick={() => setIsModalOpen(false)}
+              className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+    </PageContainer>
   );
 }

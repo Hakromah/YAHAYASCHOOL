@@ -700,6 +700,7 @@ export const hostelService = {
         phone: v.phone || 'N/A',
         purpose: v.purpose || 'Academic Guest Visit',
         hostStudentName: v.hostStudent || (v.student ? (v.student.name || `${v.student.firstName || ''} ${v.student.lastName || ''}`.trim()) : 'Central Administration'),
+        assignedRoom: v.assignedRoom || '',
         dailyChargeUSD: v.dailyCharge !== undefined && v.dailyCharge !== null ? parseFloat(v.dailyCharge) : 50.0,
         securityDepositUSD: v.securityDeposit !== undefined && v.securityDeposit !== null ? parseFloat(v.securityDeposit) : 30.0,
         checkIn: v.checkIn,

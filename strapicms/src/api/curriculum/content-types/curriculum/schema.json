@@ -4,10 +4,16 @@
   "info": {
     "singularName": "curriculum",
     "pluralName": "curriculums",
-    "displayName": "Curriculum"
+    "displayName": "Curriculum",
+    "description": "Updated curriculum syllabus records"
   },
   "options": {
     "draftAndPublish": false
+  },
+  "pluginOptions": {
+    "i18n": {
+      "localized": true
+    }
   },
   "attributes": {
     "title": {
@@ -72,13 +78,20 @@
     },
     "attachments": {
       "type": "media",
-      "multiple": true,
-      "allowedTypes": [
-        "files",
-        "images",
-        "videos",
-        "audios"
-      ]
+      "multiple": true
+    },
+    "credits": {
+      "type": "integer",
+      "default": 3
+    },
+    "prerequisites": {
+      "type": "text"
+    },
+    "electives": {
+      "type": "text"
+    },
+    "graduationCredits": {
+      "type": "integer"
     }
   }
 }

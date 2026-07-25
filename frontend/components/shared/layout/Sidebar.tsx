@@ -737,10 +737,19 @@ export function Sidebar({ className }: SidebarProps) {
     }
   }
 
+  const getStrapiMediaUrlLocal = (media: any) => {
+    if (!media) return null;
+    const rawUrl = typeof media === 'string' ? media : (media.url || media.photoUrl || media.avatarUrl);
+    if (!rawUrl || typeof rawUrl !== 'string') return null;
+    if (rawUrl.startsWith('http://') || rawUrl.startsWith('https://') || rawUrl.startsWith('data:')) return rawUrl;
+    const baseUrl = process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1339';
+    return `${baseUrl}${rawUrl.startsWith('/') ? '' : '/'}${rawUrl}`;
+  };
+
   const displayName = user ? getUserDisplayName(user as unknown as Parameters<typeof getUserDisplayName>[0]) : 'User';
   const initials = user ? getUserInitials(user as unknown as Parameters<typeof getUserInitials>[0]) : '??';
   const roleLabel = role ? role.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : '';
-  const avatarUrl = user?.avatarUrl || user?.photoUrl || (user as any)?.photo?.url || null;
+  const avatarUrl = user?.avatarUrl || user?.photoUrl || getStrapiMediaUrlLocal(user?.avatar) || getStrapiMediaUrlLocal((user as any)?.photo) || null;
 
   const sidebarWidth = isCollapsed ? 72 : 280;
 

@@ -5,7 +5,7 @@
     "singularName": "academic-transcript",
     "pluralName": "academic-transcripts",
     "displayName": "Academic Transcript",
-    "description": "Official school transcripts"
+    "description": "Updated transcript ledger records"
   },
   "options": {
     "draftAndPublish": false
@@ -16,11 +16,6 @@
     }
   },
   "attributes": {
-    "student": {
-      "type": "relation",
-      "relation": "manyToOne",
-      "target": "api::student.student"
-    },
     "transcriptNumber": {
       "type": "string",
       "unique": true
@@ -35,7 +30,7 @@
     "issueDate": {
       "type": "date"
     },
-    "recordStatus": {
+    "status": {
       "type": "enumeration",
       "enum": [
         "Draft",
@@ -43,6 +38,33 @@
         "Revoked"
       ],
       "default": "Draft"
+    },
+    "version": {
+      "type": "integer",
+      "default": 1
+    },
+    "hash": {
+      "type": "string"
+    },
+    "qrCode": {
+      "type": "string"
+    },
+    "digitalSignature": {
+      "type": "string"
+    },
+    "registrar": {
+      "type": "string"
+    },
+    "principal": {
+      "type": "string"
+    },
+    "verificationUrl": {
+      "type": "string"
+    },
+    "student": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::student.student"
     }
   }
 }

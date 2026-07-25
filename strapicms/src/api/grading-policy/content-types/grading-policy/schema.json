@@ -1,0 +1,48 @@
+{
+  "kind": "collectionType",
+  "collectionName": "grading_policies",
+  "info": {
+    "singularName": "grading-policy",
+    "pluralName": "grading-policies",
+    "displayName": "Grading Policy",
+    "description": "Configurable CA and Exam percentage weight rules"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {
+    "i18n": {
+      "localized": true
+    }
+  },
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "caPercent": {
+      "type": "decimal",
+      "default": 40
+    },
+    "midtermPercent": {
+      "type": "decimal",
+      "default": 30
+    },
+    "finalPercent": {
+      "type": "decimal",
+      "default": 30
+    },
+    "practicalPercent": {
+      "type": "decimal",
+      "default": 0
+    },
+    "attendancePercent": {
+      "type": "decimal",
+      "default": 0
+    },
+    "projectPercent": {
+      "type": "decimal",
+      "default": 0
+    }
+  }
+}

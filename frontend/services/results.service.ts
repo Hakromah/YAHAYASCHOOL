@@ -80,5 +80,96 @@ export const resultsService = {
       : '/academic-certificates?populate=*';
     const response = await apiClient.get<StrapiCollectionResponse<AcademicCertificate>>(url);
     return response.data.data;
+  },
+
+  // Student Grades & Moderation
+  getStudentGrades: async (filters?: { termId?: number; courseId?: number; sectionId?: number }) => {
+    let url = '/student-grades?populate=*&sort=createdAt:desc';
+    if (filters) {
+      const queryParams = [];
+      if (filters.termId) queryParams.push(`filters[academic_term][id][$eq]=${filters.termId}`);
+      if (filters.courseId) queryParams.push(`filters[subject][id][$eq]=${filters.courseId}`);
+      if (filters.sectionId) queryParams.push(`filters[student][sections][id][$eq]=${filters.sectionId}`);
+      if (queryParams.length) url = `/student-grades?${queryParams.join('&')}&populate=*`;
+    }
+    const response = await apiClient.get<StrapiCollectionResponse<any>>(url);
+    return response.data.data;
+  },
+
+  saveStudentGrade: async (id: number | string, data: any) => {
+    if (typeof id === 'number' && id < 10000) {
+      const response = await apiClient.put(`/student-grades/${id}`, { data });
+      return response.data.data;
+    } else {
+      const response = await apiClient.post('/student-grades', { data });
+      return response.data.data;
+    }
+  },
+
+  createAuditLog: async (data: any) => {
+    try {
+      const response = await apiClient.post('/academic-audit-logs', { data });
+      return response.data.data;
+    } catch (e) {
+      console.error('Failed to log audit:', e);
+    }
+  },
+
+  // Appeals
+  getAppeals: async () => {
+    const response = await apiClient.get<StrapiCollectionResponse<any>>('/academic-appeals?populate=*&sort=createdAt:desc');
+    return response.data.data;
+  },
+
+  updateAppeal: async (id: number, status: string, responseText: string) => {
+    const response = await apiClient.put(`/academic-appeals/${id}`, {
+      data: { status, response: responseText }
+    });
+    return response.data.data;
+  },
+
+  // Graduation Clearance
+  getGraduationClearances: async () => {
+    const response = await apiClient.get<StrapiCollectionResponse<any>>('/graduation-clearances?populate=*');
+    return response.data.data;
+  },
+
+  updateClearanceStatus: async (id: number, departmentField: string, status: string, notes?: string) => {
+    const data: any = { [departmentField]: status };
+    if (notes) data.notes = notes;
+    const response = await apiClient.put(`/graduation-clearances/${id}`, { data });
+    return response.data.data;
+  },
+
+  // Exam Timetables
+  getExamTimetables: async () => {
+    const response = await apiClient.get<StrapiCollectionResponse<any>>('/exam-timetables?populate=*&sort=examDate:asc');
+    return response.data.data;
+  },
+
+  // Academic Configuration
+  getGradingSchemes: async () => {
+    const response = await apiClient.get<StrapiCollectionResponse<any>>('/grading-schemes?populate=*');
+    return response.data.data;
+  },
+
+  getGradingPolicies: async () => {
+    const response = await apiClient.get<StrapiCollectionResponse<any>>('/grading-policies?populate=*');
+    return response.data.data;
+  },
+
+  getAcademicRegulations: async () => {
+    const response = await apiClient.get<StrapiCollectionResponse<any>>('/academic-regulations?populate=*');
+    return response.data.data;
+  },
+
+  getAcademicCalendars: async () => {
+    const response = await apiClient.get<StrapiCollectionResponse<any>>('/academic-calendars?populate=*&sort=registrationStart:asc');
+    return response.data.data;
+  },
+
+  getAuditLogs: async () => {
+    const response = await apiClient.get<StrapiCollectionResponse<any>>('/academic-audit-logs?populate=*&sort=createdAt:desc');
+    return response.data.data;
   }
 };

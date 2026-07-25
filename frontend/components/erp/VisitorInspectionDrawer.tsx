@@ -1,12 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   X, User, DollarSign, Calendar, Clock, CheckCircle2, AlertCircle, 
   CreditCard, Smartphone, CheckSquare, Square
 } from 'lucide-react';
 import { hostelService } from '@/services/hostel.service';
+import { apiClient } from '@/services/api.service';
 import { toast } from 'sonner';
 
 interface VisitorInspectionDrawerProps {
@@ -20,19 +21,54 @@ export function VisitorInspectionDrawer({ isOpen, onClose, visitor, onSuccess }:
   const [activeTab, setActiveTab] = useState<'overview' | 'finance' | 'timeline'>('overview');
   
   // Check-In / Out Local States
-  const [checkInTime, setCheckInTime] = useState(
-    visitor?.checkIn ? new Date(visitor.checkIn).toISOString().slice(0, 16) : ''
-  );
-  const [checkOutTime, setCheckOutTime] = useState(
-    visitor?.checkOut ? new Date(visitor.checkOut).toISOString().slice(0, 16) : ''
-  );
+  const [checkInTime, setCheckInTime] = useState('');
+  const [checkOutTime, setCheckOutTime] = useState('');
 
   // Payment Form States
-  const [paymentAmount, setPaymentAmount] = useState(String(visitor?.dailyChargeUSD || 50));
+  const [paymentAmount, setPaymentAmount] = useState('50');
   const [currency, setCurrency] = useState('USD');
   const [paymentMethod, setPaymentMethod] = useState('Cash');
   const [includeDeposit, setIncludeDeposit] = useState(false);
-  const [depositAmount, setDepositAmount] = useState(String(visitor?.securityDepositUSD || 30));
+  const [depositAmount, setDepositAmount] = useState('30');
+
+  // Dynamic UI display charges
+  const [displayDailyCharge, setDisplayDailyCharge] = useState(0);
+  const [displayDeposit, setDisplayDeposit] = useState(0);
+
+  // Paid Transaction History
+  const [payments, setPayments] = useState<any[]>([]);
+  const [loadingPayments, setLoadingPayments] = useState(false);
+
+  const loadPayments = useCallback(async () => {
+    if (!visitor?.id) return;
+    setLoadingPayments(true);
+    try {
+      const res = await apiClient.get('/hostel-payments', {
+        params: {
+          'filters[paymentNumber][$startsWith]': `PAY-VST-${visitor.id}`,
+          sort: 'paymentDate:desc',
+          'pagination[limit]': -1
+        }
+      });
+      setPayments(res.data?.data || []);
+    } catch (err) {
+      console.warn('Failed to load visitor payments:', err);
+    } finally {
+      setLoadingPayments(false);
+    }
+  }, [visitor?.id]);
+
+  useEffect(() => {
+    if (isOpen && visitor?.id) {
+      loadPayments();
+      setDisplayDailyCharge(visitor.dailyChargeUSD ?? 0);
+      setDisplayDeposit(visitor.securityDepositUSD ?? 0);
+      setPaymentAmount(String(visitor.dailyChargeUSD || 0));
+      setDepositAmount(String(visitor.securityDepositUSD || 0));
+      setCheckInTime(visitor.checkIn ? new Date(visitor.checkIn).toISOString().slice(0, 16) : '');
+      setCheckOutTime(visitor.checkOut ? new Date(visitor.checkOut).toISOString().slice(0, 16) : '');
+    }
+  }, [isOpen, visitor?.id, loadPayments]);
 
   if (!isOpen || !visitor) return null;
 
@@ -59,16 +95,56 @@ export function VisitorInspectionDrawer({ isOpen, onClose, visitor, onSuccess }:
       return;
     }
     const depVal = Number(depositAmount) || 0;
-    await hostelService.recordVisitorPayment(
-      visitor.id,
-      amt,
-      currency,
-      paymentMethod,
-      includeDeposit,
-      depVal
-    );
-    onSuccess?.();
-    onClose();
+
+    try {
+      // 1. Post General Ledger Entry
+      await hostelService.recordVisitorPayment(
+        visitor.id,
+        amt,
+        currency,
+        paymentMethod,
+        includeDeposit,
+        depVal
+      );
+
+      // 2. Create the Hostel Payment record in Strapi
+      const seq = `PAY-VST-${visitor.id}-${Date.now()}`;
+      await apiClient.post('/hostel-payments', {
+        data: {
+          paymentNumber: seq,
+          amount: amt,
+          paymentMethod: paymentMethod,
+          paymentDate: new Date().toISOString(),
+          status: 'completed'
+        }
+      });
+
+      // 3. Clear charges on the visitor record in Strapi
+      await apiClient.put(`/hostel-visitors/${visitor.id}`, {
+        data: {
+          dailyCharge: 0,
+          securityDeposit: 0
+        }
+      });
+
+      toast.success('Visitor payment recorded and posted to General Ledger.');
+      
+      // Update UI local states immediately
+      setDisplayDailyCharge(0);
+      setDisplayDeposit(0);
+      setPaymentAmount('0');
+      setDepositAmount('0');
+      setIncludeDeposit(false);
+
+      // Reload local payments table
+      await loadPayments();
+
+      // Trigger parent component data refresh (so outer tables/center stats update)
+      onSuccess?.();
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to process visitor payment.');
+    }
   };
 
   // Safe variables parsing
@@ -195,8 +271,8 @@ export function VisitorInspectionDrawer({ isOpen, onClose, visitor, onSuccess }:
           {activeTab === 'finance' && (
             <div className="space-y-4">
               <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 text-emerald-950 dark:text-emerald-300 space-y-1">
-                <p className="font-extrabold text-sm">Daily Accommodation Charge: ${visitor.dailyChargeUSD.toFixed(2)} / day</p>
-                <p className="font-bold">Refundable Security Deposit: ${visitor.securityDepositUSD.toFixed(2)} (GL 2050 Liability)</p>
+                <p className="font-extrabold text-sm">Daily Accommodation Charge: ${displayDailyCharge.toFixed(2)} / day</p>
+                <p className="font-bold">Refundable Security Deposit: ${displayDeposit.toFixed(2)} (GL 2050 Liability)</p>
               </div>
 
               {/* Record Payment Form */}
@@ -207,18 +283,21 @@ export function VisitorInspectionDrawer({ isOpen, onClose, visitor, onSuccess }:
                 </h4>
 
                 <div className="space-y-2">
-                  <div className="flex items-center gap-2 cursor-pointer select-none" onClick={() => setIncludeDeposit(!includeDeposit)}>
+                  <div 
+                    className={`flex items-center gap-2 cursor-pointer select-none ${displayDeposit === 0 ? 'opacity-50 pointer-events-none' : ''}`} 
+                    onClick={() => setIncludeDeposit(!includeDeposit)}
+                  >
                     {includeDeposit ? (
                       <CheckSquare className="w-4 h-4 text-indigo-600" />
                     ) : (
                       <Square className="w-4 h-4 text-slate-400" />
                     )}
                     <span className="font-bold text-slate-700 dark:text-slate-300">
-                      Include Security Deposit (${visitor.securityDepositUSD.toFixed(2)})
+                      Include Security Deposit (${displayDeposit.toFixed(2)})
                     </span>
                   </div>
 
-                  {includeDeposit && (
+                  {includeDeposit && displayDeposit > 0 && (
                     <div className="space-y-1">
                       <label className="text-[10px] font-bold text-slate-400 uppercase">Deposit Amount ($)</label>
                       <input
@@ -237,17 +316,19 @@ export function VisitorInspectionDrawer({ isOpen, onClose, visitor, onSuccess }:
                     <input
                       type="number"
                       required
+                      disabled={displayDailyCharge === 0 && displayDeposit === 0}
                       value={paymentAmount}
                       onChange={(e) => setPaymentAmount(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-semibold font-mono text-slate-900 dark:text-white"
+                      className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-semibold font-mono text-slate-900 dark:text-white disabled:opacity-50"
                     />
                   </div>
                   <div className="space-y-1">
                     <label className="text-[10px] font-bold text-slate-400 uppercase">Select Currency</label>
                     <select
                       value={currency}
+                      disabled={displayDailyCharge === 0 && displayDeposit === 0}
                       onChange={(e) => setCurrency(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-semibold text-slate-900 dark:text-white"
+                      className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-semibold text-slate-900 dark:text-white disabled:opacity-50"
                     >
                       <option value="USD" className="text-slate-900 bg-white dark:text-white dark:bg-slate-800">USD ($)</option>
                       <option value="LRD" className="text-slate-900 bg-white dark:text-white dark:bg-slate-800">LRD (L$)</option>
@@ -261,8 +342,9 @@ export function VisitorInspectionDrawer({ isOpen, onClose, visitor, onSuccess }:
                   <label className="text-[10px] font-bold text-slate-400 uppercase">Payment Method</label>
                   <select
                     value={paymentMethod}
+                    disabled={displayDailyCharge === 0 && displayDeposit === 0}
                     onChange={(e) => setPaymentMethod(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-semibold text-slate-900 dark:text-white"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-semibold text-slate-900 dark:text-white disabled:opacity-50"
                   >
                     <option value="Cash" className="text-slate-900 bg-white dark:text-white dark:bg-slate-800">Cash Account</option>
                     <option value="Bank" className="text-slate-900 bg-white dark:text-white dark:bg-slate-800">Bank Wire / Transfer</option>
@@ -272,11 +354,61 @@ export function VisitorInspectionDrawer({ isOpen, onClose, visitor, onSuccess }:
 
                 <button
                   type="submit"
-                  className="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md transition-all mt-2"
+                  disabled={displayDailyCharge === 0 && displayDeposit === 0}
+                  className="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md transition-all mt-2 disabled:bg-slate-300 dark:disabled:bg-slate-800 disabled:text-slate-500 disabled:cursor-not-allowed"
                 >
-                  Record Payment & Post to Ledger
+                  {displayDailyCharge === 0 && displayDeposit === 0 ? 'All Fees Fully Paid' : 'Record Payment & Post to Ledger'}
                 </button>
               </form>
+
+              {/* Payments History Table */}
+              <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-2">
+                <h5 className="font-bold text-slate-850 dark:text-slate-250">Paid Transaction History</h5>
+                {loadingPayments ? (
+                  <p className="text-slate-400 text-xs">Loading payment history...</p>
+                ) : payments.length === 0 ? (
+                  <p className="text-slate-500 italic text-[11px]">No payments recorded yet.</p>
+                ) : (
+                  <div className="overflow-hidden rounded-xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-905">
+                    <table className="w-full text-left text-[11px]">
+                      <thead className="bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-bold">
+                        <tr>
+                          <th className="p-2.5">Date</th>
+                          <th className="p-2.5">Payment Ref</th>
+                          <th className="p-2.5 text-right">Amount</th>
+                          <th className="p-2.5">Method</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                        {payments.map((p: any) => {
+                          const pNum = p.paymentNumber || p.id || '';
+                          const displayRef = pNum.length > 20 ? pNum.slice(0, 12) + '...' + pNum.slice(-5) : pNum;
+                          return (
+                            <tr key={p.id} className="hover:bg-slate-50 dark:hover:bg-slate-805/50 transition-colors">
+                              <td className="p-2.5 font-mono text-slate-600 dark:text-slate-400">
+                                {new Date(p.paymentDate).toLocaleDateString(undefined, {
+                                  year: 'numeric',
+                                  month: 'short',
+                                  day: 'numeric'
+                                })}
+                              </td>
+                              <td className="p-2.5 font-mono text-slate-500" title={pNum}>{displayRef}</td>
+                              <td className="p-2.5 font-extrabold text-emerald-600 dark:text-emerald-400 text-right">
+                                ${(p.amount || 0).toFixed(2)} USD
+                              </td>
+                              <td className="p-2.5">
+                                <span className="inline-flex px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold text-[10px]">
+                                  {p.paymentMethod}
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
