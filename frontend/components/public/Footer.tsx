@@ -1,226 +1,147 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
-import { Mail, Phone, MapPin, Send, HeartHandshake, CheckCircle2 } from 'lucide-react';
-import type { FooterConfig, NavigationMenuItem } from '../../types/cms.types';
+import Image from 'next/image';
+import { Container } from '../ui/Container';
+import { Mail, Phone, BookOpen, GraduationCap, LifeBuoy } from 'lucide-react';
+import type { FooterConfig } from '../../types/cms.types';
 
 interface FooterProps {
   config?: FooterConfig | null;
   locale?: string;
 }
 
-export function Footer({ config, locale = 'en' }: FooterProps) {
-  const [email, setEmail] = useState('');
-  const [subscribed, setSubscribed] = useState(false);
-  const [loading, setLoading] = useState(false);
-
-  const quickLinks: NavigationMenuItem[] = config?.quickLinks && config.quickLinks.length > 0 ? config.quickLinks : [
-    { title: 'About Us & Leadership', url: '/about' },
-    { title: 'Academic Curriculum', url: '/programs' },
-    { title: 'Online Registration', url: '/online-registration' },
-    { title: 'Tuition Fees & Scholarships', url: '/admissions#fees' },
-    { title: 'Campus Photo Gallery', url: '/gallery' },
-    { title: 'Frequently Asked Questions', url: '/faq' },
-  ];
-
-  const departments: NavigationMenuItem[] = config?.departmentsColumn && config.departmentsColumn.length > 0 ? config.departmentsColumn : [
-    { title: 'Faculty of Islamic & Qur\'anic Studies', url: '/departments/islamic-studies' },
-    { title: 'Faculty of Pure & Applied Sciences', url: '/departments/sciences' },
-    { title: 'Languages & Linguistics Department', url: '/departments/languages' },
-    { title: 'Humanities & Commerce Faculty', url: '/departments/humanities' },
-  ];
-
-  const programs: NavigationMenuItem[] = config?.programsColumn && config.programsColumn.length > 0 ? config.programsColumn : [
-    { title: 'Tahfidz Al-Qur\'an Memorization Track', url: '/programs/quran-memorization' },
-    { title: 'Advanced Arabic Immersion Track', url: '/programs/arabic-immersion' },
-    { title: 'STEM & Robotics Honors Track', url: '/programs/stem-robotics' },
-    { title: 'Intensive Summer Academy', url: '/programs/summer-academy' },
-  ];
-
-  const contactText = config?.contactText || 'Empowering future Muslim leaders through holistic, world-class Western sciences and rigorous Islamic Qur\'anic scholarship.';
-  const copyrightText = config?.copyrightText || '© 2026 YAHAYASCOOL — Yahaya International Islamic and English High School. All rights reserved.';
-  const newsletterHeading = config?.newsletterHeading || 'Stay Connected';
-  const newsletterSubheading = config?.newsletterSubheading || 'Subscribe for official school circulars, admission deadlines, and Islamic reflections directly to your inbox.';
-
-  const handleNewsletterSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email || !email.includes('@')) return;
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      setSubscribed(true);
-      setEmail('');
-    }, 800);
-  };
-
-  const getHref = (url: string) => {
-    if (url.startsWith('http') || url.startsWith('#')) return url;
-    if (locale === 'en' || !locale) return url;
-    const cleanUrl = url.startsWith('/') ? url : `/${url}`;
-    return cleanUrl === '/' ? `/${locale}` : `/${locale}${cleanUrl}`;
-  };
-
+export function Footer({ locale = 'en' }: FooterProps) {
   return (
-    <footer className="bg-emerald-950 text-emerald-100 border-t border-emerald-900 pt-16 pb-12 transition-colors">
-      <div className="max-w-7xl mx-auto px-4 sm:px-8">
-        {/* Top Section: Newsletter & Waqf Callout */}
-        <div className="bg-gradient-to-r from-emerald-900/80 to-emerald-950/90 rounded-3xl p-6 sm:p-10 border border-emerald-800/80 shadow-2xl mb-16 flex flex-col lg:flex-row items-center justify-between gap-8">
-          <div className="max-w-xl text-center lg:text-left">
-            <span className="inline-block px-3 py-1 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 mb-3">
-              OFFICIAL CIRCULARS & UPDATES
-            </span>
-            <h3 className="text-2xl sm:text-3xl font-extrabold text-white mb-2">{newsletterHeading}</h3>
-            <p className="text-emerald-200 text-sm sm:text-base">{newsletterSubheading}</p>
+    <footer className="bg-white pt-12">
+      {/* Top Contact Strip */}
+      <Container>
+        <div className="flex flex-col md:flex-row items-center justify-between py-8 border-b border-gray-100 gap-8">
+          <div className="flex items-center gap-4">
+            <span className="text-sm font-semibold text-gray-500">Follow us on Social Media</span>
+            <div className="flex items-center gap-2">
+              <a href="#" className="w-8 h-8 rounded-full bg-sky-50 text-[#0ea5e9] flex items-center justify-center hover:bg-[#0ea5e9] hover:text-white transition-colors">
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
+              </a>
+              <a href="#" className="w-8 h-8 rounded-full bg-sky-50 text-[#0ea5e9] flex items-center justify-center hover:bg-[#0ea5e9] hover:text-white transition-colors">
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+              </a>
+              <a href="#" className="w-8 h-8 rounded-full bg-sky-50 text-[#0ea5e9] flex items-center justify-center hover:bg-[#0ea5e9] hover:text-white transition-colors">
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M9 8h-3v4h3v12h5v-12h3.642l.358-4h-4v-1.667c0-.955.192-1.333 1.115-1.333h2.885v-5h-3.808c-3.596 0-5.192 1.583-5.192 4.615v3.385z"/></svg>
+              </a>
+              <a href="#" className="w-8 h-8 rounded-full bg-sky-50 text-[#0ea5e9] flex items-center justify-center hover:bg-[#0ea5e9] hover:text-white transition-colors">
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>
+              </a>
+              <a href="#" className="w-8 h-8 rounded-full bg-sky-50 text-[#0ea5e9] flex items-center justify-center hover:bg-[#0ea5e9] hover:text-white transition-colors">
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"/></svg>
+              </a>
+            </div>
           </div>
-
-          <div className="w-full lg:w-auto flex-1 max-w-md">
-            {subscribed ? (
-              <div className="bg-emerald-800/80 border border-emerald-600/60 rounded-2xl p-4 flex items-center gap-3 text-emerald-100 animate-in fade-in">
-                <CheckCircle2 className="w-6 h-6 text-amber-400 shrink-0" />
-                <span className="text-sm font-medium">Alhamdulillah! You are now subscribed to YAHAYASCOOL updates.</span>
-              </div>
-            ) : (
-              <form onSubmit={handleNewsletterSubmit} className="flex flex-col sm:flex-row gap-2.5">
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Enter your email address..."
-                  required
-                  className="flex-1 bg-emerald-900/90 border border-emerald-700/80 rounded-xl px-4 py-3 text-sm text-white placeholder:text-emerald-400/70 focus:outline-hidden focus:border-amber-400 transition-colors"
-                />
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="bg-amber-500 hover:bg-amber-400 text-emerald-950 font-bold px-6 py-3 rounded-xl text-sm shadow-lg flex items-center justify-center gap-2 transition-all disabled:opacity-50 shrink-0"
-                >
-                  <span>{loading ? 'Subscribing...' : 'Subscribe'}</span>
-                  <Send className="w-4 h-4" />
-                </button>
-              </form>
-            )}
+          
+          <div className="shrink-0 -mt-12 relative z-10 bg-white p-4 rounded-full">
+            <Image
+              src="/headerlogo.png"
+              alt="YAHAYASCHOOL Logo"
+              width={80}
+              height={95}
+              className="object-contain"
+            />
           </div>
-        </div>
-
-        {/* Middle Columns */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 lg:gap-8 pb-14 border-b border-emerald-900/80">
-          {/* Column 1: Brand & Bio (Spans 2 cols on lg) */}
-          <div className="lg:col-span-2 flex flex-col space-y-4">
-            <Link href={getHref('/')} className="flex items-center gap-3.5">
-              <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-emerald-950 font-extrabold text-2xl shadow-md">
-                Y<span className="text-emerald-900 text-xs font-semibold">S</span>
+          
+          <div className="flex flex-col sm:flex-row items-center gap-8">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-sky-50 flex items-center justify-center text-[#0ea5e9]">
+                <Mail className="w-5 h-5" />
               </div>
-              <div className="flex flex-col">
-                <span className="font-extrabold text-xl tracking-tight text-white">YAHAYASCOOL</span>
-                <span className="text-[10px] font-semibold uppercase tracking-widest text-amber-400 font-serif">
-                  Islamic & English High School
-                </span>
+              <div>
+                <p className="text-xs text-gray-400 font-medium uppercase tracking-wider mb-0.5">Email</p>
+                <p className="text-sm font-semibold text-gray-900">Yahayahighschool@Gmail.com</p>
               </div>
-            </Link>
-            <p className="text-emerald-200/90 text-sm leading-relaxed max-w-sm">{contactText}</p>
-
-            <div className="space-y-2 pt-2 text-xs text-emerald-300">
-              <div className="flex items-start gap-2.5">
-                <MapPin className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-                <span>Plot 18, Education District, Islamic Knowledge Avenue, West Africa</span>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-sky-50 flex items-center justify-center text-[#0ea5e9]">
+                <Phone className="w-5 h-5" />
               </div>
-              <div className="flex items-center gap-2.5">
-                <Phone className="w-4 h-4 text-amber-400 shrink-0" />
-                <span>+234 (0) 800-YAHAYA-S</span>
-              </div>
-              <div className="flex items-center gap-2.5">
-                <Mail className="w-4 h-4 text-amber-400 shrink-0" />
-                <span>admissions@yahayaschool.edu</span>
+              <div>
+                <p className="text-xs text-gray-400 font-medium uppercase tracking-wider mb-0.5">Telephone</p>
+                <p className="text-sm font-semibold text-gray-900">+23188368801</p>
               </div>
             </div>
           </div>
+        </div>
+      </Container>
 
-          {/* Column 2: Quick Links */}
-          <div className="flex flex-col space-y-3">
-            <h4 className="text-base font-bold text-white tracking-wide border-b border-emerald-800/80 pb-2">
-              Quick Links
-            </h4>
-            <ul className="space-y-2 text-sm">
-              {quickLinks.map((item, idx) => (
-                <li key={idx}>
-                  <Link
-                    href={getHref(item.url)}
-                    className="text-emerald-300 hover:text-amber-300 transition-colors flex items-center gap-1.5"
-                  >
-                    <span className="text-amber-400/80 text-xs">›</span>
-                    <span>{item.title}</span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Column 3: Departments */}
-          <div className="flex flex-col space-y-3">
-            <h4 className="text-base font-bold text-white tracking-wide border-b border-emerald-800/80 pb-2">
-              Departments
-            </h4>
-            <ul className="space-y-2 text-sm">
-              {departments.map((item, idx) => (
-                <li key={idx}>
-                  <Link
-                    href={getHref(item.url)}
-                    className="text-emerald-300 hover:text-amber-300 transition-colors flex items-center gap-1.5"
-                  >
-                    <span className="text-amber-400/80 text-xs">›</span>
-                    <span>{item.title}</span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Column 4: Programs & Waqf */}
-          <div className="flex flex-col space-y-3">
-            <h4 className="text-base font-bold text-white tracking-wide border-b border-emerald-800/80 pb-2">
-              Academic Tracks
-            </h4>
-            <ul className="space-y-2 text-sm">
-              {programs.map((item, idx) => (
-                <li key={idx}>
-                  <Link
-                    href={getHref(item.url)}
-                    className="text-emerald-300 hover:text-amber-300 transition-colors flex items-center gap-1.5"
-                  >
-                    <span className="text-amber-400/80 text-xs">›</span>
-                    <span>{item.title}</span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-            <div className="pt-4">
-              <Link
-                href={getHref('/donations')}
-                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold text-emerald-950 bg-amber-400 hover:bg-amber-300 shadow-md transition-colors"
-              >
-                <HeartHandshake className="w-3.5 h-3.5" />
-                <span>Sadaqah & Waqf Fund</span>
-              </Link>
+      {/* Main Footer Links */}
+      <Container>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 py-16">
+          <div className="lg:col-span-1 space-y-6">
+            <h4 className="text-xs font-bold text-[#0ea5e9] uppercase tracking-wider">YAHAYA INTERNATIONAL ISLAMIC AND ENGLISH HIGH SCHOOL</h4>
+            <h3 className="text-2xl font-bold text-gray-900 font-serif leading-tight">Knowledge Faith & <span className="text-[#0ea5e9]">Excellence</span></h3>
+            <p className="text-gray-600 text-sm leading-relaxed">
+              Building a brighter future through Islamic values, quality education and character development
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <span className="px-4 py-1.5 rounded-full bg-[#0ea5e9] text-white text-xs font-bold">Islamic Education</span>
+              <span className="px-4 py-1.5 rounded-full bg-[#0ea5e9] text-white text-xs font-bold">Modern Learning</span>
+              <span className="px-4 py-1.5 rounded-full bg-[#0ea5e9] text-white text-xs font-bold">Bright Future</span>
             </div>
           </div>
-        </div>
+          
+          <div className="space-y-6">
+            <div className="flex items-center gap-2 text-[#0ea5e9]">
+              <BookOpen className="w-5 h-5" />
+              <h4 className="font-bold text-gray-900">Quick Links</h4>
+            </div>
+            <ul className="space-y-3">
+              <li><Link href={`/${locale}/about`} className="text-sm text-gray-600 hover:text-[#0ea5e9]">About Us</Link></li>
+              <li><Link href={`/${locale}/programs`} className="text-sm text-gray-600 hover:text-[#0ea5e9]">Academic Programs</Link></li>
+              <li><Link href={`/${locale}/news`} className="text-sm text-gray-600 hover:text-[#0ea5e9]">News & Events</Link></li>
+              <li><Link href={`/${locale}/gallery`} className="text-sm text-gray-600 hover:text-[#0ea5e9]">Gallery</Link></li>
+              <li><Link href={`/${locale}/careers`} className="text-sm text-gray-600 hover:text-[#0ea5e9]">Careers</Link></li>
+              <li><Link href={`/${locale}/contact`} className="text-sm text-gray-600 hover:text-[#0ea5e9]">Contact</Link></li>
+            </ul>
+          </div>
+          
+          <div className="space-y-6">
+            <div className="flex items-center gap-2 text-[#0ea5e9]">
+              <GraduationCap className="w-5 h-5" />
+              <h4 className="font-bold text-gray-900">Academics</h4>
+            </div>
+            <ul className="space-y-3">
+              <li><Link href={`/${locale}/departments/quran`} className="text-sm text-gray-600 hover:text-[#0ea5e9]">Qur'an Department</Link></li>
+              <li><Link href={`/${locale}/departments/arabic`} className="text-sm text-gray-600 hover:text-[#0ea5e9]">Arabic Language</Link></li>
+              <li><Link href={`/${locale}/departments/english`} className="text-sm text-gray-600 hover:text-[#0ea5e9]">English Department</Link></li>
+              <li><Link href={`/${locale}/online-learning`} className="text-sm text-gray-600 hover:text-[#0ea5e9]">Online Learning</Link></li>
+              <li><Link href={`/${locale}/student-life`} className="text-sm text-gray-600 hover:text-[#0ea5e9]">Student Life</Link></li>
+            </ul>
+          </div>
 
-        {/* Bottom Bar */}
-        <div className="pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-emerald-400/80 gap-4">
-          <p className="text-center sm:text-left">{copyrightText}</p>
-          <div className="flex items-center gap-6">
-            <Link href={getHref('/privacy-policy')} className="hover:text-emerald-200 transition-colors">
-              Privacy Policy
-            </Link>
-            <Link href={getHref('/terms')} className="hover:text-emerald-200 transition-colors">
-              Terms of Service
-            </Link>
-            <Link href={getHref('/sitemap')} className="hover:text-emerald-200 transition-colors">
-              Sitemap
-            </Link>
+          <div className="space-y-6">
+            <div className="flex items-center gap-2 text-[#0ea5e9]">
+              <LifeBuoy className="w-5 h-5" />
+              <h4 className="font-bold text-gray-900">Support</h4>
+            </div>
+            <ul className="space-y-3">
+              <li><Link href={`/${locale}/faq`} className="text-sm text-gray-600 hover:text-[#0ea5e9]">FAQS</Link></li>
+              <li><Link href={`/${locale}/help`} className="text-sm text-gray-600 hover:text-[#0ea5e9]">Help Center</Link></li>
+            </ul>
           </div>
         </div>
+      </Container>
+      
+      {/* Bottom Bar */}
+      <div className="bg-[#0ea5e9] py-4">
+        <Container>
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p className="text-white/90 text-sm">© 2026 Yahaya International Islamic and English School. All rights reserved.</p>
+            <div className="flex items-center gap-6">
+              <Link href={`/${locale}/terms`} className="text-white/90 text-sm hover:text-white">Terms of Service</Link>
+              <Link href={`/${locale}/privacy`} className="text-white/90 text-sm hover:text-white">Privacy Policy</Link>
+            </div>
+          </div>
+        </Container>
       </div>
     </footer>
   );

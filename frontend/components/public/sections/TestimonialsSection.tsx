@@ -1,124 +1,144 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { Star, Quote, CheckCircle2 } from 'lucide-react';
-import type { TestimonialsSectionComponent, TestimonialEntity } from '../../../types/cms.types';
-import { cmsService } from '../../../services/cms.service';
+import React, { useState } from 'react';
+import { Quote, Star } from 'lucide-react';
+import { Container } from '@/components/ui/Container';
 
-interface TestimonialsProps {
-  data?: TestimonialsSectionComponent;
-  initialTestimonials?: TestimonialEntity[];
-  locale?: string;
-}
-
-const FALLBACK_TESTIMONIALS: TestimonialEntity[] = [
+const testimonials = [
   {
     id: 1,
-    authorName: 'Hajjah Mariam Sulaiman',
-    authorRole: 'Parent of 2 Senior High Students',
-    quote:
-      'Enrolling our children at YAHAYASCOOL was the best decision we made. Not only are they topping their Cambridge math and science exams, but their love for Qur\'an and respectful manners (Adab) have transformed our home.',
-    rating: 5,
+    name: 'Mia Thompson',
+    role: 'PARENT',
+    image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=150&q=80',
+    fullImage: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=600&q=80',
+    title: 'A transformative experience for our child.',
+    quote: '"Since enrolling our daughter at Yahaya International, we have seen remarkable growth not just in her academic performance but in her character. The seamless integration of Islamic values with rigorous modern education is exactly what we were looking for."',
+    rating: 5
   },
   {
     id: 2,
-    authorName: 'Abdullah K. Yilmaz',
-    authorRole: 'Alumnus (Class of 2024) — Engineering Student at MIT',
-    quote:
-      'The dual curriculum taught me rigorous discipline. Completing my Tahfidz while doing Advanced Physics gave me exceptional mental focus that gives me a clear edge at top engineering universities.',
-    rating: 5,
+    name: 'James Miller',
+    role: 'ALUMNUS',
+    image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80',
+    fullImage: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=600&q=80',
+    title: 'It highlights academic satisfaction, testimonials.',
+    quote: '"My years at Yahaya International completely transformed my worldview. The attention to detail in the curriculum and the ease of access to mentors allowed me to maintain my faith identity while delivering world-class academic performance. It\'s not just a school; it\'s a competitive advantage."',
+    rating: 5
   },
   {
     id: 3,
-    authorName: 'Dr. Tariq Al-Mansoor',
-    authorRole: 'University Professor & PTA Chairman',
-    quote:
-      'What sets YAHAYASCOOL apart is the uncompromising commitment to high standards. The teachers are dedicated mentors who truly care about the spiritual and intellectual destiny of every student.',
-    rating: 5,
+    name: 'Olivia Carter',
+    role: 'COMMUNITY LEADER',
+    image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80',
+    fullImage: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=600&q=80',
+    title: 'An institution built on true excellence.',
+    quote: '"The leadership at Yahaya International demonstrates a profound commitment to educational excellence. I have witnessed firsthand how they nurture students into well-rounded individuals ready to tackle global challenges with moral integrity."',
+    rating: 5
   },
+  {
+    id: 4,
+    name: 'Matthew Bennett',
+    role: 'PARENT',
+    image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=150&q=80',
+    fullImage: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=600&q=80',
+    title: 'The best decision we made.',
+    quote: '"We evaluated many schools before choosing Yahaya International. The facilities are modern, the teachers are highly qualified, and the emphasis on both D\'awah and STEM makes it a unique and invaluable environment for our children."',
+    rating: 5
+  }
 ];
 
-export function TestimonialsSection({ data, initialTestimonials, locale = 'en' }: TestimonialsProps) {
-  const [testimonials, setTestimonials] = useState<TestimonialEntity[]>(initialTestimonials || FALLBACK_TESTIMONIALS);
-  const [loading, setLoading] = useState(false);
+export function TestimonialsSection({ locale = 'en', data }: { locale?: string; data?: any }) {
+  const [activeIndex, setActiveIndex] = useState(1); // Default to James Miller (index 1) to match design
 
-  const title = data?.title || 'What Parents, Students & Alumni Say';
-  const subtitle = data?.subtitle || 'Hear firsthand experiences from the vibrant YAHAYASCOOL community';
-  const limit = data?.limit || 6;
-
-  useEffect(() => {
-    if (initialTestimonials && initialTestimonials.length > 0) return;
-    setLoading(true);
-    cmsService.getTestimonials(locale, limit).then((fetched) => {
-      if (fetched && fetched.length > 0) {
-        setTestimonials(fetched);
-      }
-      setLoading(false);
-    });
-  }, [locale, limit, initialTestimonials]);
+  const activeTestimonial = testimonials[activeIndex];
 
   return (
-    <section className="bg-white py-20 sm:py-28 border-b border-gray-100 overflow-hidden">
-      <div className="max-w-7xl mx-auto px-4 sm:px-8">
-        <div className="text-center max-w-3xl mx-auto mb-16">
-          <span className="inline-block px-3.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-emerald-100 text-emerald-900 mb-3 border border-emerald-200">
-            Community Voices
-          </span>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-emerald-950 tracking-tight">
-            {title}
-          </h2>
-          <p className="text-gray-600 text-base sm:text-lg mt-2">
-            {subtitle}
-          </p>
-        </div>
-
-        {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 animate-pulse">
-            {[1, 2, 3].map((n) => (
-              <div key={n} className="bg-gray-100 h-64 rounded-3xl" />
-            ))}
+    <section className="w-full">
+      {/* Top Half: Blue Background */}
+      <div className="bg-[#0ea5e9] pt-24 pb-0">
+        <Container>
+          <div className="text-center max-w-3xl mx-auto mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
+              Kind Words From Our Community
+            </h2>
+            <p className="text-sky-100 text-[15px] md:text-base leading-relaxed">
+              Discover why thousands of families trust Yahaya International to elevate their children's educational journey and nurture their moral development.
+            </p>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {testimonials.map((test, idx) => (
-              <div
-                key={idx}
-                className="bg-emerald-50/40 hover:bg-emerald-50/80 rounded-3xl p-8 border border-emerald-100 shadow-2xs hover:shadow-lg transition-all flex flex-col justify-between relative group"
-              >
-                <Quote className="absolute top-6 right-6 w-10 h-10 text-emerald-800/10 group-hover:text-emerald-800/20 transition-colors pointer-events-none" />
 
-                <div>
-                  {/* Star Rating */}
-                  <div className="flex items-center gap-1 mb-5">
-                    {[...Array(test.rating || 5)].map((_, sIdx) => (
-                      <Star key={sIdx} className="w-4 h-4 fill-amber-400 text-amber-400" />
-                    ))}
+          {/* Avatars Row */}
+          <div className="flex flex-wrap items-end justify-center gap-4 sm:gap-8 lg:gap-12 px-4">
+            {testimonials.map((t, idx) => {
+              const isActive = activeIndex === idx;
+              return (
+                <div 
+                  key={t.id}
+                  onClick={() => setActiveIndex(idx)}
+                  className="flex flex-col items-center cursor-pointer group"
+                >
+                  <div className={`w-14 h-14 md:w-16 md:h-16 rounded-full overflow-hidden mb-3 border-2 transition-all duration-300 ${isActive ? 'border-white scale-110' : 'border-transparent opacity-70 group-hover:opacity-100'}`}>
+                    <img src={t.image} alt={t.name} className="w-full h-full object-cover" />
                   </div>
-
-                  <p className="text-gray-700 text-sm sm:text-base leading-relaxed italic mb-8 relative z-10">
-                    &ldquo;{test.quote}&rdquo;
-                  </p>
+                  <span className={`text-sm font-semibold transition-colors duration-300 ${isActive ? 'text-white' : 'text-sky-200 group-hover:text-white'}`}>
+                    {t.name}
+                  </span>
+                  {/* Active Indicator Line */}
+                  <div className={`h-1 w-full mt-4 transition-colors duration-300 ${isActive ? 'bg-white' : 'bg-transparent'}`} />
                 </div>
+              );
+            })}
+          </div>
+        </Container>
+      </div>
 
-                <div className="flex items-center gap-4 pt-4 border-t border-emerald-100/80">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-800 to-emerald-950 text-amber-400 font-bold flex items-center justify-center text-base shadow-xs shrink-0">
-                    {test.authorName ? test.authorName.charAt(0).toUpperCase() : 'P'}
-                  </div>
-
-                  <div className="flex flex-col">
-                    <span className="font-bold text-emerald-950 text-sm flex items-center gap-1">
-                      <span>{test.authorName}</span>
-                      <CheckCircle2 className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                    </span>
-                    <span className="text-xs text-gray-500 font-medium">
-                      {test.authorRole || 'Parent & Supporter'}
-                    </span>
-                  </div>
-                </div>
+      {/* Bottom Half: White Background */}
+      <div className="bg-white py-16 md:py-24">
+        <Container>
+          <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center gap-12 lg:gap-16">
+            
+            {/* Left: Big Image */}
+            <div className="w-full md:w-2/5 shrink-0">
+              <div className="aspect-square bg-slate-100 overflow-hidden relative">
+                 <img 
+                   src={activeTestimonial.fullImage} 
+                   alt={activeTestimonial.name}
+                   className="w-full h-full object-cover transition-opacity duration-500"
+                   key={activeTestimonial.fullImage} // Force re-render for transition if needed, though simple replacement works
+                 />
               </div>
-            ))}
+            </div>
+
+            {/* Right: Quote Details */}
+            <div className="w-full md:w-3/5 flex flex-col">
+              <Quote className="w-12 h-12 text-[#0ea5e9]/20 mb-6 shrink-0" fill="currentColor" />
+              
+              <h3 className="text-3xl md:text-4xl font-bold text-slate-900 mb-2 leading-tight">
+                {activeTestimonial.title}
+              </h3>
+              
+              <div className="flex flex-col mb-8">
+                <span className="text-xl font-bold text-slate-900">{activeTestimonial.name}</span>
+                <span className="text-[#0ea5e9] text-xs font-bold tracking-widest uppercase mt-1">
+                  {activeTestimonial.role}
+                </span>
+              </div>
+              
+              <p className="text-slate-600 text-lg italic leading-relaxed mb-8">
+                {activeTestimonial.quote}
+              </p>
+              
+              <div className="flex items-center gap-3">
+                <div className="flex text-black">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className={`w-5 h-5 ${i < activeTestimonial.rating ? 'fill-current' : 'text-slate-300'}`} />
+                  ))}
+                </div>
+                <span className="text-slate-500 text-sm font-medium">Verified Purchase</span>
+              </div>
+            </div>
+            
           </div>
-        )}
+        </Container>
       </div>
     </section>
   );

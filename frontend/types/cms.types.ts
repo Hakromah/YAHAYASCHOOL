@@ -104,16 +104,6 @@ export interface FeatureCardsSectionComponent {
   cards?: FeatureCardItem[];
 }
 
-export interface PrincipalWelcomeSectionComponent {
-  __component: 'sections.principal-welcome';
-  sectionBadge?: string;
-  title?: string;
-  message: string;
-  principalName?: string;
-  principalTitle?: string;
-  avatar?: StrapiMediaFile;
-  quote?: string;
-}
 
 export interface ProgramsGridSectionComponent {
   __component: 'sections.programs-grid';
@@ -169,15 +159,6 @@ export interface DonationBannerSectionComponent {
   buttonUrl?: string;
 }
 
-export interface CtaBannerSectionComponent {
-  __component: 'sections.cta-banner';
-  title: string;
-  description?: string;
-  buttonText: string;
-  buttonUrl: string;
-  themeStyle?: 'emerald' | 'gold' | 'dark';
-}
-
 export interface NewsletterSignupSectionComponent {
   __component: 'sections.newsletter-signup';
   title?: string;
@@ -197,7 +178,7 @@ export type DynamicZoneSection =
   | HeroSectionComponent
   | StatsSectionComponent
   | FeatureCardsSectionComponent
-  | PrincipalWelcomeSectionComponent
+
   | ProgramsGridSectionComponent
   | DepartmentsGridSectionComponent
   | NewsGridSectionComponent
@@ -205,7 +186,7 @@ export type DynamicZoneSection =
   | TestimonialsSectionComponent
   | GalleryPreviewSectionComponent
   | DonationBannerSectionComponent
-  | CtaBannerSectionComponent
+
   | NewsletterSignupSectionComponent
   | SponsorsGridSectionComponent;
 

@@ -72,6 +72,17 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-full: 9999px;
+  --header-height: 100px;
+  --breakpoint-3xl: 1921px;
+  --breakpoint-mxl: 1800px;
+  --breakpoint-2xl: 1681px;
+  --breakpoint-nxl: 1580px;
+  --breakpoint-xl: 1441px;
+  --breakpoint-xlg: 1367px;
+  --breakpoint-lg: 1281px;
+  --breakpoint-md: 1025px;
+  --breakpoint-sm: 769px;
+  --breakpoint-xs: 481px;
 
   /* Shadows */
   --shadow-glow-green: 0 0 20px oklch(0.53 0.145 163 / 0.3);
@@ -135,7 +146,7 @@
   /* ── Sidebar ─────────────────────────────────────────────── */
   --sidebar: oklch(0.972 0.007 163);
   --sidebar-foreground: oklch(0.22 0.02 240);
-  --sidebar-primary: oklch(0.53 0.145 163);
+  --sidebar-primary: #048ED6;
   --sidebar-primary-foreground: oklch(0.99 0 0);
   --sidebar-accent: oklch(0.92 0.022 163);
   --sidebar-accent-foreground: oklch(0.33 0.09 163);
@@ -212,7 +223,54 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+    -webkit-tap-highlight-color: transparent;
+  }
 
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+body::-webkit-scrollbar {
+  width: 3px !important;
+}
+
+/* Track */
+body::-webkit-scrollbar-track {
+  box-shadow: inset 0 0 225px white;
+  border-radius: 10px;
+}
+
+/* Handle */
+body::-webkit-scrollbar-thumb {
+  background: var(--color-primary) !important;
+  border-radius: 10px;
+}
+
+
+/* Marquee Animation */
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  display: flex;
+  width: max-content;
+  animation: marquee 40s linear infinite;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
   /* RTL: Use Arabic font when dir=rtl */
   [dir="rtl"] {
     font-family: 'Noto Sans Arabic', 'Noto Naskh Arabic', system-ui, sans-serif;

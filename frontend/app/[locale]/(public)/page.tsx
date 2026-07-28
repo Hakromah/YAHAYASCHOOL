@@ -9,8 +9,12 @@ interface HomepageProps {
 
 export async function generateMetadata({ params }: HomepageProps): Promise<Metadata> {
   const { locale } = await params;
-  const homepage = await cmsService.getHomepage(locale);
-
+  let homepage = null;
+  try {
+    homepage = await cmsService.getHomepage(locale);
+  } catch (error) {
+    console.warn('Failed to fetch homepage data for metadata (Strapi might be down).', error);
+  }
   if (homepage?.seo) {
     return {
       title: homepage.seo.metaTitle || homepage.title || 'Welcome to YAHAYASCOOL',
@@ -29,7 +33,14 @@ export async function generateMetadata({ params }: HomepageProps): Promise<Metad
 
 export default async function PublicHomepage({ params }: HomepageProps) {
   const { locale } = await params;
-  const homepage = await cmsService.getHomepage(locale);
+  let homepage = null;
+  try {
+    homepage = await cmsService.getHomepage(locale);
+  } catch (error) {
+    console.warn('Failed to fetch homepage data (Strapi might be down). Rendering static UI.', error);
+  }
 
-  return <HomepageBuilder sections={homepage?.sections} locale={locale} />;
+  // Temporarily forcing sections to undefined to render the static mock UI built from designs
+  // until Strapi CMS is fully configured and connected.
+  return <HomepageBuilder sections={undefined} locale={locale} />;
 }

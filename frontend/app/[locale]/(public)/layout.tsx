@@ -21,12 +21,7 @@ export default async function PublicLayout({ children, params }: PublicLayoutPro
 
   return (
     <div className="flex flex-col min-h-screen bg-white">
-      <Topbar
-        currentLocale={locale}
-        phone={contactInfo?.phone}
-        email={contactInfo?.email}
-      />
-      <Navbar items={headerMenu?.items} locale={locale} />
+      <Navbar locale={locale} />
       <div className="flex-1">
         {children}
       </div>
