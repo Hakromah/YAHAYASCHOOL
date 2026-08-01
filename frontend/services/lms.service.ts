@@ -36,7 +36,7 @@ export const getCurriculums = async (params = {}) => {
 export const getTimetables = async (params = {}) => {
   const query = qs.stringify(
     {
-      populate: ['teacher', 'subject', 'classroom', 'section', 'academicYear', 'academicTerm', 'campus'],
+      populate: ['teacher', 'subject', 'classroom', 'section', 'academicYear', 'academicTerm', 'campus', 'courseOffering.subject', 'courseOffering.teacher', 'courseOffering.academicSection', 'courseOffering.gradeLevel'],
       ...params,
     },
     { encodeValuesOnly: true }

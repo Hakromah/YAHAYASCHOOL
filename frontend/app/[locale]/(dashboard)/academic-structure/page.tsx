@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useParams } from 'next/navigation';
 import {
   Layers, Building2, Calendar, BookOpen, CheckCircle2,
   Users, RefreshCw, Plus, ArrowRight
@@ -11,6 +12,9 @@ import { StatusBadge } from '@/components/erp/StatusBadge';
 import { RelationshipChip } from '@/components/erp/RelationshipChip';
 
 export default function AcademicStructurePage() {
+  const params = useParams();
+  const locale = (params?.locale as string) || 'en';
+
   const [academicYears, setAcademicYears] = useState<AcademicYear[]>([]);
   const [campuses, setCampuses] = useState<Campus[]>([]);
   const [sections, setSections] = useState<Section[]>([]);
@@ -22,9 +26,9 @@ export default function AcademicStructurePage() {
       setLoading(true);
       try {
         const [yrRes, campRes, secRes] = await Promise.all([
-          erpService.getAcademicYears(),
-          erpService.getCampuses(),
-          erpService.getSections(),
+          erpService.getAcademicYears(locale),
+          erpService.getCampuses(locale),
+          erpService.getSections(locale),
         ]);
         setAcademicYears(yrRes);
         setCampuses(campRes);
@@ -36,7 +40,7 @@ export default function AcademicStructurePage() {
       }
     }
     loadStructure();
-  }, []);
+  }, [locale]);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -47,7 +51,7 @@ export default function AcademicStructurePage() {
             <span>Unified Academic Structure Console</span>
           </h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Configure school campuses, active academic calendars, terms, and multi-track class sections.
+            Configure school campuses, active academic calendars, terms, and multi-track academic sections.
           </p>
         </div>
 
@@ -93,8 +97,8 @@ export default function AcademicStructurePage() {
         <div className="space-y-6">
           <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 flex items-center justify-between shadow-sm">
             <div>
-              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Multi-Track Class Section Architecture</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Students and teachers can be linked to multiple sections across grade levels and Tahfidz groups simultaneously.</p>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Multi-Track Academic Section Architecture</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Students and teachers can be linked to multiple academic sections across grade levels and Tahfidz groups simultaneously.</p>
             </div>
           </div>
 
@@ -110,7 +114,7 @@ export default function AcademicStructurePage() {
                   </div>
 
                   <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">{sec.name}</h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">{sec.description || 'Academic class section'}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">{sec.description || 'Academic division section'}</p>
 
                   <div className="space-y-2 border-t border-slate-200 dark:border-slate-800/80 pt-3 text-xs">
                     {sec.department && (

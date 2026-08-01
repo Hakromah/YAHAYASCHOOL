@@ -4,7 +4,7 @@
   "info": {
     "singularName": "section",
     "pluralName": "sections",
-    "displayName": "Section",
+    "displayName": "Academic Section",
     "description": "Multi-purpose academic sections, groups, levels, or boarding tracks"
   },
   "options": {
@@ -17,7 +17,11 @@
   },
   "attributes": {
     "name": {
-      "pluginOptions": { "i18n": { "localized": true } },
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      },
       "type": "string",
       "required": true
     },
@@ -30,7 +34,11 @@
       "default": 35
     },
     "description": {
-      "pluginOptions": { "i18n": { "localized": true } },
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      },
       "type": "text"
     },
     "active": {
@@ -66,6 +74,23 @@
       "relation": "manyToMany",
       "target": "api::teacher.teacher",
       "inversedBy": "sections"
+    },
+    "courseOfferings": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::course-offering.course-offering",
+      "mappedBy": "academicSection"
+    },
+    "academicHead": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::teacher.teacher"
+    },
+    "color": {
+      "type": "string"
+    },
+    "icon": {
+      "type": "string"
     }
   }
 }

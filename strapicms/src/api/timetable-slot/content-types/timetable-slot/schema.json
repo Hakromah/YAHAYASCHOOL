@@ -77,6 +77,11 @@
       "type": "relation",
       "relation": "manyToOne",
       "target": "api::campus.campus"
+    },
+    "courseOffering": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::course-offering.course-offering"
     }
   }
 }

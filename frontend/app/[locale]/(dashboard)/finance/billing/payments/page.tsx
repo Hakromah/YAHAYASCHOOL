@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, Suspense } from 'react';
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 import { useSearchParams, useRouter } from 'next/navigation';
 import {
   CreditCard, DollarSign, QrCode, Search, Filter, Download, Plus,

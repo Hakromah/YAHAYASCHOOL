@@ -87,12 +87,26 @@ const createApiClient = (): AxiosInstance => {
     },
   });
 
-  // ── Request Interceptor: Attach JWT ──────────────────────────────────────
+  // ── Request Interceptor: Attach JWT and Auto-Locale ──────────────────────
   instance.interceptors.request.use(
     (config: InternalAxiosRequestConfig) => {
       const token = getToken();
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
+      }
+
+      // Auto-inject locale for Strapi query strings — always wins over default 'en'
+      if (typeof window !== 'undefined') {
+        const path = window.location.pathname;
+        const match = path.match(/^\/(en|ar|fr|tr)\b/);
+        if (match) {
+          const currentLocale = match[1];
+          // Current URL locale always overrides any default passed in params
+          config.params = {
+            ...config.params,
+            locale: currentLocale,
+          };
+        }
       }
       return config;
     },
@@ -172,6 +186,18 @@ uploadClient.interceptors.request.use((config) => {
   const token = getToken();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
+  }
+
+  // Auto-inject locale for upload request parameters
+  if (typeof window !== 'undefined') {
+    const path = window.location.pathname;
+    const match = path.match(/^\/(en|ar|fr|tr)\b/);
+    if (match) {
+      config.params = {
+        locale: match[1],
+        ...config.params,
+      };
+    }
   }
   return config;
 });

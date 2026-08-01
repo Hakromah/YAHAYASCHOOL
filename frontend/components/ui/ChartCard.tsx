@@ -6,6 +6,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
 } from 'recharts';
 import { cn } from '@/lib/utils';
+import { useTranslations } from 'next-intl';
 
 type ChartType = 'bar' | 'line' | 'area' | 'pie';
 
@@ -44,6 +45,48 @@ export function ChartCard({
   title, subtitle, data, type = 'bar', dataKeys, xKey = 'name',
   height = 240, isLoading = false, className, delay = 0,
 }: ChartCardProps) {
+  const tD = useTranslations('dashboard');
+  const tN = useTranslations('navigation');
+  const tC = useTranslations('common');
+
+  const getTranslatedText = (text: string | undefined): string => {
+    if (!text) return '';
+    const norm = text.toLowerCase().trim();
+
+    // Mapping dictionary for common chart titles
+    const keyMap: Record<string, { ns: 'dashboard' | 'navigation' | 'common'; key: string }> = {
+      'academic enrollment by level': { ns: 'dashboard', key: 'totalStudents' },
+      'monthly attendance trends': { ns: 'dashboard', key: 'attendanceToday' },
+      'faculty & student distribution': { ns: 'dashboard', key: 'activeUsers' },
+      'announcements': { ns: 'dashboard', key: 'announcements' },
+      'recent activity': { ns: 'dashboard', key: 'recentActivity' },
+      'upcoming events': { ns: 'dashboard', key: 'upcomingEvents' },
+    };
+
+    const mapping = keyMap[norm];
+    if (mapping) {
+      if (mapping.ns === 'dashboard' && tD.has(mapping.key)) return tD(mapping.key);
+      if (mapping.ns === 'navigation' && tN.has(mapping.key)) return tN(mapping.key);
+      if (mapping.ns === 'common' && tC.has(mapping.key)) return tC(mapping.key);
+    }
+
+    // Secondary translation map for chart subtitles
+    const isAr = tC('confirm') === 'تأكيد';
+    if (isAr) {
+      const arMap: Record<string, string> = {
+        'academic enrollment by level': 'توزيع تسجيل الطلاب حسب المستوى الأكاديمي',
+        'monthly attendance trends': 'اتجاهات نسبة حضور الطلاب الشهرية',
+        'faculty & student distribution': 'توزيع نسب أعضاء هيئة التدريس والطلاب',
+        'live statistics': 'الإحصائيات المباشرة',
+        'live telemetry feed': 'مراقبة النشاط المباشر للنظام',
+        'live calendar feed': 'الأحداث والفعاليات المدرسية القادمة',
+        'active school announcements': 'لوحة الإعلانات المدرسية النشطة',
+      };
+      if (arMap[norm]) return arMap[norm];
+    }
+
+    return text;
+  };
   const axisStyle = { fontSize: 11, fill: 'hsl(var(--muted-foreground))' };
   const gridStyle = { strokeDasharray: '3 3', stroke: 'hsl(var(--border))' };
 
@@ -55,8 +98,8 @@ export function ChartCard({
       className={cn('bg-card border border-border rounded-2xl p-5 overflow-hidden', className)}
     >
       <div className="mb-4">
-        <h3 className="text-sm font-semibold text-foreground">{title}</h3>
-        {subtitle && <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>}
+        <h3 className="text-sm font-semibold text-foreground">{getTranslatedText(title)}</h3>
+        {subtitle && <p className="text-xs text-muted-foreground mt-0.5">{getTranslatedText(subtitle)}</p>}
       </div>
       {isLoading ? (
         <div className="animate-pulse rounded-xl bg-muted" style={{ height }} />

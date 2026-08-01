@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -40,11 +41,9 @@ export default function TimetablesPage() {
   // Dropdown options states for Add/Edit Form
   const [yearsOptions, setYearsOptions] = useState<{ label: string; value: string | number }[]>([]);
   const [termsOptions, setTermsOptions] = useState<{ label: string; value: string | number }[]>([]);
-  const [sectionsOptions, setSectionsOptions] = useState<{ label: string; value: string | number }[]>([]);
-  const [teachersOptions, setTeachersOptions] = useState<{ label: string; value: string | number }[]>([]);
-  const [subjectsOptions, setSubjectsOptions] = useState<{ label: string; value: string | number }[]>([]);
   const [classroomsOptions, setClassroomsOptions] = useState<{ label: string; value: string | number }[]>([]);
   const [campusesOptions, setCampusesOptions] = useState<{ label: string; value: string | number }[]>([]);
+  const [courseOfferingsOptions, setCourseOfferingsOptions] = useState<{ label: string; value: string | number }[]>([]);
 
   const loadTimetables = async () => {
     setIsLoading(true);
@@ -53,55 +52,39 @@ export default function TimetablesPage() {
       const roleType = userRole ? String(userRole).toLowerCase() : '';
 
       if (roleType === 'teacher' && user?.profile?.id) {
-        params['filters[teacher][id][$eq]'] = user.profile.id;
-      } else if (roleType === 'student') {
-        const studentSectionIds = user?.profile?.sections?.map((s: any) => s.id) || [];
-        if (studentSectionIds.length > 0) {
-          params['filters[section][id][$in]'] = studentSectionIds;
-        } else {
-          params['filters[section][id][$eq]'] = 999999;
-        }
-      } else if (roleType === 'parent') {
-        try {
-          const childRes = await apiClient.get('/students', {
-            params: { filters: { parents: { id: { $eq: user?.profile?.id } } }, populate: ['sections'] }
-          });
-          const kids = childRes.data?.data || [];
-          const sectionIds: number[] = [];
-          kids.forEach((k: any) => {
-            k.sections?.forEach((sec: any) => {
-              if (sec.id) sectionIds.push(sec.id);
-            });
-          });
-          if (sectionIds.length > 0) {
-            params['filters[section][id][$in]'] = sectionIds;
-          } else {
-            params['filters[section][id][$eq]'] = 999999;
-          }
-        } catch (e) {
-          params['filters[section][id][$eq]'] = 999999;
-        }
+        params['filters[$or][0][teacher][id][$eq]'] = user.profile.id;
+        params['filters[$or][1][courseOffering][teacher][id][$eq]'] = user.profile.id;
       }
 
       const ttRes = await getTimetables(params);
       const items = ttRes?.data || [];
 
       setData(
-        items.map((item: any) => ({
-          id: item.id,
-          section: item.section?.name || 'N/A',
-          subject: item.subject?.name || 'N/A',
-          teacher: item.teacher ? (item.teacher.firstName ? `${item.teacher.firstName} ${item.teacher.lastName}` : item.teacher.schoolId || 'N/A') : 'N/A',
-          dayOfWeek: item.dayOfWeek || 'Monday',
-          timeSlot: `${item.startTime ? item.startTime.substring(0, 5) : ''} - ${item.endTime ? item.endTime.substring(0, 5) : ''}`,
-          room: item.classroom?.name || 'N/A',
-          campus: item.campus?.name || 'N/A',
-          academicYear: item.academicYear?.name || 'N/A',
-          academicTerm: item.academicTerm?.name || 'N/A',
-          durationMinutes: item.durationMinutes || 0,
-          recordStatus: item.recordStatus || 'Active',
-          raw: item
-        }))
+        items.map((item: any) => {
+          const co = item.courseOffering;
+          const sectionName = co?.academicSection?.name || item.section?.name || 'N/A';
+          const subjectName = co?.subject?.name || item.subject?.name || 'N/A';
+          const gradeName = co?.gradeLevel?.name || 'N/A';
+          const teacherName = co?.teacher 
+            ? (co.teacher.displayName || `${co.teacher.firstName} ${co.teacher.lastName}`)
+            : (item.teacher ? (item.teacher.displayName || `${item.teacher.firstName} ${item.teacher.lastName}`) : 'Unassigned');
+
+          return {
+            id: item.id,
+            section: sectionName + (gradeName !== 'N/A' ? ` (${gradeName})` : ''),
+            subject: subjectName,
+            teacher: teacherName,
+            dayOfWeek: item.dayOfWeek || 'Monday',
+            timeSlot: `${item.startTime ? item.startTime.substring(0, 5) : ''} - ${item.endTime ? item.endTime.substring(0, 5) : ''}`,
+            room: item.classroom?.name || 'N/A',
+            campus: item.campus?.name || 'N/A',
+            academicYear: item.academicYear?.name || 'N/A',
+            academicTerm: item.academicTerm?.name || 'N/A',
+            durationMinutes: item.durationMinutes || 0,
+            recordStatus: item.recordStatus || 'Active',
+            raw: item
+          };
+        })
       );
     } catch (e) {
       toast.error('Failed to load timetable slots');
@@ -112,23 +95,28 @@ export default function TimetablesPage() {
 
   const loadOptions = async () => {
     try {
-      const [yearsRes, termsRes, sectionsRes, teachersRes, subjectsRes, classroomsRes, campusesRes] = await Promise.all([
+      const [yearsRes, termsRes, classroomsRes, campusesRes, offeringsRes] = await Promise.all([
         apiClient.get('/academic-years?pagination[limit]=100'),
         apiClient.get('/academic-terms?pagination[limit]=100'),
-        apiClient.get('/sections?pagination[limit]=100'),
-        apiClient.get('/teachers?pagination[limit]=100'),
-        apiClient.get('/subjects?pagination[limit]=100'),
         apiClient.get('/classrooms?pagination[limit]=100'),
-        apiClient.get('/campuses?pagination[limit]=100')
+        apiClient.get('/campuses?pagination[limit]=100'),
+        apiClient.get('/course-offerings?populate=[\'subject\',\'teacher\',\'gradeLevel\']&pagination[limit]=250')
       ]);
 
       setYearsOptions((yearsRes.data?.data || []).map((y: any) => ({ label: y.name || `Year ${y.id}`, value: y.id })));
       setTermsOptions((termsRes.data?.data || []).map((t: any) => ({ label: t.name || `Term ${t.id}`, value: t.id })));
-      setSectionsOptions((sectionsRes.data?.data || []).map((s: any) => ({ label: s.name || `Section ${s.id}`, value: s.id })));
-      setTeachersOptions((teachersRes.data?.data || []).map((t: any) => ({ label: t.firstName ? `${t.firstName} ${t.lastName}` : t.schoolId || `Teacher ${t.id}`, value: t.id })));
-      setSubjectsOptions((subjectsRes.data?.data || []).map((s: any) => ({ label: s.name || `Subject ${s.id}`, value: s.id })));
       setClassroomsOptions((classroomsRes.data?.data || []).map((c: any) => ({ label: c.name || c.roomNumber || `Room ${c.id}`, value: c.id })));
       setCampusesOptions((campusesRes.data?.data || []).map((c: any) => ({ label: c.name || `Campus ${c.id}`, value: c.id })));
+      
+      setCourseOfferingsOptions((offeringsRes.data?.data || []).map((o: any) => {
+        const subjName = o.subject?.name || 'General';
+        const tchrName = o.teacher ? (o.teacher.displayName || `${o.teacher.firstName} ${o.teacher.lastName}`) : 'Unassigned';
+        const grdeName = o.gradeLevel?.name || 'All Grades';
+        return {
+          label: `${subjName} (${grdeName}) - Instructor: ${tchrName}`,
+          value: o.id
+        };
+      }));
     } catch (err) {
       console.warn('Could not fetch filter options:', err);
     }
@@ -150,11 +138,9 @@ export default function TimetablesPage() {
       recordStatus: formData.recordStatus || 'Active',
       academicYear: formData.academicYear ? parseInt(formData.academicYear) : null,
       academicTerm: formData.academicTerm ? parseInt(formData.academicTerm) : null,
-      section: formData.section ? parseInt(formData.section) : null,
-      teacher: formData.teacher ? parseInt(formData.teacher) : null,
-      subject: formData.subject ? parseInt(formData.subject) : null,
       classroom: formData.classroom ? parseInt(formData.classroom) : null,
       campus: formData.campus ? parseInt(formData.campus) : null,
+      courseOffering: formData.courseOffering ? parseInt(formData.courseOffering) : null,
     };
 
     try {
@@ -174,6 +160,7 @@ export default function TimetablesPage() {
   };
 
   const handleDelete = async (rows: TimetableRecord[]) => {
+    if (!confirm(`Are you sure you want to delete these ${rows.length} session(s)?`)) return;
     try {
       for (const row of rows) {
         await apiClient.delete(`/timetable-slots/${row.id}`);
@@ -205,7 +192,7 @@ export default function TimetablesPage() {
     },
     {
       id: 'section',
-      header: 'Class Section',
+      header: 'Academic Division / Grade',
       cell: ({ row }: any) => (
         <span className="font-semibold">{row.original?.section}</span>
       )
@@ -270,6 +257,13 @@ export default function TimetablesPage() {
 
   const formFields: FormFieldDef[] = [
     {
+      name: 'courseOffering',
+      label: 'Scheduled Course Offering *',
+      type: 'select',
+      required: true,
+      options: courseOfferingsOptions,
+    },
+    {
       name: 'academicYear',
       label: 'Academic Year',
       type: 'select',
@@ -289,27 +283,6 @@ export default function TimetablesPage() {
       type: 'select',
       required: true,
       options: campusesOptions,
-    },
-    {
-      name: 'section',
-      label: 'Class Section',
-      type: 'select',
-      required: true,
-      options: sectionsOptions,
-    },
-    {
-      name: 'teacher',
-      label: 'Assigned Teacher',
-      type: 'select',
-      required: true,
-      options: teachersOptions,
-    },
-    {
-      name: 'subject',
-      label: 'Subject',
-      type: 'select',
-      required: true,
-      options: subjectsOptions,
     },
     {
       name: 'classroom',
@@ -374,7 +347,7 @@ export default function TimetablesPage() {
           <button
             onClick={loadTimetables}
             disabled={isLoading}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border bg-card hover:bg-muted text-xs font-semibold text-foreground transition-colors"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border bg-card hover:bg-muted text-xs font-semibold text-foreground transition-colors cursor-pointer"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
             <span>Refresh</span>
@@ -382,11 +355,10 @@ export default function TimetablesPage() {
           {canModify && (
             <button
               onClick={() => {
-                const defaultTeacherId = (userRole === 'teacher' && user?.profile?.id) ? user.profile.id : '';
                 setEditingItem(null);
                 setIsModalOpen(true);
               }}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition-all shadow-md shadow-primary/20"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition-all shadow-md shadow-primary/20 cursor-pointer border-none"
             >
               <Plus className="w-4 h-4" />
               <span>Schedule Session</span>
@@ -407,9 +379,7 @@ export default function TimetablesPage() {
             academicYear: item.raw?.academicYear?.id || '',
             academicTerm: item.raw?.academicTerm?.id || '',
             campus: item.raw?.campus?.id || '',
-            section: item.raw?.section?.id || '',
-            teacher: item.raw?.teacher?.id || '',
-            subject: item.raw?.subject?.id || '',
+            courseOffering: item.raw?.courseOffering?.id || '',
             classroom: item.raw?.classroom?.id || '',
             dayOfWeek: item.raw?.dayOfWeek || 'Monday',
             startTime: item.raw?.startTime ? item.raw.startTime.substring(0, 5) : '',
@@ -424,8 +394,8 @@ export default function TimetablesPage() {
       />
 
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="w-full max-w-lg bg-card border border-border rounded-2xl shadow-2xl p-6 relative max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 animate-fade-in">
+          <div className="w-full max-w-lg bg-card border border-border rounded-2xl shadow-2xl p-6 relative max-h-[90vh] overflow-y-auto animate-slide-up">
             <h3 className="text-lg font-bold text-foreground mb-1">
               {editingItem ? 'Edit Timetable Session' : 'Schedule New Class Session'}
             </h3>
@@ -434,13 +404,12 @@ export default function TimetablesPage() {
             </p>
             <FormBuilder
               fields={formFields}
-              initialValues={editingItem || { 
-                dayOfWeek: 'Monday', 
+              initialValues={editingItem || {
+                dayOfWeek: 'Monday',
                 startTime: '08:00',
                 endTime: '08:45',
                 durationMinutes: 45,
                 recordStatus: 'Active',
-                teacher: (userRole === 'teacher' && user?.profile?.id) ? user.profile.id : ''
               }}
               onSubmit={handleSave}
               draftKey="timetable_form"
@@ -448,7 +417,7 @@ export default function TimetablesPage() {
             />
             <button
               onClick={() => setIsModalOpen(false)}
-              className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground"
+              className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer border-none bg-transparent"
             >
               ✕
             </button>

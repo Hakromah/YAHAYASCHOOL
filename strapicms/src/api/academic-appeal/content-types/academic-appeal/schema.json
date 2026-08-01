@@ -4,56 +4,45 @@
   "info": {
     "singularName": "academic-appeal",
     "pluralName": "academic-appeals",
-    "displayName": "Academic Appeal",
-    "description": "Grade and transcript appeals submitted by students"
+    "displayName": "Academic Appeal"
   },
   "options": {
     "draftAndPublish": false
   },
-  "pluginOptions": {
-    "i18n": {
-      "localized": true
-    }
-  },
   "attributes": {
-    "appealType": {
-      "type": "enumeration",
-      "enum": [
-        "Grade Review",
-        "Transcript Error",
-        "Promotion Review",
-        "Graduation Review",
-        "Certificate Error"
-      ]
+    "originalGrade": {
+      "type": "decimal",
+      "required": true
     },
-    "details": {
-      "type": "text"
+    "requestedGrade": {
+      "type": "decimal"
+    },
+    "reason": {
+      "type": "text",
+      "required": true
     },
     "status": {
       "type": "enumeration",
       "enum": [
         "Pending",
-        "Under Review",
+        "UnderReview",
         "Approved",
         "Rejected"
       ],
       "default": "Pending"
     },
-    "response": {
+    "resolutionNotes": {
       "type": "text"
-    },
-    "appealDate": {
-      "type": "date"
     },
     "student": {
       "type": "relation",
       "relation": "manyToOne",
       "target": "api::student.student"
     },
-    "reviewer": {
+    "courseOffering": {
       "type": "relation",
       "relation": "manyToOne",
-      "target": "api::teacher.teacher"
+      "target": "api::course-offering.course-offering"
     }
   }
 }

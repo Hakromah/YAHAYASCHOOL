@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 import {
   DollarSign, CreditCard, Heart, GraduationCap, FileText, Receipt,
   Clock, CheckCircle2, AlertTriangle, QrCode, Download, Printer,

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 import {
   Clock, Lock, Unlock, ShieldCheck, AlertTriangle, CheckCircle2,
   Calendar, FileText, Receipt, Scale, ScrollText, Landmark,

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 import {
   PiggyBank, Plus, Search, Filter, Download, Eye, CheckCircle2,
   Clock, DollarSign, FileText, Receipt, ShieldCheck, AlertTriangle,
@@ -9,15 +9,19 @@ import {
 } from 'lucide-react';
 import { financeService } from '@/services/finance.service';
 import type { CashierSession } from '@/types/finance.types';
-import { EnterpriseModuleShell } from '@/components/erp/EnterpriseModuleShell';
+import { EnterpriseModuleShell, getTranslation } from '@/components/erp/EnterpriseModuleShell';
 import { EnterpriseKPIDeck, type EnterpriseKPICard } from '@/components/erp/EnterpriseKPIDeck';
 import { EnterpriseToolbar, type TableDensity } from '@/components/erp/EnterpriseToolbar';
 import { EnterpriseDataGrid, type ColumnDef } from '@/components/erp/EnterpriseDataGrid';
 import { SlideOutDrawer } from '@/components/erp/SlideOutDrawer';
 import { StatusBadge } from '@/components/erp/StatusBadge';
 import { toast } from 'sonner';
+import { useLocale } from 'next-intl';
 
 export default function CashierSessionsPage() {
+  const locale = useLocale();
+  const t = (key: string) => getTranslation(key, locale);
+
   const [sessions, setSessions] = useState<CashierSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
@@ -126,12 +130,16 @@ export default function CashierSessionsPage() {
       {
         accessorKey: 'openedAt',
         header: 'Timestamps (Opened / Closed)',
-        cell: ({ row }) => (
-          <div className="space-y-0.5 font-mono text-[11px]">
-            <span className="text-slate-300 block font-bold">Opened: {row.original.openedAt.replace('T', ' ')}</span>
-            <span className="text-slate-400 block">Closed: {row.original.closedAt?.replace('T', ' ') || '● Active Now'}</span>
-          </div>
-        )
+        cell: ({ row }) => {
+          const openedStr = typeof row.original.openedAt === 'string' ? row.original.openedAt.replace('T', ' ') : 'N/A';
+          const closedStr = typeof row.original.closedAt === 'string' ? row.original.closedAt.replace('T', ' ') : null;
+          return (
+            <div className="space-y-0.5 font-mono text-[11px]">
+              <span className="text-slate-300 block font-bold">Opened: {openedStr}</span>
+              <span className="text-slate-400 block">Closed: {closedStr || '● Active Now'}</span>
+            </div>
+          );
+        }
       },
       {
         accessorKey: 'openingCash',
@@ -196,10 +204,10 @@ export default function CashierSessionsPage() {
     <EnterpriseModuleShell
       title="Cashier Session Management & Cash Drawer Reconciliation"
       description="Monitor opening float balances, track daily POS terminal and physical cash receipts across cashiers, and enforce strict zero-variance daily closing reconciliation."
-      breadcrumbs={[{ label: 'Finance ERP', href: '/finance' }, { label: 'Billing Suite' }, { label: 'Cashier Sessions' }]}
+      breadcrumbs={[{ label: t('Finance'), href: '/finance' }, { label: t('Billing') }, { label: t('Sessions & Drawers') }]}
       icon={<PiggyBank className="w-8 h-8 text-amber-400" />}
       recordCount={filteredSessions.length}
-      recordLabel="Cashier Sessions"
+      recordLabel="sessions"
       activeFilterCount={activeFiltersCount}
       onClearFilters={() => { setStatusFilter('all'); setQuery(''); }}
       headerActions={
@@ -209,14 +217,14 @@ export default function CashierSessionsPage() {
             className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white text-xs font-bold transition-all shadow-sm cursor-pointer"
           >
             <Download className="w-4 h-4 text-emerald-400" />
-            <span>Export CSV</span>
+            <span>{t('Export CSV')}</span>
           </button>
           <button
             onClick={() => setShowOpenModal(true)}
             className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 text-white text-xs font-black transition-all shadow-lg shadow-emerald-600/30 hover:scale-[1.02] cursor-pointer"
           >
             <Plus className="w-4 h-4 stroke-[3]" />
-            <span>+ Open New Cash Drawer</span>
+            <span>{t('+ Open New Cash Drawer')}</span>
           </button>
         </div>
       }
@@ -228,19 +236,19 @@ export default function CashierSessionsPage() {
       <div className="flex flex-wrap items-center gap-2 pb-2 border-b border-slate-800">
         <Link href="/finance/billing/invoices" className="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white font-bold text-xs transition-all flex items-center gap-1.5">
           <FileText className="w-3.5 h-3.5 text-emerald-400" />
-          <span>Invoices Console</span>
+          <span>{t('Invoices Console')}</span>
         </Link>
         <Link href="/finance/billing/payments" className="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white font-bold text-xs transition-all flex items-center gap-1.5">
           <Receipt className="w-3.5 h-3.5 text-amber-400" />
-          <span>Multi-Method Cashier & POS</span>
+          <span>{t('Multi-Method Cashier & POS')}</span>
         </Link>
         <Link href="/finance/billing/sessions" className="px-3.5 py-1.5 rounded-xl bg-emerald-600 text-white font-black text-xs shadow-md flex items-center gap-1.5">
           <PiggyBank className="w-3.5 h-3.5" />
-          <span>Cashier Sessions & Drawer</span>
+          <span>{t('Cashier Sessions & Drawer')}</span>
         </Link>
         <Link href="/finance/billing/ledger" className="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white font-bold text-xs transition-all flex items-center gap-1.5">
           <ScrollText className="w-3.5 h-3.5 text-sky-400" />
-          <span>Student Running Ledger</span>
+          <span>{t('Student Running Ledger')}</span>
         </Link>
       </div>
 
@@ -253,7 +261,15 @@ export default function CashierSessionsPage() {
         onDensityChange={setDensity}
         onRefresh={() => {
           loadData();
-          toast.success('Sessions synced with physical campus registers.');
+          toast.success(
+            locale === 'ar'
+              ? 'تمت مزامنة الجلسات مع سجلات الحرم المدرسي.'
+              : locale === 'fr'
+              ? 'Sessions synchronisées avec les registres physiques du campus.'
+              : locale === 'tr'
+              ? 'Oturumlar fiziksel kampüs kasalarıyla senkronize edildi.'
+              : 'Sessions synced with physical campus registers.'
+          );
         }}
         activeFilterCount={activeFiltersCount}
         onResetFilters={() => { setStatusFilter('all'); setQuery(''); }}
@@ -265,11 +281,11 @@ export default function CashierSessionsPage() {
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
               aria-label="Filter sessions by status"
-              className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white font-bold focus:outline-none focus:border-emerald-500 shadow-2xs cursor-pointer"
+              className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white font-bold focus:outline-none focus:border-emerald-500 shadow-2xs cursor-pointer animate-none bg-transparent"
             >
-              <option value="all">All Session Statuses</option>
-              <option value="open">Open (Active Drawers)</option>
-              <option value="closed">Reconciled / Closed</option>
+              <option value="all" className="bg-slate-900">{t('All Session Statuses')}</option>
+              <option value="open" className="bg-slate-900">{t('open (active drawers)')}</option>
+              <option value="closed" className="bg-slate-900">{t('reconciled / closed')}</option>
             </select>
           </div>
         }
@@ -346,10 +362,10 @@ export default function CashierSessionsPage() {
           id: selectedSession.sessionNumber,
           role: `SESSION STATUS: ${selectedSession.status.toUpperCase()}`,
           status: selectedSession.status,
-          email: `Opened: ${selectedSession.openedAt.replace('T', ' ')}`,
+          email: `Opened: ${typeof selectedSession.openedAt === 'string' ? selectedSession.openedAt.replace('T', ' ') : 'N/A'}`,
           phone: `Receipts: ${selectedSession.receiptsCount}`,
           department: `Opening Float: $${selectedSession.openingCash.toFixed(2)} | Collections: $${selectedSession.totalCollections.toFixed(2)}`,
-          joinDate: selectedSession.closedAt?.split('T')[0] || 'Open Now',
+          joinDate: typeof selectedSession.closedAt === 'string' ? selectedSession.closedAt.split('T')[0] : 'Open Now',
           balance: `EXPECTED CLOSING CASH: $${selectedSession.expectedClosingCash.toLocaleString('en-US', { minimumFractionDigits: 2 })}`
         } : null}
         category="finance"

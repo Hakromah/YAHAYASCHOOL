@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 import { Globe, Package, MessageSquare, Edit3, Eye, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 

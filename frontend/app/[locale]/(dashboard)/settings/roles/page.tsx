@@ -131,7 +131,7 @@ export default function RolesPermissionsPage() {
       'api::payment': 'Payment Logs & Transactions',
       'api::department': 'School Academic Departments',
       'api::program': 'Linked Curriculum Programs',
-      'api::section': 'Grade Class Sections',
+      'api::section': 'Academic Sections',
       'api::academic-year': 'Academic Sessions/Years',
       'api::academic-term': 'Academic Semesters/Terms',
       'plugin::users-permissions': 'User Authentication & Access control',

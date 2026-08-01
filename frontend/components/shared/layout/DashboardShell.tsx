@@ -12,6 +12,8 @@ import { cn } from '@/lib/utils';
 // YAHAYASCOOL — Dashboard Shell Layout
 // ─────────────────────────────────────────────────────────────────────────────
 
+import { useLocale } from 'next-intl';
+
 interface DashboardShellProps {
   children: React.ReactNode;
 }
@@ -19,6 +21,8 @@ interface DashboardShellProps {
 export default function DashboardShell({ children }: DashboardShellProps) {
   const [isCollapsed] = useLocalStorage(STORAGE_KEYS.SIDEBAR_COLLAPSED, false);
   const isMobile = useMobile();
+  const locale = useLocale();
+  const isRtl = locale === 'ar';
 
   return (
     <div className="flex min-h-screen bg-background w-full">
@@ -29,7 +33,9 @@ export default function DashboardShell({ children }: DashboardShellProps) {
       <main
         className={cn(
           'flex flex-col flex-1 min-w-0 transition-[padding] duration-300 w-full min-h-screen',
-          isMobile ? 'pl-0' : isCollapsed ? 'pl-[72px]' : 'pl-[280px]'
+          isMobile ? 'px-0' : isCollapsed 
+            ? (isRtl ? 'pr-[72px] pl-0' : 'pl-[72px] pr-0') 
+            : (isRtl ? 'pr-[280px] pl-0' : 'pl-[280px] pr-0')
         )}
       >
         <DashboardHeader />

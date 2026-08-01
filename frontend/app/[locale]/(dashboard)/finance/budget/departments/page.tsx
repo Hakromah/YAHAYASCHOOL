@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 import {
   Building2, PieChart, ShieldCheck, Clock, DollarSign,
   AlertTriangle, ArrowRight, CheckCircle2, Plus

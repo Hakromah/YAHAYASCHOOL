@@ -1,12 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useRouter } from '@/i18n/routing';
 import { useAuth } from '@/hooks/useAuth';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Dashboard Root — Smart Role-Based Redirect
+// Waits for auth to fully settle before redirecting to avoid cold-start 404s.
 // ─────────────────────────────────────────────────────────────────────────────
 
 const ROLE_DASHBOARD: Record<string, string> = {
@@ -22,15 +23,34 @@ const ROLE_DASHBOARD: Record<string, string> = {
 };
 
 export default function DashboardRootPage() {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, isAuthenticated } = useAuth();
   const router = useRouter();
+  const hasRedirected = useRef(false);
 
   useEffect(() => {
+    // Don't redirect until auth has fully resolved
     if (isLoading) return;
-    const role = (user as any)?.role?.type as string | undefined;
-    const destination = role ? (ROLE_DASHBOARD[role] ?? '/dashboard/admin') : '/login';
+    // Prevent double-redirect on re-renders
+    if (hasRedirected.current) return;
+
+    if (!isAuthenticated || !user) {
+      // Not authenticated — go to login
+      hasRedirected.current = true;
+      router.replace('/login');
+      return;
+    }
+
+    const roleType = (user as any)?.role?.type as string | undefined;
+    if (!roleType) {
+      // Authenticated but role not yet loaded — wait for next render
+      return;
+    }
+
+    // All good — redirect to role-specific dashboard
+    const destination = ROLE_DASHBOARD[roleType] ?? '/dashboard/admin';
+    hasRedirected.current = true;
     router.replace(destination);
-  }, [user, isLoading, router]);
+  }, [user, isLoading, isAuthenticated, router]);
 
   return (
     <div className="flex-1 flex items-center justify-center min-h-screen">

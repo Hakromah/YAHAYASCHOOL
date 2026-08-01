@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 import {
   Users, Phone, Mail, MapPin, ArrowLeft, Printer, RefreshCw,
   AlertTriangle, GraduationCap, Briefcase

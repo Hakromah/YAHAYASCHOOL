@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 import {
   Users, Plus, Search, Filter, Download, Eye, CheckCircle2,
   Clock, DollarSign, FileText, Receipt, Award, ShieldCheck,

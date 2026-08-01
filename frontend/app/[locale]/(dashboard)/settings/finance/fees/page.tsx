@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 import {
   DollarSign, Plus, Settings, Globe, Percent, CreditCard,
   ShieldCheck, CheckCircle2, AlertTriangle, Save, Award

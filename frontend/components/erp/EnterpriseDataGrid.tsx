@@ -17,6 +17,8 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { EnterpriseEmptyState, type EnterpriseEmptyStateProps } from './EnterpriseEmptyState';
 import type { TableDensity } from './EnterpriseToolbar';
+import { useLocale } from 'next-intl';
+import { getTranslation } from './EnterpriseModuleShell';
 
 export interface EnterpriseDataGridProps<TData> {
   data: TData[];
@@ -57,6 +59,9 @@ export function EnterpriseDataGrid<TData>({
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [expanded, setExpanded] = useState<ExpandedState>({});
   
+  const locale = useLocale();
+  const isRtl = locale === 'ar';
+
   // Right-Click Context Menu State
   const [contextMenu, setContextMenu] = useState<{
     x: number;
@@ -134,7 +139,7 @@ export function EnterpriseDataGrid<TData>({
       <div className={cn("rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden shadow-2xs min-h-[500px] flex items-center justify-center", className)}>
         <div className="p-8 text-center space-y-3">
           <div className="w-8 h-8 border-3 border-emerald-600/20 border-t-emerald-600 rounded-full animate-spin mx-auto" />
-          <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Loading Enterprise Grid Data...</p>
+          <p className="text-xs font-medium text-slate-500 dark:text-slate-400">{getTranslation('Loading Enterprise Grid Data...', locale)}</p>
         </div>
       </div>
     );
@@ -144,10 +149,51 @@ export function EnterpriseDataGrid<TData>({
     return <EnterpriseEmptyState {...emptyStateProps} />;
   }
 
+  // Format footer strings
+  const fromIndex = table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1;
+  const toIndex = Math.min((table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize, data.length);
+  const totalCount = data.length;
+
+  let showingLabel = (
+    <span>
+      Showing <strong className="text-slate-900 dark:text-white">{fromIndex}</strong> to <strong className="text-slate-900 dark:text-white">{toIndex}</strong> of <strong className="text-emerald-600 dark:text-emerald-400">{totalCount}</strong> entries
+    </span>
+  );
+  if (locale === 'ar') {
+    showingLabel = (
+      <span>
+        عرض <strong className="text-slate-900 dark:text-white">{fromIndex}</strong> إلى <strong className="text-slate-900 dark:text-white">{toIndex}</strong> من أصل <strong className="text-emerald-600 dark:text-emerald-400">{totalCount}</strong> مدخلات
+      </span>
+    );
+  } else if (locale === 'fr') {
+    showingLabel = (
+      <span>
+        Affichage de <strong className="text-slate-900 dark:text-white">{fromIndex}</strong> à <strong className="text-slate-900 dark:text-white">{toIndex}</strong> sur <strong className="text-emerald-600 dark:text-emerald-400">{totalCount}</strong> entrées
+      </span>
+    );
+  } else if (locale === 'tr') {
+    showingLabel = (
+      <span>
+        <strong className="text-emerald-600 dark:text-emerald-400">{totalCount}</strong> kayıttan <strong className="text-slate-900 dark:text-white">{fromIndex}</strong> - <strong className="text-slate-900 dark:text-white">{toIndex}</strong> arası gösteriliyor
+      </span>
+    );
+  }
+
+  const pageIndex = table.getState().pagination.pageIndex + 1;
+  const pageCount = table.getPageCount() || 1;
+  let pageOfLabel = `Page ${pageIndex} of ${pageCount}`;
+  if (locale === 'ar') {
+    pageOfLabel = `الصفحة ${pageIndex} من ${pageCount}`;
+  } else if (locale === 'fr') {
+    pageOfLabel = `Page ${pageIndex} sur ${pageCount}`;
+  } else if (locale === 'tr') {
+    pageOfLabel = `Sayfa ${pageIndex} / ${pageCount}`;
+  }
+
   return (
     <div className={cn("rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden shadow-2xs relative flex flex-col min-h-[550px]", className)}>
       <div className="overflow-x-auto flex-1">
-        <table className="w-full text-left border-collapse font-sans" role="grid">
+        <table className={cn("w-full border-collapse font-sans", isRtl ? "text-right" : "text-left")} role="grid">
           {/* Sticky Table Header */}
           <thead>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -193,7 +239,7 @@ export function EnterpriseDataGrid<TData>({
           </thead>
 
           {/* Table Body with Hover, Right-Click, and Keyboard Navigation */}
-          <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 text-slate-800 dark:text-slate-200">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 text-slate-800 dark:text-slate-205">
             {table.getRowModel().rows.map((row) => {
               const rowOriginal = row.original;
               const isSelected = row.getIsSelected();
@@ -254,9 +300,7 @@ export function EnterpriseDataGrid<TData>({
       {/* Pagination Footer */}
       <div className="p-3 bg-slate-50 dark:bg-slate-800/60 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600 dark:text-slate-400">
         <div className="flex items-center gap-2">
-          <span>
-            Showing <strong className="text-slate-900 dark:text-white">{table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1}</strong> to <strong className="text-slate-900 dark:text-white">{Math.min((table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize, data.length)}</strong> of <strong className="text-emerald-600 dark:text-emerald-400">{data.length}</strong> entries
-          </span>
+          {showingLabel}
         </div>
 
         <div className="flex items-center gap-2">
@@ -264,20 +308,20 @@ export function EnterpriseDataGrid<TData>({
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
             className="p-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-40 disabled:pointer-events-none text-slate-700 dark:text-slate-300 transition-colors cursor-pointer shadow-2xs"
-            title="Previous Page"
+            title={getTranslation('Previous Page', locale)}
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
 
           <span className="px-2 font-semibold text-slate-800 dark:text-slate-200">
-            Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount() || 1}
+            {pageOfLabel}
           </span>
 
           <button
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
             className="p-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-40 disabled:pointer-events-none text-slate-700 dark:text-slate-300 transition-colors cursor-pointer shadow-2xs"
-            title="Next Page"
+            title={getTranslation('Next Page', locale)}
           >
             <ChevronRight className="w-4 h-4" />
           </button>
@@ -289,10 +333,13 @@ export function EnterpriseDataGrid<TData>({
         <div
           ref={contextMenuRef}
           style={{ top: contextMenu.y, left: contextMenu.x }}
-          className="fixed z-50 w-56 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-lg py-1.5 text-xs text-slate-700 dark:text-slate-200 animate-in fade-in zoom-in-95 duration-150"
+          className={cn(
+            "fixed z-50 w-56 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-lg py-1.5 text-xs text-slate-700 dark:text-slate-200 animate-in fade-in zoom-in-95 duration-150",
+            isRtl ? "text-right" : "text-left"
+          )}
         >
           <div className="px-3 py-1.5 border-b border-slate-100 dark:border-slate-800 font-bold text-[10px] text-slate-400 uppercase tracking-wider flex items-center justify-between">
-            <span>Enterprise Actions</span>
+            <span>{getTranslation('Enterprise Actions', locale)}</span>
             <span className="text-emerald-600 dark:text-emerald-400 font-mono">S/4</span>
           </div>
 
@@ -303,10 +350,10 @@ export function EnterpriseDataGrid<TData>({
               if (onRowInspect) onRowInspect(row);
               else toast.info('Profile inspection triggered');
             }}
-            className="w-full text-left px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2 text-slate-900 dark:text-white font-semibold transition-colors"
+            className={cn("w-full px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2 text-slate-900 dark:text-white font-semibold transition-colors", isRtl ? "flex-row-reverse text-right" : "text-left")}
           >
             <Eye className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-            <span>Inspect Record Drawer</span>
+            <span>{getTranslation('Inspect Record Drawer', locale)}</span>
           </button>
 
           <button
@@ -316,10 +363,10 @@ export function EnterpriseDataGrid<TData>({
               if (onRowEdit) onRowEdit(row);
               else toast.info('Edit mode triggered');
             }}
-            className="w-full text-left px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2 transition-colors"
+            className={cn("w-full px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2 transition-colors", isRtl ? "flex-row-reverse text-right" : "text-left")}
           >
             <Edit className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
-            <span>Edit Record</span>
+            <span>{getTranslation('Edit Record', locale)}</span>
           </button>
 
           <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
@@ -329,10 +376,10 @@ export function EnterpriseDataGrid<TData>({
               setContextMenu(null);
               toast.success('Viewing Attendance Report');
             }}
-            className="w-full text-left px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2 transition-colors"
+            className={cn("w-full px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2 transition-colors", isRtl ? "flex-row-reverse text-right" : "text-left")}
           >
             <Calendar className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-            <span>Attendance Logs</span>
+            <span>{getTranslation('Attendance Logs', locale)}</span>
           </button>
 
           <button
@@ -340,10 +387,10 @@ export function EnterpriseDataGrid<TData>({
               setContextMenu(null);
               toast.info('Viewing Finance Invoices');
             }}
-            className="w-full text-left px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2 transition-colors"
+            className={cn("w-full px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2 transition-colors", isRtl ? "flex-row-reverse text-right" : "text-left")}
           >
             <DollarSign className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-            <span>Finance & Billing</span>
+            <span>{getTranslation('Finance & Billing', locale)}</span>
           </button>
 
           <button
@@ -351,10 +398,10 @@ export function EnterpriseDataGrid<TData>({
               setContextMenu(null);
               toast.info('Viewing Hostel & Accommodation Status');
             }}
-            className="w-full text-left px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2 transition-colors"
+            className={cn("w-full px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2 transition-colors", isRtl ? "flex-row-reverse text-right" : "text-left")}
           >
             <Home className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-            <span>Hostel Details</span>
+            <span>{getTranslation('Hostel Details', locale)}</span>
           </button>
 
           <button
@@ -362,10 +409,10 @@ export function EnterpriseDataGrid<TData>({
               setContextMenu(null);
               toast.success('Printing ID Card & Barcode...');
             }}
-            className="w-full text-left px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2 transition-colors"
+            className={cn("w-full px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2 transition-colors", isRtl ? "flex-row-reverse text-right" : "text-left")}
           >
             <Printer className="w-3.5 h-3.5 text-slate-400" />
-            <span>Print ID Card</span>
+            <span>{getTranslation('Print ID Card', locale)}</span>
           </button>
 
           <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
@@ -375,10 +422,10 @@ export function EnterpriseDataGrid<TData>({
               setContextMenu(null);
               toast.warning('Record suspension requested');
             }}
-            className="w-full text-left px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2 text-amber-700 dark:text-amber-400 transition-colors"
+            className={cn("w-full px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2 text-amber-700 dark:text-amber-400 transition-colors", isRtl ? "flex-row-reverse text-right" : "text-left")}
           >
             <PauseCircle className="w-3.5 h-3.5" />
-            <span>Suspend Record</span>
+            <span>{getTranslation('Suspend Record', locale)}</span>
           </button>
 
           <button
@@ -388,10 +435,10 @@ export function EnterpriseDataGrid<TData>({
               if (onRowDelete) onRowDelete(row);
               else toast.error('Record deletion initiated');
             }}
-            className="w-full text-left px-3 py-2 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center gap-2 text-rose-600 dark:text-rose-400 font-bold transition-colors"
+            className={cn("w-full px-3 py-2 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center gap-2 text-rose-600 dark:text-rose-450 font-bold transition-colors", isRtl ? "flex-row-reverse text-right" : "text-left")}
           >
             <Trash2 className="w-3.5 h-3.5" />
-            <span>Delete Permanently</span>
+            <span>{getTranslation('Delete Permanently', locale)}</span>
           </button>
         </div>
       )}

@@ -39,13 +39,14 @@ export default function StudentDashboardPage() {
   const [hostelAlloc, setHostelAlloc] = useState<any | null>(null);
   const [hostelVisitors, setHostelVisitors] = useState<any[]>([]);
   const [transcripts, setTranscripts] = useState<any[]>([]);
-  const [gpaData, setGpaData] = useState<any[]>([]);
-
-  // Submissions state
+  const [gpaData, setGpaData] = useState<any[]>([]);  // Submissions state
   const [submittingFile, setSubmittingFile] = useState<string | null>(null);
   const [absenceReason, setAbsenceReason] = useState('');
   const [absenceDate, setAbsenceDate] = useState('');
   const [isSubmittingExcuse, setIsSubmittingExcuse] = useState(false);
+  const [excuses, setExcuses] = useState<any[]>([]);
+  const [excuseFile, setExcuseFile] = useState<File | null>(null);
+  const [isUploadingFile, setIsUploadingFile] = useState(false);
 
   // Transcript print dialog state
   const [selectedTranscript, setSelectedTranscript] = useState<any | null>(null);
@@ -61,7 +62,7 @@ export default function StudentDashboardPage() {
     try {
       // 1. Fetch academic structure allocations
       const sectionId = student.sections?.[0]?.id || student.sections?.[0]?.documentId || null;
-      
+
       const [ttRes, hwRes, invs, trs, vsts, allAllocs] = await Promise.all([
         sectionId ? getTimetables({ 'filters[section][id][$eq]': sectionId }) : Promise.resolve({ data: [] }),
         sectionId ? getHomeworks({ 'filters[section][id][$eq]': sectionId }) : Promise.resolve({ data: [] }),
@@ -76,8 +77,8 @@ export default function StudentDashboardPage() {
       setHomeworks(hwRes.data || []);
 
       // Invoices
-      const studentInvs = invs.filter((i: any) => 
-        i.student?.id === student.id || 
+      const studentInvs = invs.filter((i: any) =>
+        i.student?.id === student.id ||
         i.student?.schoolId === student.schoolId
       );
       setInvoices(studentInvs);
@@ -86,14 +87,14 @@ export default function StudentDashboardPage() {
       setTranscripts(trs);
 
       // Hostel status
-      const alloc = allAllocs.find((a: any) => 
-        a.studentId === student.documentId || 
+      const alloc = allAllocs.find((a: any) =>
+        a.studentId === student.documentId ||
         a.studentId === String(student.id)
       );
       setHostelAlloc(alloc || null);
 
-      const visitorLogs = vsts.filter((v: any) => 
-        v.student?.id === student.id || 
+      const visitorLogs = vsts.filter((v: any) =>
+        v.student?.id === student.id ||
         v.visitorName === `${student.firstName} ${student.lastName}`
       );
       setHostelVisitors(visitorLogs);
@@ -104,11 +105,29 @@ export default function StudentDashboardPage() {
         { term: 'Term 2 2026', gpa: 3.85, cGpa: 3.78 },
         { term: 'Term 3 2026', gpa: 3.92, cGpa: 3.83 }
       ]);
+
+      await loadExcuses();
     } catch (err) {
       console.error('Failed to load student data:', err);
       toast.error('Failed to load portal live database records');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const loadExcuses = async () => {
+    try {
+      const res = await apiClient.get('/audit-logs', {
+        params: {
+          'filters[action][$eq]': 'Attendance Excuse Filed',
+          'filters[performedBy][$eq]': user?.username || 'Student',
+          'sort': 'timestamp:desc',
+          'pagination[limit]': 20
+        }
+      });
+      setExcuses(res.data?.data || []);
+    } catch (e) {
+      console.warn('Could not load excuses:', e);
     }
   };
 
@@ -131,6 +150,16 @@ export default function StudentDashboardPage() {
       .reduce((sum: number, i: any) => sum + (i.totalAmount ?? 0), 0);
   }, [invoices]);
 
+  const refNo = useMemo(
+    () => `TS-${(student.id || 101) * 7}-${Date.now().toString().slice(-6)}`,
+    [student.id]
+  );
+
+  const today = useMemo(
+    () => new Date().toLocaleDateString(),
+    []
+  );
+
   const handleExcuseSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!absenceReason.trim() || !absenceDate) {
@@ -139,23 +168,39 @@ export default function StudentDashboardPage() {
     }
     setIsSubmittingExcuse(true);
     try {
+      let attachmentUrl = '';
+      if (excuseFile) {
+        setIsUploadingFile(true);
+        const formData = new FormData();
+        formData.append('files', excuseFile);
+        const uploadRes = await apiClient.post('/upload', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+        attachmentUrl = uploadRes.data?.[0]?.url || '';
+        setIsUploadingFile(false);
+      }
+
       // Post to Strapi audit log & attendance-adjustment
       await apiClient.post('/audit-logs', {
         data: {
           action: 'Attendance Excuse Filed',
-          module: 'Attendance',
-          details: `Student filed excuse for date ${absenceDate}: ${absenceReason}`,
-          performedBy: user?.username || 'Student',
-          timestamp: new Date().toISOString()
+          description: `Student filed excuse for date ${absenceDate}: ${absenceReason}${attachmentUrl ? ` | Attachment: ${attachmentUrl}` : ''}`,
+          performedBy: user?.id,
+          severity: 'info'
         }
       });
       toast.success('Excuse note submitted successfully to registrar.');
       setAbsenceReason('');
       setAbsenceDate('');
+      setExcuseFile(null);
+      await loadExcuses();
     } catch {
       toast.error('Failed to submit excuse note.');
     } finally {
       setIsSubmittingExcuse(false);
+      setIsUploadingFile(false);
     }
   };
 
@@ -166,10 +211,9 @@ export default function StudentDashboardPage() {
       await apiClient.post('/audit-logs', {
         data: {
           action: 'Homework Assignment Submitted',
-          module: 'Academics',
-          details: `Student submitted assignment ref HW-${hwId}`,
-          performedBy: user?.username || 'Student',
-          timestamp: new Date().toISOString()
+          description: `Student submitted assignment ref HW-${hwId}`,
+          performedBy: user?.id,
+          severity: 'info'
         }
       });
       toast.success('Assignment uploaded and marked as submitted.');
@@ -185,7 +229,7 @@ export default function StudentDashboardPage() {
     setIsPaying(true);
     try {
       const amount = selectedInvoice.remainingBalance ?? selectedInvoice.totalAmount ?? 0;
-      
+
       // Post Combined Payment details to ledger
       await financeService.postCombinedPayment({
         invoiceId: selectedInvoice.id,
@@ -199,10 +243,9 @@ export default function StudentDashboardPage() {
       await apiClient.post('/audit-logs', {
         data: {
           action: 'Fee Payment Processed',
-          module: 'Finance',
-          details: `Student paid invoice ${selectedInvoice.invoiceNumber} amount $${amount.toFixed(2)} via ${paymentMethod}`,
-          performedBy: user?.username || 'Student',
-          timestamp: new Date().toISOString()
+          description: `Student paid invoice ${selectedInvoice.invoiceNumber} amount $${amount.toFixed(2)} via ${paymentMethod}`,
+          performedBy: user?.id,
+          severity: 'info'
         }
       });
 
@@ -360,7 +403,7 @@ export default function StudentDashboardPage() {
                       <p className="text-[10px] text-slate-400 mt-1">Recommendation: Review Biology Chapter 4 and practice the cell diagram quiz.</p>
                     </div>
                     <div className="p-3 rounded-2xl bg-indigo-950/30 border border-indigo-500/20">
-                      <p className="font-bold text-emerald-300">Strong Area: Qur'an Recitation</p>
+                      <p className="font-bold text-emerald-300">Strong Area: Quran Recitation</p>
                       <p className="text-[10px] text-slate-400 mt-1">Excellent progress in Murajaah. Continue memorizing Surah Al-Kahf.</p>
                     </div>
                   </div>
@@ -495,38 +538,93 @@ export default function StudentDashboardPage() {
           {/* TAB 4: ATTENDANCE */}
           {activeTab === 'attendance' && (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 lg:col-span-2">
-                <h3 className="text-sm font-extrabold text-slate-900 dark:text-white mb-4">Absence Excuse Filing Portal</h3>
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 lg:col-span-2 space-y-6">
+                <div>
+                  <h3 className="text-sm font-extrabold text-slate-900 dark:text-white mb-1">Absence Excuse Filing Portal</h3>
+                  <p className="text-[11px] text-slate-500">File excuse justifications for absences and upload medical or parent permission documents.</p>
+                </div>
+
                 <form onSubmit={handleExcuseSubmit} className="space-y-4 text-xs">
-                  <div>
-                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Absence Date</label>
-                    <input
-                      type="date"
-                      required
-                      value={absenceDate}
-                      onChange={(e) => setAbsenceDate(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
-                    />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Absence Date</label>
+                      <input
+                        type="date"
+                        required
+                        value={absenceDate}
+                        onChange={(e) => setAbsenceDate(e.target.value)}
+                        className="w-full px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Supporting Document (Optional)</label>
+                      <input
+                        type="file"
+                        onChange={(e) => {
+                          if (e.target.files && e.target.files.length > 0) {
+                            setExcuseFile(e.target.files[0]);
+                          }
+                        }}
+                        className="w-full px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
+                      />
+                    </div>
                   </div>
                   <div>
-                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Excuse Reason / Notes</label>
+                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Excuse Reason / Justification Note</label>
                     <textarea
                       required
                       rows={4}
                       value={absenceReason}
-                      placeholder="My child was unable to attend due to a medical appointment..."
+                      placeholder="Please clarify the reason for absence (medical appointment, family urgent matter, etc.)..."
                       onChange={(e) => setAbsenceReason(e.target.value)}
                       className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
                     />
                   </div>
                   <button
                     type="submit"
-                    disabled={isSubmittingExcuse}
-                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-md disabled:opacity-50"
+                    disabled={isSubmittingExcuse || isUploadingFile}
+                    className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-md disabled:opacity-50 flex items-center gap-2 cursor-pointer"
                   >
-                    {isSubmittingExcuse ? 'Submitting...' : 'Submit Excuse Note'}
+                    <Upload className="w-4 h-4" />
+                    <span>{isSubmittingExcuse ? 'Submitting...' : isUploadingFile ? 'Uploading Attachment...' : 'Submit Excuse Note'}</span>
                   </button>
                 </form>
+
+                {/* Excuse Logs History Table */}
+                <div className="pt-6 border-t border-slate-100 dark:border-slate-800 space-y-3">
+                  <h4 className="font-extrabold text-slate-900 dark:text-white text-xs">Filing History & Audit Trails</h4>
+                  {excuses.length === 0 ? (
+                    <p className="text-slate-500 text-[11px] italic py-2">No absence excuse slips filed yet.</p>
+                  ) : (
+                    <div className="overflow-x-auto rounded-2xl border border-slate-100 dark:border-slate-800">
+                      <table className="w-full text-left text-xs">
+                        <thead className="bg-slate-50 dark:bg-slate-800 font-bold text-slate-500 dark:text-slate-400">
+                          <tr>
+                            <th className="p-3">Filing Date</th>
+                            <th className="p-3">Details</th>
+                            <th className="p-3">Status</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                          {excuses.map((exc: any) => {
+                            const dateStr = exc.createdAt ? new Date(exc.createdAt).toLocaleDateString() : '';
+                            return (
+                              <tr key={exc.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30">
+                                <td className="p-3 font-mono font-semibold text-slate-700 dark:text-slate-300">{dateStr}</td>
+                                <td className="p-3 text-slate-600 dark:text-slate-400">{exc.description}</td>
+                                <td className="p-3">
+                                  <span className="inline-flex px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-300 dark:border-amber-850/40">
+                                    Pending Review
+                                  </span>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Behavior Records */}
@@ -671,13 +769,13 @@ export default function StudentDashboardPage() {
               {selectedTranscript && (
                 <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
                   <div className="bg-white text-slate-900 w-full max-w-4xl p-8 rounded-3xl shadow-2xl relative space-y-6">
-                    <button 
+                    <button
                       onClick={() => setSelectedTranscript(null)}
                       className="absolute top-4 right-4 p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-full"
                     >
                       <X className="w-4 h-4" />
                     </button>
-                    
+
                     {/* Header */}
                     <div className="flex justify-between items-start border-b pb-6">
                       <div className="flex items-center gap-3">
@@ -690,7 +788,7 @@ export default function StudentDashboardPage() {
                         </div>
                       </div>
                       <div className="text-right text-[10px] text-slate-400 font-mono space-y-0.5">
-                        <p>REF NO: TS-{(student.id || 101) * 7}-{Date.now().toString().slice(-6)}</p>
+                          <p>REF NO: TS-{(student.id || 101) * 7}-{Date.now().toString().slice(-6)}</p>
                         <p>DATE: {new Date().toLocaleDateString()}</p>
                       </div>
                     </div>
@@ -738,7 +836,7 @@ export default function StudentDashboardPage() {
                           </tr>
                           <tr>
                             <td className="p-3 font-mono">QUR-103</td>
-                            <td className="p-3">Qur'an Hifz & Tajweed</td>
+                            <td className="p-3">Qur a' Hifz & Tajweed</td>
                             <td className="p-3 text-center">96%</td>
                             <td className="p-3 text-center">A+</td>
                             <td className="p-3 text-center">4.0</td>
@@ -865,7 +963,7 @@ export default function StudentDashboardPage() {
               {selectedInvoice && (
                 <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
                   <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full max-w-md p-6 rounded-3xl shadow-2xl relative space-y-4">
-                    <button 
+                    <button
                       onClick={() => setSelectedInvoice(null)}
                       className="absolute top-4 right-4 p-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-full"
                     >
@@ -999,7 +1097,7 @@ export default function StudentDashboardPage() {
                 </div>
 
                 <div className="p-4 rounded-2xl bg-indigo-950/30 border border-indigo-500/20 space-y-2">
-                  <h4 className="font-bold text-emerald-300">Qur'an Performance Prediction</h4>
+                  <h4 className="font-bold text-emerald-300">Qur a' Performance Prediction</h4>
                   <p className="text-slate-400 leading-relaxed text-[11px]">
                     Your daily Halaqah revision stands at 98.2% accuracy.
                   </p>

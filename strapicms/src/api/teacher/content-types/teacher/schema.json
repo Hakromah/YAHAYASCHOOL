@@ -30,7 +30,11 @@
       ]
     },
     "name": {
-      "pluginOptions": { "i18n": { "localized": true } },
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      },
       "type": "string",
       "required": true
     },
@@ -42,11 +46,19 @@
       ]
     },
     "qualifications": {
-      "pluginOptions": { "i18n": { "localized": true } },
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      },
       "type": "string"
     },
     "specializations": {
-      "pluginOptions": { "i18n": { "localized": true } },
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      },
       "type": "string"
     },
     "experienceYears": {
@@ -64,7 +76,11 @@
       "type": "email"
     },
     "address": {
-      "pluginOptions": { "i18n": { "localized": true } },
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      },
       "type": "text"
     },
     "employmentDate": {
@@ -87,7 +103,11 @@
       "type": "string"
     },
     "biography": {
-      "pluginOptions": { "i18n": { "localized": true } },
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      },
       "type": "richtext"
     },
     "emergencyContact": {
@@ -130,6 +150,18 @@
       "type": "relation",
       "relation": "oneToOne",
       "target": "plugin::users-permissions.user"
+    },
+    "assignments": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::teacher-assignment.teacher-assignment",
+      "mappedBy": "teacher"
+    },
+    "courseOfferings": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::course-offering.course-offering",
+      "mappedBy": "teacher"
     }
   }
 }

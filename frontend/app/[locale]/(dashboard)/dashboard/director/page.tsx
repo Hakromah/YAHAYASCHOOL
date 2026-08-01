@@ -19,7 +19,7 @@ import { toast } from 'sonner';
 const DEFAULT_WIDGETS: WidgetConfig[] = [
   { id: 'stat-students', title: 'Total Students', layer: 'summary', isVisible: true, isPinned: true, size: 'normal' },
   { id: 'stat-teachers', title: 'Faculty Staff', layer: 'summary', isVisible: true, isPinned: true, size: 'normal' },
-  { id: 'stat-sections', title: 'Class Sections', layer: 'summary', isVisible: true, isPinned: false, size: 'normal' },
+  { id: 'stat-sections', title: 'Academic Sections', layer: 'summary', isVisible: true, isPinned: false, size: 'normal' },
   { id: 'stat-departments', title: 'Departments', layer: 'summary', isVisible: true, isPinned: false, size: 'normal' },
   { id: 'stat-exams', title: 'Active Exams', layer: 'summary', isVisible: true, isPinned: false, size: 'normal' },
   { id: 'stat-lesson-plans', title: 'Lesson Plans', layer: 'summary', isVisible: true, isPinned: false, size: 'normal' },

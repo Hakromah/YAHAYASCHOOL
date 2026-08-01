@@ -224,6 +224,8 @@ export interface Student {
   staffNotes?: StaffNote[];
   documents?: StrapiMedia[];
   advanceBalance?: number;
+  user?: any;
+  enrollments?: any[];
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -251,4 +253,156 @@ export interface PaginatedERPResponse<T> {
       total: number;
     };
   };
+}
+
+export interface GradeLevel {
+  id: number;
+  documentId?: string;
+  name: string;
+  code: string;
+  order: number;
+  capacity: number;
+  curriculum?: any;
+  courseOfferings?: CourseOffering[];
+  homerooms?: Homeroom[];
+}
+
+export interface CourseOffering {
+  id: number;
+  documentId?: string;
+  academicSection?: Section;
+  gradeLevel?: GradeLevel;
+  subject?: any;
+  teacher?: Teacher;
+  room?: any;
+  academicYear?: AcademicYear;
+  academicTerm?: AcademicTerm;
+  capacity: number;
+  schedule?: any;
+  deliveryMode: 'in-person' | 'online' | 'hybrid';
+  offeringStatus: 'ACTIVE' | 'DRAFT' | 'CANCELLED';
+  studentEnrollments?: StudentEnrollment[];
+  teacherAssignments?: TeacherAssignment[];
+}
+
+
+export interface StudentEnrollment {
+  id: number;
+  documentId?: string;
+  student?: Student;
+  courseOffering?: CourseOffering;
+  enrollmentDate?: string;
+  enrollmentStatus: 'active' | 'dropped' | 'completed';
+  gradeStatus: 'graded' | 'pending';
+}
+
+export interface TeacherAssignment {
+  id: number;
+  documentId?: string;
+  teacher?: Teacher;
+  courseOffering?: CourseOffering;
+  workload?: number;
+}
+
+export interface Homeroom {
+  id: number;
+  documentId?: string;
+  name: string;
+  code: string;
+  gradeLevel?: GradeLevel;
+  advisor?: Teacher;
+  classroom?: any;
+  students?: Student[];
+}
+
+export interface GradingPolicy {
+  id: number;
+  documentId?: string;
+  gradeName: string;
+  minScore: number;
+  maxScore: number;
+  gpaPoints: number;
+  isPassing: boolean;
+  isDistinction: boolean;
+  remedialThreshold: number;
+}
+
+export interface AssessmentBlueprint {
+  id: number;
+  documentId?: string;
+  componentName: 'Homework' | 'Quiz' | 'Project' | 'Participation' | 'Attendance' | 'Exam' | 'Oral' | 'Practical';
+  weightPercentage: number;
+  subject?: any;
+}
+
+export interface TeachingProgress {
+  id: number;
+  documentId?: string;
+  weekNumber: number;
+  lessonDelivered: boolean;
+  attendanceSubmitted: boolean;
+  homeworkGiven: boolean;
+  outcomeCompleted: boolean;
+  materialsUploaded: boolean;
+  notes?: string;
+  courseOffering?: CourseOffering;
+}
+
+export interface GradeApproval {
+  id: number;
+  documentId?: string;
+  status: 'Draft' | 'Submitted' | 'Approved' | 'Locked' | 'Released';
+  submittedAt?: string;
+  releasedAt?: string;
+  courseOffering?: CourseOffering;
+  academicTerm?: any;
+  approvedBy?: any;
+}
+
+export interface AcademicAppeal {
+  id: number;
+  documentId?: string;
+  originalGrade: number;
+  requestedGrade?: number;
+  reason: string;
+  status: 'Pending' | 'UnderReview' | 'Approved' | 'Rejected';
+  resolutionNotes?: string;
+  student?: Student;
+  courseOffering?: CourseOffering;
+}
+
+export interface AcademicClearance {
+  id: number;
+  documentId?: string;
+  status: 'Eligible' | 'Blocked';
+  reasons?: any;
+  attendanceRate?: number;
+  creditsEarned?: number;
+  failedCoursesCount?: number;
+  student?: Student;
+}
+
+export interface TranscriptVersion {
+  id: number;
+  documentId?: string;
+  versionNumber: number;
+  sha256Hash: string;
+  qrCodeData?: string;
+  issuedDate: string;
+  reason?: string;
+  recordStatus: 'Active' | 'Archived';
+  student?: Student;
+  issuedBy?: any;
+}
+
+export interface IslamicExtension {
+  id: number;
+  documentId?: string;
+  currentJuz?: number;
+  currentSurah?: string;
+  currentAyah?: number;
+  tajweedCompetency: 'Beginner' | 'Intermediate' | 'Hafiz' | 'Qari';
+  ijazahEarned: boolean;
+  sanadChain?: string;
+  student?: Student;
 }

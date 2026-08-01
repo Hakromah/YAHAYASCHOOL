@@ -275,6 +275,12 @@
     "multiCurrencyWallets": {
       "type": "json",
       "description": "Multi-currency wallet balances map, e.g. { USD: 5, GNF: 1000000, LRD: 500 }"
+    },
+    "enrollments": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::student-enrollment.student-enrollment",
+      "mappedBy": "student"
     }
   }
 }

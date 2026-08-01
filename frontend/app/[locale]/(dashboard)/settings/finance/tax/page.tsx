@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 import {
   Percent, Plus, Save, ShieldCheck, CheckCircle2, AlertCircle,
   Building2, Settings, Globe, CreditCard, DollarSign

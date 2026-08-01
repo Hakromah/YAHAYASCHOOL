@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link, usePathname } from '@/i18n/routing';
 import Image from 'next/image';
+import { useTranslations, useLocale } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -16,7 +17,8 @@ import {
   MessageSquare, Clock, UserCog, Landmark, ScrollText, BookMarked,
   HeartHandshake, UsersRound, Cpu, Fuel, AlertTriangle, Presentation,
   FolderOpen, SquareCheckBig, Star, BadgeCheck, Compass, CreditCard,
-  QrCode, Coins, PiggyBank, Scale, Percent, ShoppingBag, Bed, KeyRound, ShieldAlert
+  QrCode, Coins, PiggyBank, Scale, Percent, ShoppingBag, Bed, KeyRound, ShieldAlert,
+  Briefcase, Book
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { toast } from 'sonner';
@@ -100,7 +102,7 @@ function getSuperAdminNav(): NavSection[] {
         { label: 'Workers', href: '/workers', icon: Clipboard },
         { label: 'Departments', href: '/academic-structure', icon: Layers },
         { label: 'Programs', href: '/academic-structure/programs', icon: BookMarked },
-        { label: 'Sections', href: '/academic-structure/sections', icon: Boxes },
+        { label: 'Academic Sections', href: '/academic-structure/sections', icon: Boxes },
         { label: 'Academic Years', href: '/academic-structure/years', icon: Calendar },
         { label: 'Academic Terms', href: '/academic-structure/terms', icon: Clock },
         { label: 'School Calendar', href: '/calendar', icon: Calendar },
@@ -110,7 +112,6 @@ function getSuperAdminNav(): NavSection[] {
     {
       title: 'Enterprise Operations ERP',
       items: [
-        { label: 'Admissions ERP', href: '/erp/admissions', icon: GraduationCap },
         { label: 'Transport Logistics', href: '/transport', icon: Bus },
         { label: 'Library System', href: '/library', icon: BookOpen },
         { label: 'Inventory & Supplies', href: '/inventory', icon: Package },
@@ -123,6 +124,7 @@ function getSuperAdminNav(): NavSection[] {
       title: 'Academic Management',
       items: [
         { label: 'Subjects & Curriculum', href: '/lms/subjects', icon: BookOpen },
+        { label: 'Course Offerings', href: '/lms/offerings', icon: GraduationCap },
         { label: 'Classes & Timetable', href: '/lms/timetables', icon: School },
         { label: 'Lesson Plans', href: '/lms/lesson-plans', icon: PenTool },
         { label: 'Homework', href: '/lms/homework', icon: BookCheck },
@@ -246,6 +248,7 @@ function getDirectorNav(): NavSection[] {
       title: 'Academic Management',
       items: [
         { label: 'Subjects & Curriculum', href: '/lms/subjects', icon: BookOpen },
+        { label: 'Course Offerings', href: '/lms/offerings', icon: GraduationCap },
         { label: 'Timetable', href: '/lms/timetables', icon: School },
         { label: 'Lesson Plans', href: '/lms/lesson-plans', icon: PenTool },
         { label: 'Homework', href: '/lms/homework', icon: BookCheck },
@@ -616,18 +619,76 @@ function getDriverNav(): NavSection[] {
 }
 
 function getNavForRole(role: string | undefined): NavSection[] {
+  let nav: NavSection[] = [];
   switch (role) {
-    case 'super-administrator': return getSuperAdminNav();
-    case 'director':            return getDirectorNav();
-    case 'teacher':             return getTeacherNav();
-    case 'student':             return getStudentNav();
-    case 'parent':              return getParentNav();
-    case 'accountant':          return getAccountantNav();
-    case 'account-lead':        return getAccountLeadNav();
-    case 'worker':              return getWorkerNav();
-    case 'driver':              return getDriverNav();
-    default:                    return [{ title: 'Overview', items: [{ label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard }] }];
+    case 'super-administrator': nav = getSuperAdminNav(); break;
+    case 'director':            nav = getDirectorNav(); break;
+    case 'teacher':             nav = getTeacherNav(); break;
+    case 'student':             nav = getStudentNav(); break;
+    case 'parent':              nav = getParentNav(); break;
+    case 'accountant':          nav = getAccountantNav(); break;
+    case 'account-lead':        nav = getAccountLeadNav(); break;
+    case 'worker':              nav = getWorkerNav(); break;
+    case 'driver':              nav = getDriverNav(); break;
+    default:                    nav = [{ title: 'Overview', items: [{ label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard }] }]; break;
   }
+
+  if (role === 'super-administrator' || role === 'director' || role === 'teacher') {
+    nav = nav.map(section => {
+      if (section.title === 'Academic Management') {
+        const hasCurr = section.items.some(i => i.href === '/lms/curriculum');
+        if (!hasCurr) {
+          return {
+            ...section,
+            items: [
+              ...section.items,
+              { label: 'Curriculum Outlines', href: '/lms/curriculum', icon: Compass },
+              { label: 'Teacher Workload', href: '/lms/teacher/workload', icon: Briefcase }
+            ]
+          };
+        }
+      }
+      if (section.title === 'Results & Certification') {
+        const hasAppr = section.items.some(i => i.href === '/results/approvals');
+        if (!hasAppr) {
+          return {
+            ...section,
+            items: [
+              ...section.items,
+              { label: 'Grade Moderation', href: '/results/approvals', icon: Award },
+              { label: 'Retakes & Appeals', href: '/results/appeals', icon: FileText }
+            ]
+          };
+        }
+      }
+      if (section.title === "Qur'an Department") {
+        const hasHifz = section.items.some(i => i.href === '/qms/hifz-profile');
+        if (!hasHifz) {
+          return {
+            ...section,
+            items: [
+              ...section.items,
+              { label: 'Quran Hifz Portal', href: '/qms/hifz-profile', icon: Book }
+            ]
+          };
+        }
+      }
+      return section;
+    });
+
+    const hasClearance = nav.some(s => s.items.some(i => i.href === '/directory/clearance'));
+    if (!hasClearance) {
+      nav.push({
+        title: 'Enterprise Audits',
+        items: [
+          { label: 'Academic Clearance', href: '/directory/clearance', icon: ShieldCheck },
+          { label: 'AI Advisor Alerts', href: '/dashboard/advisor', icon: Cpu }
+        ]
+      });
+    }
+  }
+
+  return nav;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -644,6 +705,419 @@ export function Sidebar({ className }: SidebarProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const isMobile = useMobile();
+
+  const t = useTranslations('navigation');
+  const locale = useLocale();
+  const isRtl = locale === 'ar';
+
+  const getTranslatedLabel = (label: string) => {
+    const labelKeyMap: Record<string, string> = {
+      'Dashboard': 'dashboard',
+      'Users': 'users',
+      'Students': 'students',
+      'Teachers': 'teachers',
+      'Parents': 'parents',
+      'Workers': 'workers',
+      'Staff': 'workers',
+      'Finance': 'finance',
+      'Hostel': 'hostel',
+      'Exams': 'exams',
+      'Attendance': 'attendance',
+      'Timetable': 'timetable',
+      'Events': 'events',
+      'Qur\'an': 'quran',
+      'Messages': 'messages',
+      'Notifications': 'notifications',
+      'Audit Logs': 'auditLogs',
+      'Settings': 'settings',
+      'School Profile': 'schoolProfile',
+      'Roles & Permissions': 'roles',
+      'Reports': 'reports',
+    };
+    const key = labelKeyMap[label];
+    if (key && t.has(key)) {
+      return t(key);
+    }
+
+    const localDict: Record<string, Record<string, string>> = {
+      ar: {
+        'Activity Logs': 'سجلات الأنشطة',
+        'Login Sessions': 'جلسات تسجيل الدخول',
+        'Localization': 'الترجمة واللغات',
+        'Media Library': 'مكتبة الوسائط',
+        'People Directory': 'دليل الأشخاص',
+        'Departments': 'الأقسام والمستويات',
+        'Programs': 'البرامج الدراسية',
+        'Academic Sections': 'المراحل الدراسية',
+        'Academic Years': 'السنوات الدراسية',
+        'Academic Terms': 'الفصول الدراسية',
+        'School Calendar': 'التقويم المدرسي',
+        'Admissions Hub': 'مركز القبول',
+        'Admissions ERP': 'نظام القبول',
+        'Transport Logistics': 'الخدمات اللوجستية والنقل',
+        'Library System': 'نظام المكتبة',
+        'Inventory & Supplies': 'المخزون والمستلزمات',
+        'Fixed Assets': 'الأصول الثابتة',
+        'Procurement & AP': 'المشتريات والحسابات الدائنة',
+        'Hostel Dashboard': 'لوحة السكن',
+        'Buildings & Floors': 'المباني والطوابق',
+        'Rooms & Beds': 'الغرف والأسرة',
+        'Bed Allocations': 'توزيع الأسرة',
+        'Waiting List': 'قائمة الانتظار',
+        'Fee Plans & Setup': 'خطط الرسوم',
+        'Security Deposits': 'التأمينات المستردة',
+        'Visitor Logs': 'سجلات الزوار',
+        'Gate Passes': 'تصاريح البوابات',
+        'Attendance Logs': 'سجلات الحضور',
+        'Wardens & Duty': 'المشرفون والمناوبات',
+        'Maintenance Tickets': 'طلبات الصيانة',
+        'Reports & Settings': 'التقارير والإعدادات',
+        'Subjects & Curriculum': 'المواد والمناهج',
+        'Course Offerings': 'المواد المطروحة',
+        'Classes & Timetable': 'الفصول والجدول',
+        'Lesson Plans': 'خطط الدروس',
+        'Homework': 'الواجبات المنزلية',
+        'Attendance': 'الحضور والغياب',
+        'Assessments & Gradebook': 'التقييمات ودفتر الدرجات',
+        'Learning Resources': 'مصادر التعلم',
+        'Curriculum Outlines': 'الخطط الدراسية',
+        'Teacher Workload': 'العبء الدراسي للمعلم',
+        'Programs & Groups': 'البرامج والمجموعات',
+        'Hifz Tracking': 'متابعة الحفظ',
+        "Muraja'ah": 'المراجعة والتمكين',
+        'Tajweed': 'التجويد المخارج',
+        'Daily Halaqah': 'الحلقة اليومية',
+        "Qur'an Attendance": 'حضور القرآن',
+        "Da'wah Activities": 'الأنشطة الدعوية',
+        'Competitions & Certs': 'المسابقات والشهادات',
+        'Quran Hifz Portal': 'بوابة حفظ القرآن',
+        'Programs & Levels': 'البرامج والمستويات',
+        'Placement Tests': 'اختبارات تحديد المستوى',
+        'Skill Analytics': 'تحليل المهارات',
+        'Learning Portfolio': 'الملف التعليمي',
+        'Competitions': 'المسابقات والجوائز',
+        'Achievements': 'الإنجازات المدرسية',
+        'Assessment Types': 'أنواع التقييمات',
+        'Examinations': 'الامتحانات والتقييم',
+        'Question Bank': 'بنك الأسئلة',
+        'Scheduling': 'جدولة الامتحانات',
+        'Marks Entry': 'رصد الدرجات',
+        'Results Overview': 'نظرة عامة على النتائج',
+        'Report Cards': 'الشهادات المدرسية',
+        'Transcripts': 'كشوف الدرجات',
+        'Certificates': 'الشهادات المعتمدة',
+        'Promotions': 'الترقيات والترفيع',
+        'Rankings': 'الترتيب والمراكز',
+        'Grade Moderation': 'اعتماد الدرجات',
+        'Retakes & Appeals': 'الإعادات والاعتراضات',
+        'Executive Dashboard': 'لوحة التحكم التنفيذية',
+        'Chart of Accounts': 'شجرة الحسابات',
+        'Double-Entry Journals': 'قيود اليومية',
+        'General Ledger': 'دفتر الأستاذ العام',
+        'Bank & Cash Treasury': 'الخزينة والحسابات البنكية',
+        'Accounting Periods': 'الفترات المالية',
+        'Student Invoices': 'فواتير الطلاب',
+        'Multi-Method Payments': 'الدفع متعدد الوسائل',
+        'Fee Structures': 'هياكل الرسوم',
+        'Installment Plans': 'خطط التقسيط',
+        'Scholarships & Aid': 'المنح والمساعدات',
+        'Discounts & Rules': 'الخصومات والقواعد',
+        'Cashier Sessions': 'جلسات الصندوق',
+        'Staff Payroll Runs': 'مسيرات الرواتب',
+        'Payroll Approvals': 'موافقات الرواتب',
+        'Expense Requests': 'طلبات المصروفات',
+        'Expense Approvals': 'موافقات المصروفات',
+        'Department Budgets': 'ميزانيات الأقسام',
+        'Donation Campaigns': 'حملات التبرعات',
+        'Financial Statements': 'القوائم المالية',
+        'Audit Log & Search': 'دفتر التدقيق والبحث',
+        'Finance Settings': 'إعدادات المالية',
+        'Events': 'الفعاليات والنشاطات',
+        'Announcements': 'الإعلانات والتعاميم',
+        'Website CMS': 'إدارة محتوى الموقع',
+        'Gallery': 'معرض الصور',
+        'Contact Messages': 'رسائل التواصل',
+        'Settings': 'الإعدادات العامة',
+        'School Profile': 'ملف المدرسة التعريف',
+        'Integrations': 'الربط البرمجي والأنظمة',
+        'Academic Clearance': 'المخالصة الأكاديمية',
+        'AI Advisor Alerts': 'تنبيهات مستشار الذكاء الاصطناعي',
+      },
+      fr: {
+        'Activity Logs': "Journaux d'activité",
+        'Login Sessions': 'Sessions de connexion',
+        'Localization': 'Localisation',
+        'Media Library': 'Médiathèque',
+        'People Directory': 'Annuaire des personnes',
+        'Departments': 'Départements',
+        'Programs': 'Programmes',
+        'Academic Sections': 'Sections académiques',
+        'Academic Years': 'Années académiques',
+        'Academic Terms': 'Trimestres académiques',
+        'School Calendar': 'Calendrier scolaire',
+        'Admissions Hub': 'Portail des admissions',
+        'Admissions ERP': 'ERP des admissions',
+        'Transport Logistics': 'Transport et Logistique',
+        'Library System': 'Système de bibliothèque',
+        'Inventory & Supplies': 'Inventaire et Fournitures',
+        'Fixed Assets': 'Immobilisations',
+        'Procurement & AP': 'Achats et Dépenses',
+        'Hostel Dashboard': "Tableau d'hébergement",
+        'Buildings & Floors': 'Bâtiments et Étages',
+        'Rooms & Beds': 'Chambres et Lits',
+        'Bed Allocations': 'Allocations de lits',
+        'Waiting List': "Liste d'attente",
+        'Fee Plans & Setup': 'Plans de frais',
+        'Security Deposits': 'Dépôts de sécurité',
+        'Visitor Logs': 'Registre des visiteurs',
+        'Gate Passes': 'Laisser-passer',
+        'Attendance Logs': 'Registres de présence',
+        'Wardens & Duty': 'Gardiens et Devoirs',
+        'Maintenance Tickets': 'Tickets de maintenance',
+        'Reports & Settings': 'Rapports et Paramètres',
+        'Subjects & Curriculum': 'Matières et Curriculum',
+        'Course Offerings': 'Offres de cours',
+        'Classes & Timetable': 'Classes et Emplois du temps',
+        'Lesson Plans': 'Plans de cours',
+        'Homework': 'Devoirs',
+        'Attendance': 'Présence',
+        'Assessments & Gradebook': 'Évaluations et Notes',
+        'Learning Resources': "Ressources d'apprentissage",
+        'Curriculum Outlines': 'Grandes lignes du curriculum',
+        'Teacher Workload': "Charge de travail de l'enseignant",
+        'Programs & Groups': 'Programmes et Groupes',
+        'Hifz Tracking': 'Suivi de la mémorisation',
+        "Muraja'ah": 'Révision',
+        'Tajweed': 'Tajweed',
+        'Daily Halaqah': 'Halaqah quotidienne',
+        "Qur'an Attendance": 'Présence au Coran',
+        "Da'wah Activities": "Activités de Da'wah",
+        'Competitions & Certs': 'Compétitions et Certificats',
+        'Quran Hifz Portal': 'Portail de mémorisation du Coran',
+        'Programs & Levels': 'Programmes et Niveaux',
+        'Placement Tests': 'Tests de placement',
+        'Skill Analytics': 'Analyses de compétences',
+        'Learning Portfolio': "Portfolio d'apprentissage",
+        'Competitions': 'Compétitions',
+        'Achievements': 'Réalisations',
+        'Assessment Types': "Types d'évaluation",
+        'Examinations': 'Examens',
+        'Question Bank': 'Banque de questions',
+        'Scheduling': 'Planification',
+        'Marks Entry': 'Saisie des notes',
+        'Results Overview': 'Aperçu des résultats',
+        'Report Cards': 'Bulletins de notes',
+        'Transcripts': 'Relevés de notes',
+        'Certificates': 'Certificats',
+        'Promotions': 'Promotions',
+        'Rankings': 'Classements',
+        'Grade Moderation': 'Modération des notes',
+        'Retakes & Appeals': 'Rattrapages et Appels',
+        'Executive Dashboard': 'Tableau de bord exécutif',
+        'Chart of Accounts': 'Plan comptable',
+        'Double-Entry Journals': "Journaux d'écriture",
+        'General Ledger': 'Grand livre',
+        'Bank & Cash Treasury': 'Trésorerie et Banque',
+        'Accounting Periods': 'Périodes comptables',
+        'Student Invoices': 'Factures des élèves',
+        'Multi-Method Payments': 'Paiements multi-méthodes',
+        'Fee Structures': 'Structures de frais',
+        'Installment Plans': 'Plans de versement',
+        'Scholarships & Aid': 'Bourses et Aides',
+        'Discounts & Rules': 'Remises et Règles',
+        'Cashier Sessions': 'Sessions de caisse',
+        'Staff Payroll Runs': 'Fiches de paie',
+        'Payroll Approvals': 'Approbations de paie',
+        'Expense Requests': 'Demandes de dépenses',
+        'Expense Approvals': 'Approbations de dépenses',
+        'Department Budgets': 'Budgets par département',
+        'Donation Campaigns': 'Campagnes de dons',
+        'Financial Statements': 'États financiers',
+        'Audit Log & Search': "Journal d'audit et Recherche",
+        'Finance Settings': 'Paramètres financiers',
+        'Events': 'Événements',
+        'Announcements': 'Annonces',
+        'Website CMS': 'CMS du site web',
+        'Gallery': 'Galerie',
+        'Contact Messages': 'Messages de contact',
+        'Settings': 'Paramètres',
+        'School Profile': "Profil de l'école",
+        'Integrations': 'Intégrations',
+        'Academic Clearance': 'Clairance académique',
+        'AI Advisor Alerts': 'Alertes du conseiller IA',
+      },
+      tr: {
+        'Activity Logs': 'Aktivite Günlükleri',
+        'Login Sessions': 'Oturum Yönetimi',
+        'Localization': 'Yerelleştirme',
+        'Media Library': 'Medya Kütüphanesi',
+        'People Directory': 'Kişi Rehberi',
+        'Departments': 'Bölümler',
+        'Programs': 'Programlar',
+        'Academic Sections': 'Akademik Seksiyonlar',
+        'Academic Years': 'Akademik Yıllar',
+        'Academic Terms': 'Akademik Dönemler',
+        'School Calendar': 'Okul Takvimi',
+        'Admissions Hub': 'Kabul Merkezi',
+        'Admissions ERP': 'Kabul ERP',
+        'Transport Logistics': 'Ulaşım Lojistiği',
+        'Library System': 'Kütüphane Sistemi',
+        'Inventory & Supplies': 'Envanter ve Malzemeler',
+        'Fixed Assets': 'Sabit Varlıklar',
+        'Procurement & AP': 'Satın Alma',
+        'Hostel Dashboard': 'Yurt Paneli',
+        'Buildings & Floors': 'Binalar ve Katlar',
+        'Rooms & Beds': 'Odalar ve Yataklar',
+        'Bed Allocations': 'Yatak Tahsisleri',
+        'Waiting List': 'Bekleme Listesi',
+        'Fee Plans & Setup': 'Ücret Planları',
+        'Security Deposits': 'Güvenlik Depozitoları',
+        'Visitor Logs': 'Ziyaretçi Defteri',
+        'Gate Passes': 'Kapı İzinleri',
+        'Attendance Logs': 'Yoklama Günlükleri',
+        'Wardens & Duty': 'Nöbetçiler ve Görevler',
+        'Maintenance Tickets': 'Bakım Talepleri',
+        'Reports & Settings': 'Raporlar ve Ayarlar',
+        'Subjects & Curriculum': 'Dersler ve Müfredat',
+        'Course Offerings': 'Açılan Dersler',
+        'Classes & Timetable': 'Sınıflar ve Programlar',
+        'Lesson Plans': 'Ders Planları',
+        'Homework': 'Ödevler',
+        'Attendance': 'Yoklama',
+        'Assessments & Gradebook': 'Değerlendirmeler ve Not Defteri',
+        'Learning Resources': 'Öğrenme Kaynakları',
+        'Curriculum Outlines': 'Müfredat Ana Hatları',
+        'Teacher Workload': 'Öğretmen İş Yükü',
+        'Programs & Groups': 'Programlar ve Gruplar',
+        'Hifz Tracking': 'Hıfız Takibi',
+        "Muraja'ah": 'Mürafaa / Tekrar',
+        'Tajweed': 'Tecvid',
+        'Daily Halaqah': 'Günlük Halka',
+        "Qur'an Attendance": 'Kuran Yoklaması',
+        "Da'wah Activities": 'Davet Faaliyetleri',
+        'Competitions & Certs': 'Yarışmalar ve Belgeler',
+        'Quran Hifz Portal': 'Kuran Hıfız Portalı',
+        'Programs & Levels': 'Programlar ve Seviyeler',
+        'Placement Tests': 'Seviye Tespit Sınavları',
+        'Skill Analytics': 'Beceri Analitiği',
+        'Learning Portfolio': 'Öğrenim Portföyü',
+        'Competitions': 'Yarışmalar',
+        'Achievements': 'Başarılar',
+        'Assessment Types': 'Değerlendirme Türleri',
+        'Examinations': 'Sınavlar',
+        'Question Bank': 'Soru Bankası',
+        'Scheduling': 'Sınav Takvimi',
+        'Marks Entry': 'Not Girişi',
+        'Results Overview': 'Sonuçlara Genel Bakış',
+        'Report Cards': 'Karne Raporları',
+        'Transcripts': 'Transkriptler',
+        'Certificates': 'Sertifikalar',
+        'Promotions': 'Sınıf Geçme',
+        'Rankings': 'Sıralamalar',
+        'Grade Moderation': 'Not Moderasyonu',
+        'Retakes & Appeals': 'İtirazlar ve Bütünleme',
+        'Executive Dashboard': 'Yönetici Finans Paneli',
+        'Chart of Accounts': 'Hesap Planı',
+        'Double-Entry Journals': 'Yevmiye Kayıtları',
+        'General Ledger': 'Defter-i Kebir',
+        'Bank & Cash Treasury': 'Kasa ve Banka',
+        'Accounting Periods': 'Muhasebe Dönemleri',
+        'Student Invoices': 'Öğrenci Faturaları',
+        'Multi-Method Payments': 'Çok Yöntemli Ödemeler',
+        'Fee Structures': 'Harç Yapıları',
+        'Installment Plans': 'Taksit Planları',
+        'Scholarships & Aid': 'Burslar ve Destekler',
+        'Discounts & Rules': 'İndirimler ve Kurallar',
+        'Cashier Sessions': 'Kasa Oturumları',
+        'Staff Payroll Runs': 'Personel Bordroları',
+        'Payroll Approvals': 'Bordro Onayları',
+        'Expense Requests': 'Gider Talepleri',
+        'Expense Approvals': 'Gider Onayları',
+        'Department Budgets': 'Bölüm Bütçeleri',
+        'Donation Campaigns': 'Bağış Kampanyaları',
+        'Financial Statements': 'Finansal Tablolar',
+        'Audit Log & Search': 'Denetim ve Arama',
+        'Finance Settings': 'Finans Ayarları',
+        'Events': 'Etkinlikler',
+        'Announcements': 'Duyurular',
+        'Website CMS': 'Web Sitesi CMS',
+        'Gallery': 'Galeri',
+        'Contact Messages': 'İletişim Mesajları',
+        'Settings': 'Ayarlar',
+        'School Profile': 'Okul Profili',
+        'Integrations': 'Entegrasyonlar',
+        'Academic Clearance': 'Akademik İlişik Kesme',
+        'AI Advisor Alerts': 'Yapay Zeka Uyarıları',
+      }
+    };
+
+    return localDict[locale]?.[label] || label;
+  };
+
+  const getTranslatedSectionTitle = (title: string) => {
+    const titleKeyMap: Record<string, string> = {
+      'Overview': 'overview',
+      'Administration': 'administration',
+      'School ERP': 'academics',
+      'LMS Academics': 'academics',
+      'System Settings': 'system',
+      'System': 'system',
+    };
+    const key = titleKeyMap[title];
+    if (key && t.has(key)) {
+      return t(key);
+    }
+
+    const sectionDict: Record<string, Record<string, string>> = {
+      ar: {
+        'Academic Management': 'الإدارة الأكاديمية',
+        "Qur'an Department": 'قسم القرآن الكريم',
+        'Language Department': 'قسم اللغات',
+        'Assessment & Exams': 'التقييم والامتحانات',
+        'Results & Certification': 'النتائج والشهادات',
+        'Finance ERP (Executive)': 'إدارة المالية (تنفيذي)',
+        'Billing & Cashier Suite': 'نظام الفواتير والخزينة',
+        'Payroll, Expenses & Budgets': 'الرواتب والمصروفات المدرسية',
+        'Finance Reports & Audit': 'التقارير المالية والتدقيق',
+        'Events & CMS': 'الفعاليات ومحتوى الموقع',
+        'Enterprise Operations ERP': 'العمليات والخدمات اللوجستية',
+        'Hostel ERP Suite': 'إدارة السكن الداخلي',
+        'Enterprise Audits': 'التدقيق والتحليل الذكي',
+      },
+      fr: {
+        'Academic Management': 'Gestion académique',
+        "Qur'an Department": 'Département du Coran',
+        'Language Department': 'Département des langues',
+        'Assessment & Exams': 'Évaluations et Examens',
+        'Results & Certification': 'Résultats et Certifications',
+        'Finance ERP (Executive)': 'Finance (Exécutif)',
+        'Billing & Cashier Suite': 'Facturation et Caisse',
+        'Payroll, Expenses & Budgets': 'Paie, Dépenses et Budgets',
+        'Finance Reports & Audit': 'Rapports financiers et Audit',
+        'Events & CMS': 'Événements et CMS',
+        'Enterprise Operations ERP': 'Opérations d\'entreprise',
+        'Hostel ERP Suite': 'Hébergement ERP',
+        'Enterprise Audits': 'Audits d\'entreprise',
+      },
+      tr: {
+        'Academic Management': 'Akademik Yönetim',
+        "Qur'an Department": 'Kuran Departmanı',
+        'Language Department': 'Dil Departmanı',
+        'Assessment & Exams': 'Değerlendirme ve Sınavlar',
+        'Results & Certification': 'Sonuçlar ve Sertifikalar',
+        'Finance ERP (Executive)': 'Finans ERP (Yönetici)',
+        'Billing & Cashier Suite': 'Faturalandırma ve Vezne',
+        'Payroll, Expenses & Budgets': 'Bordro, Giderler ve Bütçeler',
+        'Finance Reports & Audit': 'Finansal Raporlar ve Denetim',
+        'Events & CMS': 'Etkinlikler ve CMS',
+        'Enterprise Operations ERP': 'Operasyonel ERP',
+        'Hostel ERP Suite': 'Yurt ERP',
+        'Enterprise Audits': 'Kurumsal Denetim',
+      }
+    };
+
+    return sectionDict[locale]?.[title] || title;
+  };
 
   const [isCollapsed, setIsCollapsed] = useLocalStorage(STORAGE_KEYS.SIDEBAR_COLLAPSED, false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
@@ -756,7 +1230,8 @@ export function Sidebar({ className }: SidebarProps) {
   const sidebarContent = (
     <aside
       className={cn(
-        'fixed inset-y-0 left-0 z-40 flex flex-col h-full bg-card border-r border-border',
+        'fixed inset-y-0 z-40 flex flex-col h-full bg-card border-border',
+        isRtl ? 'right-0 border-l' : 'left-0 border-r',
         'transition-all duration-300 ease-in-out overflow-hidden',
         className
       )}
@@ -784,9 +1259,17 @@ export function Sidebar({ className }: SidebarProps) {
         {!isMobile && (
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className={cn('ml-auto p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground flex-shrink-0', isCollapsed && 'ml-0')}
+            className={cn(
+              'p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground flex-shrink-0',
+              isRtl ? 'mr-auto' : 'ml-auto',
+              isCollapsed && (isRtl ? 'mr-0' : 'ml-0')
+            )}
           >
-            {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+            {isRtl ? (
+              isCollapsed ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />
+            ) : (
+              isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />
+            )}
           </button>
         )}
       </div>
@@ -801,7 +1284,7 @@ export function Sidebar({ className }: SidebarProps) {
                 onClick={() => toggleSection(section.title)}
                 className="w-full flex items-center justify-between px-2 py-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70 hover:text-muted-foreground transition-colors"
               >
-                <span>{section.title}</span>
+                <span>{getTranslatedSectionTitle(section.title)}</span>
                 {isSectionExpanded(section.title)
                   ? <ChevronUp className="w-3 h-3" />
                   : <ChevronDown className="w-3 h-3" />}
@@ -820,11 +1303,12 @@ export function Sidebar({ className }: SidebarProps) {
                 >
                   {section.items.map((item) => {
                     const active = isActive(item.href);
+                    const translatedLabel = getTranslatedLabel(item.label);
                     return (
                       <Link
                         key={item.href}
                         href={item.href}
-                        title={isCollapsed ? item.label : undefined}
+                        title={isCollapsed ? translatedLabel : undefined}
                         className={cn(
                           'flex items-center gap-3 rounded-xl transition-all duration-150 group relative',
                           isCollapsed ? 'h-10 w-10 mx-auto justify-center' : 'px-3 py-2.5',
@@ -842,13 +1326,13 @@ export function Sidebar({ className }: SidebarProps) {
                               exit={{ opacity: 0 }}
                               className="text-sm font-medium truncate"
                             >
-                              {item.label}
+                              {translatedLabel}
                             </motion.span>
                           )}
                         </AnimatePresence>
                         {isCollapsed && (
                           <div className="absolute left-full ml-3 px-2 py-1 rounded-lg bg-popover border border-border shadow-lg text-xs font-medium text-popover-foreground whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50">
-                            {item.label}
+                            {translatedLabel}
                           </div>
                         )}
                         {!isCollapsed && item.badge && (
@@ -948,7 +1432,10 @@ export function Sidebar({ className }: SidebarProps) {
         {/* Mobile Trigger */}
         <button
           onClick={() => setIsMobileOpen(true)}
-          className="fixed top-4 left-4 z-40 p-2.5 rounded-xl bg-card border border-border shadow-md text-foreground"
+          className={cn(
+            "fixed top-4 z-40 p-2.5 rounded-xl bg-card border border-border shadow-md text-foreground",
+            isRtl ? 'right-4' : 'left-4'
+          )}
         >
           <Menu className="w-5 h-5" />
         </button>
@@ -965,15 +1452,21 @@ export function Sidebar({ className }: SidebarProps) {
                 className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
               />
               <motion.div
-                initial={{ x: -280 }}
+                initial={{ x: isRtl ? 280 : -280 }}
                 animate={{ x: 0 }}
-                exit={{ x: -280 }}
+                exit={{ x: isRtl ? 280 : -280 }}
                 transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                className="fixed inset-y-0 left-0 z-50 w-[280px]"
+                className={cn(
+                  "fixed inset-y-0 z-50 w-[280px]",
+                  isRtl ? 'right-0' : 'left-0'
+                )}
               >
                 <button
                   onClick={() => setIsMobileOpen(false)}
-                  className="absolute top-4 right-4 p-1.5 rounded-lg bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                  className={cn(
+                    "absolute top-4 p-1.5 rounded-lg bg-muted text-muted-foreground hover:text-foreground transition-colors",
+                    isRtl ? 'left-4' : 'right-4'
+                  )}
                 >
                   <X className="w-4 h-4" />
                 </button>

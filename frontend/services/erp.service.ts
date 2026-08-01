@@ -136,7 +136,7 @@ export const erpService = {
       const res = await apiClient.get(`/students/${id}`, {
         params: {
           locale,
-          populate: ['photo', 'user', 'user.avatar', 'sections', 'parents', 'teachers', 'timeline', 'behaviorRecords', 'enrollmentHistory', 'medicalInfo', 'staffNotes', 'documents', 'departments', 'programs', 'academicYears'],
+          populate: ['photo', 'user', 'user.avatar', 'sections', 'parents', 'teachers', 'timeline', 'behaviorRecords', 'enrollmentHistory', 'medicalInfo', 'staffNotes', 'documents', 'departments', 'programs', 'academicYears', 'enrollments.courseOffering.subject', 'enrollments.courseOffering.academicSection', 'enrollments.courseOffering.teacher'],
         },
       });
       return unwrapSingle<Student>(res.data);

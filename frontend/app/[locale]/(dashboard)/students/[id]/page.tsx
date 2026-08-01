@@ -4,16 +4,17 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 import Image from 'next/image';
 import {
   GraduationCap, User, BookOpen, Layers, Calendar, AlertCircle,
   HeartPulse, FileText, Clock, DollarSign, Home, Shield, Award,
   CheckCircle2, ArrowLeft, Phone, Mail, MapPin, QrCode, Share2,
-  Download, Printer, RefreshCw, AlertTriangle
+  Download, Printer, RefreshCw, AlertTriangle, X
 } from 'lucide-react';
 import { erpService } from '@/services/erp.service';
 import { financeService } from '@/services/finance.service';
+import { qmsService } from '@/services/qms.service';
 import { Avatar } from '@/components/shared/Avatar';
 import type { Student } from '@/types/erp.types';
 import { StatusBadge } from '@/components/erp/StatusBadge';
@@ -21,6 +22,10 @@ import { RelationshipChip } from '@/components/erp/RelationshipChip';
 import { TimelineFeed } from '@/components/erp/TimelineFeed';
 import { BehaviorLevelCard } from '@/components/erp/BehaviorLevelCard';
 import { getStrapiMediaUrl } from '@/services/cms.service';
+import { useAuth } from '@/hooks/useAuth';
+import { usePermissions } from '@/hooks/usePermissions';
+import { apiClient } from '@/services/api.service';
+import { toast } from 'sonner';
 
 export default function StudentSISProfilePage() {
   const params = useParams();
@@ -32,6 +37,35 @@ export default function StudentSISProfilePage() {
     'overview' | 'identity' | 'academic' | 'behavior' | 'medical' | 'documents' | 'attendance' | 'finance' | 'hostel' | 'quran' | 'scholarships_transport' | 'audit'
   >('overview');
 
+  const { user } = useAuth();
+  const { userRole } = usePermissions();
+
+  // Behavior Form states
+  const [showBehaviorModal, setShowBehaviorModal] = useState(false);
+  const [behaviorLevel, setBehaviorLevel] = useState<'green' | 'yellow' | 'red'>('green');
+  const [behaviorCategory, setBehaviorCategory] = useState('');
+  const [behaviorDescription, setBehaviorDescription] = useState('');
+  const [behaviorRecommendation, setBehaviorRecommendation] = useState('');
+  const [parentNotified, setParentNotified] = useState(false);
+  const [followUpRequired, setFollowUpRequired] = useState(false);
+  const [isSavingBehavior, setIsSavingBehavior] = useState(false);
+
+  // Audit logs states
+  const [auditLogs, setAuditLogs] = useState<any[]>([]);
+  const [loadingAudit, setLoadingAudit] = useState(false);
+
+  // Quran states
+  const [quranMemorizations, setQuranMemorizations] = useState<any[]>([]);
+  const [loadingQuran, setLoadingQuran] = useState(false);
+
+  // Attendance states
+  const [attendanceLogs, setAttendanceLogs] = useState<any[]>([]);
+  const [loadingAttendance, setLoadingAttendance] = useState(false);
+
+  // Hostel states
+  const [hostelAllocation, setHostelAllocation] = useState<any>(null);
+  const [loadingHostel, setLoadingHostel] = useState(false);
+
   // Finance states
   const [invoices, setInvoices] = useState<any[]>([]);
   const [receipts, setReceipts] = useState<any[]>([]);
@@ -39,21 +73,162 @@ export default function StudentSISProfilePage() {
   const [ledger, setLedger] = useState<any[]>([]);
   const [activeFinanceSubTab, setActiveFinanceSubTab] = useState<'invoices' | 'receipts' | 'wallet' | 'ledger'>('invoices');
 
+  const loadStudent = async () => {
+    if (!idOrDocumentId) return;
+    try {
+      const data = await erpService.getStudentById(idOrDocumentId);
+      setStudent(data);
+    } catch (err) {
+      console.error('Failed loading student profile:', err);
+    }
+  };
+
   useEffect(() => {
     if (!idOrDocumentId) return;
-    async function loadStudent() {
-      setLoading(true);
-      try {
-        const data = await erpService.getStudentById(idOrDocumentId);
-        setStudent(data);
-      } catch (err) {
-        console.error('Failed loading student profile:', err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadStudent();
+    setLoading(true);
+    loadStudent().finally(() => setLoading(false));
   }, [idOrDocumentId]);
+
+  const handleSaveBehavior = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!behaviorCategory.trim() || !behaviorDescription.trim() || !student) {
+      toast.error('Please enter category and description.');
+      return;
+    }
+    setIsSavingBehavior(true);
+    try {
+      const existing = student.behaviorRecords || [];
+      const newRecord = {
+        teacherName: user?.displayName || user?.username || 'Faculty Member',
+        date: new Date().toISOString().split('T')[0],
+        level: behaviorLevel,
+        category: behaviorCategory,
+        description: behaviorDescription,
+        recommendation: behaviorRecommendation,
+        parentNotified,
+        followUpRequired,
+        resolution: ''
+      };
+
+      const updated = [newRecord, ...existing];
+
+      await apiClient.put(`/students/${student.documentId}`, {
+        data: {
+          behaviorRecords: updated
+        }
+      });
+
+      await apiClient.post('/audit-logs', {
+        data: {
+          action: 'Behavior Incident Logged',
+          description: `Logged ${behaviorLevel} conduct event for student ${student.firstName} ${student.lastName}: ${behaviorCategory}`,
+          performedBy: user?.id,
+          severity: behaviorLevel === 'red' ? 'warning' : 'info'
+        }
+      });
+
+      toast.success('Behavior/Conduct record logged successfully.');
+      setShowBehaviorModal(false);
+
+      setBehaviorCategory('');
+      setBehaviorDescription('');
+      setBehaviorRecommendation('');
+      setParentNotified(false);
+      setFollowUpRequired(false);
+
+      await loadStudent();
+    } catch (err) {
+      toast.error('Failed to log behavior incident.');
+    } finally {
+      setIsSavingBehavior(false);
+    }
+  };
+
+  const loadAuditLogs = async () => {
+    if (!student?.user?.id) return;
+    setLoadingAudit(true);
+    try {
+      const res = await apiClient.get('/audit-logs', {
+        params: {
+          'filters[performedBy][id][$eq]': student.user.id,
+          'sort': 'createdAt:desc',
+          'pagination[limit]': 50
+        }
+      });
+      setAuditLogs(res.data?.data || []);
+    } catch (e) {
+      console.warn('Failed to load student audit trail');
+    } finally {
+      setLoadingAudit(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'audit' && student?.user?.id) {
+      loadAuditLogs();
+    }
+  }, [activeTab, student?.user?.id]);
+
+  const loadQuranData = async () => {
+    if (!student?.id) return;
+    setLoadingQuran(true);
+    try {
+      const memos = await qmsService.getMemorizationRecords(student.id);
+      setQuranMemorizations(memos || []);
+    } catch (e) {
+      console.warn('Failed to load Quran progress logs');
+    } finally {
+      setLoadingQuran(false);
+    }
+  };
+
+  const loadAttendanceLogs = async () => {
+    if (!student?.id) return;
+    setLoadingAttendance(true);
+    try {
+      const res = await apiClient.get('/attendance-records', {
+        params: {
+          'filters[student][id][$eq]': student.id,
+          'sort': 'date:desc',
+          'pagination[limit]': 100
+        }
+      });
+      setAttendanceLogs(res.data?.data || []);
+    } catch (e) {
+      console.warn('Failed to load student attendance logs');
+    } finally {
+      setLoadingAttendance(false);
+    }
+  };
+
+  const loadHostelAllocation = async () => {
+    if (!student?.id) return;
+    setLoadingHostel(true);
+    try {
+      const res = await apiClient.get('/hostel-allocations', {
+        params: {
+          'filters[student][id][$eq]': student.id,
+          'populate': 'room,room.floor,room.floor.building,bed',
+          'pagination[limit]': 1
+        }
+      });
+      setHostelAllocation(res.data?.data?.[0] || null);
+    } catch (e) {
+      console.warn('Failed to load hostel allocation');
+    } finally {
+      setLoadingHostel(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'quran') {
+      loadQuranData();
+    } else if (activeTab === 'attendance') {
+      loadAttendanceLogs();
+    } else if (activeTab === 'hostel') {
+      loadHostelAllocation();
+    }
+  }, [activeTab, student?.id]);
 
   useEffect(() => {
     if (!student) return;
@@ -110,6 +285,46 @@ export default function StudentSISProfilePage() {
   const fullName = `${student.firstName} ${student.middleName ? `${student.middleName} ` : ''}${student.lastName}`;
   const photoUrl = student.photo ? getStrapiMediaUrl(student.photo) : null;
 
+  const renderEmergencyContacts = () => {
+    if (!student.emergencyContacts) {
+      return <p className="text-xs text-slate-500 italic">In emergency, contact primary parent/guardian listed above immediately.</p>;
+    }
+    
+    let contactsList: string[] = [];
+    try {
+      if (typeof student.emergencyContacts === 'string') {
+        const parsed = JSON.parse(student.emergencyContacts);
+        contactsList = Array.isArray(parsed) ? parsed : (parsed.contacts ? (typeof parsed.contacts === 'string' ? JSON.parse(parsed.contacts) : parsed.contacts) : []);
+      } else if (typeof student.emergencyContacts === 'object') {
+        const contactsObj = student.emergencyContacts as any;
+        if (contactsObj.contacts) {
+          contactsList = typeof contactsObj.contacts === 'string' ? JSON.parse(contactsObj.contacts) : contactsObj.contacts;
+        } else if (Array.isArray(contactsObj)) {
+          contactsList = contactsObj;
+        }
+      }
+    } catch (e) {
+      console.warn("Failed parsing emergency contacts:", e);
+    }
+
+    if (!Array.isArray(contactsList) || contactsList.length === 0) {
+      const rawVal = typeof student.emergencyContacts === 'string' ? student.emergencyContacts : JSON.stringify(student.emergencyContacts);
+      return <p className="text-xs font-mono text-rose-800 dark:text-rose-350">{rawVal}</p>;
+    }
+
+    return (
+      <div className="space-y-1.5 font-mono text-xs">
+        {contactsList.map((phone, idx) => (
+          <div key={idx} className="flex items-center gap-2 text-rose-800 dark:text-rose-300">
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+            <span className="font-bold">Call #{idx + 1}:</span>
+            <span className="font-semibold">{phone}</span>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   const tabs = [
     { id: 'overview', label: 'Dossier Overview', icon: GraduationCap },
     { id: 'identity', label: 'Identity & Demographics', icon: User },
@@ -126,7 +341,7 @@ export default function StudentSISProfilePage() {
   ];
 
   return (
-    <div className="p-6 md:p-8 space-y-6 max-w-7xl mx-auto text-slate-800 dark:text-slate-100">
+    <div className="p-6 md:p-8 space-y-6 w-full text-slate-800 dark:text-slate-100">
       {/* Back Navigation Bar */}
       <div className="flex items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
         <Link
@@ -347,7 +562,7 @@ export default function StudentSISProfilePage() {
                           <Link href={`/teachers/${t.documentId || t.id}`} className="text-xs font-bold text-amber-600 dark:text-amber-300 hover:underline">
                             {t.name}
                           </Link>
-                          <p className="text-[11px] text-slate-600 dark:text-slate-550 truncate max-w-[160px]">{t.specializations || 'Academic Faculty'}</p>
+                          <p className="text-[11px] text-slate-600 dark:text-slate-400 truncate max-w-[160px]">{t.specializations || 'Academic Faculty'}</p>
                         </div>
                         <span className="text-[10px] font-mono text-slate-600 dark:text-slate-400">{t.phone || 'N/A'}</span>
                       </div>
@@ -364,9 +579,9 @@ export default function StudentSISProfilePage() {
                   <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400" />
                   <span>Emergency Care & Contact Info</span>
                 </h3>
-                <p className="text-xs text-slate-700 dark:text-slate-300 font-mono">
-                  {student.emergencyContacts ? JSON.stringify(student.emergencyContacts) : 'In emergency, contact primary parent/guardian listed above immediately.'}
-                </p>
+                <div className="mt-2">
+                  {renderEmergencyContacts()}
+                </div>
               </div>
             </div>
           </div>
@@ -431,13 +646,74 @@ export default function StudentSISProfilePage() {
         {/* ── 3. Academic & Multi-Sections Tab ────────────────────────────── */}
         {activeTab === 'academic' && (
           <div className="space-y-6">
+            {/* Active Course Enrollments Card */}
             <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 p-6 shadow-xl">
-              <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-4 flex items-center gap-2">
+              <h3 className="text-sm font-black text-slate-900 dark:text-slate-100 mb-2 flex items-center gap-2">
+                <BookOpen className="w-5 h-5 text-indigo-500" />
+                <span>Active Course Offerings & Enrollments</span>
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
+                Active academic classes, language modules, and religious study groups the student is currently attending.
+              </p>
+              
+              {student.enrollments && student.enrollments.length > 0 ? (
+                <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-400">
+                      <tr>
+                        <th className="p-3">Course Code</th>
+                        <th className="p-3">Subject Name</th>
+                        <th className="p-3">Academic Section (Division)</th>
+                        <th className="p-3">Instructor</th>
+                        <th className="p-3 text-center">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
+                      {student.enrollments.map((enr: any) => {
+                        const co = enr.courseOffering;
+                        if (!co) return null;
+                        const teacherName = co.teacher 
+                          ? co.teacher.displayName || `${co.teacher.firstName} ${co.teacher.lastName}`
+                          : 'Unassigned';
+                        return (
+                          <tr key={enr.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                            <td className="p-3 font-mono font-bold text-indigo-600 dark:text-indigo-400">{co.subject?.code || 'N/A'}</td>
+                            <td className="p-3 font-bold text-slate-900 dark:text-white">{co.subject?.name || 'General studies'}</td>
+                            <td className="p-3">
+                              <span 
+                                className="px-2 py-0.5 rounded text-[9px] font-bold text-white shadow-2xs"
+                                style={{ backgroundColor: co.academicSection?.color || '#4f46e5' }}
+                              >
+                                {co.academicSection?.name || 'General'}
+                              </span>
+                            </td>
+                            <td className="p-3">{teacherName}</td>
+                            <td className="p-3 text-center">
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400 border border-emerald-250/50">
+                                Active
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <p className="text-slate-500 italic text-[11px] bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-slate-150 dark:border-slate-850">
+                  No active course offerings enrolled. Enroll this student using the Course Offerings console.
+                </p>
+              )}
+            </div>
+
+            {/* Historical Enrollment Records Card */}
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 p-6 shadow-xl">
+              <h3 className="text-sm font-black text-slate-900 dark:text-slate-100 mb-2 flex items-center gap-2">
                 <Layers className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                 <span>Multi-Section Assignment & Enrollment History</span>
               </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">
-                Under the YAHAYASCOOL Core ERP model, students can simultaneously belong to an academic grade section (e.g., Grade 10A) and specialized religious/language sections (e.g., Tahfidz Group 2 or Advanced Arabic).
+              <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
+                Historical record of academic section assignments, including counselor/homeroom cohort migrations.
               </p>
 
               {student.enrollmentHistory && student.enrollmentHistory.length > 0 ? (
@@ -456,7 +732,7 @@ export default function StudentSISProfilePage() {
                       {student.enrollmentHistory.map((h, idx) => (
                         <tr key={idx} className="hover:bg-slate-100 dark:hover:bg-slate-800/40">
                           <td className="p-3 font-bold text-slate-900 dark:text-slate-100">{h.academicYear}</td>
-                          <td className="p-3 font-mono text-emerald-650 dark:text-emerald-400">{h.sectionCode}</td>
+                          <td className="p-3 font-mono text-emerald-600 dark:text-emerald-400">{h.sectionCode}</td>
                           <td className="p-3 font-mono">{new Date(h.enrollmentDate).toLocaleDateString()}</td>
                           <td className="p-3"><StatusBadge status={h.status} size="sm" /></td>
                           <td className="p-3 text-slate-500 dark:text-slate-400">{h.notes || 'N/A'}</td>
@@ -478,10 +754,20 @@ export default function StudentSISProfilePage() {
         {activeTab === 'behavior' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 p-6 shadow-xl">
-              <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-4 flex items-center gap-2">
-                <Award className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-                <span>Behavioral & Disciplinary Records</span>
-              </h3>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                  <Award className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                  <span>Behavioral & Disciplinary Records</span>
+                </h3>
+                {(userRole === 'super-administrator' || userRole === 'director' || userRole === 'teacher') && (
+                  <button
+                    onClick={() => setShowBehaviorModal(true)}
+                    className="px-3.5 py-1.5 rounded-xl bg-emerald-650 hover:bg-emerald-600 text-white text-xs font-bold transition-all shadow-md cursor-pointer border-none"
+                  >
+                    + Log Behavior Event
+                  </button>
+                )}
+              </div>
               {student.behaviorRecords && student.behaviorRecords.length > 0 ? (
                 <div className="space-y-4">
                   {student.behaviorRecords.map((rec, i) => (
@@ -605,20 +891,26 @@ export default function StudentSISProfilePage() {
                 </h3>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
                   <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-3 rounded-xl">
-                    <span className="text-slate-500 block font-bold mb-1">CURRENT JUZ</span>
-                    <strong className="text-emerald-600 dark:text-emerald-400 text-lg">Juz 15</strong>
+                    <span className="text-slate-500 block font-bold mb-1">MEMORIZED LOGS</span>
+                    <strong className="text-emerald-600 dark:text-emerald-400 text-lg">{quranMemorizations.length} entries</strong>
                   </div>
                   <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-3 rounded-xl">
-                    <span className="text-slate-500 block font-bold mb-1">LAST SURAH</span>
-                    <strong className="text-emerald-600 dark:text-emerald-400 text-lg">Al-Israa</strong>
+                    <span className="text-slate-500 block font-bold mb-1">LAST MEMORIZED</span>
+                    <strong className="text-emerald-600 dark:text-emerald-400 text-lg truncate block max-w-full">
+                      {quranMemorizations[0]?.surahName || quranMemorizations[0]?.surah || 'None'}
+                    </strong>
                   </div>
                   <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-3 rounded-xl">
-                    <span className="text-slate-500 block font-bold mb-1">MURAJA'AH SURAH</span>
-                    <strong className="text-amber-600 dark:text-amber-400 text-lg">Al-Kahf</strong>
+                    <span className="text-slate-500 block font-bold mb-1">LATEST STATUS</span>
+                    <strong className="text-amber-600 dark:text-amber-400 text-lg">
+                      {quranMemorizations[0]?.status || 'Active'}
+                    </strong>
                   </div>
                   <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-3 rounded-xl">
-                    <span className="text-slate-500 block font-bold mb-1">ATTENDANCE RATE</span>
-                    <strong className="text-emerald-600 dark:text-emerald-400 text-lg">98%</strong>
+                    <span className="text-slate-500 block font-bold mb-1">LAST EVAL GRADE</span>
+                    <strong className="text-emerald-600 dark:text-emerald-400 text-lg">
+                      {quranMemorizations[0]?.grade || 'Pass'}
+                    </strong>
                   </div>
                 </div>
               </div>
@@ -626,30 +918,34 @@ export default function StudentSISProfilePage() {
               <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 p-6 shadow-xl space-y-4">
                 <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">Daily progress log</h3>
                 <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
-                  <table className="w-full text-left text-xs">
-                    <thead className="bg-slate-100 dark:bg-slate-950 text-slate-700 dark:text-slate-400">
-                      <tr>
-                        <th className="p-3">Date</th>
-                        <th className="p-3">Surah / Ayah</th>
-                        <th className="p-3">Grade</th>
-                        <th className="p-3">Teacher Notes</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
-                      <tr className="hover:bg-slate-100 dark:hover:bg-slate-800/40">
-                        <td className="p-3">July 18, 2026</td>
-                        <td className="p-3 font-bold text-slate-900 dark:text-slate-100">Al-Israa (Ayah 1-15)</td>
-                        <td className="p-3 text-emerald-600 dark:text-emerald-400 font-bold">Excellent (A+)</td>
-                        <td className="p-3 text-slate-500 dark:text-slate-400">Makharij was perfect. Prompt attention to tajweed.</td>
-                      </tr>
-                      <tr className="hover:bg-slate-100 dark:hover:bg-slate-800/40">
-                        <td className="p-3">July 17, 2026</td>
-                        <td className="p-3 font-bold text-slate-900 dark:text-slate-100">Al-Israa (Ayah 16-30)</td>
-                        <td className="p-3 text-emerald-600 dark:text-emerald-300 font-bold">Very Good (A)</td>
-                        <td className="p-3 text-slate-500 dark:text-slate-400">Smooth revision. Great fluency.</td>
-                      </tr>
-                    </tbody>
-                  </table>
+                  {loadingQuran ? (
+                    <div className="flex justify-center p-6"><RefreshCw className="animate-spin text-emerald-500 w-5 h-5" /></div>
+                  ) : quranMemorizations.length === 0 ? (
+                    <p className="text-slate-500 text-xs italic py-4 text-center">No memorization logs registered yet.</p>
+                  ) : (
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-slate-100 dark:bg-slate-950 text-slate-700 dark:text-slate-400">
+                        <tr>
+                          <th className="p-3">Date</th>
+                          <th className="p-3">Surah / Ayah</th>
+                          <th className="p-3">Grade</th>
+                          <th className="p-3">Teacher Notes</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
+                        {quranMemorizations.map((memo: any) => (
+                          <tr key={memo.id} className="hover:bg-slate-100 dark:hover:bg-slate-800/40">
+                            <td className="p-3 font-mono">{memo.date ? new Date(memo.date).toLocaleDateString() : 'N/A'}</td>
+                            <td className="p-3 font-bold text-slate-900 dark:text-white">
+                              {memo.surahName || memo.surah || 'Quran Memorization'} {memo.startAyah && memo.endAyah ? `(Ayah ${memo.startAyah}-${memo.endAyah})` : ''}
+                            </td>
+                            <td className="p-3 text-emerald-600 dark:text-emerald-450 font-bold">{memo.grade || 'Passed'}</td>
+                            <td className="p-3 text-slate-600 dark:text-slate-400">{memo.notes || memo.remarks || 'N/A'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
                 </div>
               </div>
             </div>
@@ -658,9 +954,9 @@ export default function StudentSISProfilePage() {
               <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">Evaluations & Competitions</h3>
               <div className="space-y-3 text-xs">
                 <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-                  <span className="text-[10px] text-slate-500 font-bold block uppercase mb-1">Inter-Class Quran Competition</span>
-                  <strong className="text-emerald-600 dark:text-emerald-400 block mb-0.5">2nd Place (Juz 15 Category)</strong>
-                  <span className="text-slate-500 dark:text-slate-400 text-[10px]">Held: June 2026</span>
+                  <span className="text-[10px] text-slate-500 font-bold block uppercase mb-1">Placement Standing</span>
+                  <strong className="text-emerald-600 dark:text-emerald-400 block mb-0.5">Assigned to Hifz Track</strong>
+                  <span className="text-slate-500 dark:text-slate-400 text-[10px]">Evaluated: Sep 2026</span>
                 </div>
               </div>
             </div>
@@ -674,47 +970,68 @@ export default function StudentSISProfilePage() {
               <Clock className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
               <span>Academic Attendance Tracker</span>
             </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-              <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-4 rounded-xl text-center">
-                <span className="text-slate-500 block font-bold mb-1">TOTAL DAYS PRESENT</span>
-                <strong className="text-emerald-600 dark:text-emerald-400 text-3xl font-mono">145</strong>
-              </div>
-              <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-4 rounded-xl text-center">
-                <span className="text-slate-500 block font-bold mb-1">TOTAL DAYS ABSENT</span>
-                <strong className="text-rose-600 dark:text-rose-400 text-3xl font-mono">3</strong>
-              </div>
-              <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-4 rounded-xl text-center">
-                <span className="text-slate-500 block font-bold mb-1">ATTENDANCE AVERAGE</span>
-                <strong className="text-emerald-600 dark:text-emerald-350 text-3xl font-mono">97.9%</strong>
-              </div>
-            </div>
 
-            <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-slate-100 dark:bg-slate-950 text-slate-700 dark:text-slate-400">
-                  <tr>
-                    <th className="p-3">Month</th>
-                    <th className="p-3">Present Days</th>
-                    <th className="p-3">Absent Days</th>
-                    <th className="p-3">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
-                  <tr className="hover:bg-slate-100 dark:hover:bg-slate-800/40">
-                    <td className="p-3">June 2026</td>
-                    <td className="p-3 font-mono">22 days</td>
-                    <td className="p-3 font-mono text-emerald-600 dark:text-emerald-400">0 days</td>
-                    <td className="p-3 text-emerald-600 dark:text-emerald-400 font-bold">100% Perfect</td>
-                  </tr>
-                  <tr className="hover:bg-slate-100 dark:hover:bg-slate-800/40">
-                    <td className="p-3">May 2026</td>
-                    <td className="p-3 font-mono">20 days</td>
-                    <td className="p-3 font-mono text-rose-600 dark:text-rose-400">1 day</td>
-                    <td className="p-3 text-emerald-600 dark:text-emerald-350 font-bold">95.2% Excellent</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+            {loadingAttendance ? (
+              <div className="flex justify-center p-6"><RefreshCw className="animate-spin text-emerald-500 w-5 h-5" /></div>
+            ) : (
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+                  <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-4 rounded-xl text-center">
+                    <span className="text-slate-500 block font-bold mb-1">TOTAL DAYS PRESENT</span>
+                    <strong className="text-emerald-600 dark:text-emerald-400 text-3xl font-mono">
+                      {attendanceLogs.filter(a => a.recordStatus?.toLowerCase() === 'present').length}
+                    </strong>
+                  </div>
+                  <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-4 rounded-xl text-center">
+                    <span className="text-slate-500 block font-bold mb-1">TOTAL DAYS ABSENT</span>
+                    <strong className="text-rose-600 dark:text-rose-400 text-3xl font-mono">
+                      {attendanceLogs.filter(a => a.recordStatus?.toLowerCase() === 'absent').length}
+                    </strong>
+                  </div>
+                  <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-4 rounded-xl text-center">
+                    <span className="text-slate-500 block font-bold mb-1">ATTENDANCE AVERAGE</span>
+                    <strong className="text-emerald-600 dark:text-emerald-350 text-3xl font-mono">
+                      {attendanceLogs.length > 0
+                        ? `${((attendanceLogs.filter(a => a.recordStatus?.toLowerCase() === 'present').length / attendanceLogs.length) * 100).toFixed(1)}%`
+                        : '100%'}
+                    </strong>
+                  </div>
+                </div>
+
+                <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
+                  {attendanceLogs.length === 0 ? (
+                    <p className="text-slate-500 text-xs italic py-6 text-center">No attendance records logged for this scholar.</p>
+                  ) : (
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-slate-100 dark:bg-slate-950 text-slate-700 dark:text-slate-400">
+                        <tr>
+                          <th className="p-3">Session Date</th>
+                          <th className="p-3">Status</th>
+                          <th className="p-3">Remarks / Justification</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
+                        {attendanceLogs.map((log: any) => (
+                          <tr key={log.id} className="hover:bg-slate-100 dark:hover:bg-slate-800/40">
+                            <td className="p-3 font-mono">{log.date}</td>
+                            <td className="p-3 font-bold">
+                              <span className={`px-2 py-0.5 rounded text-[10px] ${
+                                log.recordStatus?.toLowerCase() === 'present' ? 'bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400' :
+                                log.recordStatus?.toLowerCase() === 'absent' ? 'bg-rose-50 dark:bg-rose-950 text-rose-700 dark:text-rose-400' :
+                                'bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-400'
+                              }`}>
+                                {log.recordStatus}
+                              </span>
+                            </td>
+                            <td className="p-3 text-slate-600 dark:text-slate-400">{log.comments || '—'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+              </>
+            )}
           </div>
         )}
 
@@ -797,7 +1114,7 @@ export default function StudentSISProfilePage() {
                               <td className="p-3 font-mono">{inv.issueDate}</td>
                               <td className="p-3 font-mono">{inv.dueDate}</td>
                               <td className="p-3 text-right font-mono">${Number(inv.totalAmount || 0).toFixed(2)}</td>
-                              <td className="p-3 text-right font-mono text-emerald-655 dark:text-emerald-400">${Number(inv.paidAmount || 0).toFixed(2)}</td>
+                              <td className="p-3 text-right font-mono text-emerald-600 dark:text-emerald-400">${Number(inv.paidAmount || 0).toFixed(2)}</td>
                               <td className="p-3 text-right font-mono text-amber-600 dark:text-amber-400">${Number(inv.remainingBalance || 0).toFixed(2)}</td>
                               <td className="p-3"><StatusBadge status={inv.status} size="sm" /></td>
                             </tr>
@@ -950,24 +1267,38 @@ export default function StudentSISProfilePage() {
               <Home className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
               <span>Hostel & Dormitory Allocation details</span>
             </h3>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
-              <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-3 rounded-xl">
-                <span className="text-slate-500 block font-bold mb-1">BUILDING</span>
-                <strong className="text-emerald-600 dark:text-emerald-400 text-lg">Al-Bukhari Hall</strong>
+            {loadingHostel ? (
+              <div className="flex justify-center p-6"><RefreshCw className="animate-spin text-emerald-500 w-5 h-5" /></div>
+            ) : !hostelAllocation ? (
+              <p className="text-slate-500 text-xs italic py-4 text-center">No active hostel or dormitory allocation assigned to this scholar.</p>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
+                <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-3 rounded-xl">
+                  <span className="text-slate-500 block font-bold mb-1">BUILDING</span>
+                  <strong className="text-emerald-600 dark:text-emerald-400 text-lg">
+                    {hostelAllocation.room?.floor?.building?.name || 'Al-Bukhari Hall'}
+                  </strong>
+                </div>
+                <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-3 rounded-xl">
+                  <span className="text-slate-500 block font-bold mb-1">ROOM NUMBER</span>
+                  <strong className="text-emerald-600 dark:text-emerald-400 text-lg">
+                    {hostelAllocation.room?.roomNumber ? `Room ${hostelAllocation.room.roomNumber}` : 'Room 205'} ({hostelAllocation.room?.floor?.name || 'Floor 2'})
+                  </strong>
+                </div>
+                <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-3 rounded-xl">
+                  <span className="text-slate-500 block font-bold mb-1">BED ID</span>
+                  <strong className="text-emerald-600 dark:text-emerald-400 text-lg">
+                    {hostelAllocation.bed?.bedNumber || 'Bed-C'}
+                  </strong>
+                </div>
+                <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-3 rounded-xl">
+                  <span className="text-slate-600 block font-bold mb-1">MONTHLY FEES</span>
+                  <strong className="text-emerald-600 dark:text-emerald-400 text-lg font-mono">
+                    {hostelAllocation.monthlyRate ? `$${Number(hostelAllocation.monthlyRate).toFixed(2)}` : '$50.00'}
+                  </strong>
+                </div>
               </div>
-              <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-3 rounded-xl">
-                <span className="text-slate-500 block font-bold mb-1">ROOM NUMBER</span>
-                <strong className="text-emerald-600 dark:text-emerald-400 text-lg">Room 205 (Floor 2)</strong>
-              </div>
-              <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-3 rounded-xl">
-                <span className="text-slate-500 block font-bold mb-1">BED ID</span>
-                <strong className="text-emerald-600 dark:text-emerald-400 text-lg">Bed-C</strong>
-              </div>
-              <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-3 rounded-xl">
-                <span className="text-slate-500 block font-bold mb-1">MONTHLY FEES</span>
-                <strong className="text-emerald-600 dark:text-emerald-400 text-lg">$50.00</strong>
-              </div>
-            </div>
+            )}
           </div>
         )}
 
@@ -1000,25 +1331,142 @@ export default function StudentSISProfilePage() {
               <Clock className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
               <span>System Audit Log Trail for Scholar #{student.schoolId || student.id}</span>
             </h3>
-            <div className="space-y-3 font-mono text-xs">
-              <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-                <div>
-                  <span className="font-bold text-emerald-600 dark:text-emerald-400 block">STUDENT_CREATED</span>
-                  <span className="text-slate-400">Enrolled into SIS database by Registrar</span>
-                </div>
-                <span className="text-slate-500">{new Date().toISOString().split('T')[0]}</span>
+
+            {loadingAudit ? (
+              <div className="flex justify-center p-6"><RefreshCw className="animate-spin text-emerald-500 w-5 h-5" /></div>
+            ) : auditLogs.length === 0 ? (
+              <p className="text-slate-500 text-xs italic py-4 text-center">No audit logs or submitted excuses found for this scholar.</p>
+            ) : (
+              <div className="space-y-3 font-mono text-xs">
+                {auditLogs.map((log: any) => (
+                  <div key={log.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 gap-2">
+                    <div>
+                      <span className={`font-bold block text-xs ${
+                        log.action.includes('Excuse') ? "text-amber-600 dark:text-amber-400" :
+                        log.action.includes('Payment') ? "text-emerald-600 dark:text-emerald-400" : "text-sky-600 dark:text-sky-400"
+                      }`}>
+                        {log.action}
+                      </span>
+                      <span className="text-slate-600 text-[11px] block mt-0.5">{log.description}</span>
+                    </div>
+                    <span className="text-[10px] text-slate-400 font-sans shrink-0">
+                      {log.createdAt ? new Date(log.createdAt).toLocaleString() : ''}
+                    </span>
+                  </div>
+                ))}
               </div>
-              <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-                <div>
-                  <span className="font-bold text-sky-600 dark:text-sky-400 block">LEDGER_POSTED</span>
-                  <span className="text-slate-400">Tuition Invoice and Ledger account initialized</span>
-                </div>
-                <span className="text-slate-500">{new Date().toISOString().split('T')[0]}</span>
-              </div>
-            </div>
+            )}
           </div>
         )}
       </div>
+
+      {/* Behavior Logging Modal */}
+      {showBehaviorModal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-300">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full max-w-lg p-6 rounded-3xl shadow-2xl relative space-y-4 text-xs text-slate-800 dark:text-slate-200">
+            <button
+              onClick={() => setShowBehaviorModal(false)}
+              className="absolute top-4 right-4 p-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-850 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-full cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <div>
+              <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Log Conduct / Behavior Event</h3>
+              <p className="text-slate-500 text-[10px] mt-0.5">Record positive commendation or disciplinary warning for {fullName}.</p>
+            </div>
+
+            <form onSubmit={handleSaveBehavior} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Behavior Level</label>
+                  <select
+                    value={behaviorLevel}
+                    onChange={(e) => setBehaviorLevel(e.target.value as any)}
+                    className="w-full px-3.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none"
+                  >
+                    <option value="green">Green (Commendation)</option>
+                    <option value="yellow">Yellow (Minor Infraction)</option>
+                    <option value="red">Red (Major Infraction)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Category</label>
+                  <input
+                    type="text"
+                    required
+                    value={behaviorCategory}
+                    placeholder="e.g. Helpful Conduct, Punctuality"
+                    onChange={(e) => setBehaviorCategory(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Incident / Commendation Description</label>
+                <textarea
+                  required
+                  rows={4}
+                  value={behaviorDescription}
+                  placeholder="Provide precise details of the student's behavior event..."
+                  onChange={(e) => setBehaviorDescription(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Action / Recommendation</label>
+                <input
+                  type="text"
+                  value={behaviorRecommendation}
+                  placeholder="e.g. Nominated for weekly honor roll, Warning slip issued"
+                  onChange={(e) => setBehaviorRecommendation(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none"
+                />
+              </div>
+
+              <div className="flex flex-wrap items-center gap-6 pt-2">
+                <label className="flex items-center gap-2 font-bold text-slate-700 dark:text-slate-300 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={parentNotified}
+                    onChange={(e) => setParentNotified(e.target.checked)}
+                    className="w-4 h-4 rounded-sm border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                  />
+                  <span>Parent / Guardian Notified</span>
+                </label>
+                <label className="flex items-center gap-2 font-bold text-slate-700 dark:text-slate-300 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={followUpRequired}
+                    onChange={(e) => setFollowUpRequired(e.target.checked)}
+                    className="w-4 h-4 rounded-sm border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                  />
+                  <span>Follow Up Required</span>
+                </label>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-4 border-t border-slate-100 dark:border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setShowBehaviorModal(false)}
+                  className="px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 font-semibold cursor-pointer text-slate-700 dark:text-slate-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingBehavior}
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold shadow-md disabled:opacity-50 cursor-pointer"
+                >
+                  {isSavingBehavior ? 'Saving Log...' : 'Log Behavior Event'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

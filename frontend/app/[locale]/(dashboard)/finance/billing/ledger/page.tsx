@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 import {
   ScrollText, Search, Filter, Download, Printer, AlertTriangle,
   CheckCircle2, Clock, DollarSign, FileText, Receipt, User,

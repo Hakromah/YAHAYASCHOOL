@@ -78,6 +78,22 @@
       "type": "relation",
       "relation": "manyToMany",
       "target": "api::student.student"
+    },
+    "academicSection": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::section.section"
+    },
+    "gradeLevels": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::grade-level.grade-level"
+    },
+    "courseOfferings": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::course-offering.course-offering",
+      "mappedBy": "subject"
     }
   }
 }

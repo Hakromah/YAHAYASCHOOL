@@ -46,11 +46,19 @@ export async function generateMetadata({
 export default async function LocaleLayout({ children, params }: LocaleLayoutProps) {
   const { locale } = await params;
 
-  // Validate the incoming locale
-  if (!routing.locales.includes(locale as any)) {
-    console.warn(`[LocaleLayout] Invalid locale detected: ${locale}`);
+  // Guard: if the "locale" looks like a static file (e.g. favicon.ico, robots.txt),
+  // skip locale processing and let Next.js handle it with a 404.
+  // This is a safety net for when static asset requests bypass the middleware matcher.
+  if (locale.includes('.')) {
     notFound();
   }
+
+  // Validate the incoming locale
+  if (!routing.locales.includes(locale as any)) {
+    notFound();
+  }
+
+
 
   // RTL for Arabic
   const direction = locale === 'ar' ? 'rtl' : 'ltr';

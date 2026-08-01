@@ -1,17 +1,20 @@
 'use client';
 
 import React, { useState } from 'react';
-import { AlignLeft, Search, Filter, Clock, User, CheckCircle2 } from 'lucide-react';
+import { AlignLeft, Search } from 'lucide-react';
+import { useLocale } from 'next-intl';
+import { t } from '@/lib/i18n-dict';
 
 export default function ActivityLogsPage() {
+  const locale = useLocale();
   const [query, setQuery] = useState('');
 
   const activities = [
-    { id: 1, user: 'Admin User', role: 'Super Admin', action: 'Created new student profile #ST-2026-001', time: '14 mins ago', module: 'Directory' },
-    { id: 2, user: 'Sheikh Yahaya Camara', role: 'Director', action: 'Approved 34 Hifz evaluation records for Halaqah 1', time: '45 mins ago', module: 'QMS' },
-    { id: 3, user: 'Fatima Diop', role: 'Teacher', action: 'Uploaded study materials for Arabic Intensive Section B', time: '2 hours ago', module: 'LMS' },
-    { id: 4, user: 'Accountant Staff', role: 'Accountant', action: 'Generated monthly fee summary and tuition invoice run', time: '3 hours ago', module: 'Finance' },
-    { id: 5, user: 'Admin User', role: 'Super Admin', action: 'Updated campus principal contact for Main Campus', time: 'Yesterday', module: 'Structure' },
+    { id: 1, user: 'Admin User', role: 'Super Admin', action: 'Created new student profile #ST-2026-001', time: t('14 mins ago', locale) || '14 mins ago', module: 'Directory' },
+    { id: 2, user: 'Sheikh Yahaya Camara', role: 'Director', action: 'Approved 34 Hifz evaluation records for Halaqah 1', time: t('45 mins ago', locale) || '45 mins ago', module: 'QMS' },
+    { id: 3, user: 'Fatima Diop', role: 'Teacher', action: 'Uploaded study materials for Arabic Intensive Section B', time: t('2 hours ago', locale) || '2 hours ago', module: 'LMS' },
+    { id: 4, user: 'Accountant Staff', role: 'Accountant', action: 'Generated monthly fee summary and tuition invoice run', time: t('3 hours ago', locale) || '3 hours ago', module: 'Finance' },
+    { id: 5, user: 'Admin User', role: 'Super Admin', action: 'Updated campus principal contact for Main Campus', time: t('Yesterday', locale), module: 'Structure' },
   ];
 
   return (
@@ -20,10 +23,10 @@ export default function ActivityLogsPage() {
         <div>
           <h1 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-slate-100 flex items-center gap-2.5">
             <AlignLeft className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
-            <span>User Activity & Workflow Logs</span>
+            <span>{t('User Activity & Workflow Logs', locale)}</span>
           </h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Live stream of user interactions, records created, and academic status modifications across the platform.
+            {t('Live stream of user interactions, records created, and academic status modifications across the platform.', locale)}
           </p>
         </div>
       </div>
@@ -33,7 +36,7 @@ export default function ActivityLogsPage() {
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input
             type="text"
-            placeholder="Search activity by user or action..."
+            placeholder={t('Search activity by user or action...', locale)}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 font-medium"
@@ -42,7 +45,9 @@ export default function ActivityLogsPage() {
       </div>
 
       <div className="space-y-3">
-        {activities.map((act) => (
+        {activities
+          .filter(act => act.user.toLowerCase().includes(query.toLowerCase()) || act.action.toLowerCase().includes(query.toLowerCase()))
+          .map((act) => (
           <div key={act.id} className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-between shadow-sm">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 flex items-center justify-center text-emerald-700 dark:text-emerald-400 font-bold text-xs">
