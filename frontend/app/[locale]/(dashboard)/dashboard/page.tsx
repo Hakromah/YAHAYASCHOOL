@@ -20,6 +20,8 @@ const ROLE_DASHBOARD: Record<string, string> = {
   'account-lead':        '/dashboard/account-lead',
   'worker':              '/dashboard/worker',
   'driver':              '/dashboard/driver',
+  'section-head':        '/dashboard/section-head',
+  'registrar':           '/dashboard/admin', // Registrar uses the registrar scope but admin page works or can redirect
 };
 
 export default function DashboardRootPage() {

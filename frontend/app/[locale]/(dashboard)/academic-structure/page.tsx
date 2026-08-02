@@ -2,11 +2,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
+import Link from 'next/link';
 import {
   Layers, Building2, Calendar, BookOpen, CheckCircle2,
-  Users, RefreshCw, Plus, ArrowRight
+  Users, RefreshCw, Plus, ArrowRight, ExternalLink, GraduationCap
 } from 'lucide-react';
 import { erpService } from '@/services/erp.service';
+import { apiClient } from '@/services/api.service';
 import type { AcademicYear, Campus, Section } from '@/types/erp.types';
 import { StatusBadge } from '@/components/erp/StatusBadge';
 import { RelationshipChip } from '@/components/erp/RelationshipChip';
@@ -18,21 +20,24 @@ export default function AcademicStructurePage() {
   const [academicYears, setAcademicYears] = useState<AcademicYear[]>([]);
   const [campuses, setCampuses] = useState<Campus[]>([]);
   const [sections, setSections] = useState<Section[]>([]);
+  const [gradeLevels, setGradeLevels] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'years' | 'campuses' | 'sections'>('sections');
+  const [activeTab, setActiveTab] = useState<'sections' | 'grade-levels' | 'years' | 'campuses'>('sections');
 
   useEffect(() => {
     async function loadStructure() {
       setLoading(true);
       try {
-        const [yrRes, campRes, secRes] = await Promise.all([
+        const [yrRes, campRes, secRes, glRes] = await Promise.all([
           erpService.getAcademicYears(locale),
           erpService.getCampuses(locale),
           erpService.getSections(locale),
+          apiClient.get('/grade-levels', { params: { populate: ['sections', 'curriculum'], sort: 'order:asc', pagination: { limit: 50 } } }),
         ]);
         setAcademicYears(yrRes);
         setCampuses(campRes);
         setSections(secRes);
+        setGradeLevels(glRes.data?.data ?? []);
       } catch (err) {
         console.error('Failed loading academic structure:', err);
       } finally {
@@ -66,9 +71,10 @@ export default function AcademicStructurePage() {
         </div>
       </div>
 
-      <div className="flex gap-2 border-b border-slate-200 dark:border-slate-800 pb-3">
+      <div className="flex gap-2 border-b border-slate-200 dark:border-slate-800 pb-3 overflow-x-auto">
         {[
           { id: 'sections', label: `Academic Sections (${sections.length})`, icon: Layers },
+          { id: 'grade-levels', label: `Grade Levels (${gradeLevels.length})`, icon: GraduationCap },
           { id: 'years', label: `Calendar & Terms (${academicYears.length})`, icon: Calendar },
           { id: 'campuses', label: `Campuses & Facilities (${campuses.length})`, icon: Building2 },
         ].map((t) => {
@@ -138,8 +144,46 @@ export default function AcademicStructurePage() {
                   </div>
                 </div>
 
-                <div className="mt-4 pt-3 border-t border-slate-200 dark:border-slate-800/80 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
-                  <span>Linked Teachers: <strong className="text-slate-900 dark:text-slate-200">{sec.teachers?.length || 0}</strong></span>
+                <div className="mt-4 pt-3 border-t border-slate-200 dark:border-slate-800/80 flex items-center justify-between">
+                  <span className="text-xs text-slate-500 dark:text-slate-400">
+                    Linked Teachers: <strong className="text-slate-900 dark:text-slate-200">{sec.teachers?.length || 0}</strong>
+                  </span>
+                  <Link
+                    href={`/academic/sections/${(sec as any).documentId ?? sec.id}`}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-500 transition-all shadow-sm"
+                  >
+                    <ExternalLink className="w-3 h-3" />
+                    Open Workspace
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : activeTab === 'grade-levels' ? (
+        <div className="space-y-4">
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 flex items-center justify-between shadow-sm">
+            <div>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Global Grade Levels</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Grade levels are shared across all Academic Sections. Each section defines its own curriculum per grade.</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {gradeLevels.length === 0 ? (
+              <p className="text-xs text-slate-400 col-span-full text-center py-8">No grade levels found. Add grade levels in Strapi admin.</p>
+            ) : gradeLevels.map((gl: any) => (
+              <div key={gl.id} className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm hover:border-indigo-400 transition-all">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="font-mono text-xs font-bold text-indigo-600 dark:text-indigo-400 px-2 py-0.5 rounded bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800">
+                    {gl.code}
+                  </span>
+                  <span className="text-[10px] text-slate-400">Order: {gl.order}</span>
+                </div>
+                <h3 className="text-base font-black text-slate-900 dark:text-white mb-1">{gl.name}</h3>
+                {gl.ageRange && <p className="text-[10px] text-slate-400 mb-2">Age: {gl.ageRange}</p>}
+                <div className="text-xs text-slate-500 space-y-1">
+                  <p>Sections: <strong className="text-indigo-600 dark:text-indigo-400">{gl.sections?.length ?? 0}</strong></p>
+                  {gl.curriculum?.name && <p>Curriculum: <strong>{gl.curriculum.name}</strong></p>}
                 </div>
               </div>
             ))}

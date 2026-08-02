@@ -33,7 +33,9 @@ export default function LoginPageClient() {
   const tNav = useTranslations('language');
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get('callbackUrl') ?? ROUTES.DASHBOARD.ROOT;
+  const rawCallbackUrl = searchParams.get('callbackUrl') ?? ROUTES.DASHBOARD.ROOT;
+  // Strip locale prefix if present to prevent next-intl router double-prepending it
+  const callbackUrl = rawCallbackUrl.replace(/^\/(en|ar|fr|tr)\b/, '') || '/';
   const { login } = useAuth();
 
   const [showPassword, setShowPassword] = useState(false);

@@ -289,7 +289,7 @@ export default function StudentSISProfilePage() {
     if (!student.emergencyContacts) {
       return <p className="text-xs text-slate-500 italic">In emergency, contact primary parent/guardian listed above immediately.</p>;
     }
-    
+
     let contactsList: string[] = [];
     try {
       if (typeof student.emergencyContacts === 'string') {
@@ -602,7 +602,7 @@ export default function StudentSISProfilePage() {
               </div>
               <div className="space-y-1">
                 <span className="text-slate-500 uppercase font-semibold text-[10px]">Middle Name</span>
-                <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{student.middleName || 'N/A'}</p>
+                <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{student.middleName || ''}</p>
               </div>
               <div className="space-y-1">
                 <span className="text-slate-500 uppercase font-semibold text-[10px]">Last Name / Family</span>
@@ -655,7 +655,7 @@ export default function StudentSISProfilePage() {
               <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
                 Active academic classes, language modules, and religious study groups the student is currently attending.
               </p>
-              
+
               {student.enrollments && student.enrollments.length > 0 ? (
                 <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
                   <table className="w-full text-left text-xs">
@@ -672,7 +672,7 @@ export default function StudentSISProfilePage() {
                       {student.enrollments.map((enr: any) => {
                         const co = enr.courseOffering;
                         if (!co) return null;
-                        const teacherName = co.teacher 
+                        const teacherName = co.teacher
                           ? co.teacher.displayName || `${co.teacher.firstName} ${co.teacher.lastName}`
                           : 'Unassigned';
                         return (
@@ -680,7 +680,7 @@ export default function StudentSISProfilePage() {
                             <td className="p-3 font-mono font-bold text-indigo-600 dark:text-indigo-400">{co.subject?.code || 'N/A'}</td>
                             <td className="p-3 font-bold text-slate-900 dark:text-white">{co.subject?.name || 'General studies'}</td>
                             <td className="p-3">
-                              <span 
+                              <span
                                 className="px-2 py-0.5 rounded text-[9px] font-bold text-white shadow-2xs"
                                 style={{ backgroundColor: co.academicSection?.color || '#4f46e5' }}
                               >
@@ -762,7 +762,7 @@ export default function StudentSISProfilePage() {
                 {(userRole === 'super-administrator' || userRole === 'director' || userRole === 'teacher') && (
                   <button
                     onClick={() => setShowBehaviorModal(true)}
-                    className="px-3.5 py-1.5 rounded-xl bg-emerald-650 hover:bg-emerald-600 text-white text-xs font-bold transition-all shadow-md cursor-pointer border-none"
+                    className="px-3.5 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold transition-all shadow-md cursor-pointer border-none"
                   >
                     + Log Behavior Event
                   </button>

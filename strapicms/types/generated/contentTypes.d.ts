@@ -3423,7 +3423,7 @@ export interface ApiGradeBandGradeBand extends Struct.CollectionTypeSchema {
 export interface ApiGradeLevelGradeLevel extends Struct.CollectionTypeSchema {
   collectionName: 'grade_levels';
   info: {
-    description: 'Independent Grade Level entity';
+    description: 'Independent Grade Level entity \u2014 shared globally across all Academic Sections';
     displayName: 'Grade Level';
     pluralName: 'grade-levels';
     singularName: 'grade-level';
@@ -3432,6 +3432,7 @@ export interface ApiGradeLevelGradeLevel extends Struct.CollectionTypeSchema {
     draftAndPublish: false;
   };
   attributes: {
+    ageRange: Schema.Attribute.String;
     capacity: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<35>;
     code: Schema.Attribute.String & Schema.Attribute.Required;
     courseOfferings: Schema.Attribute.Relation<
@@ -3454,7 +3455,9 @@ export interface ApiGradeLevelGradeLevel extends Struct.CollectionTypeSchema {
       Schema.Attribute.Private;
     name: Schema.Attribute.String & Schema.Attribute.Required;
     order: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<1>;
+    promotionCriteria: Schema.Attribute.JSON;
     publishedAt: Schema.Attribute.DateTime;
+    sections: Schema.Attribute.Relation<'manyToMany', 'api::section.section'>;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -6689,6 +6692,10 @@ export interface ApiSectionSection extends Struct.CollectionTypeSchema {
           localized: true;
         };
       }>;
+    gradeLevels: Schema.Attribute.Relation<
+      'manyToMany',
+      'api::grade-level.grade-level'
+    >;
     icon: Schema.Attribute.String;
     locale: Schema.Attribute.String;
     localizations: Schema.Attribute.Relation<
@@ -6704,6 +6711,20 @@ export interface ApiSectionSection extends Struct.CollectionTypeSchema {
       }>;
     program: Schema.Attribute.Relation<'manyToOne', 'api::program.program'>;
     publishedAt: Schema.Attribute.DateTime;
+    sectionType: Schema.Attribute.Enumeration<
+      [
+        'general',
+        'quran',
+        'language',
+        'stem',
+        'islamic',
+        'sports',
+        'arts',
+        'vocational',
+        'other',
+      ]
+    > &
+      Schema.Attribute.DefaultTo<'general'>;
     students: Schema.Attribute.Relation<'manyToMany', 'api::student.student'>;
     teachers: Schema.Attribute.Relation<'manyToMany', 'api::teacher.teacher'>;
     updatedAt: Schema.Attribute.DateTime;

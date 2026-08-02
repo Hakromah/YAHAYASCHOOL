@@ -50,6 +50,16 @@ const SCHOOL_ROLES = [
     description: 'Transport staff with access to vehicle assignments and student transport records',
     type: 'driver',
   },
+  {
+    name: 'Section Head',
+    description: 'Academic section head with full management access to their assigned section only — including teachers, students, subjects, course offerings, attendance, gradebook, assessments, timetable, and analytics for their section',
+    type: 'section-head',
+  },
+  {
+    name: 'Registrar',
+    description: 'Academic registrar with access to student enrollment, transcripts, report cards, promotions, graduation records, and academic clearances across all sections',
+    type: 'registrar',
+  },
 ] as const;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -286,7 +296,148 @@ function registerERPLifecycles(strapi: Core.Strapi): void {
     }
   });
 
+  // Verify academicHead is a Section Head role profile
+  strapi.db.lifecycles.subscribe({
+    models: ['api::section.section'],
+    async beforeCreate(event: any) {
+      await validateAcademicHeadIsSectionHead(event, strapi);
+    },
+    async beforeUpdate(event: any) {
+      await validateAcademicHeadIsSectionHead(event, strapi);
+    }
+  });
+
   strapi.log.info('[YAHAYASCOOL] ERP lifecycle hooks registered.');
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Content Manager: Filter academicHead dropdown to only show Section Head profiles
+// ─────────────────────────────────────────────────────────────────────────────
+
+function registerContentManagerFilters(strapi: Core.Strapi): void {
+  // Intercept the Content Manager relation API endpoint for academicHead
+  // and filter results to only include teacher profiles linked to Section Head users.
+  // The endpoint pattern is: GET /content-manager/relations/api::section.section/academicHead
+  strapi.server.use(async (ctx: any, next: any) => {
+    await next();
+
+    const isRelationEndpoint =
+      ctx.method === 'GET' &&
+      ctx.path &&
+      ctx.path.includes('content-manager') &&
+      ctx.path.includes('relations') &&
+      ctx.path.includes('section') &&
+      ctx.path.includes('academicHead');
+
+    if (!isRelationEndpoint) return;
+
+    try {
+      const knex = strapi.db.connection;
+
+      // 1. Get the section-head role
+      const role = await knex('up_roles').where({ type: 'section-head' }).first();
+      if (!role) return;
+
+      // 2. Get teacher IDs AND documentIds for all section-head linked teacher profiles
+      //    Strapi v5 Content Manager uses 'documentId' (string) as primary identifier,
+      //    not the numeric database 'id'. We check both for safety.
+      const sectionHeadTeachers: Array<{ id: number | string; document_id: string }> = await knex('teachers as t')
+        .join('teachers_user_lnk as tul', 'tul.teacher_id', 't.id')
+        .join('up_users_role_lnk as url', 'url.user_id', 'tul.user_id')
+        .where('url.role_id', role.id)
+        .select('t.id', 't.document_id');
+
+      const numericIdSet = new Set(sectionHeadTeachers.map(t => Number(t.id)));
+      const documentIdSet = new Set(sectionHeadTeachers.map(t => t.document_id).filter(Boolean));
+
+      strapi.log.info(
+        `[YAHAYASCOOL] academicHead filter: allowed numeric IDs = [${[...numericIdSet].join(', ')}], ` +
+        `documentIds = [${[...documentIdSet].join(', ')}]`
+      );
+
+      // 3. Filter the response body
+      //    Strapi CM v5 uses { results: [...], pagination: {...} } where each item has:
+      //      item.id         → numeric DB id (may not always be present)
+      //      item.documentId → Strapi v5 stable string identifier
+      if (ctx.body) {
+        if (Array.isArray(ctx.body.results)) {
+          const before = ctx.body.results.length;
+          ctx.body.results = ctx.body.results.filter((item: any) => {
+            const matchesNumericId = item.id != null && numericIdSet.has(Number(item.id));
+            const matchesDocumentId = item.documentId && documentIdSet.has(item.documentId);
+            return matchesNumericId || matchesDocumentId;
+          });
+          strapi.log.info(
+            `[YAHAYASCOOL] academicHead filter: ${before} → ${ctx.body.results.length} results after filtering`
+          );
+          if (ctx.body.pagination) {
+            ctx.body.pagination.total = ctx.body.results.length;
+          }
+        }
+        // Some endpoints use { data: [...] }
+        if (Array.isArray(ctx.body.data)) {
+          ctx.body.data = ctx.body.data.filter((item: any) => {
+            const matchesNumericId = item.id != null && numericIdSet.has(Number(item.id));
+            const matchesDocumentId = item.documentId && documentIdSet.has(item.documentId);
+            return matchesNumericId || matchesDocumentId;
+          });
+        }
+      }
+
+      strapi.log.debug('[YAHAYASCOOL] Filtered academicHead relation dropdown to Section Head profiles only.');
+    } catch (err: any) {
+      strapi.log.warn('[YAHAYASCOOL] Could not filter academicHead dropdown:', err.message);
+    }
+  });
+}
+
+async function validateAcademicHeadIsSectionHead(event: any, strapi: any) {
+  const { data } = event.params || {};
+  if (!data || !data.academicHead) return;
+
+  try {
+    const academicHeadVal = data.academicHead;
+    let queryWhere: any = {};
+
+    if (typeof academicHeadVal === 'object' && academicHeadVal !== null) {
+      const docId = academicHeadVal.connect?.[0]?.documentId || academicHeadVal.id || academicHeadVal.documentId;
+      if (!docId) return;
+      if (typeof docId === 'number' || (typeof docId === 'string' && /^\d+$/.test(docId))) {
+        queryWhere = { id: Number(docId) };
+      } else {
+        queryWhere = { documentId: docId };
+      }
+    } else if (typeof academicHeadVal === 'number' || (typeof academicHeadVal === 'string' && /^\d+$/.test(academicHeadVal))) {
+      queryWhere = { id: Number(academicHeadVal) };
+    } else if (typeof academicHeadVal === 'string') {
+      queryWhere = { documentId: academicHeadVal };
+    } else {
+      return;
+    }
+
+    // 1. Find teacher and check linked user account role
+    const teacherLink = await strapi.db.query('api::teacher.teacher').findOne({
+      where: queryWhere,
+      populate: ['user.role']
+    });
+
+    if (!teacherLink) {
+      const { errors } = require('@strapi/utils');
+      throw new errors.ValidationError('Selected academic head profile does not exist.');
+    }
+
+    const roleType = teacherLink.user?.role?.type;
+    if (roleType !== 'section-head') {
+      const { errors } = require('@strapi/utils');
+      throw new errors.ValidationError(
+        `The selected teacher (${teacherLink.name}) does not have the 'Section Head' user role. Only registered Section Heads can be assigned as the Academic Head.`
+      );
+    }
+  } catch (err: any) {
+    const { errors } = require('@strapi/utils');
+    if (err instanceof errors.ValidationError) throw err;
+    throw new errors.ValidationError(err.message || 'Validation of academic head role failed.');
+  }
 }
 
 async function updateStudentEnrollmentName(event: any, strapi: any) {
@@ -856,6 +1007,8 @@ export default {
   register({ strapi }: { strapi: Core.Strapi }) {
     registerUserLifecycles(strapi);
     registerERPLifecycles(strapi);
+    // Note: academicHead relation filter is handled by global::academic-head-filter middleware
+    // registered in config/middlewares.ts → src/middlewares/academic-head-filter.ts
   },
 
 

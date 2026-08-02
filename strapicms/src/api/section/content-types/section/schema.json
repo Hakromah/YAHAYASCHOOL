@@ -86,6 +86,27 @@
       "relation": "manyToOne",
       "target": "api::teacher.teacher"
     },
+    "gradeLevels": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::grade-level.grade-level",
+      "inversedBy": "sections"
+    },
+    "sectionType": {
+      "type": "enumeration",
+      "enum": [
+        "general",
+        "quran",
+        "language",
+        "stem",
+        "islamic",
+        "sports",
+        "arts",
+        "vocational",
+        "other"
+      ],
+      "default": "general"
+    },
     "color": {
       "type": "string"
     },

@@ -5,7 +5,7 @@
     "singularName": "grade-level",
     "pluralName": "grade-levels",
     "displayName": "Grade Level",
-    "description": "Independent Grade Level entity"
+    "description": "Independent Grade Level entity — shared globally across all Academic Sections"
   },
   "options": {
     "draftAndPublish": false
@@ -26,6 +26,18 @@
     "capacity": {
       "type": "integer",
       "default": 35
+    },
+    "ageRange": {
+      "type": "string"
+    },
+    "promotionCriteria": {
+      "type": "json"
+    },
+    "sections": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::section.section",
+      "mappedBy": "gradeLevels"
     },
     "curriculum": {
       "type": "relation",

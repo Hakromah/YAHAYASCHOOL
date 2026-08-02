@@ -79,6 +79,12 @@ function getSuperAdminNav(): NavSection[] {
         { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
       ],
     },
+    // DYNAMIC: Academic Sections group is injected at runtime by useSidebarSections() hook
+    // The __ACADEMIC_SECTIONS__ sentinel is replaced by the AcademicSectionsGroup component
+    {
+      title: '__ACADEMIC_SECTIONS__',
+      items: [],
+    },
     {
       title: 'Administration',
       items: [
@@ -102,7 +108,8 @@ function getSuperAdminNav(): NavSection[] {
         { label: 'Workers', href: '/workers', icon: Clipboard },
         { label: 'Departments', href: '/academic-structure', icon: Layers },
         { label: 'Programs', href: '/academic-structure/programs', icon: BookMarked },
-        { label: 'Academic Sections', href: '/academic-structure/sections', icon: Boxes },
+        { label: 'All Sections', href: '/academic-structure/sections', icon: Boxes },
+        { label: 'Grade Levels', href: '/academic-structure?tab=grade-levels', icon: Layers },
         { label: 'Academic Years', href: '/academic-structure/years', icon: Calendar },
         { label: 'Academic Terms', href: '/academic-structure/terms', icon: Clock },
         { label: 'School Calendar', href: '/calendar', icon: Calendar },
@@ -244,17 +251,20 @@ function getSuperAdminNav(): NavSection[] {
 function getDirectorNav(): NavSection[] {
   return [
     { title: 'Overview', items: [{ label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard }] },
+    // Dynamic Academic Sections group — injected at runtime
+    { title: '__ACADEMIC_SECTIONS__', items: [] },
     {
-      title: 'Academic Management',
+      title: 'Academic Administration',
       items: [
-        { label: 'Subjects & Curriculum', href: '/lms/subjects', icon: BookOpen },
-        { label: 'Course Offerings', href: '/lms/offerings', icon: GraduationCap },
+        { label: 'All Subjects', href: '/lms/subjects', icon: BookOpen },
+        { label: 'All Course Offerings', href: '/lms/offerings', icon: GraduationCap },
         { label: 'Timetable', href: '/lms/timetables', icon: School },
         { label: 'Lesson Plans', href: '/lms/lesson-plans', icon: PenTool },
         { label: 'Homework', href: '/lms/homework', icon: BookCheck },
-        { label: 'Attendance', href: '/lms/attendance', icon: SquareCheckBig },
-        { label: 'Gradebook', href: '/lms/gradebook', icon: Award },
+        { label: 'Attendance Console', href: '/lms/attendance', icon: SquareCheckBig },
+        { label: 'Gradebook Console', href: '/lms/gradebook', icon: Award },
         { label: 'Resources', href: '/lms/resources', icon: Library },
+        { label: 'Academic Structure', href: '/academic-structure', icon: Layers },
       ],
     },
     {
@@ -618,11 +628,100 @@ function getDriverNav(): NavSection[] {
   ];
 }
 
-function getNavForRole(role: string | undefined): NavSection[] {
+// ─────────────────────────────────────────────────────────────────────────────
+// Section Head & Registrar Navigations
+// ─────────────────────────────────────────────────────────────────────────────
+
+function getSectionHeadNav(sectionId?: string): NavSection[] {
+  const basePrefix = sectionId ? `/academic/sections/${sectionId}` : '';
+
+  return [
+    { title: 'Overview', items: [{ label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard }] },
+    // Dynamic: shows only sections this teacher is head of
+    { title: '__ACADEMIC_SECTIONS__', items: [] },
+    ...(sectionId ? [{
+      title: 'My Section',
+      items: [
+        { label: 'Overview', href: `${basePrefix}`, icon: BarChart3 },
+        { label: 'Grade Levels', href: `${basePrefix}/grade-levels`, icon: Layers },
+        { label: 'Subjects', href: `${basePrefix}/subjects`, icon: BookOpen },
+        { label: 'Course Offerings', href: `${basePrefix}/offerings`, icon: GraduationCap },
+        { label: 'My Teachers', href: `${basePrefix}/teachers`, icon: UserCheck },
+        { label: 'My Students', href: `${basePrefix}/students`, icon: Users },
+        { label: 'Attendance', href: `${basePrefix}/attendance`, icon: SquareCheckBig },
+        { label: 'Gradebook', href: `${basePrefix}/gradebook`, icon: Award },
+        { label: 'Assessments', href: `${basePrefix}/assessments`, icon: PenTool },
+        { label: 'Timetable', href: `${basePrefix}/timetable`, icon: School },
+        { label: 'Transcripts', href: `${basePrefix}/transcripts`, icon: ScrollText },
+        { label: 'Analytics', href: `${basePrefix}/analytics`, icon: BarChart3 },
+      ],
+    }] : []),
+    {
+      title: 'Communication',
+      items: [
+        { label: 'Notifications', href: '/notifications', icon: Bell },
+        { label: 'Announcements', href: '/announcements', icon: Megaphone },
+        { label: 'Profile', href: '/profile', icon: UserCog },
+      ],
+    },
+  ];
+}
+
+function getRegistrarNav(): NavSection[] {
+  return [
+    { title: 'Overview', items: [{ label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard }] },
+    { title: '__ACADEMIC_SECTIONS__', items: [] },
+    {
+      title: 'Enrollment & Records',
+      items: [
+        { label: 'Students', href: '/students', icon: GraduationCap },
+        { label: 'Student Enrollments', href: '/lms/offerings', icon: Clipboard },
+        { label: 'Admissions', href: '/erp/admissions', icon: GraduationCap },
+        { label: 'Academic Structure', href: '/academic-structure', icon: Layers },
+      ],
+    },
+    {
+      title: 'Results & Certification',
+      items: [
+        { label: 'Results Overview', href: '/results', icon: BarChart3 },
+        { label: 'Report Cards', href: '/results/report-cards', icon: FileText },
+        { label: 'Transcripts', href: '/results/transcripts', icon: ScrollText },
+        { label: 'Certificates', href: '/results/certificates', icon: BadgeCheck },
+        { label: 'Promotions', href: '/results/promotions', icon: ArrowRight },
+        { label: 'Grade Moderation', href: '/results/approvals', icon: Award },
+        { label: 'Academic Appeals', href: '/results/appeals', icon: FileText },
+        { label: 'Graduation Records', href: '/results/rankings', icon: Trophy },
+        { label: 'Academic Clearance', href: '/directory/clearance', icon: ShieldCheck },
+      ],
+    },
+    {
+      title: 'System',
+      items: [
+        { label: 'Notifications', href: '/notifications', icon: Bell },
+        { label: 'Profile', href: '/profile', icon: UserCog },
+      ],
+    },
+  ];
+}
+
+function getNavForRole(role: string | undefined, pathname?: string): NavSection[] {
   let nav: NavSection[] = [];
+  
+  // Extract sectionId from pathname if we are on a section page
+  // Path pattern: /academic/sections/[sectionId]
+  let sectionId: string | undefined;
+  if (pathname) {
+    const match = pathname.match(/\/academic\/sections\/([^\/]+)/);
+    if (match) {
+      sectionId = match[1];
+    }
+  }
+
   switch (role) {
     case 'super-administrator': nav = getSuperAdminNav(); break;
     case 'director':            nav = getDirectorNav(); break;
+    case 'section-head':        nav = getSectionHeadNav(sectionId); break;
+    case 'registrar':           nav = getRegistrarNav(); break;
     case 'teacher':             nav = getTeacherNav(); break;
     case 'student':             nav = getStudentNav(); break;
     case 'parent':              nav = getParentNav(); break;
@@ -689,6 +788,147 @@ function getNavForRole(role: string | undefined): NavSection[] {
   }
 
   return nav;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Dynamic Academic Sections Sidebar Group
+// Fetches all published sections from Strapi and renders clickable workspace links
+// ─────────────────────────────────────────────────────────────────────────────
+
+const SECTION_TYPE_ICONS: Record<string, string> = {
+  quran: '📖',
+  language: '🌐',
+  stem: '🔬',
+  islamic: '🕌',
+  sports: '⚽',
+  arts: '🎨',
+  vocational: '🔧',
+  general: '📚',
+  other: '📚',
+};
+
+function AcademicSectionsNav({
+  isCollapsed,
+  isActive,
+  locale,
+  user,
+  role,
+}: {
+  isCollapsed: boolean;
+  isActive: (href: string) => boolean;
+  locale: string;
+  user: any;
+  role: string | undefined;
+}) {
+  const [sections, setSections] = useState<Array<{
+    id: number; documentId: string; name: string; code: string;
+    color?: string; sectionType?: string;
+  }>>([]);
+  const [isExpanded, setIsExpanded] = useState(true);
+
+  useEffect(() => {
+    // Fetch sections from the public Strapi endpoint
+    // We use fetch directly to avoid circular dependency issues
+    const baseUrl = process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1339';
+    const token = typeof document !== 'undefined'
+      ? document.cookie.split(';').find(c => c.trim().startsWith('token='))?.split('=')?.[1]
+      : null;
+    
+    // If the role is section-head, we filter sections down to only those led by this user
+    let fetchUrl = `${baseUrl}/api/sections?locale=${locale}&populate=*&pagination[limit]=30&sort=name:asc`;
+    if (role === 'section-head' && user?.id) {
+      fetchUrl += `&filters[academicHead][user][id][$eq]=${user.id}`;
+    }
+
+    fetch(fetchUrl, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
+      .then(r => r.json())
+      .then(data => {
+        const items = data?.data ?? [];
+        setSections(items);
+      })
+      .catch(() => {/* silently fail */});
+  }, [locale, role, user]);
+
+  const sectionTitle = locale === 'ar' ? 'المراحل الأكاديمية' : 'Academic Sections';
+
+  if (sections.length === 0) return null;
+
+  return (
+    <div className="mb-1">
+      {!isCollapsed && (
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="w-full flex items-center justify-between px-2 py-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70 hover:text-muted-foreground transition-colors"
+        >
+          <span>{sectionTitle}</span>
+          {isExpanded
+            ? <ChevronUp className="w-3 h-3" />
+            : <ChevronDown className="w-3 h-3" />}
+        </button>
+      )}
+      <AnimatePresence initial={false}>
+        {(isCollapsed || isExpanded) && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.15 }}
+            className="space-y-0.5"
+          >
+            {sections.map(sec => {
+              const href = `/academic/sections/${sec.documentId}`;
+              const active = isActive(href) || (typeof window !== 'undefined' && window.location.pathname.includes(`/academic/sections/${sec.documentId}`));
+              const emoji = SECTION_TYPE_ICONS[sec.sectionType ?? 'general'] ?? '📚';
+              const dotColor = sec.color || '#6366f1';
+              return (
+                <Link
+                  key={sec.documentId}
+                  href={href}
+                  title={isCollapsed ? sec.name : undefined}
+                  className={cn(
+                    'flex items-center gap-3 rounded-xl transition-all duration-150 group relative',
+                    isCollapsed ? 'h-10 w-10 mx-auto justify-center' : 'px-3 py-2',
+                    active
+                      ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/20'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                  )}
+                >
+                  {isCollapsed ? (
+                    <span className="text-base leading-none">{emoji}</span>
+                  ) : (
+                    <>
+                      <span
+                        className="w-2 h-2 rounded-full flex-shrink-0"
+                        style={{ background: dotColor }}
+                      />
+                      <AnimatePresence>
+                        <motion.span
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          className="text-sm font-medium truncate flex-1"
+                        >
+                          {sec.name}
+                        </motion.span>
+                      </AnimatePresence>
+                      <span className="text-[10px] font-bold opacity-40 flex-shrink-0">{sec.code}</span>
+                    </>
+                  )}
+                  {isCollapsed && (
+                    <div className="absolute left-full ml-3 px-2 py-1 rounded-lg bg-popover border border-border shadow-lg text-xs font-medium text-popover-foreground whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50">
+                      {sec.name}
+                    </div>
+                  )}
+                </Link>
+              );
+            })}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1126,7 +1366,7 @@ export function Sidebar({ className }: SidebarProps) {
   useEffect(() => { setIsMobileOpen(false); }, [pathname]);
 
   const role = (user as any)?.role?.type as string | undefined;
-  const navSections = useMemo(() => getNavForRole(role), [role]);
+  const navSections = useMemo(() => getNavForRole(role, pathname), [role, pathname]);
 
   const activeHref = useMemo(() => {
     let best = '';
@@ -1276,7 +1516,21 @@ export function Sidebar({ className }: SidebarProps) {
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-0.5 scrollbar-thin">
-        {navSections.map((section) => (
+        {navSections.map((section) => {
+          // Render the dynamic Academic Sections group
+          if (section.title === '__ACADEMIC_SECTIONS__') {
+            return (
+              <AcademicSectionsNav
+                key="__academic_sections__"
+                isCollapsed={isCollapsed}
+                isActive={isActive}
+                locale={locale}
+                user={user}
+                role={role}
+              />
+            );
+          }
+          return (
           <div key={section.title} className="mb-1">
             {/* Section Header */}
             {!isCollapsed && (
@@ -1347,7 +1601,8 @@ export function Sidebar({ className }: SidebarProps) {
               )}
             </AnimatePresence>
           </div>
-        ))}
+          );
+        })}
       </nav>
 
       {/* Footer */}
