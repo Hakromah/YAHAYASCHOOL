@@ -9,20 +9,25 @@
   "options": {
     "draftAndPublish": false
   },
+  "pluginOptions": {},
   "attributes": {
     "componentName": {
       "type": "enumeration",
+      "required": true,
       "enum": [
         "Homework",
         "Quiz",
+        "Quiz2",
         "Project",
         "Participation",
         "Attendance",
         "Exam",
         "Oral",
         "Practical"
-      ],
-      "required": true
+      ]
+    },
+    "label": {
+      "type": "string"
     },
     "weightPercentage": {
       "type": "decimal",

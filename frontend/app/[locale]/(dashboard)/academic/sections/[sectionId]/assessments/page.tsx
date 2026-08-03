@@ -21,19 +21,37 @@ export default function AssessmentsPage() {
     async function fetchAssessments() {
       try {
         setIsLoading(true);
-        // Using assessment-blueprints as proxy for assessments
-        const res = await apiClient.get("/assessment-blueprints", {
+
+        // Step 1: Get all course offerings for this section to collect subject documentIds
+        const offeringsRes = await apiClient.get("/course-offerings", {
           params: {
+            filters: { academicSection: { documentId: { $eq: sectionId } } },
             populate: ["subject"],
-            pagination: { limit: 50 }
+            pagination: { limit: 100 },
+            fields: ["id"],
           },
         });
-        
-        // Filter those that belong to our section by checking if their subject/grade relates
-        // Since we don't have direct relation in the prompt, we'll just show all for demo if filtering fails,
-        // but ideally we filter by some academicSection field if it exists.
-        const allAssessments = res.data?.data || [];
-        setAssessments(allAssessments);
+        const offeringsData: any[] = offeringsRes.data?.data || [];
+        const subjectDocIds: string[] = [];
+        offeringsData.forEach((o: any) => {
+          const docId = o.subject?.documentId;
+          if (docId && !subjectDocIds.includes(docId)) subjectDocIds.push(docId);
+        });
+
+        if (subjectDocIds.length === 0) {
+          setAssessments([]);
+          return;
+        }
+
+        // Step 2: Fetch blueprints whose subject is in our collected subject IDs
+        const bpRes = await apiClient.get("/assessment-blueprints", {
+          params: {
+            filters: { subject: { documentId: { $in: subjectDocIds } } },
+            populate: ["subject"],
+            pagination: { limit: 200 },
+          },
+        });
+        setAssessments(bpRes.data?.data || []);
       } catch (error) {
         console.error("Failed to fetch assessments", error);
       } finally {
@@ -109,13 +127,13 @@ export default function AssessmentsPage() {
               <div key={assessment.documentId || index} className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow">
                 <div className="flex justify-between items-start mb-4">
                   <span className="inline-flex items-center rounded-md bg-indigo-50 dark:bg-indigo-900/30 px-2 py-1 text-xs font-medium text-indigo-700 dark:text-indigo-400">
-                    {assessment.type || "Examination"}
+                    {assessment.componentName || "Examination"}
                   </span>
                   <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${index % 3 === 0 ? 'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'}`}>
                     {index % 3 === 0 ? "Upcoming" : "Completed"}
                   </span>
                 </div>
-                <h3 className="font-bold text-lg text-slate-900 dark:text-white mb-2 line-clamp-1">{assessment.title || assessment.name || `Assessment ${index + 1}`}</h3>
+                <h3 className="font-bold text-lg text-slate-900 dark:text-white mb-2 line-clamp-1">{assessment.label || assessment.componentName || `Assessment ${index + 1}`}</h3>
                 <div className="space-y-2 mt-4 text-sm text-slate-600 dark:text-slate-400">
                   <div className="flex items-center">
                     <BookOpen className="h-4 w-4 mr-2 text-slate-400" />

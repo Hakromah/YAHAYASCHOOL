@@ -1211,6 +1211,7 @@ export interface ApiAssessmentBlueprintAssessmentBlueprint
       [
         'Homework',
         'Quiz',
+        'Quiz2',
         'Project',
         'Participation',
         'Attendance',
@@ -1223,6 +1224,7 @@ export interface ApiAssessmentBlueprintAssessmentBlueprint
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    label: Schema.Attribute.String;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
@@ -1725,6 +1727,10 @@ export interface ApiCourseOfferingCourseOffering
       ['in-person', 'online', 'hybrid']
     > &
       Schema.Attribute.DefaultTo<'in-person'>;
+    gradebookStatus: Schema.Attribute.Enumeration<
+      ['Draft', 'Submitted', 'Verified', 'Approved', 'Released', 'Archived']
+    > &
+      Schema.Attribute.DefaultTo<'Draft'>;
     gradeLevel: Schema.Attribute.Relation<
       'manyToOne',
       'api::grade-level.grade-level'
@@ -3328,6 +3334,48 @@ export interface ApiGpaHistoryGpaHistory extends Struct.CollectionTypeSchema {
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+  };
+}
+
+export interface ApiGradeApprovalHistoryGradeApprovalHistory
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'grade_approval_histories';
+  info: {
+    displayName: 'Grade Approval History';
+    pluralName: 'grade-approval-histories';
+    singularName: 'grade-approval-history';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    actionDateTime: Schema.Attribute.DateTime & Schema.Attribute.Required;
+    changeHash: Schema.Attribute.String;
+    comments: Schema.Attribute.Text;
+    courseOffering: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::course-offering.course-offering'
+    >;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::grade-approval-history.grade-approval-history'
+    > &
+      Schema.Attribute.Private;
+    publishedAt: Schema.Attribute.DateTime;
+    reviewerEmail: Schema.Attribute.String;
+    reviewerName: Schema.Attribute.String;
+    stage: Schema.Attribute.Enumeration<
+      ['Draft', 'Submitted', 'Verified', 'Approved', 'Released', 'Archived']
+    > &
+      Schema.Attribute.Required;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    versionNumber: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<1>;
   };
 }
 
@@ -8404,6 +8452,7 @@ declare module '@strapi/strapi' {
       'api::gallery-item.gallery-item': ApiGalleryItemGalleryItem;
       'api::gpa-configuration.gpa-configuration': ApiGpaConfigurationGpaConfiguration;
       'api::gpa-history.gpa-history': ApiGpaHistoryGpaHistory;
+      'api::grade-approval-history.grade-approval-history': ApiGradeApprovalHistoryGradeApprovalHistory;
       'api::grade-approval.grade-approval': ApiGradeApprovalGradeApproval;
       'api::grade-band.grade-band': ApiGradeBandGradeBand;
       'api::grade-level.grade-level': ApiGradeLevelGradeLevel;

@@ -3,7 +3,8 @@
 import Link from 'next/link';
 import {
   BarChart3, Layers, BookOpen, BookMarked, Users, UserCheck,
-  CalendarCheck, ClipboardList, FileText, Clock, Award, TrendingUp
+  CalendarCheck, ClipboardList, FileText, Clock, Award, TrendingUp,
+  CheckSquare
 } from 'lucide-react';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -23,6 +24,7 @@ export const WORKSPACE_TABS = [
   { key: 'assessments', label: 'Assessments', icon: FileText },
   { key: 'timetable', label: 'Timetable', icon: Clock },
   { key: 'transcripts', label: 'Transcripts', icon: Award },
+  { key: 'approvals', label: 'Grade Approvals', icon: CheckSquare },
   { key: 'analytics', label: 'Analytics', icon: TrendingUp },
 ];
 

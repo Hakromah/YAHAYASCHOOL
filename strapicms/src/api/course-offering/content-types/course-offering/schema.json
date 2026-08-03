@@ -95,6 +95,18 @@
       "relation": "oneToMany",
       "target": "api::teacher-assignment.teacher-assignment",
       "mappedBy": "courseOffering"
+    },
+    "gradebookStatus": {
+      "type": "enumeration",
+      "enum": [
+        "Draft",
+        "Submitted",
+        "Verified",
+        "Approved",
+        "Released",
+        "Archived"
+      ],
+      "default": "Draft"
     }
   }
 }
