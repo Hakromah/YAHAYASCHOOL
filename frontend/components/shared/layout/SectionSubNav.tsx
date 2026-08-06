@@ -25,6 +25,7 @@ export const WORKSPACE_TABS = [
   { key: 'timetable', label: 'Timetable', icon: Clock },
   { key: 'transcripts', label: 'Transcripts', icon: Award },
   { key: 'approvals', label: 'Grade Approvals', icon: CheckSquare },
+  { key: 'lesson-plans', label: 'Lesson Plans', icon: BookOpen },
   { key: 'analytics', label: 'Analytics', icon: TrendingUp },
 ];
 

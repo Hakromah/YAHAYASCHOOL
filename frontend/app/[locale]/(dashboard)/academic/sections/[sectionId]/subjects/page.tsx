@@ -1,13 +1,12 @@
 "use client";
 
-import React from 'react';
-import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { Fragment, useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 import { useSection } from "@/providers/SectionContext";
 import { SectionSubNav } from "@/components/shared/layout/SectionSubNav";
 import { PageContainer } from "@/components/shared/layout/PageContainer";
 import { apiClient } from "@/services/api.service";
-import { BookOpen, Search, Filter, Book, Layers, ExternalLink, ChevronDown, ChevronRight, Users } from "lucide-react";
+import { Search, Book, ExternalLink, ChevronDown, ChevronRight, Users } from "lucide-react";
 import Link from "next/link";
 
 interface Subject {
@@ -24,9 +23,8 @@ interface Subject {
 
 export default function SubjectsPage() {
   const params = useParams();
-  const router = useRouter();
   const sectionId = params.sectionId as string;
-  
+
   const { section, isLoading: sectionLoading } = useSection();
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -37,15 +35,29 @@ export default function SubjectsPage() {
     async function fetchSubjects() {
       try {
         setIsLoading(true);
-        const res = await apiClient.get("/subjects", {
+        const res = await apiClient.get('/course-offerings', {
           params: {
             filters: { academicSection: { documentId: { $eq: sectionId } } },
-            populate: ["gradeLevels", "courseOfferings.teacher", "courseOfferings.room", "courseOfferings.studentEnrollments", "department"],
+            populate: ['subject.gradeLevels', 'subject.department', 'teacher', 'room', 'studentEnrollments'],
+            pagination: { limit: 100 },
           },
         });
-        setSubjects(res.data?.data || []);
+        const offerings: any[] = res.data?.data || [];
+
+        // Deduplicate by subject, merging offerings
+        const subjectMap = new Map<string, Subject & { courseOfferings: any[] }>();
+        offerings.forEach((o: any) => {
+          const s = o.subject;
+          if (!s?.documentId) return;
+          if (!subjectMap.has(s.documentId)) {
+            subjectMap.set(s.documentId, { ...s, courseOfferings: [o] });
+          } else {
+            subjectMap.get(s.documentId)!.courseOfferings.push(o);
+          }
+        });
+        setSubjects(Array.from(subjectMap.values()));
       } catch (error) {
-        console.error("Failed to fetch subjects", error);
+        console.error('Failed to fetch subjects', error);
       } finally {
         setIsLoading(false);
       }
@@ -54,7 +66,9 @@ export default function SubjectsPage() {
   }, [sectionId]);
 
   const filteredSubjects = subjects.filter(
-    (s) => s.name.toLowerCase().includes(searchQuery.toLowerCase()) || s.code.toLowerCase().includes(searchQuery.toLowerCase())
+    (s) =>
+      s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      s.code.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -105,7 +119,9 @@ export default function SubjectsPage() {
             </div>
             <h3 className="text-lg font-semibold text-slate-900 dark:text-white">No Subjects Found</h3>
             <p className="text-slate-500 mt-2 max-w-md">
-              {searchQuery ? "No subjects match your search." : "There are no subjects associated with this section yet."}
+              {searchQuery
+                ? "No subjects match your search."
+                : "There are no subjects associated with this section yet."}
             </p>
           </div>
         ) : (
@@ -119,6 +135,7 @@ export default function SubjectsPage() {
                     <th className="px-6 py-4 font-medium">Type</th>
                     <th className="px-6 py-4 font-medium">Grade Levels</th>
                     <th className="px-6 py-4 font-medium">Offerings</th>
+                    <th className="px-6 py-4 font-medium">Students</th>
                     <th className="px-6 py-4 font-medium">Status</th>
                   </tr>
                 </thead>
@@ -126,16 +143,26 @@ export default function SubjectsPage() {
                   {filteredSubjects.map((subject) => {
                     const isExpanded = expandedSubject === subject.documentId;
                     const offerings = subject.courseOfferings || [];
-                    
+                    const totalStudents = offerings.reduce(
+                      (sum: number, o: any) => sum + (o.studentEnrollments?.length || 0),
+                      0
+                    );
+
                     return (
-                      <React.Fragment key={subject.documentId}>
-                        <tr 
+                      <Fragment key={subject.documentId}>
+                        <tr
                           onClick={() => setExpandedSubject(isExpanded ? null : subject.documentId)}
-                          className={`cursor-pointer hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors ${isExpanded ? 'bg-indigo-50/50 dark:bg-indigo-900/10' : ''}`}
+                          className={`cursor-pointer hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors ${
+                            isExpanded ? "bg-indigo-50/50 dark:bg-indigo-900/10" : ""
+                          }`}
                         >
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-3">
-                              {isExpanded ? <ChevronDown className="h-4 w-4 text-slate-400" /> : <ChevronRight className="h-4 w-4 text-slate-400" />}
+                              {isExpanded ? (
+                                <ChevronDown className="h-4 w-4 text-slate-400" />
+                              ) : (
+                                <ChevronRight className="h-4 w-4 text-slate-400" />
+                              )}
                               <div>
                                 <p className="font-semibold text-slate-900 dark:text-white">{subject.name}</p>
                                 <p className="text-xs text-slate-500">{subject.department?.name}</p>
@@ -147,15 +174,21 @@ export default function SubjectsPage() {
                           </td>
                           <td className="px-6 py-4">
                             <span className="inline-flex items-center rounded-md bg-slate-100 dark:bg-slate-800 px-2 py-1 text-xs font-medium text-slate-700 dark:text-slate-300">
-                              {subject.type || "Core"}
+                              {subject.type || "General"}
                             </span>
                           </td>
                           <td className="px-6 py-4 text-slate-600 dark:text-slate-400">
-                            {subject.gradeLevels?.map(g => g.name).join(", ") || "-"}
+                            {subject.gradeLevels?.map((g) => g.name).join(", ") || "-"}
                           </td>
                           <td className="px-6 py-4">
                             <span className="inline-flex items-center rounded-full bg-blue-50 dark:bg-blue-900/30 px-2.5 py-0.5 text-xs font-medium text-blue-700 dark:text-blue-400">
                               {offerings.length}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className="inline-flex items-center gap-1 rounded-full bg-violet-50 dark:bg-violet-900/30 px-2.5 py-0.5 text-xs font-medium text-violet-700 dark:text-violet-400">
+                              <Users className="h-3 w-3" />
+                              {totalStudents}
                             </span>
                           </td>
                           <td className="px-6 py-4">
@@ -174,15 +207,23 @@ export default function SubjectsPage() {
                         </tr>
                         {isExpanded && (
                           <tr className="bg-slate-50/50 dark:bg-slate-800/20">
-                            <td colSpan={6} className="px-14 py-6 border-l-2 border-indigo-500">
-                              <h4 className="text-sm font-semibold mb-3 text-slate-900 dark:text-white">Course Offerings</h4>
+                            <td colSpan={7} className="px-14 py-6 border-l-2 border-indigo-500">
+                              <h4 className="text-sm font-semibold mb-3 text-slate-900 dark:text-white">
+                                Course Offerings
+                              </h4>
                               {offerings.length > 0 ? (
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                   {offerings.map((offering: any) => (
-                                    <div key={offering.id || offering.documentId} className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                                    <div
+                                      key={offering.id || offering.documentId}
+                                      className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm"
+                                    >
                                       <p className="font-medium text-slate-900 dark:text-white flex items-center gap-2">
                                         <Users className="h-4 w-4 text-indigo-500" />
-                                        Teacher: {offering.teacher?.displayName || offering.teacher?.name || "TBA"}
+                                        Teacher:{" "}
+                                        {offering.teacher?.displayName ||
+                                          offering.teacher?.name ||
+                                          "TBA"}
                                       </p>
                                       <div className="mt-2 text-xs text-slate-500 dark:text-slate-400 space-y-1">
                                         <p>Room: {offering.room?.name || "TBA"}</p>
@@ -197,7 +238,7 @@ export default function SubjectsPage() {
                             </td>
                           </tr>
                         )}
-                      </React.Fragment>
+                      </Fragment>
                     );
                   })}
                 </tbody>

@@ -639,29 +639,38 @@ function getSectionHeadNav(sectionId?: string): NavSection[] {
     { title: 'Overview', items: [{ label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard }] },
     // Dynamic: shows only sections this teacher is head of
     { title: '__ACADEMIC_SECTIONS__', items: [] },
+    // My Section items — only shown when inside a section workspace (sectionId extracted from URL)
+    // On the console, the Academic Sections group above gives direct section access
     ...(sectionId ? [{
       title: 'My Section',
       items: [
-        { label: 'Overview', href: `${basePrefix}`, icon: BarChart3 },
-        { label: 'Grade Levels', href: `${basePrefix}/grade-levels`, icon: Layers },
-        { label: 'Subjects', href: `${basePrefix}/subjects`, icon: BookOpen },
-        { label: 'Course Offerings', href: `${basePrefix}/offerings`, icon: GraduationCap },
-        { label: 'My Teachers', href: `${basePrefix}/teachers`, icon: UserCheck },
-        { label: 'My Students', href: `${basePrefix}/students`, icon: Users },
-        { label: 'Attendance', href: `${basePrefix}/attendance`, icon: SquareCheckBig },
-        { label: 'Gradebook', href: `${basePrefix}/gradebook`, icon: Award },
-        { label: 'Assessments', href: `${basePrefix}/assessments`, icon: PenTool },
-        { label: 'Timetable', href: `${basePrefix}/timetable`, icon: School },
-        { label: 'Transcripts', href: `${basePrefix}/transcripts`, icon: ScrollText },
-        { label: 'Analytics', href: `${basePrefix}/analytics`, icon: BarChart3 },
+        { label: 'Overview',          href: `${basePrefix}`,               icon: BarChart3 },
+        { label: 'Grade Levels',      href: `${basePrefix}/grade-levels`,  icon: Layers },
+        { label: 'Subjects',          href: `${basePrefix}/subjects`,      icon: BookOpen },
+        { label: 'Course Offerings',  href: `${basePrefix}/offerings`,     icon: GraduationCap },
+        { label: 'My Teachers',       href: `${basePrefix}/teachers`,      icon: UserCheck },
+        { label: 'My Students',       href: `${basePrefix}/students`,      icon: Users },
+        { label: 'Attendance',        href: `${basePrefix}/attendance`,    icon: SquareCheckBig },
+        { label: 'Gradebook',         href: `${basePrefix}/gradebook`,     icon: Award },
+        { label: 'Assessments',       href: `${basePrefix}/assessments`,   icon: PenTool },
+        { label: 'Timetable',         href: `${basePrefix}/timetable`,     icon: School },
+        { label: 'Transcripts',       href: `${basePrefix}/transcripts`,   icon: ScrollText },
+        { label: 'Analytics',         href: `${basePrefix}/analytics`,     icon: BarChart3 },
+      ],
+    }] : []),
+    // Transcripts is accessible globally — redirects to the section head's first managed section
+    ...(!sectionId ? [{
+      title: 'Tools',
+      items: [
+        { label: 'Transcripts', href: '/lms/transcripts', icon: ScrollText },
       ],
     }] : []),
     {
       title: 'Communication',
       items: [
-        { label: 'Notifications', href: '/notifications', icon: Bell },
-        { label: 'Announcements', href: '/announcements', icon: Megaphone },
-        { label: 'Profile', href: '/profile', icon: UserCog },
+        { label: 'Notifications',  href: '/notifications',  icon: Bell },
+        { label: 'Announcements',  href: '/announcements',  icon: Megaphone },
+        { label: 'Profile',        href: '/profile',        icon: UserCog },
       ],
     },
   ];

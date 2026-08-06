@@ -6,13 +6,13 @@ import { useSection } from "@/providers/SectionContext";
 import { SectionSubNav } from "@/components/shared/layout/SectionSubNav";
 import { PageContainer } from "@/components/shared/layout/PageContainer";
 import { apiClient } from "@/services/api.service";
-import { FileText, Calendar, ExternalLink, Activity, BookOpen } from "lucide-react";
+import { FileText, Hash, ExternalLink, Activity, BookOpen } from "lucide-react";
 import Link from "next/link";
 
 export default function AssessmentsPage() {
   const params = useParams();
   const sectionId = params.sectionId as string;
-  
+
   const { section, isLoading: sectionLoading } = useSection();
   const [assessments, setAssessments] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -61,6 +61,15 @@ export default function AssessmentsPage() {
     fetchAssessments();
   }, [sectionId]);
 
+  // Real category counts derived from componentName
+  const examCount = assessments.filter((a: any) =>
+    a.componentName?.toLowerCase().includes("exam")
+  ).length;
+  const quizCount = assessments.filter((a: any) =>
+    a.componentName?.toLowerCase().includes("quiz")
+  ).length;
+  const otherCount = assessments.length - examCount - quizCount;
+
   return (
     <PageContainer>
       <div className="space-y-6 pb-12">
@@ -71,11 +80,11 @@ export default function AssessmentsPage() {
               Assessments
             </h1>
             <p className="text-slate-500 dark:text-slate-400 mt-1">
-              Examinations and assessments scheduled for {section?.name || "this section"}.
+              Assessment blueprints and component weights for subjects in this section.
             </p>
           </div>
           <Link
-            href="/assessment"
+            href="/lms/assessment"
             className="inline-flex items-center justify-center rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 px-4 py-2.5 text-sm font-medium hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors"
           >
             <ExternalLink className="h-4 w-4 mr-2" />
@@ -85,24 +94,24 @@ export default function AssessmentsPage() {
 
         <SectionSubNav activeTab="assessments" sectionId={sectionId} />
 
-        {/* Stats */}
+        {/* Stats — real counts by componentName category */}
         {!isLoading && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-100 dark:border-slate-800 shadow-sm">
-              <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Total Assessments</p>
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Total Blueprints</p>
               <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1">{assessments.length}</p>
             </div>
             <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-100 dark:border-slate-800 shadow-sm">
-              <p className="text-sm font-medium text-indigo-500 dark:text-indigo-400">Upcoming</p>
-              <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1">{Math.floor(assessments.length * 0.4)}</p>
+              <p className="text-sm font-medium text-indigo-500 dark:text-indigo-400">Exams</p>
+              <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1">{examCount}</p>
             </div>
             <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-100 dark:border-slate-800 shadow-sm">
-              <p className="text-sm font-medium text-emerald-500 dark:text-emerald-400">Completed</p>
-              <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1">{Math.floor(assessments.length * 0.5)}</p>
+              <p className="text-sm font-medium text-emerald-500 dark:text-emerald-400">Quizzes</p>
+              <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1">{quizCount}</p>
             </div>
             <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-100 dark:border-slate-800 shadow-sm">
-              <p className="text-sm font-medium text-amber-500 dark:text-amber-400">Draft</p>
-              <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1">{Math.ceil(assessments.length * 0.1)}</p>
+              <p className="text-sm font-medium text-amber-500 dark:text-amber-400">Other</p>
+              <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1">{otherCount}</p>
             </div>
           </div>
         )}
@@ -129,8 +138,8 @@ export default function AssessmentsPage() {
                   <span className="inline-flex items-center rounded-md bg-indigo-50 dark:bg-indigo-900/30 px-2 py-1 text-xs font-medium text-indigo-700 dark:text-indigo-400">
                     {assessment.componentName || "Examination"}
                   </span>
-                  <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${index % 3 === 0 ? 'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'}`}>
-                    {index % 3 === 0 ? "Upcoming" : "Completed"}
+                  <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                    {assessment.weightPercentage != null ? `${assessment.weightPercentage}% weight` : "—"}
                   </span>
                 </div>
                 <h3 className="font-bold text-lg text-slate-900 dark:text-white mb-2 line-clamp-1">{assessment.label || assessment.componentName || `Assessment ${index + 1}`}</h3>
@@ -140,7 +149,7 @@ export default function AssessmentsPage() {
                     Subject: {assessment.subject?.name || "General"}
                   </div>
                   <div className="flex items-center">
-                    <Calendar className="h-4 w-4 mr-2 text-slate-400" />
+                    <Hash className="h-4 w-4 mr-2 text-slate-400" />
                     Weight: {assessment.weightPercentage}%
                   </div>
                 </div>

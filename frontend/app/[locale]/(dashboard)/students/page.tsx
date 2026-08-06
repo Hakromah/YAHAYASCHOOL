@@ -225,8 +225,8 @@ export default function StudentsListPage() {
     {
       id: 'enrolled',
       title: 'Active Enrolled Scholars',
-      value: students.length || '3',
-      subtitle: '▲ +14% vs previous academic year',
+      value: students.length,
+      subtitle: `${students.length} total registered`,
       trendDirection: 'up',
       icon: <GraduationCap className="w-5 h-5" />,
       isActive: statusFilter === 'active',
@@ -239,8 +239,8 @@ export default function StudentsListPage() {
     {
       id: 'hifz',
       title: 'Hifz Qur\'an Scholars',
-      value: Math.floor((students.length || 3) * 0.45).toLocaleString('en-US'),
-      subtitle: '45% enrolled in intensive Hifz track',
+      value: students.filter((s: any) => (s.section?.name || '').toLowerCase().includes('hifz') || (s.program?.name || '').toLowerCase().includes('hifz')).length.toLocaleString('en-US'),
+      subtitle: 'Scholars in Hifz track',
       trendDirection: 'up',
       icon: <Award className="w-5 h-5" />,
       onClick: () => toast.success('Filtered view to Hifz Intensive Track Scholars')
@@ -248,16 +248,16 @@ export default function StudentsListPage() {
     {
       id: 'attendance',
       title: 'Average Daily Attendance',
-      value: '96.8%',
-      subtitle: '▲ +2.1% across all homerooms',
-      trendDirection: 'up',
+      value: '—',
+      subtitle: 'See Attendance module for live data',
+      trendDirection: 'neutral',
       icon: <Calendar className="w-5 h-5" />,
       onClick: () => toast.info('Opened campus attendance analytical breakdown')
     },
     {
       id: 'pending',
       title: 'Pending Review / Action',
-      value: Math.floor((students.length || 3) * 0.08).toString(),
+      value: students.filter((s: any) => (s.enrollmentStatus || s.status || '') === 'pending').length.toString(),
       subtitle: 'Admissions awaiting final placement',
       trendDirection: 'neutral',
       icon: <Layers className="w-5 h-5" />,
@@ -315,7 +315,7 @@ export default function StudentsListPage() {
         cell: ({ row }: any) => {
           const st = row.original;
           const guardian = st.parentName || st.guardian?.name || 'No Guardian Linked';
-          const phone = st.parentPhone || st.contactPhone || '+231 770 000 000';
+          const phone = st.parentPhone || st.contactPhone || 'No contact';
 
           return (
             <div className="space-y-0.5 text-xs">

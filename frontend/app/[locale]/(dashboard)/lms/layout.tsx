@@ -2,7 +2,7 @@ import { RoleGuard } from '@/components/shared/layout/RoleGuard';
 
 export default function AdminRouteLayout({ children }: { children: React.ReactNode }) {
   return (
-    <RoleGuard allowedRoles={['super-administrator', 'director', 'teacher', 'student', 'parent']}>
+    <RoleGuard allowedRoles={['super-administrator', 'director', 'teacher', 'student', 'parent', 'section-head']}>
       {children}
     </RoleGuard>
   );

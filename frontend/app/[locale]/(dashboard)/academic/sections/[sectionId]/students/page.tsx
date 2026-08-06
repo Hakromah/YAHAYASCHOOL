@@ -6,14 +6,14 @@ import { useSection } from "@/providers/SectionContext";
 import { SectionSubNav } from "@/components/shared/layout/SectionSubNav";
 import { PageContainer } from "@/components/shared/layout/PageContainer";
 import { apiClient } from "@/services/api.service";
-import { Users, Search, Filter, ExternalLink, ChevronRight, User } from "lucide-react";
+import { Users, Search, ChevronRight, User } from "lucide-react";
 import Link from "next/link";
 
 interface StudentEnrollment {
   documentId: string;
-  student?: { documentId: string; studentId: string; user?: { firstName: string; lastName: string; email: string } };
+  student?: { documentId: string; schoolId?: string; studentId?: string; user?: { firstName: string; lastName: string; email: string } };
   courseOffering?: { subject?: { name: string }; gradeLevel?: { name: string } };
-  status: string;
+  enrollmentStatus?: string;
 }
 
 export default function StudentsPage() {
@@ -35,6 +35,7 @@ export default function StudentsPage() {
           params: {
             filters: { courseOffering: { academicSection: { documentId: { $eq: sectionId } } } },
             populate: ["student.user", "courseOffering.subject", "courseOffering.gradeLevel"],
+            pagination: { limit: 500 },
           },
         });
         
@@ -153,16 +154,20 @@ export default function StudentsPage() {
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                   {filteredStudents.map((student) => {
-                    const fullName = `${student.user?.firstName || ''} ${student.user?.lastName || ''}`;
+                    const firstName = student.user?.firstName || '';
+                    const lastName = student.user?.lastName || '';
+                    const fullName = `${firstName} ${lastName}`.trim();
+                    const initials = firstName.charAt(0).toUpperCase() || lastName.charAt(0).toUpperCase() || '?';
                     const grades = Array.from(new Set(student.enrollments.map((e: any) => e.courseOffering?.gradeLevel?.name).filter(Boolean)));
                     const subjects = Array.from(new Set(student.enrollments.map((e: any) => e.courseOffering?.subject?.name).filter(Boolean)));
+                    const studentSchoolId = student.schoolId || student.studentId || '-';
                     
                     return (
                       <tr key={student.documentId} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
                             <div className="h-9 w-9 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-700 dark:text-indigo-400 font-bold">
-                              {fullName.charAt(0)}
+                              {initials}
                             </div>
                             <div>
                               <p className="font-semibold text-slate-900 dark:text-white">{fullName}</p>
@@ -171,7 +176,7 @@ export default function StudentsPage() {
                           </div>
                         </td>
                         <td className="px-6 py-4 text-slate-600 dark:text-slate-300 font-medium">
-                          {student.studentId || "-"}
+                          {studentSchoolId}
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex flex-wrap gap-1">

@@ -17,20 +17,24 @@ interface CourseOffering {
   room?: { name: string; code?: string };
   studentEnrollments?: any[];
   academicTerm?: { name: string };
-  status: string;
+  /** Legacy lowercase status field */
+  status?: string;
+  /** Strapi all-caps status field (e.g. 'ACTIVE', 'CANCELLED', 'OPEN') */
+  offeringStatus?: string;
   capacity?: number;
 }
 
 export default function OfferingsPage() {
   const params = useParams();
   const sectionId = params.sectionId as string;
-  
+
   const { section, isLoading: sectionLoading } = useSection();
   const [offerings, setOfferings] = useState<CourseOffering[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  
+
   const [filterSubject, setFilterSubject] = useState("");
   const [filterGrade, setFilterGrade] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     async function fetchOfferings() {
@@ -40,6 +44,7 @@ export default function OfferingsPage() {
           params: {
             filters: { academicSection: { documentId: { $eq: sectionId } } },
             populate: ["gradeLevel", "subject", "teacher", "room", "studentEnrollments", "academicYear", "academicTerm"],
+            pagination: { limit: 100 },
           },
         });
         setOfferings(res.data?.data || []);
@@ -58,11 +63,18 @@ export default function OfferingsPage() {
   const filteredOfferings = offerings.filter((o) => {
     if (filterSubject && o.subject?.name !== filterSubject) return false;
     if (filterGrade && o.gradeLevel?.name !== filterGrade) return false;
+    const matchesSearch =
+      !searchQuery ||
+      (o.subject?.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (o.teacher?.displayName || o.teacher?.name || "").toLowerCase().includes(searchQuery.toLowerCase());
+    if (!matchesSearch) return false;
     return true;
   });
 
   const totalEnrolled = offerings.reduce((acc, curr) => acc + (curr.studentEnrollments?.length || 0), 0);
-  const activeOfferings = offerings.filter(o => o.status !== "cancelled").length;
+  const activeOfferings = offerings.filter(
+    o => o.offeringStatus !== "CANCELLED" && o.status !== "cancelled"
+  ).length;
 
   return (
     <PageContainer>
@@ -121,9 +133,22 @@ export default function OfferingsPage() {
           </div>
         )}
 
+        {/* Filters & Search Row */}
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm p-4 flex flex-col md:flex-row gap-4">
-          <select 
-            value={filterGrade} 
+          {/* Search input */}
+          <div className="relative flex-1 min-w-[220px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+            <input
+              type="text"
+              placeholder="Search by subject or teacher…"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-xl pl-9 pr-4 py-2.5 text-sm outline-none text-slate-900 dark:text-white placeholder:text-slate-400"
+            />
+          </div>
+          {/* Grade level filter */}
+          <select
+            value={filterGrade}
             onChange={e => setFilterGrade(e.target.value)}
             className="bg-slate-50 dark:bg-slate-800 border-none rounded-xl px-4 py-2.5 text-sm outline-none text-slate-900 dark:text-white min-w-[200px]"
           >
@@ -132,8 +157,9 @@ export default function OfferingsPage() {
               <option key={g} value={g}>{g}</option>
             ))}
           </select>
-          <select 
-            value={filterSubject} 
+          {/* Subject filter */}
+          <select
+            value={filterSubject}
             onChange={e => setFilterSubject(e.target.value)}
             className="bg-slate-50 dark:bg-slate-800 border-none rounded-xl px-4 py-2.5 text-sm outline-none text-slate-900 dark:text-white min-w-[200px]"
           >
@@ -162,9 +188,15 @@ export default function OfferingsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {filteredOfferings.map((offering) => {
               const enrolled = offering.studentEnrollments?.length || 0;
-              const capacity = offering.capacity || 30;
+              const capacity = offering.capacity || section?.capacity || 30;
               const percentFull = Math.min(Math.round((enrolled / capacity) * 100), 100);
-              
+
+              const isActive =
+                offering.offeringStatus === "ACTIVE" ||
+                offering.offeringStatus === "OPEN" ||
+                offering.status === "active" ||
+                (!offering.offeringStatus && !offering.status);
+
               return (
                 <div key={offering.documentId} className="group flex flex-col bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-6 transition-all hover:shadow-md hover:border-indigo-200 dark:hover:border-indigo-900/50">
                   <div className="flex justify-between items-start mb-4">
@@ -174,13 +206,13 @@ export default function OfferingsPage() {
                       </span>
                       <h3 className="font-bold text-lg text-slate-900 dark:text-white line-clamp-1">{offering.subject?.name || "Unknown Subject"}</h3>
                     </div>
-                    {offering.status === "active" || !offering.status ? (
+                    {isActive ? (
                       <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
                     ) : (
                       <span className="h-2.5 w-2.5 rounded-full bg-slate-400"></span>
                     )}
                   </div>
-                  
+
                   <div className="space-y-3 mb-6 flex-grow">
                     <div className="flex items-center text-sm text-slate-600 dark:text-slate-400">
                       <Users className="h-4 w-4 mr-2.5 text-slate-400" />
@@ -195,15 +227,15 @@ export default function OfferingsPage() {
                       {offering.academicTerm?.name || "All Year"}
                     </div>
                   </div>
-                  
+
                   <div className="pt-4 border-t border-slate-100 dark:border-slate-800 mt-auto">
                     <div className="flex justify-between text-xs mb-1.5">
                       <span className="font-medium text-slate-700 dark:text-slate-300">Enrollment</span>
                       <span className="text-slate-500">{enrolled} / {capacity}</span>
                     </div>
                     <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2 overflow-hidden">
-                      <div 
-                        className={`h-2 rounded-full ${percentFull > 90 ? 'bg-rose-500' : percentFull > 75 ? 'bg-amber-500' : 'bg-indigo-500'}`} 
+                      <div
+                        className={`h-2 rounded-full ${percentFull > 90 ? 'bg-rose-500' : percentFull > 75 ? 'bg-amber-500' : 'bg-indigo-500'}`}
                         style={{ width: `${percentFull}%` }}
                       ></div>
                     </div>

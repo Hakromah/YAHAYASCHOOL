@@ -51,15 +51,16 @@ export default function TimetablePage() {
     fetchTimetable();
   }, [sectionId]);
 
-  const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-  
-  // Quick mock if no data for demo visual richness
+  const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
   const hasData = slots.length > 0;
   
   const filteredSlots = slots.filter(s => {
     if (filterGrade && s.courseOffering?.gradeLevel?.name !== filterGrade) return false;
     return true;
   });
+
+  // Normalise time strings so sort works even without leading zeros (e.g. "9:00" vs "10:00")
+  const normaliseTime = (t: string) => t ? t.padStart(8, '0') : '00:00:00';
 
   const uniqueGrades = Array.from(new Set(slots.map(s => s.courseOffering?.gradeLevel?.name).filter(Boolean)));
 
@@ -118,8 +119,10 @@ export default function TimetablePage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-6">
-            {days.map(day => {
-              const daySlots = filteredSlots.filter(s => s.dayOfWeek === day).sort((a, b) => a.startTime.localeCompare(b.startTime));
+            {DAYS.map(day => {
+              const daySlots = filteredSlots
+                .filter(s => s.dayOfWeek === day)
+                .sort((a, b) => normaliseTime(a.startTime).localeCompare(normaliseTime(b.startTime)));
               if (daySlots.length === 0) return null;
               
               return (

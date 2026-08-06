@@ -6,7 +6,7 @@ import { useSection } from "@/providers/SectionContext";
 import { SectionSubNav } from "@/components/shared/layout/SectionSubNav";
 import { PageContainer } from "@/components/shared/layout/PageContainer";
 import { apiClient } from "@/services/api.service";
-import { UserCheck, ChevronDown, ChevronRight, BookOpen, Clock, Users } from "lucide-react";
+import { UserCheck, ChevronDown, ChevronRight, BookOpen, Users } from "lucide-react";
 import Link from "next/link";
 import React from "react";
 
@@ -37,12 +37,14 @@ export default function TeachersPage() {
             params: {
               filters: { sections: { documentId: { $eq: sectionId } } },
               populate: ["user"],
+              pagination: { limit: 100 },
             },
           }),
           apiClient.get("/course-offerings", {
             params: {
               filters: { academicSection: { documentId: { $eq: sectionId } } },
               populate: ["teacher", "subject", "gradeLevel", "studentEnrollments"],
+              pagination: { limit: 100 },
             },
           })
         ]);
@@ -103,7 +105,7 @@ export default function TeachersPage() {
           </div>
           <div className="flex items-center gap-3">
             <span className="inline-flex items-center rounded-lg bg-indigo-50 dark:bg-indigo-900/30 px-4 py-2.5 text-sm font-medium text-indigo-700 dark:text-indigo-400">
-              {teachers.length} Active Teachers
+              {teachers.length} Teacher{teachers.length !== 1 ? 's' : ''}
             </span>
           </div>
         </div>

@@ -78,7 +78,7 @@ export default function GradebookPage() {
         const offeringsRes = await apiClient.get("/course-offerings", {
           params: {
             filters: { academicSection: { documentId: { $eq: sectionId } } },
-            populate: ["subject", "teacher", "gradeLevel", "studentEnrollments.student"],
+            populate: ["subject", "teacher", "gradeLevel", "studentEnrollments.student.user"],
             pagination: { limit: 100 },
           },
         });
@@ -100,12 +100,11 @@ export default function GradebookPage() {
         }).catch(() => ({ data: { data: [] } }));
         const allBlueprints: any[] = bpRes.data?.data || [];
 
-        // 5. Fetch all gradebook entries for this section
         const entriesRes = await apiClient.get("/gradebook-entries", {
           params: {
-            filters: { section: { documentId: { $eq: sectionId } } },
+            filters: { courseOffering: { academicSection: { documentId: { $eq: sectionId } } } },
             populate: ["student", "courseOffering"],
-            pagination: { limit: 2000 },
+            pagination: { limit: 500 },
           },
         }).catch(() => ({ data: { data: [] } }));
         const allEntries: any[] = entriesRes.data?.data || [];
@@ -123,30 +122,45 @@ export default function GradebookPage() {
             .map((e: any) => ({
               id: e.student.id,
               documentId: e.student.documentId,
-              firstName: e.student.firstName || e.student.user?.firstName || "Student",
+              firstName: e.student.firstName || e.student.user?.firstName || "Unknown",
               lastName: e.student.lastName || e.student.user?.lastName || "",
               schoolId: e.student.schoolId || e.student.admissionNumber || "",
             }));
 
-          // Entries for this offering
+          // Entries for this offering — match by documentId (Strapi v5 uses string documentIds)
           const offeringEntries = allEntries.filter(
-            (entry: any) => entry.courseOffering?.id === o.id
+            (entry: any) =>
+              entry.courseOffering?.documentId === o.documentId ||
+              (o.id && entry.courseOffering?.id === o.id)
           );
 
           // Map: studentId → (label → score)
           const grades: Record<string, Record<string, number>> = {};
           students.forEach(s => { grades[s.id] = {}; });
 
+          // Sort blueprints by name length descending so longer matches (e.g. Quiz2) are tried first
+          const sortedBps = [...bps].sort((x: any, y: any) => 
+            (y.componentName || '').length - (x.componentName || '').length
+          );
+
           offeringEntries.forEach((entry: any) => {
             const sid = entry.student?.id;
             if (!sid) return;
-            // Match entry to blueprint by label or componentName
-            const bp = bps.find(
-              b =>
-                (b.label && b.label === entry.title) ||
-                b.componentName === entry.title ||
-                b.componentName === entry.assessmentType
-            );
+
+            // Match entry back to a blueprint with robust title/label parsing
+            const bp = sortedBps.find((b: any) => {
+              const bpName = (b.componentName || '').toLowerCase();
+              const bpLabel = (b.label || '').toLowerCase();
+              const entryTitle = (entry.title || '').toLowerCase();
+              
+              if (bpLabel && entryTitle === bpLabel) return true;
+              if (entryTitle === bpName) return true;
+              if (entryTitle.includes(bpName)) return true;
+              if (entryTitle.replace(/\s+/g, '').includes(bpName)) return true;
+              
+              return false;
+            }) || bps.find((b: any) => (b.componentName || '').toLowerCase() === (entry.assessmentType || '').toLowerCase());
+
             const colKey = bp ? (bp.label || bp.componentName) : (entry.title || entry.assessmentType);
             if (colKey && sid) {
               if (!grades[sid]) grades[sid] = {};
@@ -200,8 +214,24 @@ export default function GradebookPage() {
 
     const score = totalWeight > 0 ? Math.round((weighted / totalWeight) * 100) : 0;
 
-    const sorted = [...gradingPolicies].sort((a, b) => b.minimumScore - a.minimumScore);
-    const matched = sorted.find(p => score >= p.minimumScore);
+    const rules = (gradingPolicies && gradingPolicies.length > 0)
+      ? gradingPolicies.map((p: any) => ({
+          minScore: parseFloat(p.minScore ?? p.minimumScore ?? 0),
+          letterGrade: p.gradeName ?? p.letterGrade ?? "F",
+          gradePoints: parseFloat(p.gpaPoints ?? p.gradePoints ?? 0),
+        })).sort((a, b) => b.minScore - a.minScore)
+      : [
+          { minScore: 97, letterGrade: "A+", gradePoints: 4.0 },
+          { minScore: 93, letterGrade: "A", gradePoints: 3.8 },
+          { minScore: 87, letterGrade: "B+", gradePoints: 3.5 },
+          { minScore: 83, letterGrade: "B", gradePoints: 3.0 },
+          { minScore: 77, letterGrade: "C+", gradePoints: 2.5 },
+          { minScore: 70, letterGrade: "C", gradePoints: 2.0 },
+          { minScore: 50, letterGrade: "D", gradePoints: 1.0 },
+          { minScore: 0, letterGrade: "F", gradePoints: 0.0 }
+        ];
+
+    const matched = rules.find(r => score >= r.minScore);
     const grade = matched?.letterGrade || "F";
     const points = matched?.gradePoints ?? 0;
 

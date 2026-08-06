@@ -122,6 +122,15 @@ function GradeLevelCard({
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Section icon map
+// ─────────────────────────────────────────────────────────────────────────────
+
+const SECTION_ICONS: Record<string, string> = {
+  quran: '📖', language: '🌐', stem: '🔬', islamic: '🕌',
+  sports: '⚽', arts: '🎨', vocational: '🔧', other: '📋',
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Section Workspace Dashboard — Main Page
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -144,7 +153,7 @@ export default function SectionDashboardPage() {
   const loadDashboardData = async () => {
     setIsLoading(true);
     try {
-      const [offeringsRes, teachersRes, enrollmentsRes] = await Promise.all([
+      const [offeringsRes, teachersRes, enrollmentsRes, attendanceRes, gradeRes] = await Promise.all([
         apiClient.get('/course-offerings', {
           params: {
             filters: { academicSection: { documentId: { $eq: sectionId } } },
@@ -167,31 +176,83 @@ export default function SectionDashboardPage() {
             pagination: { limit: 10 },
           },
         }),
+        apiClient.get('/attendance-records', {
+          params: {
+            filters: { courseOffering: { academicSection: { documentId: { $eq: sectionId } } } },
+            pagination: { limit: 500 },
+            fields: ['status'],
+          },
+        }).catch(() => ({ data: { data: [] } })),
+        apiClient.get('/gradebook-entries', {
+          params: {
+            filters: { courseOffering: { academicSection: { documentId: { $eq: sectionId } } } },
+            pagination: { limit: 1000 },
+            fields: ['score', 'maxScore'],
+          },
+        }).catch(() => ({ data: { data: [] } })),
       ]);
 
       const offeringsData = offeringsRes.data?.data ?? [];
       const teachersData = teachersRes.data?.data ?? [];
       const enrollmentsData = enrollmentsRes.data?.data ?? [];
+      const attendanceData = attendanceRes.data?.data ?? [];
+      const gradeData = gradeRes.data?.data ?? [];
 
       setOfferings(offeringsData);
       setTeachers(teachersData);
       setRecentEnrollments(enrollmentsData);
 
-      // Compute stats
-      const totalEnrolled = offeringsData.reduce(
-        (sum: number, o: any) => sum + (o.studentEnrollments?.length ?? 0), 0
-      );
+      // Fix: deduplicate students across offerings
+      const uniqueStudentIds = new Set<number>();
+      offeringsData.forEach((o: any) => {
+        (o.studentEnrollments || []).forEach((se: any) => {
+          if (se.id) uniqueStudentIds.add(se.id);
+        });
+      });
+      const totalEnrolled = uniqueStudentIds.size;
+
       const activeOfferings = offeringsData.filter((o: any) => o.offeringStatus === 'ACTIVE').length;
+
+      // Compute attendance rate
+      const presentCount = attendanceData.filter(
+        (r: any) => r.status?.toLowerCase() === 'present'
+      ).length;
+      const attendanceRate =
+        attendanceData.length > 0
+          ? `${Math.round((presentCount / attendanceData.length) * 100)}%`
+          : '—';
+
+      // Compute pass rate
+      const passedCount = gradeData.filter((g: any) => {
+        const max = g.maxScore || 100;
+        return (g.score / max) >= 0.5;
+      }).length;
+      const passRate =
+        gradeData.length > 0
+          ? `${Math.round((passedCount / gradeData.length) * 100)}%`
+          : '—';
+
+      // Compute avg score percentage
+      const avgPct =
+        gradeData.length > 0
+          ? Math.round(
+              gradeData.reduce((sum: number, g: any) => {
+                const max = g.maxScore || 100;
+                return sum + Math.min((g.score / max) * 100, 100);
+              }, 0) / gradeData.length
+            )
+          : null;
+      const avgGpa = avgPct !== null ? `${avgPct}%` : '—';
 
       setStats({
         totalStudents: totalEnrolled,
         totalTeachers: teachersData.length,
         totalOfferings: offeringsData.length,
         activeOfferings,
-        avgGpa: '—',
-        attendanceRate: '—',
-        passRate: '—',
-        assessmentCompletion: '—',
+        avgGpa,
+        attendanceRate,
+        passRate,
+        assessmentCompletion: gradeData.length > 0 ? gradeData.length : '—',
       });
     } catch (err) {
       toast.error('Failed to load section data.');
@@ -211,11 +272,7 @@ export default function SectionDashboardPage() {
   }, [offerings]);
 
   const sectionColor = section?.color ?? '#6366f1';
-  const sectionIcon = section?.sectionType === 'quran' ? '📖'
-    : section?.sectionType === 'language' ? '🌐'
-    : section?.sectionType === 'stem' ? '🔬'
-    : section?.sectionType === 'islamic' ? '🕌'
-    : '📚';
+  const sectionIcon = SECTION_ICONS[section?.sectionType ?? ''] ?? '📚';
 
   if (sectionLoading || isLoading) {
     return (
@@ -379,8 +436,9 @@ export default function SectionDashboardPage() {
               ) : (
                 <div className="space-y-2">
                   {teachers.slice(0, 6).map((t: any) => {
+                    // Fix: match by documentId first, fall back to id
                     const teacherOfferings = offerings.filter(
-                      (o) => o.teacher?.id === t.id
+                      (o) => o.teacher?.documentId === t.documentId || (t.id && o.teacher?.id === t.id)
                     );
                     return (
                       <div key={t.id} className="flex items-center justify-between py-1.5 border-b border-slate-100 dark:border-slate-800 last:border-0">

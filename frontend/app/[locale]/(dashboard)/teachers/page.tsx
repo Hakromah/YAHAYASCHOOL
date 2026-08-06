@@ -213,8 +213,8 @@ export default function TeachersListPage() {
     {
       id: 'total',
       title: 'Active Faculty & Sheikhs',
-      value: teachers.length || '2',
-      subtitle: '▲ +6 new instructors this term',
+      value: teachers.filter((t: any) => (t.employmentStatus || t.status || '').includes('active') || (t.employmentStatus || t.status || '') === 'full_time' || (t.employmentStatus || t.status || '') === 'part_time').length || teachers.length,
+      subtitle: `${teachers.length} total in faculty registry`,
       trendDirection: 'up',
       icon: <UserCheck className="w-5 h-5" />,
       isActive: statusFilter === 'active',
@@ -227,32 +227,36 @@ export default function TeachersListPage() {
     {
       id: 'load',
       title: 'Active Teaching Load',
-      value: '98.5%',
-      subtitle: 'Average 22 periods per instructor',
-      trendDirection: 'up',
+      value: `${teachers.length} instructors`,
+      subtitle: 'Assigned to course offerings this term',
+      trendDirection: 'neutral',
       icon: <BookOpen className="w-5 h-5" />,
-      onClick: () => toast.success('Opened faculty teaching load breakdown')
+      onClick: () => toast.info('Teaching load is managed via Course Offerings')
     },
     {
       id: 'heads',
-      title: 'Department Leaders',
-      value: '12',
-      subtitle: 'Hifz, Islamic Studies, Sciences & Arabic',
-      trendDirection: 'neutral',
-      icon: <Award className="w-5 h-5" />,
-      onClick: () => toast.info('Viewing department leaders directory')
-    },
-    {
-      id: 'leave',
-      title: 'On Leave / Substitute Needed',
-      value: Math.floor((teachers.length || 2) * 0.04).toString(),
-      subtitle: 'Current active leave approvals',
+      title: 'On Leave / Substitute',
+      value: teachers.filter((t: any) => (t.employmentStatus || t.status || '') === 'on_leave').length,
+      subtitle: 'Faculty on approved leave',
       trendDirection: 'down',
       icon: <Clock className="w-5 h-5" />,
       isActive: statusFilter === 'on_leave',
       onClick: () => {
         setStatusFilter(statusFilter === 'on_leave' ? 'all' : 'on_leave');
         toast.info(statusFilter === 'on_leave' ? 'Showing all faculty' : 'Filtered to Faculty On Leave');
+      }
+    },
+    {
+      id: 'leave',
+      title: 'Part-Time / Contract',
+      value: teachers.filter((t: any) => ['part_time', 'contract'].includes(t.employmentStatus || t.status || '')).length,
+      subtitle: 'Visiting and contract instructors',
+      trendDirection: 'neutral',
+      icon: <Award className="w-5 h-5" />,
+      isActive: statusFilter === 'part_time',
+      onClick: () => {
+        setStatusFilter(statusFilter === 'part_time' ? 'all' : 'part_time');
+        toast.info(statusFilter === 'part_time' ? 'Showing all faculty' : 'Filtered to Part-Time Faculty');
       }
     }
   ];
@@ -288,10 +292,12 @@ export default function TeachersListPage() {
         header: 'Academic Department & Qualification',
         cell: ({ row }: any) => {
           const tch = row.original;
+          const dept = tch.department
+            || (tch.departments && tch.departments.length > 0 ? tch.departments.map((d: any) => d.name).join(', ') : null);
           return (
             <div className="space-y-0.5">
-              <span className="font-bold text-slate-800 dark:text-slate-200 block text-xs">{tch.department || 'Islamic & Arabic Studies'}</span>
-              <span className="text-xs text-slate-500 dark:text-slate-400 font-mono block">{tch.qualification || 'Senior Hifz Sheikh'}</span>
+              <span className="font-bold text-slate-800 dark:text-slate-200 block text-xs">{dept || <span className="text-slate-400 italic">No department</span>}</span>
+              <span className="text-xs text-slate-500 dark:text-slate-400 font-mono block">{tch.qualifications || tch.qualification || <span className="text-slate-400 italic">—</span>}</span>
             </div>
           );
         }
@@ -301,18 +307,18 @@ export default function TeachersListPage() {
         header: 'Faculty Credentials',
         cell: ({ row }: any) => {
           const tch = row.original;
-          const phone = tch.phone || tch.contactPhone || '+231 770 000 000';
-          const email = tch.email || tch.contactEmail || 'faculty@yahayaschool.edu';
+          const phone = tch.phone || tch.contactPhone || null;
+          const email = tch.email || tch.contactEmail || null;
 
           return (
             <div className="space-y-1 font-mono text-xs">
               <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
                 <Phone className="w-3 h-3 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                <span>{phone}</span>
+                <span>{phone || <span className="text-slate-400 italic">No phone</span>}</span>
               </div>
               <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 truncate max-w-[200px]">
                 <Mail className="w-3 h-3 text-sky-600 dark:text-sky-400 shrink-0" />
-                <span className="truncate">{email}</span>
+                <span className="truncate">{email || <span className="text-slate-400 italic">No email</span>}</span>
               </div>
             </div>
           );

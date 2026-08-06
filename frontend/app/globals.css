@@ -403,3 +403,167 @@
     color: var(--primary);
   }
 }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Print Styles — Transcript Engine
+   Forces clean black-on-white rendering, hides all chrome (sidebar, topbar,
+   subnav, action bars, clearance panel, version history) and lets the
+   transcript document fill the full page width.
+   ───────────────────────────────────────────────────────────────────────────── */
+@media print {
+  /* Reset page */
+  @page {
+    size: A4 portrait;
+    margin: 15mm 12mm;
+  }
+
+  /* Force white background and black text everywhere */
+  html, body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-size: 11pt;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Hide all layout chrome */
+  aside,
+  nav,
+  header,
+  footer,
+  [data-sidebar],
+  [class*="sidebar"],
+  [class*="Sidebar"],
+  [class*="topbar"],
+  [class*="Topbar"],
+  [class*="TopBar"] {
+    display: none !important;
+  }
+
+  /* Collapse the dashboard shell so the transcript fills the page */
+  body > div,
+  #__next > div,
+  [data-dashboard-shell] {
+    display: block !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* PageContainer — remove padding so content starts at page edge */
+  .flex.flex-col.flex-1 {
+    padding: 0 !important;
+    margin: 0 !important;
+    display: block !important;
+  }
+
+  /* Hide the print:hidden utility elements */
+  .print\:hidden {
+    display: none !important;
+  }
+
+  /* Show elements that should only appear in print */
+  .print\:block { display: block !important; }
+  .print\:flex  { display: flex  !important; }
+  .print\:table { display: table !important; }
+  .print\:table-cell { display: table-cell !important; }
+  .print\:table-row  { display: table-row  !important; }
+
+  /* Remove dark-mode backgrounds on all containers */
+  [class*="bg-slate-9"],
+  [class*="bg-slate-8"],
+  [class*="dark:bg-slate"],
+  [class*="dark:bg-indigo"],
+  [class*="dark:bg-emerald"],
+  [class*="dark:bg-rose"] {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  /* Card / container borders */
+  [class*="rounded-2xl"],
+  [class*="rounded-xl"],
+  [class*="shadow"] {
+    border-radius: 4px !important;
+    box-shadow: none !important;
+  }
+
+  /* Tables */
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    page-break-inside: auto;
+  }
+
+  tr {
+    page-break-inside: avoid;
+    page-break-after: auto;
+  }
+
+  thead {
+    display: table-header-group;
+  }
+
+  /* Avoid breaking section blocks mid-page */
+  .space-y-8 > div,
+  .space-y-6 > div {
+    page-break-inside: avoid;
+  }
+
+  /* Force black text for muted/slate colours that would be invisible */
+  [class*="text-slate-4"],
+  [class*="text-slate-5"],
+  [class*="text-muted"] {
+    color: #555555 !important;
+  }
+
+  /* Indigo accent → dark navy for print readability */
+  [class*="text-indigo"] {
+    color: #1e3a8a !important;
+  }
+  [class*="text-emerald"] {
+    color: #065f46 !important;
+  }
+  [class*="text-rose"] {
+    color: #9f1239 !important;
+  }
+
+  /* Hide interactive elements */
+  button,
+  select,
+  input {
+    display: none !important;
+  }
+
+  /* Print padding overrides */
+  .print\:p-0  { padding: 0 !important; }
+  .print\:p-3  { padding: 12px !important; }
+  .print\:p-6  { padding: 24px !important; }
+  .print\:m-0  { margin: 0 !important; }
+  .print\:w-full { width: 100% !important; }
+  .print\:border-none { border: none !important; }
+  .print\:shadow-none { box-shadow: none !important; }
+  .print\:rounded    { border-radius: 4px !important; }
+  .print\:rounded-none { border-radius: 0 !important; }
+
+  /* Force border colour for print separators */
+  .print\:border-slate-300 { border-color: #cbd5e1 !important; }
+  .print\:border-slate-400 { border-color: #94a3b8 !important; }
+  .print\:border-slate-800 { border-color: #1e293b !important; }
+
+  /* Space utilities */
+  .print\:space-y-0 > * + * { margin-top: 0 !important; }
+  .print\:space-y-4 > * + * { margin-top: 16px !important; }
+  .print\:space-y-6 > * + * { margin-top: 24px !important; }
+
+  /* Gap */
+  .print\:gap-2 { gap: 8px !important; }
+
+  /* Padding overrides for tight print layout */
+  .print\:pt-4 { padding-top: 16px !important; }
+  .print\:pt-3 { padding-top: 12px !important; }
+  .print\:pb-4 { padding-bottom: 16px !important; }
+
+  /* Show hidden lg/xl columns in print */
+  .print\:table-cell { display: table-cell !important; }
+}

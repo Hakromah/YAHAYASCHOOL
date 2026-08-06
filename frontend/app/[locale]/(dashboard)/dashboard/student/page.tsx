@@ -52,6 +52,7 @@ export default function StudentDashboardPage() {
 
   const [isLoading, setIsLoading] = useState(true);
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
+  const [lessonPlansForCourse, setLessonPlansForCourse] = useState<any[]>([]);
   const [selectedOffering, setSelectedOffering] = useState<CourseOffering | null>(null);
 
   // Offering workspace tabs
@@ -61,9 +62,9 @@ export default function StudentDashboardPage() {
 
   // Overall student KPIs state
   const [outstandingFees, setOutstandingFees] = useState(0);
-  const [attendanceRate, setAttendanceRate] = useState('96.5%');
-  const [creditsEarned, setCreditsEarned] = useState(12);
-  const [currentGPA, setCurrentGPA] = useState(3.85);
+  const [attendanceRate, setAttendanceRate] = useState<string>('—');
+  const [creditsEarned, setCreditsEarned] = useState(0);
+  const [currentGPA, setCurrentGPA] = useState<number | null>(null);
 
   // Timetable
   const [timetable, setTimetable] = useState<any[]>([]);
@@ -131,18 +132,50 @@ export default function StudentDashboardPage() {
         setTimetable(ttRes.data?.data || []);
       }
 
-      // Populate credit count
+      // Populate credit count from actual subject credit values
       let earned = 0;
       enrollData.forEach((e: any) => {
         if (e.enrollmentStatus === 'completed' || e.enrollmentStatus === 'active') {
-          earned += e.courseOffering?.subject?.creditValue ?? 3;
+          earned += e.courseOffering?.subject?.creditValue ?? 0;
         }
       });
       setCreditsEarned(earned);
 
-      if (student.gpa) {
-        setCurrentGPA(student.gpa);
-      }
+      // Compute real attendance rate from all attendance records
+      try {
+        const attAllRes = await apiClient.get('/attendance-records', {
+          params: {
+            filters: { student: { id: { $eq: student.id } } },
+            fields: ['recordStatus'],
+            pagination: { limit: 1000 }
+          }
+        });
+        const attAll: any[] = attAllRes.data?.data || [];
+        if (attAll.length > 0) {
+          const presentCount = attAll.filter((r: any) => r.recordStatus === 'Present').length;
+          setAttendanceRate(`${Math.round((presentCount / attAll.length) * 100)}%`);
+        }
+      } catch { /* non-blocking */ }
+
+      // Compute GPA from released/approved gradebook entries
+      try {
+        const gradesAllRes = await apiClient.get('/gradebook-entries', {
+          params: {
+            filters: { student: { id: { $eq: student.id } } },
+            fields: ['score', 'maxScore', 'percentage'],
+            pagination: { limit: 500 }
+          }
+        });
+        const gradesAll: any[] = gradesAllRes.data?.data || [];
+        if (gradesAll.length > 0) {
+          const avgPct = gradesAll.reduce((sum: number, g: any) => sum + (g.percentage ?? g.score ?? 0), 0) / gradesAll.length;
+          // Convert to 4.0 GPA scale
+          const gpa = avgPct >= 97 ? 4.0 : avgPct >= 93 ? 3.8 : avgPct >= 87 ? 3.5 :
+                      avgPct >= 83 ? 3.0 : avgPct >= 77 ? 2.5 : avgPct >= 70 ? 2.0 :
+                      avgPct >= 50 ? 1.0 : 0.0;
+          setCurrentGPA(gpa);
+        }
+      } catch { /* non-blocking */ }
 
     } catch (err) {
       toast.error('Failed to load dashboard.');
@@ -171,18 +204,25 @@ export default function StudentDashboardPage() {
         apiClient.get('/announcements', { params: { filters: { targetAudience: { $in: ['all', 'students'] } }, sort: 'createdAt:desc', pagination: { limit: 10 } } }).catch(() => ({ data: { data: [] } }))
       ]);
 
+      const lpsRes = await apiClient.get('/lesson-plans', {
+        params: {
+          filters: {
+            subject: { id: { $eq: offering.subject?.id } },
+            recordStatus: { $eq: 'Approved' }
+          },
+          sort: 'createdAt:desc',
+          pagination: { limit: 50 }
+        }
+      }).catch(() => ({ data: { data: [] } }));
+
       setBlueprints(bpRes.data?.data || []);
       setOfferingGrades(gradesRes.data?.data || []);
       setAttendanceRecords(attendRes.data?.data || []);
       setHomeworks(hwRes.data?.data || []);
       setAnnouncements(annRes.data?.data || []);
+      setLessonPlansForCourse(lpsRes.data?.data || []);
 
-      // Mock chat messages for this class
-      setMessages([
-        { id: 1, sender: offering.teacher?.displayName || 'Teacher', content: 'Assalamu Alaikum. Please remember to submit homework 1 before tomorrow.', date: '10:15 AM' },
-        { id: 2, sender: 'You', content: 'Wa Alaikum Assalam. Can I submit a PDF copy?', date: '11:00 AM' },
-        { id: 3, sender: offering.teacher?.displayName || 'Teacher', content: 'Yes, upload it on the submissions tab.', date: '11:05 AM' }
-      ]);
+      setMessages([]);
 
     } catch (err) {
       toast.error('Failed to load offering workspace files.');
@@ -266,9 +306,9 @@ export default function StudentDashboardPage() {
           {/* KPI STATS ROW */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard
-              title="Current Term GPA"
-              value={currentGPA.toFixed(2)}
-              subtitle="Grade point average"
+              title="Current GPA"
+              value={currentGPA !== null ? currentGPA.toFixed(2) : '—'}
+              subtitle="Computed from gradebook entries"
               icon={Award}
               color="text-indigo-500"
               bgColor="bg-indigo-500/10"
@@ -368,16 +408,22 @@ export default function StudentDashboardPage() {
               )}
             </div>
 
-            {/* AI Assistant */}
-            <div className="bg-gradient-to-br from-indigo-950/40 to-slate-900 border border-indigo-850 p-5 rounded-3xl text-xs text-slate-300 space-y-3">
+            {/* Study Summary Panel */}
+            <div className="bg-gradient-to-br from-indigo-950/40 to-slate-900 border border-indigo-800/30 p-5 rounded-3xl text-xs text-slate-300 space-y-3">
               <h4 className="font-extrabold text-indigo-300 flex items-center gap-1.5">
                 <Sparkles className="w-4 h-4 text-indigo-400" />
-                <span>AI Study Recommendations</span>
+                <span>Study Summary</span>
               </h4>
-              <p className="text-[11px] text-slate-400">Based on your enrollment records, here is your recommendation checklist:</p>
-              <div className="p-3 bg-indigo-950/30 border border-indigo-500/20 rounded-xl">
-                <p className="font-bold text-indigo-200">Quran memorization: Surah Al-Kahf</p>
-                <p className="text-[10px] text-slate-400 mt-1">Excellent performance. Review lessons for Murajaah next class.</p>
+              <p className="text-[11px] text-slate-400">Based on your current records:</p>
+              <div className="space-y-2">
+                <div className="p-3 bg-indigo-950/30 border border-indigo-500/20 rounded-xl">
+                  <p className="font-bold text-indigo-200">Attendance</p>
+                  <p className="text-[10px] text-slate-400 mt-0.5">{attendanceRate === '—' ? 'No attendance records yet.' : `Your attendance rate is ${attendanceRate}.`}</p>
+                </div>
+                <div className="p-3 bg-indigo-950/30 border border-indigo-500/20 rounded-xl">
+                  <p className="font-bold text-indigo-200">Academic Standing</p>
+                  <p className="text-[10px] text-slate-400 mt-0.5">{currentGPA !== null ? `GPA: ${currentGPA.toFixed(2)} — ${currentGPA >= 3.5 ? 'Excellent standing.' : currentGPA >= 2.5 ? 'Good standing.' : 'Needs improvement.'}` : 'No grades released yet.'}</p>
+                </div>
               </div>
             </div>
           </div>
@@ -606,7 +652,10 @@ export default function StudentDashboardPage() {
                             <td className="p-3">
                               <span className={cn(
                                 "inline-flex px-2.5 py-0.5 rounded-full font-extrabold text-[10px]",
-                                r.recordStatus === 'Present' ? 'bg-emerald-55/10 text-emerald-700 dark:text-emerald-400' : 'bg-rose-55/10 text-rose-700 dark:text-rose-450'
+                                r.recordStatus === 'Present' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400' :
+                           r.recordStatus === 'Absent' ? 'bg-rose-50 text-rose-700 dark:bg-rose-900/20 dark:text-rose-400' :
+                           r.recordStatus === 'Late' ? 'bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400' :
+                           'bg-sky-50 text-sky-700 dark:bg-sky-900/20 dark:text-sky-400'
                               )}>
                                 {r.recordStatus}
                               </span>
@@ -625,29 +674,30 @@ export default function StudentDashboardPage() {
             {activeWorkspaceTab === 'resources' && (
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Syllabus & Lecture Notes</h3>
-                  <p className="text-xs text-slate-500">Course outlines and materials uploaded by the teacher.</p>
+                  <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Lesson Plans & Resources</h3>
+                  <p className="text-xs text-slate-500">Approved lesson plans and materials from your course teacher.</p>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                  <div className="p-4 border rounded-2xl bg-slate-50 dark:bg-slate-800/40 flex justify-between items-center">
-                    <div>
-                      <p className="font-extrabold">Syllabus Outline.pdf</p>
-                      <p className="text-[10px] text-slate-400 mt-0.5">Uploaded Sep 2026</p>
-                    </div>
-                    <button className="p-2 border rounded-lg bg-white hover:bg-slate-100">
-                      <Download className="w-4 h-4 text-slate-600" />
-                    </button>
+                {lessonPlansForCourse.length === 0 ? (
+                  <p className="text-xs text-slate-400 italic py-4">No lesson plans uploaded for this course yet.</p>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {lessonPlansForCourse.map((lp) => (
+                      <div key={lp.id} className="p-4 border rounded-2xl bg-white dark:bg-slate-900 shadow-sm">
+                        <h4 className="font-extrabold text-slate-900 dark:text-white text-sm">{lp.title}</h4>
+                        {lp.objectives && (
+                          <p className="text-[10px] text-slate-500 mt-2 line-clamp-3"><span className="font-bold">Objectives:</span> {lp.objectives}</p>
+                        )}
+                        {lp.teachingMethod && (
+                          <p className="text-[10px] text-slate-500 mt-1"><span className="font-bold">Method:</span> {lp.teachingMethod}</p>
+                        )}
+                      </div>
+                    ))}
                   </div>
-                  <div className="p-4 border rounded-2xl bg-slate-50 dark:bg-slate-800/40 flex justify-between items-center">
-                    <div>
-                      <p className="font-extrabold">Chapter 1 Slides.pdf</p>
-                      <p className="text-[10px] text-slate-400 mt-0.5">Uploaded Oct 2026</p>
-                    </div>
-                    <button className="p-2 border rounded-lg bg-white hover:bg-slate-100">
-                      <Download className="w-4 h-4 text-slate-600" />
-                    </button>
-                  </div>
+                )}
+
+                <div className="p-5 bg-slate-50 dark:bg-slate-800/40 border rounded-2xl text-xs text-slate-500 italic">
+                  Contact your teacher or academic section head for additional course materials and handouts.
                 </div>
               </div>
             )}
@@ -682,56 +732,74 @@ export default function StudentDashboardPage() {
             {activeWorkspaceTab === 'messages' && (
               <div className="space-y-4 text-xs">
                 <div>
-                  <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Discussion chat</h3>
-                  <p className="text-xs text-slate-500">Chat messages with your course instructor.</p>
+                  <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Course Notifications</h3>
+                  <p className="text-xs text-slate-500">Messages and updates from your section and faculty.</p>
                 </div>
 
-                <div className="border rounded-2xl p-4 bg-slate-50 dark:bg-slate-800/40 space-y-3 max-h-[300px] overflow-y-auto">
-                  {messages.map((m) => (
-                    <div key={m.id} className={cn("p-3 rounded-2xl max-w-sm", m.sender === 'You' ? 'bg-indigo-650 text-white ml-auto' : 'bg-white border text-slate-800')}>
-                      <p className="font-bold text-[10px] opacity-75 mb-0.5">{m.sender}</p>
-                      <p>{m.content}</p>
-                      <p className="text-[8px] opacity-50 text-right mt-1">{m.date}</p>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    placeholder="Write a message to instructor..."
-                    className="flex-1 px-3 py-2 border rounded-xl dark:bg-slate-900 text-black dark:text-white"
-                  />
-                  <button className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold cursor-pointer">
-                    Send
-                  </button>
-                </div>
+                {announcements.length === 0 ? (
+                  <div className="p-8 text-center text-slate-400 italic">
+                    No course notifications or messages from your teacher yet.
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {announcements.map((a: any) => (
+                      <div key={a.id} className="p-4 bg-slate-50 dark:bg-slate-800/40 border rounded-2xl">
+                        <div className="flex justify-between items-start gap-2">
+                          <h4 className="font-extrabold text-slate-900 dark:text-white">{a.title}</h4>
+                          <span className="text-[10px] text-slate-400 shrink-0">{new Date(a.createdAt).toLocaleDateString()}</span>
+                        </div>
+                        <p className="text-slate-600 dark:text-slate-300 mt-1 leading-relaxed">{a.content}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
             {/* TAB: ANALYTICS */}
             {activeWorkspaceTab === 'analytics' && (
-              <div className="bg-gradient-to-br from-indigo-950/40 to-slate-900 border border-indigo-850 p-6 rounded-3xl text-xs text-slate-350 space-y-4">
-                <h3 className="text-base font-extrabold text-indigo-300 flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-indigo-400" />
-                  <span>AI Study Assistant Recommendations</span>
-                </h3>
-                <p className="text-[11px] text-slate-400">Personalized dashboard analyzing your gradebook progress and suggested topics:</p>
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Study Analytics</h3>
+                  <p className="text-xs text-slate-500">Your performance summary for this course offering.</p>
+                </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs mt-2">
-                  <div className="p-4 bg-indigo-950/30 border border-indigo-500/20 rounded-2xl space-y-1">
-                    <h4 className="font-bold text-indigo-200">Syllabus Completion Track</h4>
-                    <p className="text-[11px] text-slate-400 leading-relaxed">
-                      You have completed 75% of learning modules. Practice revisions for final chapter assessments.
-                    </p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                  <div className="p-5 border rounded-2xl bg-slate-50 dark:bg-slate-800/40">
+                    <p className="text-xs font-bold text-slate-400 mb-1">Attendance Rate</p>
+                    <p className="text-2xl font-black text-slate-900 dark:text-white">{attendanceRate}</p>
+                    <p className="text-[10px] text-slate-400 mt-1">Based on all recorded sessions</p>
                   </div>
-                  <div className="p-4 bg-indigo-950/30 border border-indigo-500/20 rounded-2xl space-y-1">
-                    <h4 className="font-bold text-indigo-200">Attendance Rate Compliance</h4>
-                    <p className="text-[11px] text-slate-400 leading-relaxed">
-                      Your attendance rate of 96.5% exceeds target standards of 90%. Keep up the good performance!
+                  <div className="p-5 border rounded-2xl bg-slate-50 dark:bg-slate-800/40">
+                    <p className="text-xs font-bold text-slate-400 mb-1">Gradebook Entries</p>
+                    <p className="text-2xl font-black text-slate-900 dark:text-white">{offeringGrades.length}</p>
+                    <p className="text-[10px] text-slate-400 mt-1">Released assessment records</p>
+                  </div>
+                  <div className="p-5 border rounded-2xl bg-slate-50 dark:bg-slate-800/40">
+                    <p className="text-xs font-bold text-slate-400 mb-1">Course GPA</p>
+                    <p className="text-2xl font-black text-slate-900 dark:text-white">
+                      {currentGPA !== null ? currentGPA.toFixed(2) : '—'}
                     </p>
+                    <p className="text-[10px] text-slate-400 mt-1">Computed from all entries</p>
                   </div>
                 </div>
+
+                {offeringGrades.length > 0 && (
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-extrabold text-slate-800 dark:text-white">Grade Breakdown</h4>
+                    {offeringGrades.map((g: any) => (
+                      <div key={g.id} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/40 border rounded-xl text-xs">
+                        <span className="font-semibold text-slate-800 dark:text-slate-200">{g.title || g.assessmentType}</span>
+                        <div className="flex items-center gap-3">
+                          <div className="w-24 bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
+                            <div className="bg-indigo-600 h-full" style={{ width: `${g.percentage ?? g.score ?? 0}%` }} />
+                          </div>
+                          <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400 w-10 text-right">{g.percentage ?? g.score}%</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>

@@ -105,7 +105,7 @@ export default function ApprovalsPage() {
       const [bpRes, gpRes, enrRes, gradesRes, histRes] = await Promise.all([
         subjectDocId ? apiClient.get("/assessment-blueprints", { params: { filters: { subject: { documentId: { $eq: subjectDocId } } } } }).catch(() => ({ data: { data: [] } })) : Promise.resolve({ data: { data: [] } }),
         apiClient.get("/grading-policies", { params: { pagination: { limit: 100 } } }).catch(() => ({ data: { data: [] } })),
-        apiClient.get("/student-enrollments", { params: { filters: { courseOffering: { documentId: { $eq: offeringDocId } } }, populate: ["student"], pagination: { limit: 200 } } }).catch(() => ({ data: { data: [] } })),
+        apiClient.get("/student-enrollments", { params: { filters: { courseOffering: { documentId: { $eq: offeringDocId } } }, populate: ["student.user"], pagination: { limit: 200 } } }).catch(() => ({ data: { data: [] } })),
         apiClient.get("/gradebook-entries", { params: { filters: { courseOffering: { documentId: { $eq: offeringDocId } } }, populate: ["student"], pagination: { limit: 500 } } }).catch(() => ({ data: { data: [] } })),
         apiClient.get("/grade-approval-histories", { params: { filters: { courseOffering: { documentId: { $eq: offeringDocId } } }, sort: "actionDateTime:desc" } }).catch(() => ({ data: { data: [] } }))
       ]);
@@ -114,7 +114,15 @@ export default function ApprovalsPage() {
       setBlueprints(bpList);
       setGradingPolicies(gpRes.data?.data || []);
 
-      const studentsList = (enrRes.data?.data || []).map((e: any) => e.student).filter(Boolean);
+      const studentsList: Student[] = (enrRes.data?.data || [])
+        .filter((e: any) => !!e.student)
+        .map((e: any) => ({
+          id: e.student.id,
+          documentId: e.student.documentId,
+          firstName: e.student.firstName || e.student.user?.firstName || "Unknown",
+          lastName: e.student.lastName || e.student.user?.lastName || "",
+          schoolId: e.student.schoolId || e.student.admissionNumber || e.student.user?.username || "",
+        }));
       setStudents(studentsList);
 
       const gradesList = gradesRes.data?.data || [];
@@ -123,22 +131,38 @@ export default function ApprovalsPage() {
         gMap[s.id] = {};
       });
 
-      gradesList.forEach((entry: any) => {
-        const studentId = entry.student?.id;
-        if (!studentId) return;
+      // Sort blueprints by name length descending so longer matches (e.g. Quiz2) are tried first
+      const sortedBps = [...bpList].sort((x: any, y: any) => 
+        (y.componentName || '').length - (x.componentName || '').length
+      );
 
-        // Match by label first (unique), then by title/assessmentType
-        const bp = bpList.find((b: any) =>
-          (b.label && b.label === entry.title) ||
-          (b.label && b.label === entry.assessmentType) ||
-          b.componentName === entry.title ||
-          b.componentName === entry.assessmentType
+      gradesList.forEach((entry: any) => {
+        const sid = entry.student?.id;
+        const sdoc = entry.student?.documentId;
+        const matchedStudent = studentsList.find(
+          (s: Student) => (sid && s.id === sid) || (sdoc && s.documentId === sdoc)
         );
+        if (!matchedStudent) return;
+
+        // Match entry back to a blueprint with robust title/label parsing
+        const bp = sortedBps.find((b: any) => {
+          const bpName = (b.componentName || '').toLowerCase();
+          const bpLabel = (b.label || '').toLowerCase();
+          const entryTitle = (entry.title || '').toLowerCase();
+          
+          if (bpLabel && entryTitle === bpLabel) return true;
+          if (entryTitle === bpName) return true;
+          if (entryTitle.includes(bpName)) return true;
+          if (entryTitle.replace(/\s+/g, '').includes(bpName)) return true;
+          
+          return false;
+        }) || bpList.find((b: any) => (b.componentName || '').toLowerCase() === (entry.assessmentType || '').toLowerCase());
+
         // Key by label (same as teacher's save) to avoid Quiz vs Quiz2 collision
         const component = bp ? (bp.label || bp.componentName) : (entry.title || entry.assessmentType);
         if (component) {
-          if (!gMap[studentId]) gMap[studentId] = {};
-          gMap[studentId][component] = entry.score;
+          if (!gMap[matchedStudent.id]) gMap[matchedStudent.id] = {};
+          gMap[matchedStudent.id][component] = entry.score;
         }
       });
       setGrades(gMap);
@@ -194,6 +218,8 @@ export default function ApprovalsPage() {
 
   const calculateStudentFinalScore = (studentId: number) => {
     const studentGrades = grades[studentId] || {};
+    if (blueprints.length === 0) return { score: 0, grade: "N/A", points: 0.0 };
+
     let totalWeightedScore = 0;
     let totalWeightUsed = 0;
 
@@ -207,8 +233,8 @@ export default function ApprovalsPage() {
       }
     });
 
-    if (totalWeightUsed === 0) return { score: 0, grade: "F", points: 0.0 };
-    const finalScore = parseFloat(((totalWeightedScore / totalWeightUsed) * 100).toFixed(1));
+    if (totalWeightUsed === 0) return { score: 0, grade: "N/A", points: 0.0 };
+    const finalScore = Math.round((totalWeightedScore / totalWeightUsed) * 100);
     const { grade, points } = resolveLetterAndPoints(finalScore);
     return { score: finalScore, grade, points };
   };
@@ -265,9 +291,9 @@ export default function ApprovalsPage() {
       }).catch(console.warn);
 
       const stageLabels: Record<string, string> = {
-        Verified: 'Grades verified successfully!',
-        Approved: 'Grades approved!',
-        Draft: 'Changes requested — returned to teacher.',
+        Verified: 'Grades verified by Section Head.',
+        Approved: 'Grades approved and released!',
+        Rejected: 'Grades rejected — returned to teacher for corrections.',
       };
       toast.success(stageLabels[targetStage] || `Status updated to: ${targetStage}`);
       setReviewComment("");
@@ -492,7 +518,7 @@ export default function ApprovalsPage() {
                                   <div className="text-[10px] text-slate-400 font-mono mt-0.5">{s.schoolId}</div>
                                 </td>
                                 {blueprints.map((bp) => {
-                                  const val = studentGrades[bp.componentName];
+                                  const val = studentGrades[bp.label || bp.componentName];
                                   return (
                                     <td key={bp.id} className="px-4 py-3 text-center border-l border-slate-100 dark:border-slate-700">
                                       <span className="text-sm font-mono font-semibold text-slate-800 dark:text-slate-200">
@@ -549,15 +575,15 @@ export default function ApprovalsPage() {
                       {selectedOffering.gradebookStatus === "Submitted" && (
                         <>
                           <button
-                            onClick={() => handleWorkflowTransition("Approved")}
+                            onClick={() => handleWorkflowTransition("Verified")}
                             disabled={isActionLoading}
                             className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white text-sm rounded-xl font-bold cursor-pointer transition-colors"
                           >
                             <CheckCircle2 className="w-4 h-4" />
-                            Approve Grades
+                            Verify Grades
                           </button>
                           <button
-                            onClick={() => handleWorkflowTransition("Draft")}
+                            onClick={() => handleWorkflowTransition("Rejected")}
                             disabled={isActionLoading}
                             className="inline-flex items-center gap-2 px-4 py-2.5 bg-rose-100 hover:bg-rose-200 dark:bg-rose-900/30 dark:hover:bg-rose-900/50 disabled:opacity-60 text-rose-700 dark:text-rose-400 text-sm rounded-xl font-bold cursor-pointer transition-colors"
                           >
@@ -575,10 +601,10 @@ export default function ApprovalsPage() {
                             className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white text-sm rounded-xl font-bold cursor-pointer transition-colors"
                           >
                             <CheckCircle2 className="w-4 h-4" />
-                            Approve Grades
+                            Final Approve &amp; Release
                           </button>
                           <button
-                            onClick={() => handleWorkflowTransition("Draft")}
+                            onClick={() => handleWorkflowTransition("Rejected")}
                             disabled={isActionLoading}
                             className="inline-flex items-center gap-2 px-4 py-2.5 bg-rose-100 hover:bg-rose-200 dark:bg-rose-900/30 dark:hover:bg-rose-900/50 disabled:opacity-60 text-rose-700 dark:text-rose-400 text-sm rounded-xl font-bold cursor-pointer transition-colors"
                           >
@@ -593,6 +619,24 @@ export default function ApprovalsPage() {
                           <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-amber-600 dark:text-amber-400" />
                           <p className="text-sm text-amber-800 dark:text-amber-300">
                             This gradebook is in <strong>Draft</strong> stage. Awaiting teacher submission before moderation action can be taken.
+                          </p>
+                        </div>
+                      )}
+
+                      {selectedOffering.gradebookStatus === "Rejected" && (
+                        <div className="w-full p-4 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800 rounded-xl flex items-start gap-3">
+                          <AlertCircle className="w-4 h-4 mt-0.5 shrink-0 text-rose-600 dark:text-rose-400" />
+                          <p className="text-sm text-rose-800 dark:text-rose-300">
+                            These grades were <strong>Rejected</strong> and returned to the teacher for corrections.
+                          </p>
+                        </div>
+                      )}
+
+                      {(selectedOffering.gradebookStatus === "Approved" || selectedOffering.gradebookStatus === "Released") && (
+                        <div className="w-full p-4 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-xl flex items-start gap-3">
+                          <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                          <p className="text-sm text-emerald-800 dark:text-emerald-300">
+                            Grades are <strong>Approved &amp; Released</strong>. No further action needed.
                           </p>
                         </div>
                       )}

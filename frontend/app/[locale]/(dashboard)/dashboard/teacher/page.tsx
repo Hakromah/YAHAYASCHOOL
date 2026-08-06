@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import {
   BookOpen, Users, FileText, CheckCircle2, Clock, Calendar,
   Award, RefreshCw, Activity, ArrowRight, Star,
   UserCheck, ShieldCheck, Mail, ArrowUpRight, CheckSquare, Square,
   Download, Sparkles, Upload, X, PenTool, ClipboardList, Lock, Unlock,
-  MessageSquare, Settings, AlertCircle, AlertTriangle, ShieldAlert
+  MessageSquare, Settings, AlertCircle, AlertTriangle, ShieldAlert,
+  Plus, Trash2, Edit3, Eye, BarChart2, TrendingDown, TrendingUp, Send
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { apiClient } from '@/services/api.service';
@@ -15,18 +16,19 @@ import { StatCard } from '@/components/ui/StatCard';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
-// Define TS interfaces for clarity
+// ─── TS Interfaces ────────────────────────────────────────────────────────────
 interface Student {
   id: number;
   documentId: string;
   firstName: string;
   lastName: string;
-  schoolId: string;
+  schoolId?: string;
   admissionNumber?: string;
-  gpa?: number;
-  academicStanding?: string;
-  riskIndicator?: string;
+  gender?: string;
+  dateOfBirth?: string;
   enrollmentStatus?: string;
+  email?: string;
+  phone?: string;
 }
 
 interface Enrollment {
@@ -47,13 +49,15 @@ interface CourseOffering {
   academicTerm?: { id: number; documentId: string; name: string };
   room?: { id: number; roomNumber: string; buildingName?: string };
   studentEnrollments?: Enrollment[];
-  attendanceRate?: string;
-  syllabusCoverage?: number;
   gradebookStatus?: string;
+  // computed from real attendance records
+  attendanceRate?: string;
+  attendancePct?: number;
 }
 
 interface AssessmentBlueprint {
   id: number;
+  documentId?: string;
   componentName: string;
   weightPercentage: number;
   label?: string;
@@ -61,121 +65,173 @@ interface AssessmentBlueprint {
 
 interface GradingPolicy {
   id: number;
-  minimumScore: number;
-  letterGrade: string;
-  gradePoints: number;
-  description?: string;
+  minimumScore?: number;
+  minScore?: number;
+  letterGrade?: string;
+  gradeName?: string;
+  gradePoints?: number;
+  gpaPoints?: number;
 }
 
+interface LessonPlan {
+  id: number;
+  documentId: string;
+  title: string;
+  lessonNumber?: string;
+  objectives?: string;
+  teachingMethod?: string;
+  homework?: string;
+  assessmentMethod?: string;
+  recordStatus?: string;
+  rejectionReason?: string;
+}
+
+interface CurriculumTopic {
+  id: number;
+  documentId: string;
+  title: string;
+  description?: string;
+  completionStatus?: 'Pending' | 'In Progress' | 'Completed';
+  orderNumber?: number;
+}
+
+interface TeachingProgress {
+  id: number;
+  documentId: string;
+  weekNumber: number;
+  lessonDelivered?: boolean;
+  attendanceSubmitted?: boolean;
+  homeworkGiven?: boolean;
+  outcomeCompleted?: boolean;
+  notes?: string;
+}
+
+// ─── BP key helper (single source of truth) ──────────────────────────────────
+const bpKey = (bp: AssessmentBlueprint) => bp.label || bp.componentName;
+
+// ─── Sort blueprints so longer names match first (Quiz2 before Quiz) ──────────
+const sortBps = (bps: AssessmentBlueprint[]) =>
+  [...bps].sort((a, b) => bpKey(b).length - bpKey(a).length);
+
+// ─── Main Component ───────────────────────────────────────────────────────────
 export default function TeacherDashboardPage() {
   const { user } = useAuth();
-  const teacher = user?.profile as any; // Logged-in teacher profile
+  const teacher = user?.profile as any;
 
   const [isLoading, setIsLoading] = useState(true);
   const [offerings, setOfferings] = useState<CourseOffering[]>([]);
   const [selectedOffering, setSelectedOffering] = useState<CourseOffering | null>(null);
 
-  // Workspace sub-tabs state
   const [activeWorkspaceTab, setActiveWorkspaceTab] = useState<
     'overview' | 'roster' | 'attendance' | 'assessments' | 'gradebook' | 'approval' | 'lessonplan' | 'audit'
   >('overview');
 
-  // Attendance Register states
+  // Attendance
   const [attendanceDate, setAttendanceDate] = useState<string>(new Date().toISOString().substring(0, 10));
   const [attendanceRegister, setAttendanceRegister] = useState<Record<string, string>>({});
   const [attendanceHistory, setAttendanceHistory] = useState<any[]>([]);
   const [isSavingAttendance, setIsSavingAttendance] = useState(false);
 
-  // Assessment Builder states
+  // Assessments & Gradebook
   const [blueprints, setBlueprints] = useState<AssessmentBlueprint[]>([]);
   const [gradingPolicies, setGradingPolicies] = useState<GradingPolicy[]>([]);
-  const [assessments, setAssessments] = useState<any[]>([]);
-  const [newAssessName, setNewAssessName] = useState('');
-  const [newAssessCategory, setNewAssessCategory] = useState('');
-  const [newAssessMaxScore, setNewAssessMaxScore] = useState('100');
-  const [newAssessWeight, setNewAssessWeight] = useState('10');
-  const [newAssessDueDate, setNewAssessDueDate] = useState('');
-  const [isCreatingAssessment, setIsCreatingAssessment] = useState(false);
-
-  // Gradebook grid states
   const [gradebookData, setGradebookData] = useState<Record<string, Record<string, number>>>({});
   const [gradebookComments, setGradebookComments] = useState<Record<string, string>>({});
   const [gradebookEntryIds, setGradebookEntryIds] = useState<Record<string, string>>({});
   const [isSavingGrades, setIsSavingGrades] = useState(false);
 
-  // Approval state
+  // Assessment builder
+  const [newAssessName, setNewAssessName] = useState('');
+  const [newAssessCategory, setNewAssessCategory] = useState('');
+  const [newAssessMaxScore, setNewAssessMaxScore] = useState('100');
+  const [newAssessWeight, setNewAssessWeight] = useState('10');
+  const [isCreatingAssessment, setIsCreatingAssessment] = useState(false);
+
+  // Approval
   const [approvalStatus, setApprovalStatus] = useState<string>('Draft');
   const [approvalHistory, setApprovalHistory] = useState<any[]>([]);
   const [approvalComment, setApprovalComment] = useState('');
   const [isSubmittingApproval, setIsSubmittingApproval] = useState(false);
 
-  // Curriculum states
-  const [coverageChecklist, setCoverageChecklist] = useState<Record<string, boolean>>({
-    'unit1': true,
-    'unit2': true,
-    'unit3': false,
-    'unit4': false,
-  });
+  // Lesson Planner — live data
+  const [lessonPlans, setLessonPlans] = useState<LessonPlan[]>([]);
+  const [curriculumTopics, setCurriculumTopics] = useState<CurriculumTopic[]>([]);
+  const [teachingProgress, setTeachingProgress] = useState<TeachingProgress[]>([]);
+  const [isCreatingLessonPlan, setIsCreatingLessonPlan] = useState(false);
+  const [newLpTitle, setNewLpTitle] = useState('');
+  const [newLpObjectives, setNewLpObjectives] = useState('');
+  const [newLpMethod, setNewLpMethod] = useState('');
+  const [showLpForm, setShowLpForm] = useState(false);
+  const [selectedPlanForDrawer, setSelectedPlanForDrawer] = useState<any | null>(null);
+  const [showPlanDrawer, setShowPlanDrawer] = useState(false);
 
-  // Audit Logs states
+  // Audit logs
   const [sectionAuditLogs, setSectionAuditLogs] = useState<any[]>([]);
 
-  // Timetable schedule
+  // Timetable
   const [timetable, setTimetable] = useState<any[]>([]);
 
-  // 1. Fetch teacher's Course Offerings
-  const loadOfferings = async () => {
-    if (!teacher?.id) {
-      setIsLoading(false);
-      return;
-    }
+  // ── 1. Load offerings + compute real attendance rates ──────────────────────
+  const loadOfferings = useCallback(async () => {
+    if (!teacher?.id) { setIsLoading(false); return; }
     setIsLoading(true);
     try {
-      const res = await apiClient.get('/course-offerings', {
-        params: {
-          filters: { teacher: { id: { $eq: teacher.id } } },
-          populate: [
-            'subject',
-            'academicSection',
-            'gradeLevel',
-            'academicYear',
-            'academicTerm',
-            'room',
-            'studentEnrollments.student'
-          ],
-          pagination: { limit: 100 }
-        }
-      });
-      const data = res.data?.data || [];
-      // Enrich mock analytics stats
-      const enriched = data.map((o: any, idx: number) => ({
-        ...o,
-        attendanceRate: idx % 2 === 0 ? '97.2%' : '94.8%',
-        syllabusCoverage: idx % 2 === 0 ? 75 : 40,
-        gradebookStatus: o.gradebookStatus || 'Draft'
-      }));
-      setOfferings(enriched);
+      const [offeringsRes, ttRes] = await Promise.all([
+        apiClient.get('/course-offerings', {
+          params: {
+            filters: { teacher: { id: { $eq: teacher.id } } },
+            populate: ['subject', 'academicSection', 'gradeLevel', 'academicYear', 'academicTerm', 'room', 'studentEnrollments.student'],
+            pagination: { limit: 100 }
+          }
+        }),
+        apiClient.get('/timetable-slots', {
+          params: {
+            filters: { courseOffering: { teacher: { id: { $eq: teacher.id } } } },
+            populate: ['courseOffering.subject', 'courseOffering.room', 'courseOffering.academicSection']
+          }
+        })
+      ]);
 
-      // Load timetable slots
-      const ttRes = await apiClient.get('/timetable-slots', {
-        params: {
-          filters: { courseOffering: { teacher: { id: { $eq: teacher.id } } } },
-          populate: ['courseOffering.subject', 'courseOffering.room', 'courseOffering.academicSection']
-        }
-      });
+      const rawOfferings: any[] = offeringsRes.data?.data || [];
+
+      // Fetch attendance counts for each offering to compute real rates
+      const enriched: CourseOffering[] = await Promise.all(
+        rawOfferings.map(async (o: any) => {
+          try {
+            const attRes = await apiClient.get('/attendance-records', {
+              params: {
+                filters: { courseOffering: { id: { $eq: o.id } } },
+                pagination: { limit: 1000 },
+                fields: ['recordStatus']
+              }
+            });
+            const records: any[] = attRes.data?.data || [];
+            const total = records.length;
+            const present = records.filter((r: any) => r.recordStatus === 'Present').length;
+            const pct = total > 0 ? Math.round((present / total) * 100) : null;
+            return {
+              ...o,
+              attendanceRate: pct !== null ? `${pct}%` : '—',
+              attendancePct: pct
+            };
+          } catch {
+            return { ...o, attendanceRate: '—', attendancePct: null };
+          }
+        })
+      );
+
+      setOfferings(enriched);
       setTimetable(ttRes.data?.data || []);
     } catch (err) {
       toast.error('Failed to load Course Offerings.');
     } finally {
       setIsLoading(false);
     }
-  };
-
-  useEffect(() => {
-    loadOfferings();
   }, [teacher?.id]);
 
-  // 2. Fetch specific Course Offering workspace data
+  useEffect(() => { loadOfferings(); }, [loadOfferings]);
+
+  // ── 2. Load workspace data when an offering is selected ────────────────────
   const loadOfferingWorkspace = async (offering: CourseOffering) => {
     setIsLoading(true);
     setSelectedOffering(offering);
@@ -183,101 +239,127 @@ export default function TeacherDashboardPage() {
       const subjectId = offering.subject?.id;
       const offeringId = offering.id;
 
-      // Promise.all to fetch blueprints, grading policies, attendance history, current grades and approval histories
-      const [bpRes, gpRes, attendRes, gradesRes, appHistoryRes, auditsRes] = await Promise.all([
-        subjectId ? apiClient.get('/assessment-blueprints', { params: { filters: { subject: { id: { $eq: subjectId } } } } }).catch(() => ({ data: { data: [] } })) : Promise.resolve({ data: { data: [] } }),
+      const [bpRes, gpRes, attendRes, gradesRes, appHistRes, auditsRes, lpsRes] = await Promise.all([
+        subjectId
+          ? apiClient.get('/assessment-blueprints', { params: { filters: { subject: { id: { $eq: subjectId } } }, pagination: { limit: 100 } } }).catch(() => ({ data: { data: [] } }))
+          : Promise.resolve({ data: { data: [] } }),
         apiClient.get('/grading-policies', { params: { pagination: { limit: 100 } } }).catch(() => ({ data: { data: [] } })),
-        apiClient.get('/attendance-records', { params: { filters: { courseOffering: { id: { $eq: offeringId } } }, populate: ['student'], pagination: { limit: 100 } } }).catch(() => ({ data: { data: [] } })),
-        apiClient.get('/gradebook-entries', { params: { filters: { courseOffering: { id: { $eq: offeringId } } }, populate: ['student'], pagination: { limit: 500 } } }).catch(() => ({ data: { data: [] } })),
-        apiClient.get('/grade-approval-histories', { params: { filters: { courseOffering: { id: { $eq: offeringId } } }, populate: ['reviewer'], sort: 'actionDateTime:desc' } }).catch(() => ({ data: { data: [] } })),
-        apiClient.get('/audit-logs', { params: { filters: { entity: { $eq: 'CourseOffering' }, entityId: { $eq: String(offeringId) } }, populate: ['performedBy'], sort: 'createdAt:desc', pagination: { limit: 20 } } }).catch(() => ({ data: { data: [] } }))
+        apiClient.get('/attendance-records', { params: { filters: { courseOffering: { id: { $eq: offeringId } } }, populate: ['student'], sort: 'date:desc', pagination: { limit: 300 } } }).catch(() => ({ data: { data: [] } })),
+        apiClient.get('/gradebook-entries', { params: { filters: { courseOffering: { id: { $eq: offeringId } } }, populate: ['student'], pagination: { limit: 1000 } } }).catch(() => ({ data: { data: [] } })),
+        apiClient.get('/grade-approval-histories', { params: { filters: { courseOffering: { id: { $eq: offeringId } } }, sort: 'actionDateTime:desc' } }).catch(() => ({ data: { data: [] } })),
+        apiClient.get('/audit-logs', { params: { filters: { entity: { $eq: 'CourseOffering' }, entityId: { $eq: String(offeringId) } }, sort: 'createdAt:desc', pagination: { limit: 50 } } }).catch(() => ({ data: { data: [] } })),
+        apiClient.get('/lesson-plans', { params: { filters: { teacher: { id: { $eq: teacher?.id } }, subject: { id: { $eq: subjectId } } }, pagination: { limit: 100 }, sort: 'createdAt:desc' } }).catch(() => ({ data: { data: [] } }))
       ]);
 
-      const bpList = bpRes.data?.data || [];
+      const bpList: AssessmentBlueprint[] = bpRes.data?.data || [];
       setBlueprints(bpList);
       setGradingPolicies(gpRes.data?.data || []);
       setAttendanceHistory(attendRes.data?.data || []);
       setSectionAuditLogs(auditsRes.data?.data || []);
+      setLessonPlans(lpsRes.data?.data || []);
 
-      // Load approval history
-      const approvals = appHistoryRes.data?.data || [];
-      setApprovalHistory(approvals);
-      if (approvals.length > 0) {
-        setApprovalStatus(approvals[0].stage);
-      } else {
-        setApprovalStatus(offering.gradebookStatus || 'Draft');
+      // Fetch curriculum topics if subject has curriculum
+      if (subjectId) {
+        try {
+          const currRes = await apiClient.get('/curriculums', {
+            params: { filters: { subject: { id: { $eq: subjectId } } }, populate: ['topics'], pagination: { limit: 10 } }
+          });
+          const curriculums = currRes.data?.data || [];
+          const allTopics: CurriculumTopic[] = [];
+          curriculums.forEach((c: any) => {
+            (c.topics || []).forEach((t: any) => allTopics.push(t));
+          });
+          setCurriculumTopics(allTopics.sort((a, b) => (a.orderNumber ?? 0) - (b.orderNumber ?? 0)));
+        } catch { setCurriculumTopics([]); }
+
+        // Fetch teaching progress
+        try {
+          const tpRes = await apiClient.get('/teaching-progresses', {
+            params: { filters: { courseOffering: { id: { $eq: offeringId } } }, sort: 'weekNumber:asc', pagination: { limit: 100 } }
+          });
+          setTeachingProgress(tpRes.data?.data || []);
+        } catch { setTeachingProgress([]); }
       }
 
-      // Initialize attendance register for today
+      // Approval status
+      const approvals = appHistRes.data?.data || [];
+      setApprovalHistory(approvals);
+      setApprovalStatus(
+        approvals.length > 0
+          ? approvals[0].stage
+          : (offering.gradebookStatus || 'Draft')
+      );
+
+      // Init attendance register (default all Present)
       const roster = offering.studentEnrollments || [];
       const attMap: Record<string, string> = {};
       roster.forEach((enr) => {
-        if (enr.student?.id) {
-          attMap[enr.student.id] = 'Present';
-        }
+        if (enr.student?.id) attMap[String(enr.student.id)] = 'Present';
       });
       setAttendanceRegister(attMap);
 
-      // Initialize Gradebook entries map
-      const gradesList = gradesRes.data?.data || [];
+      // Build gradebook grid — key every cell by bpKey(bp)
+      const gradesList: any[] = gradesRes.data?.data || [];
       const gMap: Record<string, Record<string, number>> = {};
       const cMap: Record<string, string> = {};
       const entryIdMap: Record<string, string> = {};
 
       roster.forEach((enr) => {
-        if (enr.student?.id) {
-          gMap[enr.student.id] = {};
-        }
+        if (enr.student?.id) gMap[String(enr.student.id)] = {};
       });
 
+      const sorted = sortBps(bpList);
+
       gradesList.forEach((entry: any) => {
-        const studentId = entry.student?.id;
-        if (!studentId) return;
+        const studentId = String(entry.student?.id);
+        if (!studentId || studentId === 'undefined') return;
 
-        // Match entry back to a blueprint.
-        // Priority: match by label first (unique), then by title, then by assessmentType.
-        const bp = bpList.find((b: any) =>
-          (b.label && b.label === entry.title) ||
-          (b.label && b.label === entry.assessmentType) ||
-          b.componentName === entry.title ||
-          b.componentName === entry.assessmentType
-        );
+        // Match entry → blueprint with robust fuzzy matching
+        const matchedBp =
+          sorted.find((b) => {
+            const bLabel = (bpKey(b)).toLowerCase();
+            const bName = (b.componentName || '').toLowerCase();
+            const eTitle = (entry.title || '').toLowerCase();
+            if (bLabel && eTitle === bLabel) return true;
+            if (eTitle === bName) return true;
+            if (bLabel && eTitle.includes(bLabel)) return true;
+            return false;
+          }) ||
+          bpList.find((b) =>
+            (b.componentName || '').toLowerCase() === (entry.assessmentType || '').toLowerCase()
+          );
 
-        // Key by the LABEL (unique display name) so Quiz and Quiz2 don't collide.
-        const component = bp ? (bp.label || bp.componentName) : (entry.title || entry.assessmentType);
+        const component = matchedBp ? bpKey(matchedBp) : (entry.title || entry.assessmentType || 'Other');
         if (component) {
           if (!gMap[studentId]) gMap[studentId] = {};
           gMap[studentId][component] = entry.score;
-          if (entry.teacherComment) {
-            cMap[`${studentId}-${component}`] = entry.teacherComment;
-          }
-          entryIdMap[`${studentId}-${component}`] = entry.documentId || entry.id;
+          if (entry.teacherComment) cMap[`${studentId}-${component}`] = entry.teacherComment;
+          entryIdMap[`${studentId}-${component}`] = entry.documentId || String(entry.id);
         }
       });
+
       setGradebookData(gMap);
       setGradebookComments(cMap);
       setGradebookEntryIds(entryIdMap);
-
     } catch (err) {
-      toast.error('Failed to load workspace files.');
+      toast.error('Failed to load workspace data.');
+      console.error(err);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Grade point calculations
+  // ── Grading Rules ─────────────────────────────────────────────────────────
   const gradingRules = useMemo(() => {
-    if (gradingPolicies && gradingPolicies.length > 0) {
+    if (gradingPolicies.length > 0) {
       return gradingPolicies
-        .map((p: any) => {
-          const minVal = parseFloat(p.minScore ?? p.minimumScore ?? 0);
-          const letter = p.gradeName ?? p.letterGrade ?? 'F';
-          const gp = parseFloat(p.gpaPoints ?? p.gradePoints ?? 0);
-          return { minScore: minVal, letterGrade: letter, gradePoints: gp };
-        })
+        .map((p) => ({
+          minScore: parseFloat(String(p.minScore ?? p.minimumScore ?? 0)),
+          letterGrade: p.gradeName ?? p.letterGrade ?? 'F',
+          gradePoints: parseFloat(String(p.gpaPoints ?? p.gradePoints ?? 0))
+        }))
         .sort((a, b) => b.minScore - a.minScore);
     }
-    // Default fallback rules
     return [
       { minScore: 97, letterGrade: 'A+', gradePoints: 4.0 },
       { minScore: 93, letterGrade: 'A', gradePoints: 3.8 },
@@ -286,94 +368,108 @@ export default function TeacherDashboardPage() {
       { minScore: 77, letterGrade: 'C+', gradePoints: 2.5 },
       { minScore: 70, letterGrade: 'C', gradePoints: 2.0 },
       { minScore: 50, letterGrade: 'D', gradePoints: 1.0 },
-      { minScore: 0, letterGrade: 'F', gradePoints: 0.0 }
+      { minScore: 0,  letterGrade: 'F', gradePoints: 0.0 }
     ];
   }, [gradingPolicies]);
 
   const resolveLetterAndPoints = (score: number) => {
     for (const rule of gradingRules) {
-      if (score >= rule.minScore) {
-        return { grade: rule.letterGrade, points: rule.gradePoints };
-      }
+      if (score >= rule.minScore) return { grade: rule.letterGrade, points: rule.gradePoints };
     }
     return { grade: 'F', points: 0.0 };
   };
 
-  // Calculate student results dynamically based on blueprint weights
-  const calculateStudentFinalScore = (studentId: number) => {
-    const studentGrades = gradebookData[studentId] || {};
+  const calculateStudentFinalScore = (studentId: string | number) => {
+    const studentGrades = gradebookData[String(studentId)] || {};
     let totalWeight = 0;
     let weightedSum = 0;
-
     blueprints.forEach((bp) => {
-      const comp = bp.componentName;
-      const score = studentGrades[comp] ?? null;
+      const key = bpKey(bp);
+      const score = studentGrades[key] ?? null;
       if (score !== null) {
         weightedSum += score * (bp.weightPercentage / 100);
         totalWeight += bp.weightPercentage;
       }
     });
-
     if (totalWeight === 0) return { score: 0, grade: 'F', points: 0.0 };
-    // Normalize to 100% scale
     const finalScore = Math.min(100, Math.max(0, (weightedSum / totalWeight) * 100));
-    const { grade, points } = resolveLetterAndPoints(finalScore);
-    return { score: finalScore, grade, points };
+    return { score: finalScore, ...resolveLetterAndPoints(finalScore) };
   };
 
-  // Handle grade change
+  // ── At-risk students (real calculation) ───────────────────────────────────
+  const atRiskStudents = useMemo(() => {
+    if (!selectedOffering) return [];
+    return (selectedOffering.studentEnrollments || [])
+      .map((enr) => {
+        if (!enr.student) return null;
+        const calc = calculateStudentFinalScore(enr.student.id);
+        const grades = gradebookData[String(enr.student.id)] || {};
+        const hasAnyGrade = Object.keys(grades).length > 0;
+        return { student: enr.student, score: calc.score, grade: calc.grade, hasAnyGrade };
+      })
+      .filter((s): s is NonNullable<typeof s> => !!s && s.hasAnyGrade && s.score < 60);
+  }, [selectedOffering, gradebookData, blueprints]);
+
+  // ── Stats derived from real data ──────────────────────────────────────────
+  const avgAttendancePct = useMemo(() => {
+    const rates = offerings.map((o) => o.attendancePct).filter((p): p is number => p !== null);
+    if (rates.length === 0) return '—';
+    return `${Math.round(rates.reduce((a, b) => a + b, 0) / rates.length)}%`;
+  }, [offerings]);
+
+  // Lesson planner: compute coverage from curriculum topics
+  const coveredTopics = curriculumTopics.filter((t) => t.completionStatus === 'Completed').length;
+  const totalTopics = curriculumTopics.length;
+  const syllabusComputed = totalTopics > 0 ? Math.round((coveredTopics / totalTopics) * 100) : null;
+
+  // ── Grade cell change ─────────────────────────────────────────────────────
   const handleGradeCellChange = (studentId: number, component: string, value: string) => {
-    // If locked, reject edits
     if (approvalStatus !== 'Draft') {
-      toast.warning('Gradebook is locked for moderation review.');
+      toast.warning('Gradebook is locked while under review.');
       return;
     }
     const scoreVal = Math.max(0, Math.min(100, parseFloat(value) || 0));
     setGradebookData((prev) => ({
       ...prev,
-      [studentId]: {
-        ...(prev[studentId] || {}),
-        [component]: scoreVal
-      }
+      [String(studentId)]: { ...(prev[String(studentId)] || {}), [component]: scoreVal }
     }));
   };
 
-  // Save attendance register
+  // ── Save Attendance ────────────────────────────────────────────────────────
   const handleSaveAttendance = async () => {
     if (!selectedOffering) return;
     setIsSavingAttendance(true);
     try {
-      const logsToSave = Object.entries(attendanceRegister).map(([studentId, status]) => {
-        return apiClient.post('/attendance-records', {
-          data: {
-            date: attendanceDate,
-            recordStatus: status,
-            student: parseInt(studentId),
-            teacher: teacher.id,
-            courseOffering: selectedOffering.id,
-            section: selectedOffering.academicSection?.id,
-            subject: selectedOffering.subject?.id,
-            academicYear: selectedOffering.academicYear?.id,
-            academicTerm: selectedOffering.academicTerm?.id
-          }
-        });
-      });
+      await Promise.all(
+        Object.entries(attendanceRegister).map(([studentId, status]) =>
+          apiClient.post('/attendance-records', {
+            data: {
+              date: attendanceDate,
+              recordStatus: status,
+              student: parseInt(studentId),
+              teacher: teacher.id,
+              courseOffering: selectedOffering.id,
+              section: selectedOffering.academicSection?.id,
+              subject: selectedOffering.subject?.id,
+              academicYear: selectedOffering.academicYear?.id,
+              academicTerm: selectedOffering.academicTerm?.id
+            }
+          })
+        )
+      );
 
-      await Promise.all(logsToSave);
-
-      // Write security audit log
       await apiClient.post('/audit-logs', {
         data: {
           action: 'Attendance Register Saved',
           entity: 'CourseOffering',
           entityId: String(selectedOffering.id),
-          description: `Teacher saved attendance log for ${Object.keys(attendanceRegister).length} students on date ${attendanceDate}`,
+          description: `Teacher saved attendance for ${Object.keys(attendanceRegister).length} students on ${attendanceDate}`,
           performedBy: user?.id,
           timestamp: new Date().toISOString()
         }
       }).catch(console.warn);
 
-      toast.success('Daily attendance register posted successfully.');
+      toast.success('Attendance posted successfully.');
       loadOfferingWorkspace(selectedOffering);
     } catch {
       toast.error('Failed to post attendance.');
@@ -382,46 +478,37 @@ export default function TeacherDashboardPage() {
     }
   };
 
-  // Save Gradebook scores to database
+  // ── Save Grades ────────────────────────────────────────────────────────────
   const handleSaveGrades = async () => {
     if (!selectedOffering) return;
     setIsSavingGrades(true);
     try {
-      const recordsToSave: any[] = [];
       const roster = selectedOffering.studentEnrollments || [];
+      const validEnum = ['Homework', 'Quiz', 'Project', 'Participation', 'Attendance', 'Exam', 'Other'];
 
-      for (const enr of roster) {
-        const studentId = enr.student?.id;
-        if (!studentId) continue;
-
+      const saves = roster.flatMap((enr) => {
+        const studentId = String(enr.student?.id);
+        if (!studentId || studentId === 'undefined') return [];
         const studentGrades = gradebookData[studentId] || {};
-        for (const [component, score] of Object.entries(studentGrades)) {
-          const entryKey = `${studentId}-${component}`;
-          const existingId = gradebookEntryIds[entryKey];
 
-          // Key by label (same key used when loading) so PUT hits the correct existing entry
-          const bp = blueprints.find(b => (b.label || b.componentName) === component);
-          const titleVal = bp?.label || component;
+        return Object.entries(studentGrades).map(([component, score]) => {
+          const bp = blueprints.find((b) => bpKey(b) === component);
           const resolvedComponentName = bp?.componentName || component;
-
-          const validEnum = ["Homework", "Quiz", "Project", "Participation", "Attendance", "Exam", "Other"];
-          let resolvedType = resolvedComponentName;
           const rootType = resolvedComponentName.replace(/[0-9]/g, '');
-          if (validEnum.includes(rootType)) {
-            resolvedType = rootType;
-          } else if (validEnum.includes(resolvedComponentName)) {
-            resolvedType = resolvedComponentName;
-          } else {
-            resolvedType = 'Other';
-          }
+          const resolvedType = validEnum.includes(rootType)
+            ? rootType
+            : validEnum.includes(resolvedComponentName)
+            ? resolvedComponentName
+            : 'Other';
 
           const payload = {
             data: {
-              title: titleVal,
+              title: component,           // use the display key
               assessmentType: resolvedType,
               score,
               maxScore: 100,
               percentage: score,
+              weight: bp?.weightPercentage ?? 0,
               student: enr.student?.documentId || enr.student?.id,
               teacher: teacher.documentId || teacher.id,
               courseOffering: selectedOffering.documentId || selectedOffering.id,
@@ -433,48 +520,42 @@ export default function TeacherDashboardPage() {
             }
           };
 
-          if (existingId) {
-            recordsToSave.push(
-              apiClient.put(`/gradebook-entries/${existingId}`, payload)
-            );
-          } else {
-            recordsToSave.push(
-              apiClient.post('/gradebook-entries', payload)
-            );
-          }
-        }
-      }
+          const existingId = gradebookEntryIds[`${studentId}-${component}`];
+          return existingId
+            ? apiClient.put(`/gradebook-entries/${existingId}`, payload)
+            : apiClient.post('/gradebook-entries', payload);
+        });
+      });
 
-      await Promise.all(recordsToSave);
+      await Promise.all(saves);
 
-      // Write security audit log
       await apiClient.post('/audit-logs', {
         data: {
           action: 'Gradebook Saved',
           entity: 'CourseOffering',
           entityId: String(selectedOffering.id),
-          description: `Teacher saved gradebook scores in draft format.`,
+          description: `Teacher saved draft gradebook scores for ${roster.length} students.`,
           performedBy: user?.id,
           timestamp: new Date().toISOString()
         }
       }).catch(console.warn);
 
-      toast.success('Gradebook drafts updated successfully.');
+      toast.success('Gradebook drafts saved successfully.');
       loadOfferingWorkspace(selectedOffering);
-    } catch {
+    } catch (err) {
+      console.error(err);
       toast.error('Failed to save gradebook.');
     } finally {
       setIsSavingGrades(false);
     }
   };
 
-  // Create new Assessment Blueprint component
+  // ── Create Assessment Blueprint ────────────────────────────────────────────
   const handleCreateAssessment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedOffering || !newAssessName || !newAssessCategory) return;
     setIsCreatingAssessment(true);
     try {
-      // Simulate/create assessment blueprint in Strapi
       await apiClient.post('/assessment-blueprints', {
         data: {
           componentName: newAssessCategory,
@@ -484,20 +565,21 @@ export default function TeacherDashboardPage() {
         }
       });
 
-      // Write security audit log
       await apiClient.post('/audit-logs', {
         data: {
           action: 'Assessment Category Added',
           entity: 'CourseOffering',
           entityId: String(selectedOffering.id),
-          description: `Added blueprint component: ${newAssessCategory} (Weight: ${newAssessWeight}%)`,
+          description: `Added blueprint: ${newAssessName} (${newAssessCategory}, Weight: ${newAssessWeight}%)`,
           performedBy: user?.id,
           timestamp: new Date().toISOString()
         }
       }).catch(console.warn);
 
-      toast.success(`Assessment category '${newAssessCategory}' registered successfully.`);
+      toast.success(`Assessment '${newAssessName}' registered.`);
       setNewAssessName('');
+      setNewAssessCategory('');
+      setNewAssessWeight('10');
       loadOfferingWorkspace(selectedOffering);
     } catch {
       toast.error('Failed to register assessment blueprint.');
@@ -506,29 +588,22 @@ export default function TeacherDashboardPage() {
     }
   };
 
-  // Submit for approval (teacher-only: Draft → Submitted)
+  // ── Grade Approval Workflow ────────────────────────────────────────────────
   const handleWorkflowTransition = async (targetStage: string) => {
-    if (!selectedOffering) return;
-    if (isSubmittingApproval) return;
+    if (!selectedOffering || isSubmittingApproval) return;
     setIsSubmittingApproval(true);
     try {
       const nextVersion = (approvalHistory?.[0]?.versionNumber ?? 0) + 1;
-
-      // Simple integrity hash
       const dataStr = JSON.stringify(gradebookData);
       let hash = 0;
-      for (let i = 0; i < dataStr.length; i++) {
-        hash = (hash << 5) - hash + dataStr.charCodeAt(i);
-        hash |= 0;
-      }
+      for (let i = 0; i < dataStr.length; i++) { hash = (hash << 5) - hash + dataStr.charCodeAt(i); hash |= 0; }
       const changeHash = `SHA256-${Math.abs(hash).toString(16)}`;
 
-      // Create audit history record — use text fields (no relation binding)
       await apiClient.post('/grade-approval-histories', {
         data: {
           stage: targetStage,
           versionNumber: nextVersion,
-          comments: approvalComment || `Transitioned gradebook to stage: ${targetStage}`,
+          comments: approvalComment || `Gradebook transitioned to: ${targetStage}`,
           actionDateTime: new Date().toISOString(),
           reviewerEmail: (user as any)?.email || '',
           reviewerName: `${(user as any)?.firstName || ''} ${(user as any)?.lastName || ''}`.trim() || (user as any)?.username || '',
@@ -537,16 +612,12 @@ export default function TeacherDashboardPage() {
         }
       });
 
-      // Always update the Course Offering gradebookStatus (separate try so it always runs)
       try {
         await apiClient.put(`/course-offerings/${selectedOffering.documentId}`, {
           data: { gradebookStatus: targetStage }
         });
-      } catch (putErr) {
-        console.warn('Failed to update course offering status:', putErr);
-      }
+      } catch (e) { console.warn('Could not update gradebook status:', e); }
 
-      // Audit log (non-blocking)
       apiClient.post('/audit-logs', {
         data: {
           action: `Grade Approval: ${targetStage}`,
@@ -562,23 +633,102 @@ export default function TeacherDashboardPage() {
       setApprovalComment('');
       loadOfferingWorkspace(selectedOffering);
     } catch (err: any) {
-      console.error('Workflow transition error:', err?.response?.data || err);
+      console.error('Workflow error:', err?.response?.data || err);
       toast.error('Failed to submit approval workflow.');
     } finally {
       setIsSubmittingApproval(false);
     }
   };
 
+  // ── Create Lesson Plan ─────────────────────────────────────────────────────
+  const handleCreateLessonPlan = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedOffering || !newLpTitle) return;
+    setIsCreatingLessonPlan(true);
+    try {
+      await apiClient.post('/lesson-plans', {
+        data: {
+          title: newLpTitle,
+          objectives: newLpObjectives,
+          teachingMethod: newLpMethod,
+          teacher: teacher?.documentId || teacher?.id,
+          subject: selectedOffering.subject?.documentId || selectedOffering.subject?.id,
+          section: selectedOffering.academicSection?.documentId || selectedOffering.academicSection?.id,
+          academicYear: selectedOffering.academicYear?.documentId || selectedOffering.academicYear?.id,
+          academicTerm: selectedOffering.academicTerm?.documentId || selectedOffering.academicTerm?.id,
+          recordStatus: 'Draft'
+        }
+      });
+      toast.success('Lesson plan saved.');
+      setNewLpTitle('');
+      setNewLpObjectives('');
+      setNewLpMethod('');
+      setShowLpForm(false);
+      loadOfferingWorkspace(selectedOffering);
+    } catch {
+      toast.error('Failed to save lesson plan.');
+    } finally {
+      setIsCreatingLessonPlan(false);
+    }
+  };
+
+  // ── Submit Lesson Plan for Approval ────────────────────────────────────────
+  const handleSubmitLessonPlan = async (lpId: string | number) => {
+    try {
+      await apiClient.put(`/lesson-plans/${lpId}`, { data: { recordStatus: 'Pending Approval' } });
+      toast.success('Lesson plan submitted for Section Head approval.');
+      if (selectedOffering) loadOfferingWorkspace(selectedOffering);
+    } catch {
+      toast.error('Failed to submit lesson plan.');
+    }
+  };
+
+  // ── Delete Lesson Plan ──────────────────────────────────────────────────────
+  const handleDeleteLessonPlan = async (lpId: string | number) => {
+    if (!confirm('Delete this lesson plan?')) return;
+    try {
+      await apiClient.delete(`/lesson-plans/${lpId}`);
+      toast.success('Lesson plan deleted.');
+      if (selectedOffering) loadOfferingWorkspace(selectedOffering);
+    } catch {
+      toast.error('Failed to delete lesson plan.');
+    }
+  };
+
+  // ── Update topic completion status ─────────────────────────────────────────
+  const handleTopicStatusChange = async (topic: CurriculumTopic) => {
+    const nextStatus: Record<string, 'Pending' | 'In Progress' | 'Completed'> = {
+      'Pending': 'In Progress',
+      'In Progress': 'Completed',
+      'Completed': 'Pending'
+    };
+    const newStatus = nextStatus[topic.completionStatus || 'Pending'];
+    try {
+      await apiClient.put(`/topics/${topic.documentId}`, { data: { completionStatus: newStatus } });
+      setCurriculumTopics((prev) =>
+        prev.map((t) => t.id === topic.id ? { ...t, completionStatus: newStatus } : t)
+      );
+      toast.success(`Topic marked as "${newStatus}".`);
+    } catch {
+      toast.error('Failed to update topic status.');
+    }
+  };
+
+  // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <PageContainer>
       <PageHeader
-        title={selectedOffering ? `Workspace: ${selectedOffering.subject?.name} (${selectedOffering.gradeLevel?.name})` : `Teaching Portal`}
-        description={selectedOffering ? `${selectedOffering.academicSection?.name} · ${selectedOffering.academicYear?.name} · Term: ${selectedOffering.academicTerm?.name}` : `Manage assigned Course Offerings and syllabus delivery.`}
+        title={selectedOffering
+          ? `Workspace: ${selectedOffering.subject?.name} (${selectedOffering.gradeLevel?.name})`
+          : 'Teaching Portal'}
+        description={selectedOffering
+          ? `${selectedOffering.academicSection?.name} · ${selectedOffering.academicYear?.name} · Term: ${selectedOffering.academicTerm?.name}`
+          : 'Manage assigned Course Offerings, grades, attendance and curriculum delivery.'}
       >
         <div className="flex gap-2">
           {selectedOffering && (
             <button
-              onClick={() => setSelectedOffering(null)}
+              onClick={() => { setSelectedOffering(null); setActiveWorkspaceTab('overview'); }}
               className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-emerald-400 dark:bg-slate-900 text-xs font-bold hover:bg-yellow-400 cursor-pointer dark:hover:bg-slate-800 transition"
             >
               <X className="w-3.5 h-3.5" />
@@ -588,10 +738,10 @@ export default function TeacherDashboardPage() {
           <button
             onClick={loadOfferings}
             disabled={isLoading}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-emerald-400 dark:bg-slate-900 text-xs font-bold hover:bg-emerald-600 dark:hover:bg-slate-800 transition"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-700 dark:hover:bg-slate-800 transition disabled:opacity-60"
           >
             <RefreshCw className={cn('w-3.5 h-3.5', isLoading && 'animate-spin')} />
-            <span>Sync Live DB</span>
+            <span>Sync DB</span>
           </button>
         </div>
       </PageHeader>
@@ -599,13 +749,14 @@ export default function TeacherDashboardPage() {
       {isLoading && (
         <div className="flex flex-col items-center justify-center min-h-[300px]">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mb-3" />
-          <p className="text-slate-400 text-xs font-semibold">Syncing database registers...</p>
+          <p className="text-slate-400 text-xs font-semibold">Syncing live data...</p>
         </div>
       )}
 
+      {/* ── OFFERINGS LIST VIEW ────────────────────────────────────────────── */}
       {!isLoading && !selectedOffering && (
         <div className="space-y-6">
-          {/* STATS ROW */}
+          {/* Stats Row */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard
               title="Course Offerings"
@@ -616,7 +767,7 @@ export default function TeacherDashboardPage() {
               bgColor="bg-indigo-500/10"
             />
             <StatCard
-              title="Today's Timetable Slots"
+              title="Timetable Slots"
               value={timetable.length}
               subtitle="Assigned classroom slots"
               icon={Calendar}
@@ -632,24 +783,24 @@ export default function TeacherDashboardPage() {
               bgColor="bg-emerald-500/10"
             />
             <StatCard
-              title="Average Syllabus Coverage"
-              value="57.5%"
-              subtitle="Calculated term coverages"
+              title="Avg Attendance Rate"
+              value={avgAttendancePct}
+              subtitle="Across all assigned offerings"
               icon={CheckCircle2}
               color="text-amber-500"
               bgColor="bg-amber-500/10"
             />
           </div>
 
-          {/* COURSE OFFERINGS LIST */}
+          {/* Offerings Grid */}
           <div className="space-y-3">
             <h2 className="text-sm font-extrabold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
-              <ClipboardList className="w-4.5 h-4.5 text-indigo-500" />
+              <ClipboardList className="w-4 h-4 text-indigo-500" />
               <span>My Course Offerings</span>
             </h2>
 
             {offerings.length === 0 ? (
-              <div className="bg-white dark:bg-slate-900 border rounded-3xl p-8 text-center text-slate-400">
+              <div className="bg-white dark:bg-slate-900 border rounded-3xl p-8 text-center text-slate-400 text-sm">
                 No course offerings assigned to your profile in this term.
               </div>
             ) : (
@@ -660,7 +811,7 @@ export default function TeacherDashboardPage() {
                     <div
                       key={o.id}
                       onClick={() => loadOfferingWorkspace(o)}
-                      className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 hover:shadow-lg transition-all group cursor-pointer flex flex-col justify-between min-h-[190px]"
+                      className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 hover:shadow-lg transition-all group cursor-pointer flex flex-col justify-between min-h-[200px]"
                     >
                       <div>
                         <div className="flex items-center justify-between gap-2 mb-2">
@@ -686,8 +837,22 @@ export default function TeacherDashboardPage() {
                           <span>{o.studentEnrollments?.length ?? 0} Students</span>
                         </div>
                         <div className="flex items-center gap-1.5">
+                          <UserCheck className="w-3.5 h-3.5 text-slate-400" />
+                          <span>Attendance: {o.attendanceRate}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
                           <Clock className="w-3.5 h-3.5 text-slate-400" />
-                          <span>Room {o.room?.roomNumber ?? '101'}</span>
+                          <span>Room {o.room?.roomNumber ?? 'N/A'}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <ShieldCheck className="w-3.5 h-3.5 text-slate-400" />
+                          <span className={cn(
+                            'capitalize',
+                            o.gradebookStatus === 'Approved' ? 'text-emerald-600' :
+                            o.gradebookStatus === 'Submitted' ? 'text-amber-600' : 'text-slate-500'
+                          )}>
+                            {o.gradebookStatus ?? 'Draft'}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -699,147 +864,192 @@ export default function TeacherDashboardPage() {
         </div>
       )}
 
-      {/* WORKSPACE DETAIL VIEW */}
+      {/* ── WORKSPACE DETAIL VIEW ─────────────────────────────────────────── */}
       {!isLoading && selectedOffering && (
-        <div className="space-y-6 animate-fade-in">
-          {/* HORIZONTAL TAB BAR */}
-          <div className="flex items-center gap-1.5 px-1.5 py-1 bg-slate-100 dark:bg-slate-800 border rounded-2xl overflow-x-auto no-scrollbar max-w-5xl">
+        <div className="space-y-6">
+          {/* Tab bar */}
+          <div className="flex items-center gap-1.5 px-1.5 py-1 bg-slate-100 dark:bg-slate-800 border rounded-2xl overflow-x-auto no-scrollbar max-w-6xl">
             {[
-              { id: 'overview', label: 'Overview', icon: BookOpen },
-              { id: 'roster', label: 'Student Roster', icon: Users },
-              { id: 'attendance', label: 'Attendance logs', icon: UserCheck },
-              { id: 'assessments', label: 'Assessments', icon: PenTool },
-              { id: 'gradebook', label: 'Gradebook Spreadsheet', icon: ClipboardList },
-              { id: 'approval', label: 'Grade Approval', icon: ShieldCheck },
-              { id: 'lessonplan', label: 'Lesson Planner', icon: CheckSquare },
-              { id: 'audit', label: 'Audit Trail', icon: FileText }
-            ].map((tab) => {
-              const Icon = tab.icon;
-              const isActive = activeWorkspaceTab === tab.id;
+              { id: 'overview',    label: 'Overview',        icon: BookOpen },
+              { id: 'roster',      label: 'Roster',          icon: Users },
+              { id: 'attendance',  label: 'Attendance',      icon: UserCheck },
+              { id: 'assessments', label: 'Assessments',     icon: PenTool },
+              { id: 'gradebook',   label: 'Gradebook',       icon: ClipboardList },
+              { id: 'approval',    label: 'Grade Approval',  icon: ShieldCheck },
+              { id: 'lessonplan',  label: 'Lesson Planner',  icon: CheckSquare },
+              { id: 'audit',       label: 'Audit Trail',     icon: FileText }
+            ].map(({ id, label, icon: Icon }) => {
+              const isActive = activeWorkspaceTab === id;
               return (
                 <button
-                  key={tab.id}
-                  onClick={() => setActiveWorkspaceTab(tab.id as any)}
+                  key={id}
+                  onClick={() => setActiveWorkspaceTab(id as any)}
                   className={cn(
-                    "flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all",
+                    'flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all',
                     isActive
-                      ? "bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm border border-slate-200/80 dark:border-slate-700"
-                      : "text-slate-700 dark:text-slate-300 hover:text-slate-900 hover:bg-white/60 dark:hover:bg-slate-700/50 dark:hover:text-white"
+                      ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm border border-slate-200/80 dark:border-slate-700'
+                      : 'text-slate-700 dark:text-slate-300 hover:text-slate-900 hover:bg-white/60 dark:hover:bg-slate-700/50'
                   )}
                 >
                   <Icon className="w-3.5 h-3.5" />
-                  <span>{tab.label}</span>
+                  <span>{label}</span>
                 </button>
               );
             })}
           </div>
 
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6">
-            {/* TAB: OVERVIEW */}
+
+            {/* ── TAB: OVERVIEW ─────────────────────────────────────────────── */}
             {activeWorkspaceTab === 'overview' && (
               <div className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="p-5 border rounded-2xl bg-slate-50 dark:bg-slate-800/40">
-                    <p className="text-xs font-bold text-slate-400">Class Roster size</p>
-                    <p className="text-2xl font-black text-slate-900 dark:text-white mt-1">{selectedOffering.studentEnrollments?.length ?? 0} Students</p>
-                    <p className="text-[10px] text-slate-400 mt-1">Sourced from Student Enrollments</p>
+                    <p className="text-xs font-bold text-slate-400">Class Roster Size</p>
+                    <p className="text-2xl font-black text-slate-900 dark:text-white mt-1">
+                      {selectedOffering.studentEnrollments?.length ?? 0} Students
+                    </p>
+                    <p className="text-[10px] text-slate-400 mt-1">From enrollment records</p>
                   </div>
                   <div className="p-5 border rounded-2xl bg-slate-50 dark:bg-slate-800/40">
                     <p className="text-xs font-bold text-slate-400">Attendance Rate</p>
-                    <p className="text-2xl font-black text-slate-900 dark:text-white mt-1">{selectedOffering.attendanceRate}</p>
-                    <p className="text-[10px] text-slate-400 mt-1">Average rate in active term</p>
+                    <p className="text-2xl font-black text-slate-900 dark:text-white mt-1">
+                      {selectedOffering.attendanceRate ?? '—'}
+                    </p>
+                    <p className="text-[10px] text-slate-400 mt-1">Calculated from attendance records</p>
                   </div>
                   <div className="p-5 border rounded-2xl bg-slate-50 dark:bg-slate-800/40">
-                    <p className="text-xs font-bold text-slate-400">Syllabus Completion</p>
-                    <p className="text-2xl font-black text-slate-900 dark:text-white mt-1">{selectedOffering.syllabusCoverage}%</p>
-                    <div className="w-full bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full mt-2 overflow-hidden">
-                      <div className="bg-indigo-650 h-full" style={{ width: `${selectedOffering.syllabusCoverage}%` }} />
-                    </div>
+                    <p className="text-xs font-bold text-slate-400">Curriculum Coverage</p>
+                    <p className="text-2xl font-black text-slate-900 dark:text-white mt-1">
+                      {syllabusComputed !== null ? `${syllabusComputed}%` : '—'}
+                    </p>
+                    {totalTopics > 0 && (
+                      <div className="w-full bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full mt-2 overflow-hidden">
+                        <div className="bg-indigo-600 h-full" style={{ width: `${syllabusComputed}%` }} />
+                      </div>
+                    )}
+                    <p className="text-[10px] text-slate-400 mt-1">
+                      {totalTopics > 0 ? `${coveredTopics} / ${totalTopics} topics completed` : 'No curriculum topics linked'}
+                    </p>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Active Timetable Slots */}
+                  {/* Timetable slots */}
                   <div className="space-y-3">
                     <h3 className="text-sm font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">Course Timetable</h3>
-                    {timetable.filter(s => s.courseOffering?.id === selectedOffering.id).length === 0 ? (
-                      <p className="text-xs text-slate-400 italic">No scheduled timetable slots for this course offering.</p>
+                    {timetable.filter((s) => s.courseOffering?.id === selectedOffering.id).length === 0 ? (
+                      <p className="text-xs text-slate-400 italic">No scheduled slots for this offering.</p>
                     ) : (
                       <div className="space-y-2">
-                        {timetable.filter(s => s.courseOffering?.id === selectedOffering.id).map((slot: any) => (
-                          <div key={slot.id} className="p-3 bg-slate-50 dark:bg-slate-800/40 border rounded-2xl text-xs flex justify-between items-center">
-                            <div>
-                              <p className="font-bold">{slot.dayOfWeek}</p>
-                              <p className="text-[10px] text-slate-400 mt-0.5">Building: {selectedOffering.room?.buildingName} · Room {selectedOffering.room?.roomNumber}</p>
+                        {timetable
+                          .filter((s) => s.courseOffering?.id === selectedOffering.id)
+                          .map((slot: any) => (
+                            <div key={slot.id} className="p-3 bg-slate-50 dark:bg-slate-800/40 border rounded-2xl text-xs flex justify-between items-center">
+                              <div>
+                                <p className="font-bold">{slot.dayOfWeek}</p>
+                                <p className="text-[10px] text-slate-400 mt-0.5">
+                                  {selectedOffering.room?.buildingName
+                                    ? `Building: ${selectedOffering.room.buildingName} · `
+                                    : ''}
+                                  Room {selectedOffering.room?.roomNumber ?? 'N/A'}
+                                </p>
+                              </div>
+                              <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400">
+                                {slot.startTime} – {slot.endTime}
+                              </span>
                             </div>
-                            <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400">{slot.startTime} - {slot.endTime}</span>
-                          </div>
-                        ))}
+                          ))}
                       </div>
                     )}
                   </div>
 
-                  {/* AI recommendations */}
+                  {/* AI interventions — real at-risk students */}
                   <div className="bg-gradient-to-br from-indigo-950/40 to-slate-900 border border-indigo-800/30 p-5 rounded-3xl text-xs text-slate-300 space-y-3">
                     <h4 className="font-extrabold text-indigo-300 flex items-center gap-1.5">
                       <Sparkles className="w-4 h-4 text-indigo-400" />
-                      <span>Workspace Interventions</span>
+                      <span>At-Risk Interventions</span>
                     </h4>
-                    <p className="text-[11px] text-slate-400">Based on dynamic gradebook and attendance entries, the following learners require monitoring:</p>
-                    <div className="p-3 bg-indigo-950/40 border border-indigo-500/20 rounded-xl">
-                      <p className="font-bold text-rose-400">Mohamed Komara (GPA Risk)</p>
-                      <p className="text-[10px] text-slate-400 mt-0.5">Average calculated grades is below 60%. Excuses missing files Chapter 2.</p>
-                    </div>
+                    <p className="text-[11px] text-slate-400">Students with calculated grade below 60%:</p>
+                    {atRiskStudents.length === 0 ? (
+                      <div className="p-3 bg-emerald-950/40 border border-emerald-500/20 rounded-xl">
+                        <p className="font-bold text-emerald-400">No at-risk students 🎉</p>
+                        <p className="text-[10px] text-slate-400 mt-0.5">All graded students are performing above threshold.</p>
+                      </div>
+                    ) : (
+                      atRiskStudents.map((s) => (
+                        <div key={s.student.id} className="p-3 bg-indigo-950/40 border border-indigo-500/20 rounded-xl">
+                          <p className="font-bold text-rose-400">{s.student.firstName} {s.student.lastName}</p>
+                          <p className="text-[10px] text-slate-400 mt-0.5">
+                            Calculated grade: {s.score.toFixed(1)}% ({s.grade}) — requires monitoring.
+                          </p>
+                        </div>
+                      ))
+                    )}
                   </div>
                 </div>
               </div>
             )}
 
-            {/* TAB: ROSTER */}
+            {/* ── TAB: ROSTER ───────────────────────────────────────────────── */}
             {activeWorkspaceTab === 'roster' && (
               <div className="space-y-4">
                 <div>
                   <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Active Student Roster</h3>
-                  <p className="text-xs text-slate-500">Student rosters are synced directly from approved enrollment records.</p>
+                  <p className="text-xs text-slate-500">Synced from approved enrollment records.</p>
                 </div>
 
                 <div className="overflow-x-auto border rounded-2xl text-xs">
                   <table className="w-full text-left">
                     <thead className="bg-slate-50 dark:bg-slate-800 font-bold text-slate-700 dark:text-slate-300">
                       <tr>
-                        <th className="p-3">Admission No</th>
+                        <th className="p-3">#</th>
+                        <th className="p-3">Admission No.</th>
                         <th className="p-3">Student Name</th>
                         <th className="p-3">School ID</th>
-                        <th className="p-3 text-center">GPA</th>
-                        <th className="p-3 text-center">Standing</th>
-                        <th className="p-3 text-center">Risk Level</th>
+                        <th className="p-3">Gender</th>
+                        <th className="p-3 text-center">Calculated Grade</th>
                         <th className="p-3 text-center">Status</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y">
-                      {(selectedOffering.studentEnrollments || []).map((enr) => {
+                      {(selectedOffering.studentEnrollments || []).map((enr, idx) => {
                         const s = enr.student;
                         if (!s) return null;
+                        const calc = calculateStudentFinalScore(s.id);
                         return (
                           <tr key={enr.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30">
-                            <td className="p-3 font-mono text-slate-800 dark:text-slate-200">{s.admissionNumber || 'ADM-0921'}</td>
-                            <td className="p-3 font-bold text-slate-900 dark:text-white">{s.firstName} {s.lastName}</td>
-                            <td className="p-3 font-mono text-slate-700 dark:text-slate-300">{s.schoolId}</td>
-                            <td className="p-3 text-center font-bold text-slate-800 dark:text-slate-200">{s.gpa ?? '3.75'}</td>
-                            <td className="p-3 text-center">
-                              <span className="px-2 py-0.5 bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400 rounded-full font-bold text-[10px]">
-                                {s.academicStanding || 'Good'}
-                              </span>
+                            <td className="p-3 text-slate-400">{idx + 1}</td>
+                            <td className="p-3 font-mono text-slate-800 dark:text-slate-200">
+                              {s.admissionNumber || <span className="text-slate-400 italic">N/A</span>}
                             </td>
+                            <td className="p-3 font-bold text-slate-900 dark:text-white">
+                              {s.firstName} {s.lastName}
+                            </td>
+                            <td className="p-3 font-mono text-slate-700 dark:text-slate-300">{s.schoolId || '—'}</td>
+                            <td className="p-3 capitalize text-slate-600 dark:text-slate-400">{s.gender || '—'}</td>
                             <td className="p-3 text-center">
+                              {Object.keys(gradebookData[String(s.id)] || {}).length > 0 ? (
+                                <span className={cn(
+                                  'px-2 py-0.5 rounded font-bold text-[10px]',
+                                  calc.grade === 'F' ? 'bg-rose-50 text-rose-700' : 'bg-emerald-50 text-emerald-700'
+                                )}>
+                                  {calc.score.toFixed(1)}% ({calc.grade})
+                                </span>
+                              ) : (
+                                <span className="text-slate-400 italic">No grades</span>
+                              )}
+                            </td>
+                            <td className="p-3 text-center capitalize">
                               <span className={cn(
-                                "px-2 py-0.5 rounded-full font-bold text-[10px]",
-                                s.riskIndicator === 'High' ? 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400' : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400'
+                                'px-2 py-0.5 rounded-full font-bold text-[10px]',
+                                enr.enrollmentStatus === 'Active' || enr.enrollmentStatus === 'active'
+                                  ? 'bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400'
+                                  : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
                               )}>
-                                {s.riskIndicator || 'Low'}
+                                {enr.enrollmentStatus}
                               </span>
                             </td>
-                            <td className="p-3 text-center capitalize text-slate-800 dark:text-slate-200">{enr.enrollmentStatus}</td>
                           </tr>
                         );
                       })}
@@ -849,13 +1059,13 @@ export default function TeacherDashboardPage() {
               </div>
             )}
 
-            {/* TAB: ATTENDANCE */}
+            {/* ── TAB: ATTENDANCE ───────────────────────────────────────────── */}
             {activeWorkspaceTab === 'attendance' && (
               <div className="space-y-6">
                 <div className="flex justify-between items-center flex-wrap gap-4 border-b pb-4">
                   <div>
-                    <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Daily Attendance Registers</h3>
-                    <p className="text-xs text-slate-500">Post attendance logs directly against the course offering.</p>
+                    <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Daily Attendance Register</h3>
+                    <p className="text-xs text-slate-500">Post daily attendance against this course offering.</p>
                   </div>
                   <div className="flex items-center gap-3">
                     <input
@@ -875,7 +1085,7 @@ export default function TeacherDashboardPage() {
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  {/* Mark Attendance register table */}
+                  {/* Mark Attendance */}
                   <div className="lg:col-span-2 overflow-x-auto border rounded-2xl text-xs">
                     <table className="w-full text-left">
                       <thead className="bg-slate-50 dark:bg-slate-800 font-bold text-slate-700 dark:text-slate-300">
@@ -891,48 +1101,24 @@ export default function TeacherDashboardPage() {
                         {(selectedOffering.studentEnrollments || []).map((enr) => {
                           const s = enr.student;
                           if (!s) return null;
+                          const sid = String(s.id);
                           return (
                             <tr key={s.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30">
-                              <td className="p-3 font-bold text-slate-900 dark:text-white">
-                                <div className="text-slate-900 dark:text-white font-extrabold">{s.firstName} {s.lastName}</div>
+                              <td className="p-3">
+                                <div className="font-extrabold text-slate-900 dark:text-white">{s.firstName} {s.lastName}</div>
                                 <div className="text-[10px] text-slate-500 font-mono mt-0.5">{s.schoolId}</div>
                               </td>
-                              <td className="p-3 text-center">
-                                <input
-                                  type="radio"
-                                  name={`att-${s.id}`}
-                                  checked={attendanceRegister[s.id] === 'Present'}
-                                  onChange={() => setAttendanceRegister((prev) => ({ ...prev, [s.id]: 'Present' }))}
-                                  className="w-4 h-4 text-indigo-600"
-                                />
-                              </td>
-                              <td className="p-3 text-center">
-                                <input
-                                  type="radio"
-                                  name={`att-${s.id}`}
-                                  checked={attendanceRegister[s.id] === 'Absent'}
-                                  onChange={() => setAttendanceRegister((prev) => ({ ...prev, [s.id]: 'Absent' }))}
-                                  className="w-4 h-4 text-rose-600"
-                                />
-                              </td>
-                              <td className="p-3 text-center">
-                                <input
-                                  type="radio"
-                                  name={`att-${s.id}`}
-                                  checked={attendanceRegister[s.id] === 'Late'}
-                                  onChange={() => setAttendanceRegister((prev) => ({ ...prev, [s.id]: 'Late' }))}
-                                  className="w-4 h-4 text-amber-600"
-                                />
-                              </td>
-                              <td className="p-3 text-center">
-                                <input
-                                  type="radio"
-                                  name={`att-${s.id}`}
-                                  checked={attendanceRegister[s.id] === 'Excused'}
-                                  onChange={() => setAttendanceRegister((prev) => ({ ...prev, [s.id]: 'Excused' }))}
-                                  className="w-4 h-4 text-sky-600"
-                                />
-                              </td>
+                              {(['Present', 'Absent', 'Late', 'Excused'] as const).map((status) => (
+                                <td key={status} className="p-3 text-center">
+                                  <input
+                                    type="radio"
+                                    name={`att-${s.id}`}
+                                    checked={attendanceRegister[sid] === status}
+                                    onChange={() => setAttendanceRegister((prev) => ({ ...prev, [sid]: status }))}
+                                    className="w-4 h-4"
+                                  />
+                                </td>
+                              ))}
                             </tr>
                           );
                         })}
@@ -940,13 +1126,13 @@ export default function TeacherDashboardPage() {
                     </table>
                   </div>
 
-                  {/* Attendance Log History */}
+                  {/* History */}
                   <div className="p-4 border rounded-2xl bg-slate-50 dark:bg-slate-800/40 text-xs">
                     <h4 className="font-extrabold text-slate-900 dark:text-white mb-3">Attendance History</h4>
                     {attendanceHistory.length === 0 ? (
-                      <p className="text-slate-400 italic">No attendance history logs recorded.</p>
+                      <p className="text-slate-400 italic">No attendance records yet.</p>
                     ) : (
-                      <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+                      <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1">
                         {attendanceHistory.map((h: any) => (
                           <div key={h.id} className="p-2 border rounded-xl bg-white dark:bg-slate-900 flex justify-between items-center text-[10px]">
                             <div>
@@ -956,8 +1142,11 @@ export default function TeacherDashboardPage() {
                               <p className="text-slate-400 mt-0.5">{h.date}</p>
                             </div>
                             <span className={cn(
-                              "px-2 py-0.5 rounded-full font-bold",
-                              h.recordStatus === 'Present' ? 'bg-green-50 text-green-700' : 'bg-rose-50 text-rose-700'
+                              'px-2 py-0.5 rounded-full font-bold',
+                              h.recordStatus === 'Present' ? 'bg-green-50 text-green-700' :
+                              h.recordStatus === 'Absent'  ? 'bg-rose-50 text-rose-700' :
+                              h.recordStatus === 'Late'    ? 'bg-amber-50 text-amber-700' :
+                              'bg-sky-50 text-sky-700'
                             )}>
                               {h.recordStatus}
                             </span>
@@ -970,116 +1159,109 @@ export default function TeacherDashboardPage() {
               </div>
             )}
 
-            {/* TAB: ASSESSMENTS */}
+            {/* ── TAB: ASSESSMENTS ──────────────────────────────────────────── */}
             {activeWorkspaceTab === 'assessments' && (
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-2 space-y-4">
                   <div>
-                    <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Active Assessment Blueprints</h3>
-                    <p className="text-xs text-slate-500">Component categories and weights fetched from Subject blueprints.</p>
+                    <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Assessment Blueprints</h3>
+                    <p className="text-xs text-slate-500">Assessment components and weights for this subject.</p>
                   </div>
 
                   {blueprints.length === 0 ? (
-                    <p className="text-xs text-slate-400 italic py-4">No assessment blueprints configured. Configure weights using the builder.</p>
+                    <p className="text-xs text-slate-400 italic py-4">No blueprints configured. Use the builder to add components.</p>
                   ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                       {blueprints.map((bp) => (
                         <div key={bp.id} className="p-4 border rounded-2xl bg-slate-50 dark:bg-slate-800/40 flex justify-between items-center">
                           <div>
-                            <p className="font-extrabold text-slate-900 dark:text-white">{bp.label || bp.componentName}</p>
-                            <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Subject level rule</p>
+                            <p className="font-extrabold text-slate-900 dark:text-white">{bpKey(bp)}</p>
+                            <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Type: {bp.componentName}</p>
                           </div>
                           <span className="font-mono font-black text-indigo-600 dark:text-indigo-400 text-lg">{bp.weightPercentage}%</span>
                         </div>
                       ))}
                     </div>
                   )}
+
+                  {/* Total weight warning */}
+                  {blueprints.length > 0 && (() => {
+                    const total = blueprints.reduce((s, b) => s + b.weightPercentage, 0);
+                    return total !== 100 ? (
+                      <div className="flex items-center gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 rounded-xl text-xs text-amber-700 dark:text-amber-400">
+                        <AlertTriangle className="w-4 h-4 shrink-0" />
+                        <span>Total weight is <strong>{total}%</strong> — should sum to 100%.</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 p-3 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 rounded-xl text-xs text-emerald-700 dark:text-emerald-400">
+                        <CheckCircle2 className="w-4 h-4 shrink-0" />
+                        <span>Assessment weights correctly sum to 100%.</span>
+                      </div>
+                    );
+                  })()}
                 </div>
 
+                {/* Builder */}
                 <div className="p-5 border rounded-3xl bg-slate-50 dark:bg-slate-800/40 text-xs">
                   <h4 className="font-extrabold text-slate-900 dark:text-white mb-3 flex items-center gap-1.5">
                     <PenTool className="w-4 h-4 text-indigo-500" />
-                    <span>Assessment Builder</span>
+                    <span>Add Component</span>
                   </h4>
                   <form onSubmit={handleCreateAssessment} className="space-y-3">
                     <div>
-                      <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Assessment Label</label>
+                      <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Display Label</label>
                       <input
-                        type="text"
-                        required
-                        value={newAssessName}
-                        placeholder="Homework 1, Midterm Exam, etc."
+                        type="text" required value={newAssessName}
+                        placeholder="e.g. Homework 1, Midterm Exam"
                         onChange={(e) => setNewAssessName(e.target.value)}
-                        className="w-full px-3 py-2 border rounded-xl bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-450 dark:placeholder:text-slate-500 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                        className="w-full px-3 py-2 border rounded-xl bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
                       />
                     </div>
                     <div>
                       <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Category Type</label>
                       <select
-                        required
-                        value={newAssessCategory}
+                        required value={newAssessCategory}
                         onChange={(e) => setNewAssessCategory(e.target.value)}
                         className="w-full px-3 py-2 border rounded-xl bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-semibold focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
                       >
-                        <option value="" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">-- Choose Category --</option>
-                        <option value="Homework" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Homework</option>
-                        <option value="Quiz" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Quiz</option>
-                        <option value="Quiz2" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Quiz2</option>
-                        <option value="Project" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Project</option>
-                        <option value="Practical" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Practical</option>
-                        <option value="Participation" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Participation</option>
-                        <option value="Oral" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Oral</option>
-                        <option value="Midterm" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Midterm</option>
-                        <option value="Exam" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Final Examination</option>
+                        <option value="">-- Choose Category --</option>
+                        {['Homework', 'Quiz', 'Project', 'Practical', 'Participation', 'Oral', 'Midterm', 'Exam', 'Other'].map((c) => (
+                          <option key={c} value={c}>{c}</option>
+                        ))}
                       </select>
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Max Score</label>
-                        <input
-                          type="number"
-                          required
-                          value={newAssessMaxScore}
-                          onChange={(e) => setNewAssessMaxScore(e.target.value)}
-                          className="w-full px-3 py-2 border rounded-xl bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-semibold font-mono focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-                        />
-                      </div>
-                      <div>
-                        <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Weight (%)</label>
-                        <input
-                          type="number"
-                          required
-                          value={newAssessWeight}
-                          onChange={(e) => setNewAssessWeight(e.target.value)}
-                          className="w-full px-3 py-2 border rounded-xl bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-semibold font-mono focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-                        />
-                      </div>
+                    <div>
+                      <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Weight (%)</label>
+                      <input
+                        type="number" required min="1" max="100" value={newAssessWeight}
+                        onChange={(e) => setNewAssessWeight(e.target.value)}
+                        className="w-full px-3 py-2 border rounded-xl bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-semibold font-mono focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                      />
                     </div>
                     <button
-                      type="submit"
-                      disabled={isCreatingAssessment}
+                      type="submit" disabled={isCreatingAssessment}
                       className="w-full px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-md cursor-pointer disabled:opacity-50"
                     >
-                      {isCreatingAssessment ? 'Registering...' : 'Register Component'}
+                      {isCreatingAssessment ? 'Saving...' : 'Register Component'}
                     </button>
                   </form>
                 </div>
               </div>
             )}
 
-            {/* TAB: GRADEBOOK */}
+            {/* ── TAB: GRADEBOOK ────────────────────────────────────────────── */}
             {activeWorkspaceTab === 'gradebook' && (
               <div className="space-y-6">
                 <div className="flex justify-between items-center flex-wrap gap-4 border-b pb-4">
                   <div>
-                    <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Active Spreadsheet Gradebook</h3>
-                    <p className="text-xs text-slate-500">Dynamic assessment columns generated from active blueprints.</p>
+                    <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Gradebook Spreadsheet</h3>
+                    <p className="text-xs text-slate-500">Dynamic columns from configured blueprints.</p>
                   </div>
                   <div className="flex items-center gap-3">
                     {approvalStatus !== 'Draft' && (
                       <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/20 text-amber-600 rounded-xl text-xs font-bold border border-amber-200">
                         <Lock className="w-3.5 h-3.5" />
-                        Locked (Workflow Status: {approvalStatus})
+                        Locked ({approvalStatus})
                       </span>
                     )}
                     <button
@@ -1094,7 +1276,7 @@ export default function TeacherDashboardPage() {
 
                 {blueprints.length === 0 ? (
                   <div className="p-8 text-center text-slate-400 text-xs">
-                    Please configure at least one active Assessment Blueprint category to build the gradebook matrix columns.
+                    Configure at least one Assessment Blueprint to build the gradebook matrix.
                   </div>
                 ) : (
                   <div className="overflow-x-auto border rounded-2xl text-xs">
@@ -1104,10 +1286,10 @@ export default function TeacherDashboardPage() {
                           <th className="p-3 text-left">Student Name</th>
                           {blueprints.map((bp) => (
                             <th key={bp.id} className="p-3 text-center border-l">
-                              {bp.label || bp.componentName} ({bp.weightPercentage}%)
+                              {bpKey(bp)} ({bp.weightPercentage}%)
                             </th>
                           ))}
-                          <th className="p-3 text-right">Calculated Score</th>
+                          <th className="p-3 text-right">Score</th>
                           <th className="p-3 text-center">Grade</th>
                           <th className="p-3 text-center">GP</th>
                         </tr>
@@ -1116,26 +1298,27 @@ export default function TeacherDashboardPage() {
                         {(selectedOffering.studentEnrollments || []).map((enr) => {
                           const s = enr.student;
                           if (!s) return null;
-
-                          const grades = gradebookData[s.id] || {};
+                          const grades = gradebookData[String(s.id)] || {};
                           const calc = calculateStudentFinalScore(s.id);
 
                           return (
                             <tr key={s.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30">
                               <td className="p-3 font-bold text-slate-900 dark:text-white">
-                                <div className="text-slate-900 dark:text-white font-extrabold">{s.firstName} {s.lastName}</div>
+                                <div>{s.firstName} {s.lastName}</div>
                                 <div className="text-[10px] text-slate-500 font-mono mt-0.5">{s.schoolId}</div>
                               </td>
                               {blueprints.map((bp) => {
-                                const val = grades[bp.componentName] ?? '';
+                                const key = bpKey(bp);
+                                const val = grades[key] ?? '';
                                 return (
                                   <td key={bp.id} className="p-3 text-center border-l">
                                     <input
                                       type="number"
                                       value={val}
-                                      placeholder="-"
-                                      onChange={(e) => handleGradeCellChange(s.id, bp.componentName, e.target.value)}
-                                      className="w-16 px-2 py-1 text-center bg-transparent border-b font-semibold font-mono text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500"
+                                      placeholder="—"
+                                      disabled={approvalStatus !== 'Draft'}
+                                      onChange={(e) => handleGradeCellChange(s.id, key, e.target.value)}
+                                      className="w-16 px-2 py-1 text-center bg-transparent border-b font-semibold font-mono text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 disabled:opacity-60"
                                     />
                                   </td>
                                 );
@@ -1145,13 +1328,17 @@ export default function TeacherDashboardPage() {
                               </td>
                               <td className="p-3 text-center">
                                 <span className={cn(
-                                  "inline-flex px-2 py-0.5 rounded font-bold border text-[10px]",
-                                  calc.grade === 'F' ? 'bg-rose-50 text-rose-700 border-rose-300' : 'bg-emerald-50 text-emerald-700 border-emerald-300'
+                                  'inline-flex px-2 py-0.5 rounded font-bold border text-[10px]',
+                                  calc.grade === 'F'
+                                    ? 'bg-rose-50 text-rose-700 border-rose-300'
+                                    : 'bg-emerald-50 text-emerald-700 border-emerald-300'
                                 )}>
                                   {calc.grade}
                                 </span>
                               </td>
-                              <td className="p-3 text-center font-mono font-bold text-slate-800 dark:text-slate-200">{calc.points.toFixed(1)}</td>
+                              <td className="p-3 text-center font-mono font-bold text-slate-800 dark:text-slate-200">
+                                {calc.points.toFixed(1)}
+                              </td>
                             </tr>
                           );
                         })}
@@ -1162,106 +1349,128 @@ export default function TeacherDashboardPage() {
               </div>
             )}
 
-            {/* TAB: APPROVAL */}
+            {/* ── TAB: GRADE APPROVAL ────────────────────────────────────────── */}
             {activeWorkspaceTab === 'approval' && (
               <div className="space-y-6">
                 <div>
                   <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Grade Approval Workflow</h3>
-                  <p className="text-xs text-slate-500">Submit completed registers for Section Head verification and Principal release.</p>
+                  <p className="text-xs text-slate-500">Submit completed gradebook for Section Head verification.</p>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  {/* Transition action */}
                   <div className="lg:col-span-2 p-5 border rounded-2xl bg-slate-50 dark:bg-slate-800/40 text-xs space-y-4">
                     <div className="flex items-center gap-3">
-                      <span className="font-extrabold text-slate-800 dark:text-slate-200">Current Moderation State:</span>
-                      <span className="px-3 py-1 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-full font-black capitalize">
+                      <span className="font-extrabold text-slate-800 dark:text-slate-200">Current Status:</span>
+                      <span className={cn(
+                        'px-3 py-1 rounded-full font-black capitalize',
+                        approvalStatus === 'Draft'     ? 'bg-slate-100 text-slate-700' :
+                        approvalStatus === 'Submitted' ? 'bg-amber-100 text-amber-700' :
+                        approvalStatus === 'Verified'  ? 'bg-purple-100 text-purple-700' :
+                        approvalStatus === 'Approved'  ? 'bg-emerald-100 text-emerald-700' :
+                        'bg-indigo-100 text-indigo-700'
+                      )}>
                         {approvalStatus}
                       </span>
                     </div>
 
                     <div className="space-y-2">
-                      <label className="block font-bold text-slate-700 dark:text-slate-300">Approval / Change Rationale Comments</label>
+                      <label className="block font-bold text-slate-700 dark:text-slate-300">Submission Comments</label>
                       <textarea
                         rows={3}
                         value={approvalComment}
                         placeholder="Add review notes, audit reason, or feedback..."
                         onChange={(e) => setApprovalComment(e.target.value)}
-                        className="w-full p-3 border rounded-xl bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                        className="w-full p-3 border rounded-xl bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
                       />
                     </div>
 
-                    {/* Teacher-only action: submit for review. Other transitions are done by Section Head. */}
                     <div className="flex flex-col gap-3">
                       {approvalStatus === 'Draft' && (
-                        <div className="flex flex-col gap-3">
-                          <p className="text-xs text-slate-500 dark:text-slate-400">
-                            Add an optional note, then submit your completed gradebook to the Section Head for review.
-                          </p>
+                        <>
+                          <p className="text-xs text-slate-500">Submit your completed gradebook to the Section Head for review.</p>
                           <button
                             onClick={() => handleWorkflowTransition('Submitted')}
                             disabled={isSubmittingApproval}
-                            className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white rounded-xl font-bold cursor-pointer transition-colors text-xs"
+                            className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white rounded-xl font-bold cursor-pointer transition-colors text-xs w-fit"
                           >
                             <Upload className="w-3.5 h-3.5" />
-                            Submit Grades for Section Head Review
+                            Submit for Section Head Review
                           </button>
-                        </div>
+                        </>
                       )}
                       {approvalStatus === 'Submitted' && (
-                        <div className="p-4 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl flex items-start gap-3">
-                          <Clock className="w-4 h-4 mt-0.5 shrink-0 text-amber-600 dark:text-amber-400" />
+                        <div className="p-4 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 rounded-xl flex items-start gap-3">
+                          <Clock className="w-4 h-4 mt-0.5 shrink-0 text-amber-600" />
                           <div>
-                            <p className="font-bold text-amber-800 dark:text-amber-300 text-xs">Pending Section Head Review</p>
-                            <p className="text-xs text-amber-700 dark:text-amber-400 mt-1">
-                              Your gradebook has been submitted. Awaiting Section Head verification. You cannot edit grades while under review.
-                            </p>
+                            <p className="font-bold text-amber-800 dark:text-amber-300">Pending Section Head Review</p>
+                            <p className="text-xs text-amber-700 mt-1">Awaiting verification. Grades are locked from editing.</p>
                           </div>
                         </div>
                       )}
+                      {approvalStatus === 'Rejected' && (
+                        <div className="flex flex-col gap-3">
+                          <div className="p-4 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 rounded-xl flex items-start gap-3">
+                            <AlertCircle className="w-4 h-4 mt-0.5 shrink-0 text-rose-600" />
+                            <div>
+                              <p className="font-bold text-rose-800 dark:text-rose-300">Rejected — Please Revise</p>
+                              <p className="text-xs text-rose-700 mt-1">The Section Head has returned grades for corrections. Reset to Draft, make corrections in the Gradebook tab, then re-submit.</p>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => handleWorkflowTransition('Draft')}
+                            disabled={isSubmittingApproval}
+                            className="inline-flex items-center gap-2 px-5 py-2.5 bg-slate-700 hover:bg-slate-800 disabled:opacity-60 text-white rounded-xl font-bold cursor-pointer transition-colors text-xs w-fit"
+                          >
+                            <Unlock className="w-3.5 h-3.5" />
+                            Reset to Draft &amp; Revise
+                          </button>
+                        </div>
+                      )}
                       {approvalStatus === 'Verified' && (
-                        <div className="p-4 bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800 rounded-xl flex items-start gap-3">
-                          <ShieldCheck className="w-4 h-4 mt-0.5 shrink-0 text-purple-600 dark:text-purple-400" />
+                        <div className="p-4 bg-purple-50 dark:bg-purple-950/30 border border-purple-200 rounded-xl flex items-start gap-3">
+                          <ShieldCheck className="w-4 h-4 mt-0.5 shrink-0 text-purple-600" />
                           <div>
-                            <p className="font-bold text-purple-800 dark:text-purple-300 text-xs">Verified by Section Head</p>
-                            <p className="text-xs text-purple-700 dark:text-purple-400 mt-1">
-                              Grades are verified. Pending Registrar final approval before release to students.
-                            </p>
+                            <p className="font-bold text-purple-800 dark:text-purple-300">Verified by Section Head</p>
+                            <p className="text-xs text-purple-700 mt-1">Pending final Registrar approval before student release.</p>
                           </div>
                         </div>
                       )}
                       {(approvalStatus === 'Approved' || approvalStatus === 'Released') && (
-                        <div className="p-4 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-xl flex items-start gap-3">
-                          <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                        <div className="p-4 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 rounded-xl flex items-start gap-3">
+                          <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0 text-emerald-600" />
                           <div>
-                            <p className="font-bold text-emerald-800 dark:text-emerald-300 text-xs">Grades Approved &amp; Released</p>
-                            <p className="text-xs text-emerald-700 dark:text-emerald-400 mt-1">
-                              Grades are finalized and visible to students.
-                            </p>
+                            <p className="font-bold text-emerald-800 dark:text-emerald-300">Grades Approved &amp; Released</p>
+                            <p className="text-xs text-emerald-700 mt-1">Grades are finalized and visible to students.</p>
                           </div>
                         </div>
                       )}
                     </div>
                   </div>
 
-                  {/* Log checklist history */}
+                  {/* Approval History */}
                   <div className="p-4 border rounded-2xl bg-slate-50 dark:bg-slate-800/40 text-xs">
-                    <h4 className="font-extrabold text-slate-900 dark:text-white mb-3">Workflow State Log History</h4>
+                    <h4 className="font-extrabold text-slate-900 dark:text-white mb-3">Workflow History</h4>
                     {approvalHistory.length === 0 ? (
-                      <p className="text-slate-500 dark:text-slate-400 italic">No transition audit logs generated yet.</p>
+                      <p className="text-slate-500 italic">No history yet.</p>
                     ) : (
-                      <div className="space-y-2">
+                      <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1">
                         {approvalHistory.map((log) => (
                           <div key={log.id} className="p-3 border rounded-xl bg-white dark:bg-slate-900 text-[10px]">
                             <div className="flex justify-between items-center mb-1">
                               <span className="font-extrabold text-slate-800 dark:text-slate-200 capitalize">
-                                State: {log.stage}
+                                {log.stage}
                               </span>
                               <span className="text-slate-400 font-mono">v{log.versionNumber}</span>
                             </div>
-                            <p className="text-slate-600 dark:text-slate-300 leading-relaxed italic">"{log.comments}"</p>
-                            <p className="text-[9px] text-slate-400 mt-1">Integrity Hash: {log.changeHash?.substring(0, 15)}...</p>
-                            <p className="text-[9px] text-slate-400">{new Date(log.actionDateTime).toLocaleString()}</p>
+                            {log.comments && (
+                              <p className="text-slate-600 dark:text-slate-300 italic">"{log.comments}"</p>
+                            )}
+                            {log.reviewerName && (
+                              <p className="text-[9px] text-slate-400 mt-1">By: {log.reviewerName}</p>
+                            )}
+                            <p className="text-[9px] text-slate-400">
+                              {new Date(log.actionDateTime).toLocaleString()}
+                            </p>
                           </div>
                         ))}
                       </div>
@@ -1271,49 +1480,404 @@ export default function TeacherDashboardPage() {
               </div>
             )}
 
-            {/* TAB: LESSON PLANNER */}
+            {/* ── TAB: LESSON PLANNER ───────────────────────────────────────── */}
             {activeWorkspaceTab === 'lessonplan' && (
               <div className="space-y-6">
-                <div>
-                  <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Lesson Planner & Curriculum</h3>
-                  <p className="text-xs text-slate-500">Track curriculum progress against active learning outcomes.</p>
+                <div className="flex justify-between items-start flex-wrap gap-4">
+                  <div>
+                    <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Lesson Planner &amp; Curriculum</h3>
+                    <p className="text-xs text-slate-500">Track curriculum topics and create lesson plans linked to this subject.</p>
+                  </div>
+                  <button
+                    onClick={() => setShowLpForm((prev) => !prev)}
+                    className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-xs"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    New Lesson Plan
+                  </button>
                 </div>
 
-                <div className="space-y-3 text-xs">
-                  {[
-                    { id: 'unit1', title: 'Unit 1: Foundations & Core Terminology' },
-                    { id: 'unit2', title: 'Unit 2: Tajweed rules & Recitation standards' },
-                    { id: 'unit3', title: 'Unit 3: Textual analysis & Grammar parsing' },
-                    { id: 'unit4', title: 'Unit 4: Review and comprehensive term examination' }
-                  ].map((unit) => (
-                    <div
-                      key={unit.id}
-                      onClick={() => setCoverageChecklist((prev) => ({ ...prev, [unit.id]: !prev[unit.id] }))}
-                      className="flex items-center gap-3 p-4 bg-slate-50 dark:bg-slate-800/40 border rounded-2xl cursor-pointer hover:bg-slate-100/60 dark:hover:bg-slate-800 transition"
-                    >
-                      {coverageChecklist[unit.id] ? (
-                        <CheckSquare className="w-4.5 h-4.5 text-indigo-600" />
-                      ) : (
-                        <Square className="w-4.5 h-4.5 text-slate-400" />
-                      )}
-                      <span className="font-extrabold text-slate-800 dark:text-slate-200">{unit.title}</span>
+                {/* New LP Form */}
+                {showLpForm && (
+                  <form onSubmit={handleCreateLessonPlan} className="p-5 border rounded-2xl bg-slate-50 dark:bg-slate-800/40 space-y-3 text-xs">
+                    <h4 className="font-extrabold text-slate-900 dark:text-white">Create Lesson Plan</h4>
+                    <div>
+                      <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Title *</label>
+                      <input
+                        required value={newLpTitle} placeholder="e.g. Chapter 3 – Tajweed Rules"
+                        onChange={(e) => setNewLpTitle(e.target.value)}
+                        className="w-full px-3 py-2 border rounded-xl bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:border-indigo-500"
+                      />
                     </div>
-                  ))}
-                </div>
+                    <div>
+                      <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Learning Objectives</label>
+                      <textarea
+                        rows={2} value={newLpObjectives} placeholder="What students will learn..."
+                        onChange={(e) => setNewLpObjectives(e.target.value)}
+                        className="w-full px-3 py-2 border rounded-xl bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:border-indigo-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Teaching Method</label>
+                      <input
+                        value={newLpMethod} placeholder="e.g. Lecture, Group Work, Recitation"
+                        onChange={(e) => setNewLpMethod(e.target.value)}
+                        className="w-full px-3 py-2 border rounded-xl bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:border-indigo-500"
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        type="submit" disabled={isCreatingLessonPlan}
+                        className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold cursor-pointer disabled:opacity-50"
+                      >
+                        {isCreatingLessonPlan ? 'Saving...' : 'Save Plan'}
+                      </button>
+                      <button type="button" onClick={() => setShowLpForm(false)} className="px-4 py-2 border rounded-xl font-bold hover:bg-slate-100 dark:hover:bg-slate-800">
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                )}
+
+                {/* Curriculum Topics */}
+                {curriculumTopics.length > 0 && (
+                  <div className="space-y-3">
+                    <h4 className="text-sm font-extrabold text-slate-800 dark:text-white">Curriculum Topics</h4>
+                    <div className="space-y-2 text-xs">
+                      {curriculumTopics.map((topic) => {
+                        const icon = topic.completionStatus === 'Completed' ? CheckSquare :
+                                     topic.completionStatus === 'In Progress' ? Activity : Square;
+                        const IconComp = icon;
+                        return (
+                          <div
+                            key={topic.id}
+                            onClick={() => handleTopicStatusChange(topic)}
+                            className="flex items-center gap-3 p-4 bg-slate-50 dark:bg-slate-800/40 border rounded-2xl cursor-pointer hover:bg-slate-100/60 dark:hover:bg-slate-800 transition"
+                          >
+                            <IconComp className={cn(
+                              'w-4 h-4 shrink-0',
+                              topic.completionStatus === 'Completed' ? 'text-emerald-600' :
+                              topic.completionStatus === 'In Progress' ? 'text-amber-500' : 'text-slate-400'
+                            )} />
+                            <div className="flex-1">
+                              <span className="font-extrabold text-slate-800 dark:text-slate-200">{topic.title}</span>
+                              {topic.description && (
+                                <p className="text-[10px] text-slate-400 mt-0.5">{topic.description}</p>
+                              )}
+                            </div>
+                            <span className={cn(
+                              'text-[10px] font-bold px-2 py-0.5 rounded-full',
+                              topic.completionStatus === 'Completed' ? 'bg-emerald-100 text-emerald-700' :
+                              topic.completionStatus === 'In Progress' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600'
+                            )}>
+                              {topic.completionStatus || 'Pending'}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {totalTopics > 0 && (
+                      <p className="text-xs text-slate-500">
+                        {coveredTopics}/{totalTopics} topics completed ({syllabusComputed}% coverage)
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {curriculumTopics.length === 0 && (
+                  <div className="p-4 bg-slate-50 dark:bg-slate-800/40 border rounded-2xl text-xs text-slate-400 italic">
+                    No curriculum topics linked to this subject. Ask administration to configure curriculum topics.
+                  </div>
+                )}
+
+                {/* Lesson Plans Card Grid */}
+                {lessonPlans.length > 0 && (
+                  <div className="space-y-4">
+                    <h4 className="text-sm font-extrabold text-slate-800 dark:text-white">Saved Lesson Plans</h4>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                      {lessonPlans.map((lp) => {
+                        const status = lp.recordStatus || 'Draft';
+                        const statusColors: Record<string, string> = {
+                          'Draft': 'bg-slate-100 text-slate-700 border-slate-300 dark:bg-slate-800 dark:text-slate-300',
+                          'Pending Approval': 'bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950/40 dark:text-amber-300',
+                          'Approved': 'bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-300',
+                          'Rejected': 'bg-rose-100 text-rose-800 border-rose-300 dark:bg-rose-950/40 dark:text-rose-300'
+                        };
+
+                        return (
+                          <div 
+                            key={lp.id}
+                            onClick={() => {
+                              setSelectedPlanForDrawer(lp);
+                              setShowPlanDrawer(true);
+                            }}
+                            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 hover:shadow-xl transition-all hover:-translate-y-0.5 flex flex-col justify-between gap-3 group cursor-pointer"
+                          >
+                            <div className="space-y-2.5">
+                              {/* Top Row: Status Badge & Lesson Number */}
+                              <div className="flex justify-between items-start gap-2">
+                                <span className={cn(
+                                  "inline-flex px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border uppercase tracking-wider",
+                                  statusColors[status] || statusColors['Draft']
+                                )}>
+                                  {status}
+                                </span>
+                                <span className="text-[11px] text-slate-400 font-mono font-medium">
+                                  {lp.lessonNumber ? `Lesson ${lp.lessonNumber}` : 'Unscheduled'}
+                                </span>
+                              </div>
+
+                              {/* Title & Subject/Section */}
+                              <div>
+                                <h4 className="text-sm font-extrabold text-slate-900 dark:text-white line-clamp-2 group-hover:text-indigo-600 transition-colors">
+                                  {lp.title}
+                                </h4>
+                                <p className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-1 font-medium">
+                                  <BookOpen className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                  <span>{selectedOffering?.subject?.name || 'Subject'}</span>
+                                  <span>&gt;</span>
+                                  <span>{selectedOffering?.academicSection?.code || 'Section'}</span>
+                                </p>
+                              </div>
+
+                              {/* Rejection Alert Box */}
+                              {status === 'Rejected' && lp.rejectionReason && (
+                                <div className="p-2 bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900/30 rounded-xl text-[10px] text-rose-800 dark:text-rose-300 flex items-start gap-1.5">
+                                  <ShieldAlert className="w-3.5 h-3.5 shrink-0 text-rose-600 mt-0.5" />
+                                  <div>
+                                    <strong className="block font-bold">Revision Required:</strong>
+                                    <span className="italic">"{lp.rejectionReason}"</span>
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Objectives & Homework Summaries */}
+                              <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-1.5">
+                                {lp.objectives && (
+                                  <div>
+                                    <span className="font-bold text-slate-700 dark:text-slate-300 block text-[10px] uppercase tracking-wider">LEARNING OBJECTIVES:</span>
+                                    <p className="text-slate-600 dark:text-slate-400 text-[11px] line-clamp-2 leading-relaxed">
+                                      {lp.objectives}
+                                    </p>
+                                  </div>
+                                )}
+                                {lp.homework && (
+                                  <div>
+                                    <span className="font-bold text-slate-700 dark:text-slate-300 block text-[10px] uppercase tracking-wider">HOMEWORK ASSIGNMENT:</span>
+                                    <p className="text-slate-650 dark:text-slate-400 text-[11px] line-clamp-2 leading-relaxed">
+                                      {lp.homework}
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Card Footer: Teacher Profile & Actions */}
+                            <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-1.5">
+                                <div className="w-5 h-5 rounded-full bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 flex items-center justify-center text-[10px] font-black">
+                                  {teacher?.displayName?.[0] || 'T'}
+                                </div>
+                                <span className="text-[10px] text-slate-600 dark:text-slate-400 font-bold">{teacher?.displayName || 'Faculty'}</span>
+                              </div>
+
+                              <div className="flex items-center gap-1">
+                                {(!lp.recordStatus || lp.recordStatus === 'Draft') && (
+                                  <>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDeleteLessonPlan(lp.id || lp.documentId);
+                                      }}
+                                      className="p-1 hover:bg-rose-50 text-rose-600 rounded"
+                                      title="Delete Plan"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleSubmitLessonPlan(lp.id || lp.documentId);
+                                      }}
+                                      className="px-2 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded text-[10px] font-bold flex items-center gap-1"
+                                      title="Submit for Approval"
+                                    >
+                                      <Send className="w-3 h-3" />
+                                      Submit
+                                    </button>
+                                  </>
+                                )}
+
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedPlanForDrawer(lp);
+                                    setShowPlanDrawer(true);
+                                  }}
+                                  className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-indigo-600 rounded"
+                                  title="View Details"
+                                >
+                                  <Eye className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Slide-over Detail Drawer Panel for Teacher */}
+                {showPlanDrawer && selectedPlanForDrawer && (
+                  <div className="fixed inset-0 z-50 bg-slate-950/60 flex items-center justify-end animate-fade-in">
+                    <div className="absolute inset-0" onClick={() => setShowPlanDrawer(false)} />
+
+                    <div className="relative w-full max-w-xl bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 h-full p-6 shadow-2xl flex flex-col justify-between gap-6 overflow-y-auto animate-slide-in-right text-xs text-slate-800 dark:text-slate-200">
+                      
+                      <div className="space-y-5">
+                        {/* Drawer Header */}
+                        <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
+                          <div className="flex items-center gap-2">
+                            <BookOpen className="w-5 h-5 text-indigo-600" />
+                            <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
+                              Lesson Plan Details
+                            </h3>
+                          </div>
+                          <button 
+                            onClick={() => setShowPlanDrawer(false)}
+                            className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full cursor-pointer text-slate-400 hover:text-slate-600 border-none bg-transparent"
+                          >
+                            <X className="w-5 h-5" />
+                          </button>
+                        </div>
+
+                        {/* Title & Lesson Number */}
+                        <div>
+                          <h4 className="text-lg font-black text-slate-900 dark:text-white">{selectedPlanForDrawer.title}</h4>
+                          <p className="text-slate-500 font-mono text-xs mt-1">Lesson #{selectedPlanForDrawer.lessonNumber || '1'}</p>
+                        </div>
+
+                        {/* 2-Column Metadata Grid */}
+                        <div className="grid grid-cols-2 gap-4 bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 text-xs">
+                          <div>
+                            <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">SUBJECT</span>
+                            <strong className="text-slate-800 dark:text-slate-200 font-extrabold">{selectedOffering?.subject?.name || 'N/A'}</strong>
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">CLASS SECTION</span>
+                            <strong className="text-slate-800 dark:text-slate-200 font-extrabold">{selectedOffering?.academicSection?.code || 'N/A'}</strong>
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">SYLLABUS CURRICULUM</span>
+                            <strong className="text-slate-800 dark:text-slate-200 font-extrabold">N/A</strong>
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">ACADEMIC CYCLE</span>
+                            <strong className="text-slate-800 dark:text-slate-200 font-extrabold">
+                              {selectedOffering?.academicYear?.name || '2026-2027 Academic Year'}
+                            </strong>
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">ASSIGNED FACULTY</span>
+                            <strong className="text-slate-800 dark:text-slate-200 font-extrabold">{teacher?.displayName || 'Faculty'}</strong>
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">VERIFICATION STATUS</span>
+                            <strong className={cn(
+                              "font-black uppercase text-xs",
+                              selectedPlanForDrawer.recordStatus === 'Approved' ? 'text-emerald-600 dark:text-emerald-400' :
+                              selectedPlanForDrawer.recordStatus === 'Rejected' ? 'text-rose-600 dark:text-rose-400' : 'text-amber-600 dark:text-amber-400'
+                            )}>{selectedPlanForDrawer.recordStatus || 'Draft'}</strong>
+                          </div>
+                        </div>
+
+                        {/* Content Blocks */}
+                        <div className="space-y-4">
+                          <div>
+                            <span className="font-extrabold text-slate-900 dark:text-white block mb-1.5 text-xs">Learning Objectives:</span>
+                            <p className="p-3.5 bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-xl leading-relaxed whitespace-pre-line text-slate-700 dark:text-slate-300">
+                              {selectedPlanForDrawer.objectives || 'No learning objectives specified.'}
+                            </p>
+                          </div>
+
+                          <div>
+                            <span className="font-extrabold text-slate-900 dark:text-white block mb-1.5 text-xs">Teaching Methods / Syllabi:</span>
+                            <p className="p-3.5 bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-xl leading-relaxed whitespace-pre-line text-slate-700 dark:text-slate-300">
+                              {selectedPlanForDrawer.teachingMethod || 'No teaching methodology documented.'}
+                            </p>
+                          </div>
+
+                          <div>
+                            <span className="font-extrabold text-slate-900 dark:text-white block mb-1.5 text-xs">Homework & Classwork Assignments:</span>
+                            <p className="p-3.5 bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-xl leading-relaxed whitespace-pre-line text-slate-700 dark:text-slate-300">
+                              {selectedPlanForDrawer.homework || 'No homework assigned.'}
+                            </p>
+                          </div>
+
+                          <div>
+                            <span className="font-extrabold text-slate-900 dark:text-white block mb-1.5 text-xs">Assessment Criteria:</span>
+                            <p className="p-3.5 bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-xl leading-relaxed whitespace-pre-line text-slate-700 dark:text-slate-300">
+                              {selectedPlanForDrawer.assessmentMethod || 'No assessment method defined.'}
+                            </p>
+                          </div>
+
+                          {/* Rejection Alert Box inside drawer */}
+                          {selectedPlanForDrawer.recordStatus === 'Rejected' && selectedPlanForDrawer.rejectionReason && (
+                            <div className="p-4 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/40 rounded-xl text-rose-800 dark:text-rose-200 space-y-1">
+                              <span className="font-black block">Section Head Rejection Notes:</span>
+                              <p className="italic">"{selectedPlanForDrawer.rejectionReason}"</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Footer Actions */}
+                      <div className="pt-4 border-t border-slate-200 dark:border-slate-800 flex justify-end gap-2">
+                        {(!selectedPlanForDrawer.recordStatus || selectedPlanForDrawer.recordStatus === 'Draft' || selectedPlanForDrawer.recordStatus === 'Rejected') && (
+                          <button
+                            onClick={() => {
+                              handleSubmitLessonPlan(selectedPlanForDrawer.id || selectedPlanForDrawer.documentId);
+                              setShowPlanDrawer(false);
+                            }}
+                            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold rounded-xl text-xs flex items-center gap-1.5 cursor-pointer shadow-md"
+                          >
+                            <Send className="w-3.5 h-3.5" />
+                            <span>Submit for Section Head Approval</span>
+                          </button>
+                        )}
+                        <button
+                          onClick={() => setShowPlanDrawer(false)}
+                          className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-200 font-bold rounded-xl text-xs cursor-pointer border-none"
+                        >
+                          Close Details
+                        </button>
+                      </div>
+
+                    </div>
+                  </div>
+                )}
+
+                {lessonPlans.length === 0 && !showLpForm && (
+                  <div className="p-6 border border-dashed rounded-2xl text-center text-slate-400 text-xs">
+                    No lesson plans created yet. Click "New Lesson Plan" to get started.
+                  </div>
+                )}
               </div>
             )}
 
-            {/* TAB: AUDIT */}
+            {/* ── TAB: AUDIT TRAIL ──────────────────────────────────────────── */}
             {activeWorkspaceTab === 'audit' && (
               <div className="space-y-4">
                 <div>
-                  <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Compliance Workspace Audit Trails</h3>
-                  <p className="text-xs text-slate-500">Full audit log of changes made inside this Course Offering workspace.</p>
+                  <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Compliance Audit Trail</h3>
+                  <p className="text-xs text-slate-500">All recorded changes made inside this workspace.</p>
                 </div>
 
                 {sectionAuditLogs.length === 0 ? (
                   <div className="p-8 text-center text-slate-400 text-xs italic">
-                    No modifications logged in the audit trails for this offering.
+                    No modifications logged for this offering yet.
                   </div>
                 ) : (
                   <div className="space-y-2 text-xs">
@@ -1321,10 +1885,18 @@ export default function TeacherDashboardPage() {
                       <div key={log.id} className="p-4 border rounded-2xl bg-slate-50 dark:bg-slate-800/40">
                         <div className="flex justify-between items-center mb-1 flex-wrap gap-2">
                           <span className="font-extrabold text-indigo-600 dark:text-indigo-400">{log.action}</span>
-                          <span className="font-mono text-[10px] text-slate-400">{new Date(log.timestamp).toLocaleString()}</span>
+                          <span className="font-mono text-[10px] text-slate-400">
+                            {log.timestamp ? new Date(log.timestamp).toLocaleString() : new Date(log.createdAt).toLocaleString()}
+                          </span>
                         </div>
-                        <p className="text-slate-600 dark:text-slate-300">{log.details}</p>
-                        <p className="text-[10px] text-slate-400 mt-1 font-semibold">User: {log.performedBy}</p>
+                        <p className="text-slate-600 dark:text-slate-300">{log.description || log.details}</p>
+                        {log.performedBy && (
+                          <p className="text-[10px] text-slate-400 mt-1 font-semibold">
+                            User: {typeof log.performedBy === 'object'
+                              ? (log.performedBy?.username || log.performedBy?.email || log.performedBy?.id)
+                              : log.performedBy}
+                          </p>
+                        )}
                       </div>
                     ))}
                   </div>
