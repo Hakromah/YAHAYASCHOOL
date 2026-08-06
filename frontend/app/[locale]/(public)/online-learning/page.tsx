@@ -29,18 +29,18 @@ export default function OnlineLearningPage({ params: { locale = 'en' } }: { para
           <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-24 relative z-10">
             <div className="flex-1 space-y-6 pt-10">
               <div className="flex items-center gap-2 text-sm text-gray-500 mb-8">
-                <Link href={getHref('/')} className="hover:text-[#0ea5e9] transition-colors">Home</Link>
+                <Link href={getHref('/')} className="hover:text-[#048ED6] transition-colors">Home</Link>
                 <ChevronRight className="w-4 h-4" />
                 <span className="text-gray-900 font-medium">Online Learning</span>
               </div>
               
-              <span className="text-[#0ea5e9] text-xs font-bold tracking-[0.2em] uppercase block">
+              <span className="text-[#048ED6] text-xs font-bold tracking-[0.2em] uppercase block">
                 Learning with Purpose
               </span>
               
               <h1 className="text-[clamp(2.5rem,5vw,4.5rem)] font-bold text-gray-900 leading-[1.05] font-serif">
                 Knowledge at Your <br />
-                <span className="text-[#0ea5e9]">Fingertips</span>
+                <span className="text-[#048ED6]">Fingertips</span>
               </h1>
               
               <p className="text-lg text-gray-600 leading-relaxed max-w-xl">
@@ -50,7 +50,7 @@ export default function OnlineLearningPage({ params: { locale = 'en' } }: { para
               <div className="pt-4">
                 <button 
                   onClick={() => setIsModalOpen(true)}
-                  className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-full bg-[#0ea5e9] text-white font-bold hover:bg-sky-500 transition-colors shadow-md"
+                  className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-full bg-[#048ED6] text-white font-bold hover:bg-sky-500 transition-colors shadow-md"
                 >
                   <span>Join Enrollment</span>
                   <ArrowRight className="w-4 h-4" />
@@ -78,14 +78,14 @@ export default function OnlineLearningPage({ params: { locale = 'en' } }: { para
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 -mt-10 lg:-mt-20">
             {/* Card 1 */}
             <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-xl flex flex-col items-center text-center hover:-translate-y-1 transition-transform">
-              <div className="w-16 h-16 rounded-2xl bg-sky-50 text-[#0ea5e9] flex items-center justify-center mb-6">
+              <div className="w-16 h-16 rounded-2xl bg-sky-50 text-[#048ED6] flex items-center justify-center mb-6">
                 <PlayCircle className="w-8 h-8" />
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-4">Recorded Lessons</h3>
               <p className="text-gray-600 text-sm leading-relaxed mb-6">
                 A comprehensive library of high-definition video lectures across all academic and Islamic subjects.
               </p>
-              <button className="flex items-center gap-1 text-[#0ea5e9] font-bold text-sm hover:text-sky-600">
+              <button className="flex items-center gap-1 text-[#048ED6] font-bold text-sm hover:text-sky-600">
                 <span>Browse Library</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
@@ -93,14 +93,14 @@ export default function OnlineLearningPage({ params: { locale = 'en' } }: { para
 
             {/* Card 2 */}
             <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-xl flex flex-col items-center text-center hover:-translate-y-1 transition-transform">
-              <div className="w-16 h-16 rounded-2xl bg-sky-50 text-[#0ea5e9] flex items-center justify-center mb-6">
+              <div className="w-16 h-16 rounded-2xl bg-sky-50 text-[#048ED6] flex items-center justify-center mb-6">
                 <Book className="w-8 h-8" />
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-4">Digital Library</h3>
               <p className="text-gray-600 text-sm leading-relaxed mb-6">
                 Access curated PDF books, Qur'an resources, and exclusive scholarly articles.
               </p>
-              <button className="flex items-center gap-1 text-[#0ea5e9] font-bold text-sm hover:text-sky-600">
+              <button className="flex items-center gap-1 text-[#048ED6] font-bold text-sm hover:text-sky-600">
                 <span>Enter Library</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
@@ -108,14 +108,14 @@ export default function OnlineLearningPage({ params: { locale = 'en' } }: { para
 
             {/* Card 3 */}
             <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-xl flex flex-col items-center text-center hover:-translate-y-1 transition-transform">
-              <div className="w-16 h-16 rounded-2xl bg-sky-50 text-[#0ea5e9] flex items-center justify-center mb-6">
+              <div className="w-16 h-16 rounded-2xl bg-sky-50 text-[#048ED6] flex items-center justify-center mb-6">
                 <Video className="w-8 h-8" />
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-4">Live Classes</h3>
               <p className="text-gray-600 text-sm leading-relaxed mb-6">
                 Engage in real-time interactive sessions with our global expert faculty members.
               </p>
-              <button className="flex items-center gap-1 text-[#0ea5e9] font-bold text-sm hover:text-sky-600">
+              <button className="flex items-center gap-1 text-[#048ED6] font-bold text-sm hover:text-sky-600">
                 <span>View Schedule</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
@@ -141,11 +141,11 @@ export default function OnlineLearningPage({ params: { locale = 'en' } }: { para
                 <div className="flex-1 flex flex-col justify-between">
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-[#0ea5e9] text-xs font-bold tracking-wider">
+                      <span className="text-[#048ED6] text-xs font-bold tracking-wider">
                         {course.category} • {course.level}
                       </span>
                       {course.isNew && (
-                        <span className="px-2.5 py-1 bg-sky-50 text-[#0ea5e9] text-[10px] font-bold uppercase rounded-md tracking-wider">
+                        <span className="px-2.5 py-1 bg-sky-50 text-[#048ED6] text-[10px] font-bold uppercase rounded-md tracking-wider">
                           New Release
                         </span>
                       )}
@@ -161,7 +161,7 @@ export default function OnlineLearningPage({ params: { locale = 'en' } }: { para
                   <div className="mt-6 flex justify-end">
                     <button 
                       onClick={() => setIsModalOpen(true)}
-                      className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-[#0ea5e9] text-white text-sm font-bold hover:bg-sky-500 transition-colors shadow-md"
+                      className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-[#048ED6] text-white text-sm font-bold hover:bg-sky-500 transition-colors shadow-md"
                     >
                       <span>Join Enrollment</span>
                       <ArrowRight className="w-4 h-4" />
@@ -185,7 +185,7 @@ export default function OnlineLearningPage({ params: { locale = 'en' } }: { para
                   Classroom Image
                 </div>
               </div>
-              <div className="absolute -bottom-10 right-4 lg:-right-10 bg-[#0ea5e9] text-white p-8 rounded-3xl shadow-2xl max-w-[240px]">
+              <div className="absolute -bottom-10 right-4 lg:-right-10 bg-[#048ED6] text-white p-8 rounded-3xl shadow-2xl max-w-[240px]">
                 <div className="text-5xl font-light mb-2">98%</div>
                 <div className="text-xs font-bold tracking-wider leading-relaxed">
                   UNIVERSITY PLACEMENT RATE FOR OUR GRADUATES
@@ -196,14 +196,14 @@ export default function OnlineLearningPage({ params: { locale = 'en' } }: { para
             {/* Right List */}
             <div className="flex-1 space-y-10 mt-16 lg:mt-0 lg:pl-10">
               <div className="mb-10">
-                <span className="text-[#0ea5e9] text-xs font-bold tracking-[0.2em] uppercase block mb-4">
+                <span className="text-[#048ED6] text-xs font-bold tracking-[0.2em] uppercase block mb-4">
                   Our Approach
                 </span>
                 <h2 className="text-4xl font-bold text-gray-900 font-serif">How Learning Comes to Life</h2>
               </div>
               
               <div className="flex gap-6">
-                <div className="w-12 h-12 rounded-full bg-sky-100 text-[#0ea5e9] flex items-center justify-center shrink-0">
+                <div className="w-12 h-12 rounded-full bg-sky-100 text-[#048ED6] flex items-center justify-center shrink-0">
                   <Zap className="w-5 h-5" />
                 </div>
                 <div>
@@ -213,7 +213,7 @@ export default function OnlineLearningPage({ params: { locale = 'en' } }: { para
               </div>
               
               <div className="flex gap-6">
-                <div className="w-12 h-12 rounded-full bg-sky-100 text-[#0ea5e9] flex items-center justify-center shrink-0">
+                <div className="w-12 h-12 rounded-full bg-sky-100 text-[#048ED6] flex items-center justify-center shrink-0">
                   <ShieldCheck className="w-5 h-5" />
                 </div>
                 <div>
@@ -223,7 +223,7 @@ export default function OnlineLearningPage({ params: { locale = 'en' } }: { para
               </div>
               
               <div className="flex gap-6">
-                <div className="w-12 h-12 rounded-full bg-sky-100 text-[#0ea5e9] flex items-center justify-center shrink-0">
+                <div className="w-12 h-12 rounded-full bg-sky-100 text-[#048ED6] flex items-center justify-center shrink-0">
                   <Award className="w-5 h-5" />
                 </div>
                 <div>

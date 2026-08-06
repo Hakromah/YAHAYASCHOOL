@@ -30,7 +30,7 @@ export default function StaffsPage({ params: { locale = 'en' } }: { params: { lo
       <section className="pt-20 pb-16 text-center">
         <Container>
           <div className="flex items-center justify-center gap-2 text-sm text-gray-500 mb-6">
-            <Link href={getHref('/')} className="hover:text-[#0ea5e9] transition-colors">Home</Link>
+            <Link href={getHref('/')} className="hover:text-[#048ED6] transition-colors">Home</Link>
             <ChevronDown className="w-3.5 h-3.5 -rotate-90" />
             <span className="text-gray-900 font-medium">Staffs</span>
           </div>
@@ -57,16 +57,16 @@ export default function StaffsPage({ params: { locale = 'en' } }: { params: { lo
                   
                   {/* Social Overlay */}
                   <div className="absolute bottom-4 left-4 flex gap-2 z-10">
-                    <a href="#" className="w-7 h-7 rounded-full bg-[#0ea5e9] text-white flex items-center justify-center hover:bg-sky-500 transition-colors shadow-sm">
+                    <a href="#" className="w-7 h-7 rounded-full bg-[#048ED6] text-white flex items-center justify-center hover:bg-sky-500 transition-colors shadow-sm">
                       <Linkedin className="w-3.5 h-3.5" />
                     </a>
-                    <a href="#" className="w-7 h-7 rounded-full bg-[#0ea5e9] text-white flex items-center justify-center hover:bg-sky-500 transition-colors shadow-sm">
+                    <a href="#" className="w-7 h-7 rounded-full bg-[#048ED6] text-white flex items-center justify-center hover:bg-sky-500 transition-colors shadow-sm">
                       <Instagram className="w-3.5 h-3.5" />
                     </a>
-                    <a href="#" className="w-7 h-7 rounded-full bg-[#0ea5e9] text-white flex items-center justify-center hover:bg-sky-500 transition-colors shadow-sm">
+                    <a href="#" className="w-7 h-7 rounded-full bg-[#048ED6] text-white flex items-center justify-center hover:bg-sky-500 transition-colors shadow-sm">
                       <Facebook className="w-3.5 h-3.5" />
                     </a>
-                    <a href="#" className="w-7 h-7 rounded-full bg-[#0ea5e9] text-white flex items-center justify-center hover:bg-sky-500 transition-colors shadow-sm">
+                    <a href="#" className="w-7 h-7 rounded-full bg-[#048ED6] text-white flex items-center justify-center hover:bg-sky-500 transition-colors shadow-sm">
                       <Twitter className="w-3.5 h-3.5" />
                     </a>
                   </div>
@@ -74,16 +74,16 @@ export default function StaffsPage({ params: { locale = 'en' } }: { params: { lo
 
                 {/* Details */}
                 <div className="p-6">
-                  <h3 className="text-xl font-bold text-gray-900 mb-1 font-serif group-hover:text-[#0ea5e9] transition-colors">{staff.name}</h3>
+                  <h3 className="text-xl font-bold text-gray-900 mb-1 font-serif group-hover:text-[#048ED6] transition-colors">{staff.name}</h3>
                   <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-5">
                     {staff.role}
                   </p>
                   
                   <div className="border-t border-gray-100 pt-5 flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-sky-50 text-[#0ea5e9] flex items-center justify-center shrink-0">
+                    <div className="w-8 h-8 rounded-full bg-sky-50 text-[#048ED6] flex items-center justify-center shrink-0">
                       <Mail className="w-4 h-4" />
                     </div>
-                    <a href={`mailto:${staff.email}`} className="text-xs font-medium text-gray-600 hover:text-[#0ea5e9] transition-colors break-all">
+                    <a href={`mailto:${staff.email}`} className="text-xs font-medium text-gray-600 hover:text-[#048ED6] transition-colors break-all">
                       {staff.email}
                     </a>
                   </div>
@@ -93,7 +93,7 @@ export default function StaffsPage({ params: { locale = 'en' } }: { params: { lo
           </div>
 
           <div className="mt-16 flex justify-center">
-            <button className="flex items-center gap-2 px-8 py-3 rounded-full border border-gray-300 text-gray-700 font-bold text-sm hover:border-[#0ea5e9] hover:text-[#0ea5e9] bg-white transition-colors">
+            <button className="flex items-center gap-2 px-8 py-3 rounded-full border border-gray-300 text-gray-700 font-bold text-sm hover:border-[#048ED6] hover:text-[#048ED6] bg-white transition-colors">
               <ChevronDown className="w-4 h-4" />
               <span>Load More</span>
             </button>
@@ -117,7 +117,7 @@ export default function StaffsPage({ params: { locale = 'en' } }: { params: { lo
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link 
                   href={getHref('/about')}
-                  className="px-8 py-3.5 bg-[#0ea5e9] text-white font-bold rounded-full hover:bg-sky-500 transition-colors shadow-md text-sm"
+                  className="px-8 py-3.5 bg-[#048ED6] text-white font-bold rounded-full hover:bg-sky-500 transition-colors shadow-md text-sm"
                 >
                   Join Our School
                 </Link>

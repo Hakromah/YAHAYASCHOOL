@@ -19,7 +19,7 @@ export function LearningApproachSection() {
             </div>
             
             {/* Floating Badge */}
-            <div className="absolute -bottom-6 -right-6 md:right-8 bg-[#0ea5e9] text-white p-6 rounded-xl shadow-2xl w-56 transform translate-y-4 md:translate-y-0">
+            <div className="absolute -bottom-6 -right-6 md:right-8 bg-[#048ED6] text-white p-6 rounded-xl shadow-2xl w-56 transform translate-y-4 md:translate-y-0">
               <div className="text-4xl font-bold mb-2">98%</div>
               <p className="text-xs font-semibold tracking-wider uppercase leading-snug">
                 University Placement Rate for our Graduates
@@ -30,7 +30,7 @@ export function LearningApproachSection() {
           {/* Right: Content & List */}
           <div className="w-full lg:w-1/2 mt-12 lg:mt-0">
             <div className="mb-10">
-              <span className="text-[#0ea5e9] text-sm font-bold tracking-widest uppercase mb-4 block">
+              <span className="text-[#048ED6] text-sm font-bold tracking-widest uppercase mb-4 block">
                 Our Approach
               </span>
               <h2 className="text-4xl md:text-5xl font-bold text-slate-900 leading-tight">
@@ -42,7 +42,7 @@ export function LearningApproachSection() {
               
               {/* Item 1 */}
               <div className="flex gap-6">
-                <div className="w-12 h-12 shrink-0 rounded-full bg-sky-50 flex items-center justify-center text-[#0ea5e9]">
+                <div className="w-12 h-12 shrink-0 rounded-full bg-sky-50 flex items-center justify-center text-[#048ED6]">
                   <Zap className="w-5 h-5" />
                 </div>
                 <div>
@@ -55,7 +55,7 @@ export function LearningApproachSection() {
               
               {/* Item 2 */}
               <div className="flex gap-6">
-                <div className="w-12 h-12 shrink-0 rounded-full bg-sky-50 flex items-center justify-center text-[#0ea5e9]">
+                <div className="w-12 h-12 shrink-0 rounded-full bg-sky-50 flex items-center justify-center text-[#048ED6]">
                   <Heart className="w-5 h-5" />
                 </div>
                 <div>
@@ -68,7 +68,7 @@ export function LearningApproachSection() {
               
               {/* Item 3 */}
               <div className="flex gap-6">
-                <div className="w-12 h-12 shrink-0 rounded-full bg-sky-50 flex items-center justify-center text-[#0ea5e9]">
+                <div className="w-12 h-12 shrink-0 rounded-full bg-sky-50 flex items-center justify-center text-[#048ED6]">
                   <UserCheck className="w-5 h-5" />
                 </div>
                 <div>
@@ -81,7 +81,7 @@ export function LearningApproachSection() {
               
               {/* Item 4 */}
               <div className="flex gap-6">
-                <div className="w-12 h-12 shrink-0 rounded-full bg-sky-50 flex items-center justify-center text-[#0ea5e9]">
+                <div className="w-12 h-12 shrink-0 rounded-full bg-sky-50 flex items-center justify-center text-[#048ED6]">
                   <Compass className="w-5 h-5" />
                 </div>
                 <div>

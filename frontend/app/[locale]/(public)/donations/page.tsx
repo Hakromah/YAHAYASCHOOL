@@ -37,14 +37,14 @@ export default function DonationsPage({ params: { locale = 'en' } }: { params: {
             {/* Left Content */}
             <div className="flex-1">
               <div className="flex items-center gap-2 text-sm text-gray-500 mb-8">
-                <Link href={getHref('/')} className="hover:text-[#0ea5e9] transition-colors">Home</Link>
+                <Link href={getHref('/')} className="hover:text-[#048ED6] transition-colors">Home</Link>
                 <ChevronRight className="w-3.5 h-3.5" />
-                <span className="text-[#0ea5e9] font-medium">Donation</span>
+                <span className="text-[#048ED6] font-medium">Donation</span>
               </div>
 
               <h1 className="text-5xl lg:text-[4rem] font-bold text-gray-900 font-serif mb-6 leading-tight">
                 Invest in the <br />
-                <span className="text-[#0ea5e9] italic font-medium">Leaders of Tomorrow</span>
+                <span className="text-[#048ED6] italic font-medium">Leaders of Tomorrow</span>
               </h1>
 
               <p className="text-gray-600 text-lg leading-relaxed mb-8 max-w-lg">
@@ -53,11 +53,11 @@ export default function DonationsPage({ params: { locale = 'en' } }: { params: {
 
               <div className="flex flex-wrap items-center gap-4">
                 <div className="flex items-center gap-2 px-4 py-2 bg-sky-50 rounded-full text-sm font-bold text-gray-700">
-                  <ShieldCheck className="w-4 h-4 text-[#0ea5e9]" />
+                  <ShieldCheck className="w-4 h-4 text-[#048ED6]" />
                   <span>Secure & Transparent</span>
                 </div>
                 <div className="flex items-center gap-2 px-4 py-2 bg-sky-50 rounded-full text-sm font-bold text-gray-700">
-                  <CheckCircle2 className="w-4 h-4 text-[#0ea5e9]" />
+                  <CheckCircle2 className="w-4 h-4 text-[#048ED6]" />
                   <span>100% Impact Focused</span>
                 </div>
               </div>
@@ -66,7 +66,7 @@ export default function DonationsPage({ params: { locale = 'en' } }: { params: {
             {/* Right Hero Image */}
             <div className="flex-1 w-full max-w-lg lg:max-w-none relative">
               {/* Custom Blob Shape Container */}
-              <div className="relative w-full aspect-square md:aspect-[4/3] lg:aspect-square overflow-hidden rounded-[80px] rounded-tl-[160px] rounded-br-[160px] border-4 border-[#0ea5e9]/20">
+              <div className="relative w-full aspect-square md:aspect-[4/3] lg:aspect-square overflow-hidden rounded-[80px] rounded-tl-[160px] rounded-br-[160px] border-4 border-[#048ED6]/20">
                 <div className="absolute inset-0 bg-gray-200 flex items-center justify-center text-gray-400">
                   Students Learning Image
                 </div>
@@ -84,7 +84,7 @@ export default function DonationsPage({ params: { locale = 'en' } }: { params: {
             
             {/* Left: Bank Transfer */}
             <div className="flex-1 space-y-6">
-              <h3 className="text-xs font-bold text-[#0ea5e9] uppercase tracking-wider text-center lg:text-left mb-4">
+              <h3 className="text-xs font-bold text-[#048ED6] uppercase tracking-wider text-center lg:text-left mb-4">
                 PREFER A BANK TRANSFER?
               </h3>
 
@@ -95,12 +95,12 @@ export default function DonationsPage({ params: { locale = 'en' } }: { params: {
                   className="w-full p-6 flex items-center justify-between bg-white hover:bg-gray-50 transition-colors"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-sky-50 flex items-center justify-center text-[#0ea5e9]">
+                    <div className="w-8 h-8 rounded-full bg-sky-50 flex items-center justify-center text-[#048ED6]">
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                       </svg>
                     </div>
-                    <span className="font-bold text-[#0ea5e9]">International Transfer (USD/EUR)</span>
+                    <span className="font-bold text-[#048ED6]">International Transfer (USD/EUR)</span>
                   </div>
                   {bankExpanded === 'international' ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
                 </button>
@@ -112,7 +112,7 @@ export default function DonationsPage({ params: { locale = 'en' } }: { params: {
                         <p className="text-[10px] uppercase font-bold text-gray-400 mb-1">BANK NAME</p>
                         <div className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
                           <span className="text-sm font-bold text-gray-900">Ecobank of Liberia</span>
-                          <button className="text-[#0ea5e9] hover:text-sky-600"><Copy className="w-4 h-4" /></button>
+                          <button className="text-[#048ED6] hover:text-sky-600"><Copy className="w-4 h-4" /></button>
                         </div>
                       </div>
                       <div>
@@ -125,14 +125,14 @@ export default function DonationsPage({ params: { locale = 'en' } }: { params: {
                         <p className="text-[10px] uppercase font-bold text-gray-400 mb-1">ACCOUNT NUMBER (IBAN)</p>
                         <div className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
                           <span className="text-sm font-bold text-gray-900">NG73 0123 4567 8901 2345</span>
-                          <button className="text-[#0ea5e9] hover:text-sky-600"><Copy className="w-4 h-4" /></button>
+                          <button className="text-[#048ED6] hover:text-sky-600"><Copy className="w-4 h-4" /></button>
                         </div>
                       </div>
                       <div>
                         <p className="text-[10px] uppercase font-bold text-gray-400 mb-1">SWIFT / BIC CODE</p>
                         <div className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
                           <span className="text-sm font-bold text-gray-900">YTIBNGLXXXX</span>
-                          <button className="text-[#0ea5e9] hover:text-sky-600"><Copy className="w-4 h-4" /></button>
+                          <button className="text-[#048ED6] hover:text-sky-600"><Copy className="w-4 h-4" /></button>
                         </div>
                       </div>
                     </div>
@@ -161,8 +161,8 @@ export default function DonationsPage({ params: { locale = 'en' } }: { params: {
             </div>
 
             {/* Right: Online Donation Form */}
-            <div className="flex-1 bg-white rounded-3xl border border-[#0ea5e9] p-8 shadow-xl">
-              <button className="w-full py-4 bg-[#0ea5e9] text-white font-bold rounded-xl mb-8">
+            <div className="flex-1 bg-white rounded-3xl border border-[#048ED6] p-8 shadow-xl">
+              <button className="w-full py-4 bg-[#048ED6] text-white font-bold rounded-xl mb-8">
                 Give Online
               </button>
 
@@ -174,7 +174,7 @@ export default function DonationsPage({ params: { locale = 'en' } }: { params: {
                       <button 
                         key={amt}
                         className={`flex-1 min-w-[70px] py-2.5 rounded-lg border text-sm font-bold transition-colors ${
-                          amt === '$100' ? 'bg-[#0ea5e9] border-[#0ea5e9] text-white' : 'bg-white border-gray-200 text-gray-600 hover:border-[#0ea5e9]'
+                          amt === '$100' ? 'bg-[#048ED6] border-[#048ED6] text-white' : 'bg-white border-gray-200 text-gray-600 hover:border-[#048ED6]'
                         }`}
                       >
                         {amt}
@@ -194,7 +194,7 @@ export default function DonationsPage({ params: { locale = 'en' } }: { params: {
                   <div>
                     <label className="block text-sm font-bold text-gray-900 mb-3">Currency</label>
                     <div className="relative">
-                      <select className="w-full py-2.5 px-4 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 appearance-none focus:outline-none focus:border-[#0ea5e9]">
+                      <select className="w-full py-2.5 px-4 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 appearance-none focus:outline-none focus:border-[#048ED6]">
                         <option>USD - US Dollar</option>
                       </select>
                       <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
@@ -205,7 +205,7 @@ export default function DonationsPage({ params: { locale = 'en' } }: { params: {
                 <div>
                   <label className="block text-sm font-bold text-gray-900 mb-3">Where would you like your gift to go?</label>
                   <div className="relative">
-                    <select className="w-full py-3 px-4 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 appearance-none focus:outline-none focus:border-[#0ea5e9]">
+                    <select className="w-full py-3 px-4 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 appearance-none focus:outline-none focus:border-[#048ED6]">
                       <option>General Fund (Where it's needed most)</option>
                     </select>
                     <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
@@ -215,7 +215,7 @@ export default function DonationsPage({ params: { locale = 'en' } }: { params: {
                 <div className="pt-4">
                   <button 
                     onClick={() => setIsModalOpen(true)}
-                    className="w-full py-4 bg-[#0ea5e9] text-white font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-sky-500 transition-colors shadow-md"
+                    className="w-full py-4 bg-[#048ED6] text-white font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-sky-500 transition-colors shadow-md"
                   >
                     <Lock className="w-4 h-4" />
                     <span>Donate Securely Now</span>
@@ -241,10 +241,10 @@ export default function DonationsPage({ params: { locale = 'en' } }: { params: {
 
           <div className="relative">
             {/* Arrows */}
-            <button className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 lg:-translate-x-12 w-10 h-10 rounded-full border border-[#0ea5e9] text-[#0ea5e9] flex items-center justify-center hover:bg-sky-50 bg-white z-10 transition-colors">
+            <button className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 lg:-translate-x-12 w-10 h-10 rounded-full border border-[#048ED6] text-[#048ED6] flex items-center justify-center hover:bg-sky-50 bg-white z-10 transition-colors">
               <ChevronLeft className="w-5 h-5" />
             </button>
-            <button className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 lg:translate-x-12 w-10 h-10 rounded-full border border-[#0ea5e9] text-[#0ea5e9] flex items-center justify-center hover:bg-sky-50 bg-white z-10 transition-colors">
+            <button className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 lg:translate-x-12 w-10 h-10 rounded-full border border-[#048ED6] text-[#048ED6] flex items-center justify-center hover:bg-sky-50 bg-white z-10 transition-colors">
               <ChevronRight className="w-5 h-5" />
             </button>
 
@@ -252,16 +252,16 @@ export default function DonationsPage({ params: { locale = 'en' } }: { params: {
               {targetedGiving.map(item => (
                 <div key={item.id} className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-lg transition-shadow flex flex-col">
                   <div className="relative aspect-[4/3] bg-gray-200">
-                    <div className="absolute top-4 left-4 px-3 py-1 bg-[#0ea5e9] text-white text-[10px] font-bold rounded-full uppercase tracking-wide z-10">
+                    <div className="absolute top-4 left-4 px-3 py-1 bg-[#048ED6] text-white text-[10px] font-bold rounded-full uppercase tracking-wide z-10">
                       {item.tag}
                     </div>
                   </div>
                   <div className="p-6 flex flex-col flex-1">
-                    <h3 className="text-lg font-bold text-[#0ea5e9] mb-2">{item.title}</h3>
+                    <h3 className="text-lg font-bold text-[#048ED6] mb-2">{item.title}</h3>
                     <p className="text-sm text-gray-600 mb-6 flex-1 line-clamp-3">
                       {item.desc}
                     </p>
-                    <button className="w-full py-2.5 bg-[#0ea5e9] text-white text-sm font-bold rounded-xl hover:bg-sky-500 transition-colors">
+                    <button className="w-full py-2.5 bg-[#048ED6] text-white text-sm font-bold rounded-xl hover:bg-sky-500 transition-colors">
                       {item.btn}
                     </button>
                   </div>
@@ -273,7 +273,7 @@ export default function DonationsPage({ params: { locale = 'en' } }: { params: {
       </section>
 
       {/* Wall of Gratitude */}
-      <section className="py-24 bg-[#0ea5e9] text-white">
+      <section className="py-24 bg-[#048ED6] text-white">
         <Container>
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold font-serif mb-4 relative inline-block">

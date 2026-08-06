@@ -31,18 +31,18 @@ export default function ProgramsPage({ params: { locale = 'en' } }: { params: { 
           <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-24 relative z-10">
             <div className="flex-1 space-y-6 pt-10">
               <div className="flex items-center gap-2 text-sm text-gray-500 mb-8">
-                <Link href={getHref('/')} className="hover:text-[#0ea5e9] transition-colors">Home</Link>
+                <Link href={getHref('/')} className="hover:text-[#048ED6] transition-colors">Home</Link>
                 <ChevronRight className="w-4 h-4" />
                 <span className="text-gray-900 font-medium">Academics</span>
               </div>
               
-              <span className="text-[#0ea5e9] text-xs font-bold tracking-[0.2em] uppercase block">
+              <span className="text-[#048ED6] text-xs font-bold tracking-[0.2em] uppercase block">
                 Learning with Purpose
               </span>
               
               <h1 className="text-[clamp(2.5rem,5vw,4.5rem)] font-bold text-gray-900 leading-[1.05] font-serif">
                 Knowledge Rooted in Faith. <br />
-                <span className="italic text-[#0ea5e9]">Excellence Built for Life.</span>
+                <span className="italic text-[#048ED6]">Excellence Built for Life.</span>
               </h1>
               
               <p className="text-lg text-gray-600 leading-relaxed max-w-xl">
@@ -76,12 +76,12 @@ export default function ProgramsPage({ params: { locale = 'en' } }: { params: { 
                     Campus Night Image
                   </div>
                   {/* Badge */}
-                  <div className="absolute top-4 left-4 w-10 h-10 bg-[#0ea5e9] rounded-xl flex items-center justify-center text-white shadow-lg z-10">
+                  <div className="absolute top-4 left-4 w-10 h-10 bg-[#048ED6] rounded-xl flex items-center justify-center text-white shadow-lg z-10">
                     <BookOpen className="w-5 h-5" />
                   </div>
                 </div>
                 <div className="p-8 flex-1 flex flex-col">
-                  <div className="flex items-center gap-1 text-[#0ea5e9] text-sm font-semibold mb-3 group-hover:gap-2 transition-all">
+                  <div className="flex items-center gap-1 text-[#048ED6] text-sm font-semibold mb-3 group-hover:gap-2 transition-all">
                     <span>Explore Program</span>
                     <ArrowRight className="w-4 h-4" />
                   </div>
@@ -91,7 +91,7 @@ export default function ProgramsPage({ params: { locale = 'en' } }: { params: { 
                   </p>
                   <Link 
                     href={getHref(`/departments/quran`)} 
-                    className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#0ea5e9] text-white text-sm font-bold w-fit hover:bg-sky-500 transition-colors shadow-md"
+                    className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#048ED6] text-white text-sm font-bold w-fit hover:bg-sky-500 transition-colors shadow-md"
                   >
                     <span>Read More</span>
                     <ArrowRight className="w-4 h-4" />
@@ -107,7 +107,7 @@ export default function ProgramsPage({ params: { locale = 'en' } }: { params: { 
       <section className="py-24 bg-[#fafafa]">
         <Container>
           <div className="text-center mb-16">
-            <span className="text-[#0ea5e9] text-xs font-bold tracking-[0.2em] uppercase block mb-4">
+            <span className="text-[#048ED6] text-xs font-bold tracking-[0.2em] uppercase block mb-4">
               Our Approach
             </span>
             <h2 className="text-4xl font-bold text-gray-900 font-serif">How Learning Comes to Life</h2>
@@ -123,7 +123,7 @@ export default function ProgramsPage({ params: { locale = 'en' } }: { params: { 
               </div>
               
               {/* Floating Stat Card */}
-              <div className="absolute -bottom-10 right-4 lg:-right-10 bg-[#0ea5e9] text-white p-8 rounded-3xl shadow-2xl max-w-[240px]">
+              <div className="absolute -bottom-10 right-4 lg:-right-10 bg-[#048ED6] text-white p-8 rounded-3xl shadow-2xl max-w-[240px]">
                 <div className="text-5xl font-light mb-2">98%</div>
                 <div className="text-xs font-bold tracking-wider leading-relaxed">
                   UNIVERSITY PLACEMENT RATE FOR OUR GRADUATES
@@ -135,7 +135,7 @@ export default function ProgramsPage({ params: { locale = 'en' } }: { params: { 
             <div className="flex-1 space-y-10 mt-16 lg:mt-0 lg:pl-10">
               
               <div className="flex gap-6">
-                <div className="w-12 h-12 rounded-full bg-sky-100 text-[#0ea5e9] flex items-center justify-center shrink-0">
+                <div className="w-12 h-12 rounded-full bg-sky-100 text-[#048ED6] flex items-center justify-center shrink-0">
                   <Zap className="w-5 h-5" />
                 </div>
                 <div>
@@ -147,7 +147,7 @@ export default function ProgramsPage({ params: { locale = 'en' } }: { params: { 
               </div>
               
               <div className="flex gap-6">
-                <div className="w-12 h-12 rounded-full bg-sky-100 text-[#0ea5e9] flex items-center justify-center shrink-0">
+                <div className="w-12 h-12 rounded-full bg-sky-100 text-[#048ED6] flex items-center justify-center shrink-0">
                   <ShieldCheck className="w-5 h-5" />
                 </div>
                 <div>
@@ -159,7 +159,7 @@ export default function ProgramsPage({ params: { locale = 'en' } }: { params: { 
               </div>
               
               <div className="flex gap-6">
-                <div className="w-12 h-12 rounded-full bg-sky-100 text-[#0ea5e9] flex items-center justify-center shrink-0">
+                <div className="w-12 h-12 rounded-full bg-sky-100 text-[#048ED6] flex items-center justify-center shrink-0">
                   <Award className="w-5 h-5" />
                 </div>
                 <div>
@@ -171,7 +171,7 @@ export default function ProgramsPage({ params: { locale = 'en' } }: { params: { 
               </div>
               
               <div className="flex gap-6">
-                <div className="w-12 h-12 rounded-full bg-sky-100 text-[#0ea5e9] flex items-center justify-center shrink-0">
+                <div className="w-12 h-12 rounded-full bg-sky-100 text-[#048ED6] flex items-center justify-center shrink-0">
                   <Compass className="w-5 h-5" />
                 </div>
                 <div>

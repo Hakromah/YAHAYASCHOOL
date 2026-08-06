@@ -34,12 +34,12 @@ export default function NewsListingPage({ params: { locale = 'en' } }: { params:
             {/* Left Content */}
             <div className="flex-1 space-y-6 pt-10">
               <div className="flex items-center gap-2 text-sm text-gray-500 mb-8">
-                <Link href={getHref('/')} className="hover:text-[#0ea5e9] transition-colors">Home</Link>
+                <Link href={getHref('/')} className="hover:text-[#048ED6] transition-colors">Home</Link>
                 <ChevronRight className="w-4 h-4" />
                 <span className="text-gray-900 font-medium">News</span>
               </div>
               
-              <span className="text-[#0ea5e9] text-xs font-bold tracking-[0.2em] uppercase block">
+              <span className="text-[#048ED6] text-xs font-bold tracking-[0.2em] uppercase block">
                 School Stories
               </span>
               
@@ -54,7 +54,7 @@ export default function NewsListingPage({ params: { locale = 'en' } }: { params:
               <div className="pt-4">
                 <Link 
                   href={getHref('/news/science-tech-fair-2024')} 
-                  className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-full bg-[#0ea5e9] text-white font-bold hover:bg-sky-500 transition-colors shadow-md"
+                  className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-full bg-[#048ED6] text-white font-bold hover:bg-sky-500 transition-colors shadow-md"
                 >
                   <span>Read More</span>
                   <ArrowRight className="w-4 h-4" />
@@ -63,10 +63,10 @@ export default function NewsListingPage({ params: { locale = 'en' } }: { params:
 
               {/* Pagination controls for Hero Slider */}
               <div className="flex items-center gap-4 pt-12">
-                <button className="w-10 h-10 rounded-full border border-[#0ea5e9] text-[#0ea5e9] flex items-center justify-center hover:bg-sky-50 transition-colors">
+                <button className="w-10 h-10 rounded-full border border-[#048ED6] text-[#048ED6] flex items-center justify-center hover:bg-sky-50 transition-colors">
                   <ArrowLeft className="w-4 h-4" />
                 </button>
-                <button className="w-10 h-10 rounded-full bg-[#0ea5e9] text-white flex items-center justify-center hover:bg-sky-500 transition-colors shadow-md">
+                <button className="w-10 h-10 rounded-full bg-[#048ED6] text-white flex items-center justify-center hover:bg-sky-500 transition-colors shadow-md">
                   <ArrowRight className="w-4 h-4" />
                 </button>
                 <div className="flex-1 h-[1px] bg-sky-200 ml-4 max-w-xs"></div>
@@ -87,11 +87,11 @@ export default function NewsListingPage({ params: { locale = 'en' } }: { params:
               <div className="absolute -bottom-10 -left-10 lg:-left-20 bg-white p-8 rounded-3xl shadow-2xl w-[320px] z-20 border border-gray-100">
                 <div className="flex gap-6 mb-4">
                   <div className="text-center shrink-0">
-                    <span className="block text-[#0ea5e9] font-bold text-sm uppercase">Jul</span>
+                    <span className="block text-[#048ED6] font-bold text-sm uppercase">Jul</span>
                     <span className="block text-4xl font-light text-gray-900 mt-1">15</span>
                   </div>
                   <div>
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-sky-50 text-[#0ea5e9] uppercase tracking-wider mb-2 inline-block">
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-sky-50 text-[#048ED6] uppercase tracking-wider mb-2 inline-block">
                       Ceremony
                     </span>
                     <h4 className="font-bold text-gray-900 font-serif text-lg leading-tight">
@@ -115,7 +115,7 @@ export default function NewsListingPage({ params: { locale = 'en' } }: { params:
                   Join us as we celebrate the achievements of our graduating class.
                 </p>
 
-                <Link href={getHref('/news/graduation-2024')} className="flex items-center gap-1 text-[#0ea5e9] text-sm font-bold hover:text-sky-600 transition-colors">
+                <Link href={getHref('/news/graduation-2024')} className="flex items-center gap-1 text-[#048ED6] text-sm font-bold hover:text-sky-600 transition-colors">
                   <span>Learn More</span>
                   <ArrowRight className="w-4 h-4" />
                 </Link>
@@ -135,8 +135,8 @@ export default function NewsListingPage({ params: { locale = 'en' } }: { params:
                 key={idx}
                 className={`px-6 py-2 rounded-full text-sm font-bold border transition-colors ${
                   idx === 0 
-                    ? 'bg-[#0ea5e9] text-white border-[#0ea5e9] shadow-md' 
-                    : 'bg-white text-gray-600 border-gray-200 hover:border-[#0ea5e9] hover:text-[#0ea5e9]'
+                    ? 'bg-[#048ED6] text-white border-[#048ED6] shadow-md' 
+                    : 'bg-white text-gray-600 border-gray-200 hover:border-[#048ED6] hover:text-[#048ED6]'
                 }`}
               >
                 {cat}
@@ -162,7 +162,7 @@ export default function NewsListingPage({ params: { locale = 'en' } }: { params:
                 {/* Content */}
                 <div className="p-8 flex flex-col flex-1">
                   <div className="flex items-center justify-between mb-4">
-                    <span className="px-2.5 py-1 rounded text-[10px] font-bold bg-white border border-[#0ea5e9] text-[#0ea5e9] uppercase tracking-wider">
+                    <span className="px-2.5 py-1 rounded text-[10px] font-bold bg-white border border-[#048ED6] text-[#048ED6] uppercase tracking-wider">
                       {article.category}
                     </span>
                     <span className="text-xs text-gray-500 font-medium">
@@ -170,7 +170,7 @@ export default function NewsListingPage({ params: { locale = 'en' } }: { params:
                     </span>
                   </div>
                   
-                  <h3 className="text-xl font-bold text-gray-900 mb-3 font-serif group-hover:text-[#0ea5e9] transition-colors">
+                  <h3 className="text-xl font-bold text-gray-900 mb-3 font-serif group-hover:text-[#048ED6] transition-colors">
                     <Link href={getHref(`/news/${article.slug}`)} className="focus:outline-none">
                       <span className="absolute inset-0" aria-hidden="true" />
                       {article.title}
@@ -181,7 +181,7 @@ export default function NewsListingPage({ params: { locale = 'en' } }: { params:
                     {article.desc}
                   </p>
                   
-                  <div className="mt-6 flex items-center gap-1 text-[#0ea5e9] text-sm font-bold group-hover:gap-2 transition-all">
+                  <div className="mt-6 flex items-center gap-1 text-[#048ED6] text-sm font-bold group-hover:gap-2 transition-all">
                     <span>Read More</span>
                     <ArrowRight className="w-4 h-4" />
                   </div>

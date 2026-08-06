@@ -26,9 +26,9 @@ export function HomepageBuilder({ sections, locale = 'en' }: HomepageBuilderProp
       <main className="min-h-screen">
         <HeroSection locale={locale} />
         <HomeAboutSection />
-        <HomeActivitiesSection />
-        <HomeAnimationSection />
         <ProgramsGridSection locale={locale} />
+        <HomeAnimationSection />
+        <HomeActivitiesSection />
         <TestimonialsSection />
         <NewsGridSection locale={locale} />
 

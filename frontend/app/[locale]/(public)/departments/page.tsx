@@ -54,19 +54,19 @@ export default function AcademicsPage() {
             <div className="w-full lg:w-1/2 flex flex-col">
               {/* Breadcrumbs */}
               <div className="flex items-center gap-2 text-sm text-slate-500 mb-8 font-medium">
-                <Link href="/" className="hover:text-[#0ea5e9] transition-colors">Home</Link>
+                <Link href="/" className="hover:text-[#048ED6] transition-colors">Home</Link>
                 <span className="text-slate-300">/</span>
-                <span className="text-[#0ea5e9]">Departments</span>
+                <span className="text-[#048ED6]">Departments</span>
               </div>
               
               <div className="mb-6">
-                <span className="text-[#0ea5e9] text-sm font-bold tracking-widest uppercase mb-4 block">
+                <span className="text-[#048ED6] text-sm font-bold tracking-widest uppercase mb-4 block">
                   Learning With Purpose
                 </span>
                 <h1 className="text-5xl md:text-6xl font-bold text-slate-900 leading-tight mb-2">
                   Knowledge Rooted in Faith.
                 </h1>
-                <h2 className="text-5xl md:text-6xl font-bold text-[#0ea5e9] italic leading-tight mb-8">
+                <h2 className="text-5xl md:text-6xl font-bold text-[#048ED6] italic leading-tight mb-8">
                   Excellence Built for Life.
                 </h2>
               </div>
@@ -107,7 +107,7 @@ export default function AcademicsPage() {
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                   />
                   {/* Floating Icon */}
-                  <div className="absolute top-6 left-6 w-12 h-12 bg-[#0ea5e9] rounded-xl flex items-center justify-center text-white shadow-lg">
+                  <div className="absolute top-6 left-6 w-12 h-12 bg-[#048ED6] rounded-xl flex items-center justify-center text-white shadow-lg">
                     <Book className="w-6 h-6" />
                   </div>
                 </div>
@@ -116,7 +116,7 @@ export default function AcademicsPage() {
                 <div className="p-8 md:p-10 flex flex-col flex-grow">
                   <Link 
                     href={`/departments/${program.id}`}
-                    className="inline-flex items-center gap-2 text-[#0ea5e9] text-sm font-semibold hover:text-sky-600 transition-colors mb-4"
+                    className="inline-flex items-center gap-2 text-[#048ED6] text-sm font-semibold hover:text-sky-600 transition-colors mb-4"
                   >
                     <span>Explore Program</span>
                     <ArrowRight className="w-4 h-4" />
@@ -133,7 +133,7 @@ export default function AcademicsPage() {
                   <div>
                     <Link
                       href={`/departments/${program.id}`}
-                      className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-[#0ea5e9] text-white text-sm font-medium rounded-full hover:bg-sky-500 transition-colors"
+                      className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-[#048ED6] text-white text-sm font-medium rounded-full hover:bg-sky-500 transition-colors"
                     >
                       <span>Read More</span>
                       <ArrowRight className="w-4 h-4" />

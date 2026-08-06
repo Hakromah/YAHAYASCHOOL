@@ -14,7 +14,7 @@ export default function ContactUsPage({ params: { locale = 'en' } }: { params: {
       <section className="pt-20 pb-16 text-center">
         <Container>
           <div className="flex items-center justify-center gap-2 text-sm text-gray-500 mb-6">
-            <Link href={getHref('/')} className="hover:text-[#0ea5e9] transition-colors">Home</Link>
+            <Link href={getHref('/')} className="hover:text-[#048ED6] transition-colors">Home</Link>
             <ChevronRight className="w-3.5 h-3.5" />
             <span className="text-gray-900 font-medium">Contact</span>
           </div>
@@ -41,7 +41,7 @@ export default function ContactUsPage({ params: { locale = 'en' } }: { params: {
                     <input
                       type="text"
                       placeholder="Musa"
-                      className="w-full bg-[#f4f7f9] border-transparent rounded-xl px-5 py-4 text-sm focus:outline-none focus:border-[#0ea5e9] focus:ring-1 focus:ring-[#0ea5e9] transition-colors"
+                      className="w-full bg-[#f4f7f9] border-transparent rounded-xl px-5 py-4 text-sm focus:outline-none focus:border-[#048ED6] focus:ring-1 focus:ring-[#048ED6] transition-colors"
                     />
                   </div>
                   <div>
@@ -49,7 +49,7 @@ export default function ContactUsPage({ params: { locale = 'en' } }: { params: {
                     <input
                       type="text"
                       placeholder="Kamara"
-                      className="w-full bg-[#f4f7f9] border-transparent rounded-xl px-5 py-4 text-sm focus:outline-none focus:border-[#0ea5e9] focus:ring-1 focus:ring-[#0ea5e9] transition-colors"
+                      className="w-full bg-[#f4f7f9] border-transparent rounded-xl px-5 py-4 text-sm focus:outline-none focus:border-[#048ED6] focus:ring-1 focus:ring-[#048ED6] transition-colors"
                     />
                   </div>
                 </div>
@@ -60,7 +60,7 @@ export default function ContactUsPage({ params: { locale = 'en' } }: { params: {
                     <input
                       type="email"
                       placeholder="musakamara@gmail.com"
-                      className="w-full bg-[#f4f7f9] border-transparent rounded-xl px-5 py-4 text-sm focus:outline-none focus:border-[#0ea5e9] focus:ring-1 focus:ring-[#0ea5e9] transition-colors"
+                      className="w-full bg-[#f4f7f9] border-transparent rounded-xl px-5 py-4 text-sm focus:outline-none focus:border-[#048ED6] focus:ring-1 focus:ring-[#048ED6] transition-colors"
                     />
                   </div>
                   <div>
@@ -68,7 +68,7 @@ export default function ContactUsPage({ params: { locale = 'en' } }: { params: {
                     <input
                       type="tel"
                       placeholder="+1 (555) 000-0000"
-                      className="w-full bg-[#f4f7f9] border-transparent rounded-xl px-5 py-4 text-sm focus:outline-none focus:border-[#0ea5e9] focus:ring-1 focus:ring-[#0ea5e9] transition-colors"
+                      className="w-full bg-[#f4f7f9] border-transparent rounded-xl px-5 py-4 text-sm focus:outline-none focus:border-[#048ED6] focus:ring-1 focus:ring-[#048ED6] transition-colors"
                     />
                   </div>
                 </div>
@@ -76,7 +76,7 @@ export default function ContactUsPage({ params: { locale = 'en' } }: { params: {
                 <div>
                   <label className="block text-xs font-bold text-gray-900 mb-2">Subject Area</label>
                   <div className="relative">
-                    <select className="w-full bg-[#f4f7f9] border-transparent rounded-xl px-5 py-4 text-sm focus:outline-none focus:border-[#0ea5e9] focus:ring-1 focus:ring-[#0ea5e9] transition-colors appearance-none text-gray-700">
+                    <select className="w-full bg-[#f4f7f9] border-transparent rounded-xl px-5 py-4 text-sm focus:outline-none focus:border-[#048ED6] focus:ring-1 focus:ring-[#048ED6] transition-colors appearance-none text-gray-700">
                       <option>Admissions Inquiry</option>
                       <option>General Inquiry</option>
                       <option>Feedback</option>
@@ -94,15 +94,15 @@ export default function ContactUsPage({ params: { locale = 'en' } }: { params: {
                   <textarea
                     rows={5}
                     placeholder="How can we assist you today?"
-                    className="w-full bg-[#f4f7f9] border-transparent rounded-xl p-5 text-sm focus:outline-none focus:border-[#0ea5e9] focus:ring-1 focus:ring-[#0ea5e9] transition-colors resize-none"
+                    className="w-full bg-[#f4f7f9] border-transparent rounded-xl p-5 text-sm focus:outline-none focus:border-[#048ED6] focus:ring-1 focus:ring-[#048ED6] transition-colors resize-none"
                   />
                 </div>
 
                 <div className="flex items-center justify-between pt-4 flex-wrap gap-4">
                   <label className="flex items-center gap-3 cursor-pointer group">
                     <div className="relative flex items-center justify-center w-5 h-5">
-                      <input type="radio" className="peer appearance-none w-5 h-5 border-2 border-gray-300 rounded-full checked:border-[#0ea5e9] transition-colors cursor-pointer" />
-                      <div className="absolute w-2.5 h-2.5 bg-[#0ea5e9] rounded-full scale-0 peer-checked:scale-100 transition-transform"></div>
+                      <input type="radio" className="peer appearance-none w-5 h-5 border-2 border-gray-300 rounded-full checked:border-[#048ED6] transition-colors cursor-pointer" />
+                      <div className="absolute w-2.5 h-2.5 bg-[#048ED6] rounded-full scale-0 peer-checked:scale-100 transition-transform"></div>
                     </div>
                     <span className="text-sm text-gray-700 select-none">
                       Read the legal terms and service, <span className="text-gray-400">I have accept it</span>
@@ -111,7 +111,7 @@ export default function ContactUsPage({ params: { locale = 'en' } }: { params: {
 
                   <button
                     type="button"
-                    className="px-8 py-3.5 bg-[#0ea5e9] text-white font-bold rounded-full hover:bg-sky-500 transition-colors flex items-center gap-2 shadow-md ml-auto"
+                    className="px-8 py-3.5 bg-[#048ED6] text-white font-bold rounded-full hover:bg-sky-500 transition-colors flex items-center gap-2 shadow-md ml-auto"
                   >
                     <span>Send Message</span>
                     <Send className="w-4 h-4" />
@@ -121,7 +121,7 @@ export default function ContactUsPage({ params: { locale = 'en' } }: { params: {
             </div>
 
             {/* Right Column: Info */}
-            <div className="flex-[2] bg-[#0ea5e9] rounded-[32px] p-8 sm:p-12 text-white shadow-xl relative overflow-hidden">
+            <div className="flex-[2] bg-[#048ED6] rounded-[32px] p-8 sm:p-12 text-white shadow-xl relative overflow-hidden">
               {/* Decorative background shapes */}
               <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
               

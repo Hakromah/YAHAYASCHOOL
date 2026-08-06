@@ -26,7 +26,7 @@ export function HeroSection({ data, locale = 'en' }: HeroProps) {
   };
 
   return (
-    <section className="relative w-full h-[85vh] min-h-[600px] flex flex-col justify-end overflow-hidden bg-gray-900">
+    <section className="relative w-full h-[min(760px,calc(100vh-100px))] min-h-[560px] flex flex-col justify-end overflow-hidden bg-gray-900">
       {/* Background Image (Using placeholder div that can be replaced with actual image) */}
       <div className="absolute inset-0 z-0">
         {/* Dark gradient overlay for text readability */}
@@ -37,7 +37,7 @@ export function HeroSection({ data, locale = 'en' }: HeroProps) {
            {/* In a real scenario, use next/image here */}
            <div 
              className="absolute inset-0 bg-cover bg-center bg-no-repeat" 
-             style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1577896851231-70ef18881754?auto=format&fit=crop&q=80")' }}
+             style={{ backgroundImage: 'url("/images/figma-home/19.png")' }}
            />
         </div>
       </div>
@@ -57,33 +57,33 @@ export function HeroSection({ data, locale = 'en' }: HeroProps) {
       </div>
 
       {/* Content Container */}
-      <div className="relative z-20 w-full max-w-7xl mx-auto px-4 sm:px-8 pb-32 lg:pb-40">
+      <div className="relative z-20 w-full max-w-[1400px] mx-auto px-[clamp(1rem,4vw,4.5rem)] pb-28 lg:pb-36">
         <div className="flex flex-col lg:flex-row justify-between items-end gap-12 lg:gap-8">
           
           {/* Left Column */}
           <div className="flex-1 w-full text-white">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/20 backdrop-blur-md border border-white/20 text-xs font-bold mb-6">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md border border-white/20 text-[10px] font-bold mb-4">
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <span className="tracking-widest uppercase">EST. 2020</span>
             </div>
             
-            <h1 className="text-5xl md:text-6xl lg:text-[5rem] font-bold leading-[1.1] tracking-tight text-white drop-shadow-md">
+            <h1 className="text-4xl md:text-5xl lg:text-[3.5rem] font-bold leading-[1.03] tracking-tight text-white drop-shadow-md">
               {titlePart1} <br />
               <span className="italic font-medium">{titlePart2}</span>
             </h1>
           </div>
 
           {/* Right Column */}
-          <div className="flex-1 w-full lg:max-w-md text-white">
-            <p className="text-sm md:text-base leading-relaxed mb-8 text-gray-100 drop-shadow-sm font-medium">
+          <div className="flex-1 w-full lg:max-w-[350px] text-white">
+            <p className="text-xs md:text-sm leading-relaxed mb-6 text-gray-100 drop-shadow-sm font-medium">
               {description}
             </p>
             
             <Link
               href={getHref(ctaUrl)}
-              className="inline-flex items-center gap-3 px-8 py-4 rounded-full bg-white text-gray-900 font-bold text-sm hover:bg-gray-100 transition-colors shadow-xl"
+              className="inline-flex items-center gap-3 px-6 py-3 rounded-full bg-white text-gray-900 font-bold text-xs hover:bg-gray-100 transition-colors shadow-xl"
             >
               <span>{ctaText}</span>
               <ArrowRight className="w-4 h-4" />
@@ -107,10 +107,10 @@ export function HeroSection({ data, locale = 'en' }: HeroProps) {
           
           {/* Slider Dots */}
           <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-3 pointer-events-auto">
-            <button aria-label="Slide 1" className="w-8 h-2.5 rounded-full bg-[#0ea5e9] transition-all" />
-            <button aria-label="Slide 2" className="w-2.5 h-2.5 rounded-full border-2 border-[#0ea5e9]/30 hover:border-[#0ea5e9] transition-all" />
-            <button aria-label="Slide 3" className="w-2.5 h-2.5 rounded-full border-2 border-[#0ea5e9]/30 hover:border-[#0ea5e9] transition-all" />
-            <button aria-label="Slide 4" className="w-2.5 h-2.5 rounded-full border-2 border-[#0ea5e9]/30 hover:border-[#0ea5e9] transition-all" />
+            <button aria-label="Slide 1" className="w-8 h-2.5 rounded-full bg-[#048ED6] transition-all" />
+            <button aria-label="Slide 2" className="w-2.5 h-2.5 rounded-full border-2 border-[#048ED6]/30 hover:border-[#048ED6] transition-all" />
+            <button aria-label="Slide 3" className="w-2.5 h-2.5 rounded-full border-2 border-[#048ED6]/30 hover:border-[#048ED6] transition-all" />
+            <button aria-label="Slide 4" className="w-2.5 h-2.5 rounded-full border-2 border-[#048ED6]/30 hover:border-[#048ED6] transition-all" />
           </div>
         </div>
       </div>

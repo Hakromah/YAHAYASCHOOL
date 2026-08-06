@@ -50,13 +50,13 @@ export function CareerAccordion({ positions }: CareerAccordionProps) {
               <div className="flex items-center gap-3">
                 <button 
                   onClick={() => toggle(pos.id)}
-                  className="px-6 py-2.5 rounded-full border border-[#0ea5e9] text-[#0ea5e9] text-sm font-bold flex items-center gap-2 hover:bg-sky-50 transition-colors bg-white"
+                  className="px-6 py-2.5 rounded-full border border-[#048ED6] text-[#048ED6] text-sm font-bold flex items-center gap-2 hover:bg-sky-50 transition-colors bg-white"
                 >
                   <span>View Details</span>
                   {isOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                 </button>
                 <button 
-                  className="px-6 py-2.5 rounded-full bg-[#0ea5e9] text-white text-sm font-bold flex items-center gap-2 hover:bg-sky-500 transition-colors shadow-sm"
+                  className="px-6 py-2.5 rounded-full bg-[#048ED6] text-white text-sm font-bold flex items-center gap-2 hover:bg-sky-500 transition-colors shadow-sm"
                   onClick={() => {
                     document.getElementById('application-form')?.scrollIntoView({ behavior: 'smooth' });
                   }}
@@ -72,14 +72,14 @@ export function CareerAccordion({ positions }: CareerAccordionProps) {
               <div className="px-6 pb-6 pt-2 border-t border-sky-100/50 bg-[#f8fcfb]">
                 <div className="grid md:grid-cols-2 gap-8 mt-4">
                   <div>
-                    <div className="flex items-center gap-2 text-[#0ea5e9] font-bold mb-4">
+                    <div className="flex items-center gap-2 text-[#048ED6] font-bold mb-4">
                       <GraduationCap className="w-5 h-5" />
                       <h4>Requirements</h4>
                     </div>
                     <ul className="space-y-3">
                       {pos.requirements.map((req, i) => (
                         <li key={i} className="flex gap-3 text-sm text-gray-600">
-                          <div className="w-4 h-4 rounded-full bg-sky-100 text-[#0ea5e9] flex items-center justify-center shrink-0 mt-0.5">
+                          <div className="w-4 h-4 rounded-full bg-sky-100 text-[#048ED6] flex items-center justify-center shrink-0 mt-0.5">
                             <span className="text-[10px]">✓</span>
                           </div>
                           <span className="leading-relaxed">{req}</span>
@@ -88,14 +88,14 @@ export function CareerAccordion({ positions }: CareerAccordionProps) {
                     </ul>
                   </div>
                   <div>
-                    <div className="flex items-center gap-2 text-[#0ea5e9] font-bold mb-4">
+                    <div className="flex items-center gap-2 text-[#048ED6] font-bold mb-4">
                       <Briefcase className="w-5 h-5" />
                       <h4>Responsibilities</h4>
                     </div>
                     <ul className="space-y-3">
                       {pos.responsibilities.map((res, i) => (
                         <li key={i} className="flex gap-3 text-sm text-gray-600">
-                          <div className="w-4 h-4 rounded-full bg-sky-100 text-[#0ea5e9] flex items-center justify-center shrink-0 mt-0.5">
+                          <div className="w-4 h-4 rounded-full bg-sky-100 text-[#048ED6] flex items-center justify-center shrink-0 mt-0.5">
                             <span className="text-[10px]">✓</span>
                           </div>
                           <span className="leading-relaxed">{res}</span>

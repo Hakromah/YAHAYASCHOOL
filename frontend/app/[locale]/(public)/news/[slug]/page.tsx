@@ -60,10 +60,10 @@ export default async function ArticleDetailPage({ params }: ArticleDetailProps) 
             </div>
 
             {/* Overlaid Event Card */}
-            <div className="w-[300px] bg-[#0ea5e9] text-white p-8 rounded-3xl shadow-2xl relative translate-y-24 shrink-0 hidden lg:block border border-sky-400">
+            <div className="w-[300px] bg-[#048ED6] text-white p-8 rounded-3xl shadow-2xl relative translate-y-24 shrink-0 hidden lg:block border border-sky-400">
               <h3 className="font-bold text-xl mb-6">Next Event</h3>
               <div className="flex gap-4 mb-8">
-                <div className="bg-white text-[#0ea5e9] rounded-xl p-3 text-center shrink-0">
+                <div className="bg-white text-[#048ED6] rounded-xl p-3 text-center shrink-0">
                   <span className="block font-bold text-xs uppercase">Jul</span>
                   <span className="block text-2xl font-bold mt-0.5">15</span>
                 </div>
@@ -74,7 +74,7 @@ export default async function ArticleDetailPage({ params }: ArticleDetailProps) 
                   <span className="text-xs text-sky-100 font-medium">10:00 AM - 1:00 PM</span>
                 </div>
               </div>
-              <button className="w-full py-3 bg-white text-[#0ea5e9] rounded-full font-bold text-sm hover:bg-sky-50 transition-colors flex items-center justify-center gap-2">
+              <button className="w-full py-3 bg-white text-[#048ED6] rounded-full font-bold text-sm hover:bg-sky-50 transition-colors flex items-center justify-center gap-2">
                 <span>Apply Now</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
@@ -100,7 +100,7 @@ export default async function ArticleDetailPage({ params }: ArticleDetailProps) 
                   This year's theme, "Sustainability Through Innovation," challenged our young minds to create solutions for real-world environmental issues.
                 </p>
 
-                <h2 className="text-2xl font-bold text-[#0ea5e9] font-serif pt-4">
+                <h2 className="text-2xl font-bold text-[#048ED6] font-serif pt-4">
                   Bridging Tradition with Modernity
                 </h2>
                 
@@ -108,27 +108,27 @@ export default async function ArticleDetailPage({ params }: ArticleDetailProps) 
                   From solar-powered water filtration systems to AI-driven waste sorting algorithms, the projects displayed a deep understanding of complex scientific principles. "Our goal is not just to teach science, but to cultivate a mindset of ethical problem-solving," noted Principal Ahmed during his opening address.
                 </p>
 
-                <blockquote className="border-l-4 border-[#0ea5e9] bg-sky-50 p-6 rounded-r-xl my-8">
-                  <p className="text-[#0ea5e9] text-lg font-medium m-0 leading-relaxed italic">
+                <blockquote className="border-l-4 border-[#048ED6] bg-sky-50 p-6 rounded-r-xl my-8">
+                  <p className="text-[#048ED6] text-lg font-medium m-0 leading-relaxed italic">
                     "Science without conscience is but the ruin of the soul. At Yahaya, we ensure our students understand that every technological advancement must serve humanity and preserve our planet."
                   </p>
                 </blockquote>
 
-                <h3 className="text-xl font-bold text-[#0ea5e9] font-serif pt-4">
+                <h3 className="text-xl font-bold text-[#048ED6] font-serif pt-4">
                   Key Highlights of the Fair
                 </h3>
 
                 <ul className="space-y-4 list-none pl-0">
                   <li className="flex gap-3">
-                    <CheckCircle2 className="w-6 h-6 text-[#0ea5e9] shrink-0 mt-0.5" />
+                    <CheckCircle2 className="w-6 h-6 text-[#048ED6] shrink-0 mt-0.5" />
                     <p className="m-0"><strong className="text-gray-900">The Smart Irrigation Project:</strong> Grade 11 students developed a sensor-based system that reduces campus water usage by 40%.</p>
                   </li>
                   <li className="flex gap-3">
-                    <CheckCircle2 className="w-6 h-6 text-[#0ea5e9] shrink-0 mt-0.5" />
+                    <CheckCircle2 className="w-6 h-6 text-[#048ED6] shrink-0 mt-0.5" />
                     <p className="m-0"><strong className="text-gray-900">Renewable Energy Models:</strong> A competitive category featuring experimental designs for vertical-axis wind turbines.</p>
                   </li>
                   <li className="flex gap-3">
-                    <CheckCircle2 className="w-6 h-6 text-[#0ea5e9] shrink-0 mt-0.5" />
+                    <CheckCircle2 className="w-6 h-6 text-[#048ED6] shrink-0 mt-0.5" />
                     <p className="m-0"><strong className="text-gray-900">Inter-School Robotics Challenge:</strong> Yahaya students secured the first position against six regional competitors.</p>
                   </li>
                 </ul>
@@ -168,17 +168,17 @@ export default async function ArticleDetailPage({ params }: ArticleDetailProps) 
                   Our faculty recruitment follows a rigorous selection process, ensuring every teacher embodies our values of excellence, integrity, and lifelong learning.
                 </p>
                 <div className="flex flex-col gap-3">
-                  <button className="w-full py-3 bg-[#0ea5e9] text-white rounded-full font-bold text-sm shadow-md hover:bg-sky-500 transition-colors">
+                  <button className="w-full py-3 bg-[#048ED6] text-white rounded-full font-bold text-sm shadow-md hover:bg-sky-500 transition-colors">
                     Join Our School
                   </button>
-                  <Link href={getHref('/news')} className="w-full py-3 bg-[#0ea5e9] text-white rounded-full font-bold text-sm shadow-md hover:bg-sky-500 transition-colors block text-center">
+                  <Link href={getHref('/news')} className="w-full py-3 bg-[#048ED6] text-white rounded-full font-bold text-sm shadow-md hover:bg-sky-500 transition-colors block text-center">
                     Return to the News
                   </Link>
                 </div>
               </div>
 
               {/* Box 2 */}
-              <div className="bg-white p-8 rounded-3xl border border-[#0ea5e9] shadow-sm">
+              <div className="bg-white p-8 rounded-3xl border border-[#048ED6] shadow-sm">
                 <h3 className="font-bold text-gray-900 mb-2">Stay Updated</h3>
                 <p className="text-xs text-gray-600 leading-relaxed mb-6">
                   Get the latest school news and event reminders straight to your inbox.
@@ -188,10 +188,10 @@ export default async function ArticleDetailPage({ params }: ArticleDetailProps) 
                     <input 
                       type="email" 
                       placeholder="Email Address" 
-                      className="w-full pl-4 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:border-[#0ea5e9] focus:ring-1 focus:ring-[#0ea5e9] text-sm"
+                      className="w-full pl-4 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:border-[#048ED6] focus:ring-1 focus:ring-[#048ED6] text-sm"
                     />
                   </div>
-                  <button className="w-full py-3 bg-[#0ea5e9] text-white rounded-xl font-bold text-sm shadow-md hover:bg-sky-500 transition-colors">
+                  <button className="w-full py-3 bg-[#048ED6] text-white rounded-xl font-bold text-sm shadow-md hover:bg-sky-500 transition-colors">
                     Subscribe
                   </button>
                 </form>

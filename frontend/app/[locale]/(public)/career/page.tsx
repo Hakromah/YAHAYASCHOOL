@@ -79,16 +79,16 @@ export default function CareerPage({ params: { locale = 'en' } }: { params: { lo
         <Container className="relative z-20">
           <div className="max-w-xl">
             <div className="flex items-center gap-2 text-sm text-gray-500 mb-8">
-              <Link href={getHref('/')} className="hover:text-[#0ea5e9] transition-colors">Home</Link>
+              <Link href={getHref('/')} className="hover:text-[#048ED6] transition-colors">Home</Link>
               <ChevronRight className="w-3.5 h-3.5" />
-              <Link href={getHref('/about')} className="hover:text-[#0ea5e9] transition-colors">About</Link>
+              <Link href={getHref('/about')} className="hover:text-[#048ED6] transition-colors">About</Link>
               <ChevronRight className="w-3.5 h-3.5" />
-              <span className="text-[#0ea5e9] font-medium">Career</span>
+              <span className="text-[#048ED6] font-medium">Career</span>
             </div>
             
             <h1 className="text-[clamp(2.5rem,5vw,4rem)] font-bold text-gray-900 leading-[1.1] font-serif mb-6">
               Empowering Minds, <br />
-              <span className="text-[#0ea5e9]">Enriching Souls</span>
+              <span className="text-[#048ED6]">Enriching Souls</span>
             </h1>
             
             <p className="text-lg text-gray-600 leading-relaxed mb-8">
@@ -97,7 +97,7 @@ export default function CareerPage({ params: { locale = 'en' } }: { params: { lo
 
             <a 
               href="#open-positions"
-              className="inline-flex items-center gap-2 px-8 py-3.5 bg-[#0ea5e9] text-white font-bold rounded-full hover:bg-sky-500 transition-colors shadow-md"
+              className="inline-flex items-center gap-2 px-8 py-3.5 bg-[#048ED6] text-white font-bold rounded-full hover:bg-sky-500 transition-colors shadow-md"
             >
               <span>APPLY NOW</span>
               <ArrowRight className="w-4 h-4" />
@@ -143,14 +143,14 @@ export default function CareerPage({ params: { locale = 'en' } }: { params: { lo
                   <input 
                     type="text" 
                     placeholder="Full Name" 
-                    className="w-full px-5 py-4 rounded-xl border border-gray-200 focus:outline-none focus:border-[#0ea5e9] focus:ring-1 focus:ring-[#0ea5e9] bg-white text-sm transition-colors"
+                    className="w-full px-5 py-4 rounded-xl border border-gray-200 focus:outline-none focus:border-[#048ED6] focus:ring-1 focus:ring-[#048ED6] bg-white text-sm transition-colors"
                   />
                 </div>
                 <div>
                   <input 
                     type="email" 
                     placeholder="Email Address" 
-                    className="w-full px-5 py-4 rounded-xl border border-gray-200 focus:outline-none focus:border-[#0ea5e9] focus:ring-1 focus:ring-[#0ea5e9] bg-white text-sm transition-colors"
+                    className="w-full px-5 py-4 rounded-xl border border-gray-200 focus:outline-none focus:border-[#048ED6] focus:ring-1 focus:ring-[#048ED6] bg-white text-sm transition-colors"
                   />
                 </div>
               </div>
@@ -160,12 +160,12 @@ export default function CareerPage({ params: { locale = 'en' } }: { params: { lo
                   <input 
                     type="tel" 
                     placeholder="Phone" 
-                    className="w-full px-5 py-4 rounded-xl border border-gray-200 focus:outline-none focus:border-[#0ea5e9] focus:ring-1 focus:ring-[#0ea5e9] bg-white text-sm transition-colors"
+                    className="w-full px-5 py-4 rounded-xl border border-gray-200 focus:outline-none focus:border-[#048ED6] focus:ring-1 focus:ring-[#048ED6] bg-white text-sm transition-colors"
                   />
                 </div>
                 <div>
                   <div className="relative">
-                    <select className="w-full px-5 py-4 rounded-xl border border-gray-200 focus:outline-none focus:border-[#0ea5e9] focus:ring-1 focus:ring-[#0ea5e9] bg-white text-sm appearance-none text-gray-700 transition-colors">
+                    <select className="w-full px-5 py-4 rounded-xl border border-gray-200 focus:outline-none focus:border-[#048ED6] focus:ring-1 focus:ring-[#048ED6] bg-white text-sm appearance-none text-gray-700 transition-colors">
                       <option>Arabic Language Instructor</option>
                       <option>Administrative Officer</option>
                       <option>Mathematics Specialist (IB)</option>
@@ -176,7 +176,7 @@ export default function CareerPage({ params: { locale = 'en' } }: { params: { lo
               </div>
 
               <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 bg-gray-50 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-sky-50 hover:border-sky-200 transition-colors group">
-                <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm text-[#0ea5e9] mb-4 group-hover:scale-110 transition-transform">
+                <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm text-[#048ED6] mb-4 group-hover:scale-110 transition-transform">
                   <UploadCloud className="w-6 h-6" />
                 </div>
                 <p className="font-bold text-gray-900 text-sm mb-1">Click to upload or drag and drop</p>
@@ -186,19 +186,19 @@ export default function CareerPage({ params: { locale = 'en' } }: { params: { lo
               <div className="flex items-center justify-between pt-4 gap-4 flex-wrap">
                 <label className="flex items-center gap-3 cursor-pointer group">
                   <div className="relative flex items-center justify-center w-5 h-5">
-                    <input type="checkbox" className="peer appearance-none w-5 h-5 border-2 border-gray-300 rounded checked:border-[#0ea5e9] checked:bg-[#0ea5e9] transition-colors cursor-pointer" />
+                    <input type="checkbox" className="peer appearance-none w-5 h-5 border-2 border-gray-300 rounded checked:border-[#048ED6] checked:bg-[#048ED6] transition-colors cursor-pointer" />
                     <svg className="absolute w-3 h-3 text-white pointer-events-none opacity-0 peer-checked:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
                   <span className="text-xs text-gray-600 font-medium select-none group-hover:text-gray-900 transition-colors">
-                    I read and accept the <a href="#" className="text-[#0ea5e9] hover:underline">legal terms and service</a>.
+                    I read and accept the <a href="#" className="text-[#048ED6] hover:underline">legal terms and service</a>.
                   </span>
                 </label>
 
                 <button 
                   type="button"
-                  className="px-8 py-3.5 bg-[#0ea5e9] text-white font-bold rounded-full hover:bg-sky-500 transition-colors flex items-center gap-2 shadow-md ml-auto"
+                  className="px-8 py-3.5 bg-[#048ED6] text-white font-bold rounded-full hover:bg-sky-500 transition-colors flex items-center gap-2 shadow-md ml-auto"
                 >
                   <span>Send Message</span>
                   <Send className="w-4 h-4" />

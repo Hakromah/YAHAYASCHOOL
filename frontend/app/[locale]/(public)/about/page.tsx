@@ -18,7 +18,7 @@ export default function AboutUsPage() {
       <section className="py-16 text-center">
         <Container>
           <div className="flex items-center justify-center gap-2 text-sm text-gray-500 mb-4">
-            <Link href="/" className="hover:text-[#0ea5e9]">Home</Link>
+            <Link href="/" className="hover:text-[#048ED6]">Home</Link>
             <ChevronRight className="w-4 h-4" />
             <span className="text-gray-900 font-medium">About Us</span>
           </div>
@@ -34,7 +34,7 @@ export default function AboutUsPage() {
         <Container>
           <div className="flex flex-col lg:flex-row items-center gap-16">
             <div className="flex-1 space-y-6">
-              <span className="inline-flex items-center px-4 py-1.5 rounded-full bg-[#0ea5e9] text-white text-xs font-bold tracking-wider">
+              <span className="inline-flex items-center px-4 py-1.5 rounded-full bg-[#048ED6] text-white text-xs font-bold tracking-wider">
                 EST. 2020
               </span>
               <h2 className="text-[clamp(2rem,4vw,3.5rem)] font-bold text-gray-900 leading-[1.1] font-serif">
@@ -58,11 +58,11 @@ export default function AboutUsPage() {
       {/* Mission & Vision (Blue Shape Section) */}
       <section className="py-16">
         <Container>
-          <div className="bg-[#0ea5e9] rounded-[40px] rounded-br-[120px] p-12 lg:p-24 relative overflow-hidden text-white flex flex-col md:flex-row gap-12 lg:gap-24 items-center">
+          <div className="bg-[#048ED6] rounded-[40px] rounded-br-[120px] p-12 lg:p-24 relative overflow-hidden text-white flex flex-col md:flex-row gap-12 lg:gap-24 items-center">
             
             <div className="flex-1 space-y-12 relative z-10">
               <div className="flex items-center gap-6 group">
-                <div className="w-12 h-12 rounded-full bg-white text-[#0ea5e9] flex items-center justify-center shrink-0">
+                <div className="w-12 h-12 rounded-full bg-white text-[#048ED6] flex items-center justify-center shrink-0">
                   <Target className="w-6 h-6" />
                 </div>
                 <h3 className="text-4xl font-bold font-serif opacity-90 group-hover:opacity-100 transition-opacity">Our Mission</h3>
@@ -97,19 +97,19 @@ export default function AboutUsPage() {
               </div>
               <div className="flex-1 flex justify-between w-full">
                 <div className="text-center">
-                  <BookOpen className="w-6 h-6 text-[#0ea5e9] mx-auto mb-2" />
+                  <BookOpen className="w-6 h-6 text-[#048ED6] mx-auto mb-2" />
                   <span className="font-semibold text-gray-800">Knowledge ('Ilm)</span>
                 </div>
                 <div className="text-center">
-                  <HeartHandshake className="w-6 h-6 text-[#0ea5e9] mx-auto mb-2" />
+                  <HeartHandshake className="w-6 h-6 text-[#048ED6] mx-auto mb-2" />
                   <span className="font-semibold text-gray-800">Action (Amal)</span>
                 </div>
                 <div className="text-center">
-                  <Users className="w-6 h-6 text-[#0ea5e9] mx-auto mb-2" />
+                  <Users className="w-6 h-6 text-[#048ED6] mx-auto mb-2" />
                   <span className="font-semibold text-gray-800">Advocacy (Da'wah)</span>
                 </div>
                 <div className="text-center">
-                  <HeartHandshake className="w-6 h-6 text-[#0ea5e9] mx-auto mb-2" />
+                  <HeartHandshake className="w-6 h-6 text-[#048ED6] mx-auto mb-2" />
                   <span className="font-semibold text-gray-800">Empathy</span>
                 </div>
               </div>
@@ -121,7 +121,7 @@ export default function AboutUsPage() {
       {/* Director Message */}
       <section className="py-24">
         <Container>
-          <div className="bg-[#0ea5e9] rounded-[40px] p-4 lg:p-12 relative">
+          <div className="bg-[#048ED6] rounded-[40px] p-4 lg:p-12 relative">
             <div className="bg-white rounded-[32px] p-8 lg:p-16 flex flex-col md:flex-row gap-12 items-start relative">
               <div className="md:w-1/3 flex flex-col items-center text-center pt-8">
                 <div className="w-48 h-48 rounded-full bg-gray-200 mb-6 border-8 border-white shadow-xl flex items-center justify-center overflow-hidden">
@@ -132,7 +132,7 @@ export default function AboutUsPage() {
               </div>
               
               <div className="md:w-2/3 space-y-6">
-                <div className="text-[#0ea5e9] text-6xl font-serif">"</div>
+                <div className="text-[#048ED6] text-6xl font-serif">"</div>
                 <h3 className="text-3xl font-bold text-gray-900 font-serif leading-tight">
                   Nurturing the intellect and the soul.
                 </h3>
@@ -166,7 +166,7 @@ export default function AboutUsPage() {
               { icon: Users, title: 'Strong Community', desc: 'A supportive network of educators, parents, and alumni.' }
             ].map((feature, idx) => (
               <div key={idx} className="bg-gray-50 rounded-2xl p-8 hover:shadow-lg transition-shadow border border-gray-100">
-                <div className="w-12 h-12 rounded-xl bg-[#0ea5e9] text-white flex items-center justify-center mb-6 shadow-sm">
+                <div className="w-12 h-12 rounded-xl bg-[#048ED6] text-white flex items-center justify-center mb-6 shadow-sm">
                   <feature.icon className="w-6 h-6" />
                 </div>
                 <h4 className="text-lg font-bold text-gray-900 mb-3">{feature.title}</h4>
@@ -188,9 +188,9 @@ export default function AboutUsPage() {
             <div className="lg:w-1/4 flex flex-col gap-8 text-3xl font-bold font-serif text-gray-300">
               <div className="cursor-pointer hover:text-gray-400 transition-colors">2020</div>
               <div className="cursor-pointer hover:text-gray-400 transition-colors">2021</div>
-              <div className="text-[#0ea5e9] flex items-center gap-4">
+              <div className="text-[#048ED6] flex items-center gap-4">
                 2022
-                <div className="h-0.5 w-16 bg-[#0ea5e9]" />
+                <div className="h-0.5 w-16 bg-[#048ED6]" />
               </div>
               <div className="cursor-pointer hover:text-gray-400 transition-colors">2023</div>
               <div className="cursor-pointer hover:text-gray-400 transition-colors">2024</div>
@@ -202,15 +202,15 @@ export default function AboutUsPage() {
                 
                 <div className="absolute right-0 top-0 bottom-0 w-2/5 bg-white p-12 flex flex-col justify-center">
                   <h3 className="text-2xl font-bold text-gray-900 mb-4">2022</h3>
-                  <h4 className="text-3xl font-bold text-[#0ea5e9] font-serif leading-tight mb-6">Global Accreditation & Leadership Expansion</h4>
+                  <h4 className="text-3xl font-bold text-[#048ED6] font-serif leading-tight mb-6">Global Accreditation & Leadership Expansion</h4>
                   <p className="text-gray-600 text-sm leading-relaxed mb-8">
                     A pivotal year marked by our recognition as a leading global institution. We converged knowledge and faith, cultivating future leaders who advocate for justice, embody empathy, and drive positive change in their communities worldwide.
                   </p>
                   <div className="flex items-center gap-4">
-                    <button className="w-10 h-10 rounded-full border border-[#0ea5e9] text-[#0ea5e9] flex items-center justify-center hover:bg-[#0ea5e9] hover:text-white transition-colors">
+                    <button className="w-10 h-10 rounded-full border border-[#048ED6] text-[#048ED6] flex items-center justify-center hover:bg-[#048ED6] hover:text-white transition-colors">
                       <ChevronLeft className="w-5 h-5" />
                     </button>
-                    <button className="w-10 h-10 rounded-full border border-[#0ea5e9] text-[#0ea5e9] flex items-center justify-center hover:bg-[#0ea5e9] hover:text-white transition-colors">
+                    <button className="w-10 h-10 rounded-full border border-[#048ED6] text-[#048ED6] flex items-center justify-center hover:bg-[#048ED6] hover:text-white transition-colors">
                       <ChevronRight className="w-5 h-5" />
                     </button>
                   </div>
@@ -230,7 +230,7 @@ export default function AboutUsPage() {
               Our faculty recruitment follows a rigorous selection process, ensuring every teacher embodies our values of excellence, integrity, and lifelong learning.
             </p>
             <div className="flex items-center justify-center gap-4">
-              <Link href="/admissions" className="px-8 py-3 rounded-full bg-[#0ea5e9] text-white font-bold hover:bg-sky-500 transition-colors shadow-md">
+              <Link href="/admissions" className="px-8 py-3 rounded-full bg-[#048ED6] text-white font-bold hover:bg-sky-500 transition-colors shadow-md">
                 Join Our School
               </Link>
               <Link href="/events" className="px-8 py-3 rounded-full bg-gray-200 text-gray-800 font-bold hover:bg-gray-300 transition-colors">

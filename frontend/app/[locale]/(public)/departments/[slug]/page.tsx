@@ -24,22 +24,22 @@ export default async function AcademicDetailPage({
             <div className="w-full lg:w-1/2 flex flex-col">
               {/* Breadcrumbs */}
               <div className="flex items-center gap-2 text-sm text-slate-500 mb-8 font-medium">
-                <Link href="/" className="hover:text-[#0ea5e9] transition-colors">Home</Link>
+                <Link href="/" className="hover:text-[#048ED6] transition-colors">Home</Link>
                 <span className="text-slate-300">/</span>
-                <Link href="/departments" className="hover:text-[#0ea5e9] transition-colors">Departments</Link>
+                <Link href="/departments" className="hover:text-[#048ED6] transition-colors">Departments</Link>
                 <span className="text-slate-300">/</span>
-                <span className="text-[#0ea5e9]">Department-details</span>
+                <span className="text-[#048ED6]">Department-details</span>
               </div>
               
               <div className="mb-6">
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-sky-50 border border-sky-100 text-[#0ea5e9] text-xs font-bold tracking-widest uppercase mb-6">
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-sky-50 border border-sky-100 text-[#048ED6] text-xs font-bold tracking-widest uppercase mb-6">
                   <GraduationCap className="w-4 h-4" />
                   <span>Academic Excellence</span>
                 </div>
                 <h1 className="text-5xl md:text-6xl font-bold text-slate-900 leading-tight mb-2">
                   Knowledge Rooted in Faith.
                 </h1>
-                <h2 className="text-5xl md:text-6xl font-bold text-[#0ea5e9] italic leading-tight mb-8">
+                <h2 className="text-5xl md:text-6xl font-bold text-[#048ED6] italic leading-tight mb-8">
                   Excellence Built for Life.
                 </h2>
               </div>
@@ -51,14 +51,14 @@ export default async function AcademicDetailPage({
               <div className="flex flex-wrap items-center gap-4">
                 <Link
                   href="/admissions"
-                  className="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-[#0ea5e9] text-white text-[15px] font-semibold rounded-full hover:bg-sky-500 transition-colors shadow-md hover:shadow-lg"
+                  className="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-[#048ED6] text-white text-[15px] font-semibold rounded-full hover:bg-sky-500 transition-colors shadow-md hover:shadow-lg"
                 >
                   <span>Apply for Admission</span>
                   <ArrowRight className="w-4 h-4" />
                 </Link>
                 
                 <button
-                  className="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-white text-[#0ea5e9] border border-[#0ea5e9] text-[15px] font-semibold rounded-full hover:bg-sky-50 transition-colors"
+                  className="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-white text-[#048ED6] border border-[#048ED6] text-[15px] font-semibold rounded-full hover:bg-sky-50 transition-colors"
                 >
                   <span>Download Pdf</span>
                   <Download className="w-4 h-4" />
@@ -105,7 +105,7 @@ export default async function AcademicDetailPage({
                 ].map((item, idx) => (
                   <div key={idx} className="flex gap-4">
                     <div className="shrink-0 mt-1">
-                      <CheckCircle2 className="w-6 h-6 text-[#0ea5e9]" />
+                      <CheckCircle2 className="w-6 h-6 text-[#048ED6]" />
                     </div>
                     <div>
                       <h3 className="text-lg font-bold text-slate-900 mb-1">{item.title}</h3>

@@ -40,7 +40,7 @@ export function EnrollmentModal({ isOpen, onClose }: EnrollmentModalProps) {
         <div className="absolute top-4 right-4 z-20">
           <button 
             onClick={onClose}
-            className="w-10 h-10 bg-[#0ea5e9] text-white rounded-full flex items-center justify-center hover:bg-sky-500 transition-colors shadow-md"
+            className="w-10 h-10 bg-[#048ED6] text-white rounded-full flex items-center justify-center hover:bg-sky-500 transition-colors shadow-md"
           >
             <X className="w-5 h-5" />
           </button>
@@ -53,8 +53,8 @@ export function EnrollmentModal({ isOpen, onClose }: EnrollmentModalProps) {
               onClick={() => setTab('pay')}
               className={`px-8 py-2.5 rounded-full font-bold text-sm transition-all ${
                 tab === 'pay' 
-                  ? 'bg-[#0ea5e9] text-white shadow-md' 
-                  : 'bg-white text-[#0ea5e9] border border-[#0ea5e9] hover:bg-sky-50'
+                  ? 'bg-[#048ED6] text-white shadow-md' 
+                  : 'bg-white text-[#048ED6] border border-[#048ED6] hover:bg-sky-50'
               }`}
             >
               Pay Online
@@ -63,8 +63,8 @@ export function EnrollmentModal({ isOpen, onClose }: EnrollmentModalProps) {
               onClick={() => setTab('alreadyPaid')}
               className={`px-8 py-2.5 rounded-full font-bold text-sm transition-all ${
                 tab === 'alreadyPaid' 
-                  ? 'bg-[#0ea5e9] text-white shadow-md' 
-                  : 'bg-white text-[#0ea5e9] border border-[#0ea5e9] hover:bg-sky-50'
+                  ? 'bg-[#048ED6] text-white shadow-md' 
+                  : 'bg-white text-[#048ED6] border border-[#048ED6] hover:bg-sky-50'
               }`}
             >
               Already Paid
@@ -72,8 +72,8 @@ export function EnrollmentModal({ isOpen, onClose }: EnrollmentModalProps) {
           </div>
 
           {/* Form Box */}
-          <div className="w-full border border-[#0ea5e9] rounded-2xl overflow-hidden bg-white">
-            <div className="bg-[#0ea5e9] text-white text-center py-4 font-bold text-lg">
+          <div className="w-full border border-[#048ED6] rounded-2xl overflow-hidden bg-white">
+            <div className="bg-[#048ED6] text-white text-center py-4 font-bold text-lg">
               {tab === 'pay' ? 'Pay Online' : 'Verify Payment'}
             </div>
             
@@ -88,14 +88,14 @@ export function EnrollmentModal({ isOpen, onClose }: EnrollmentModalProps) {
                       <input 
                         type="text" 
                         defaultValue="500"
-                        className="w-full lg:w-[150px] pl-8 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0ea5e9] focus:border-transparent text-gray-900 font-medium"
+                        className="w-full lg:w-[150px] pl-8 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#048ED6] focus:border-transparent text-gray-900 font-medium"
                       />
                     </div>
                   </div>
 
                   <div className="space-y-2">
                     <label className="block text-gray-900 font-bold">Currency</label>
-                    <select className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0ea5e9] appearance-none bg-white text-gray-700">
+                    <select className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#048ED6] appearance-none bg-white text-gray-700">
                       <option>USD - US Dollar</option>
                       <option>EUR - Euro</option>
                       <option>GBP - British Pound</option>
@@ -104,14 +104,14 @@ export function EnrollmentModal({ isOpen, onClose }: EnrollmentModalProps) {
 
                   <div className="space-y-2">
                     <label className="block text-gray-900 font-bold">Course Selection</label>
-                    <select className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0ea5e9] appearance-none bg-white text-gray-700 text-sm sm:text-base">
+                    <select className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#048ED6] appearance-none bg-white text-gray-700 text-sm sm:text-base">
                       <option>English (speaking, Writting, and Listening)</option>
                       <option>Advanced Arabic Grammar</option>
                       <option>Qur'an Memorization (Hifz)</option>
                     </select>
                   </div>
 
-                  <button className="w-full py-4 bg-[#0ea5e9] text-white font-bold rounded-xl hover:bg-sky-500 transition-colors flex items-center justify-center gap-2 mt-4 shadow-md">
+                  <button className="w-full py-4 bg-[#048ED6] text-white font-bold rounded-xl hover:bg-sky-500 transition-colors flex items-center justify-center gap-2 mt-4 shadow-md">
                     <Lock className="w-5 h-5" />
                     <span>Pay Securely Now</span>
                   </button>
@@ -127,20 +127,20 @@ export function EnrollmentModal({ isOpen, onClose }: EnrollmentModalProps) {
                     <input 
                       type="text" 
                       placeholder="e.g. TXN-123456789"
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0ea5e9] focus:border-transparent text-gray-900"
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#048ED6] focus:border-transparent text-gray-900"
                     />
                   </div>
 
                   <div className="space-y-2">
                     <label className="block text-gray-900 font-bold">Course Selection</label>
-                    <select className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0ea5e9] appearance-none bg-white text-gray-700 text-sm sm:text-base">
+                    <select className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#048ED6] appearance-none bg-white text-gray-700 text-sm sm:text-base">
                       <option>English (speaking, Writting, and Listening)</option>
                       <option>Advanced Arabic Grammar</option>
                       <option>Qur'an Memorization (Hifz)</option>
                     </select>
                   </div>
 
-                  <button className="w-full py-4 bg-[#0ea5e9] text-white font-bold rounded-xl hover:bg-sky-500 transition-colors flex items-center justify-center mt-4 shadow-md">
+                  <button className="w-full py-4 bg-[#048ED6] text-white font-bold rounded-xl hover:bg-sky-500 transition-colors flex items-center justify-center mt-4 shadow-md">
                     <span>Verify & Request Access</span>
                   </button>
                 </>

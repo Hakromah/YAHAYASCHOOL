@@ -42,8 +42,8 @@ export default function GalleryPage({ params: { locale = 'en' } }: { params: { l
                     key={idx}
                     className={`px-5 py-2 rounded-full text-sm font-semibold border transition-colors ${
                       idx === 0 
-                        ? 'bg-[#0ea5e9] text-white border-[#0ea5e9] shadow-md' 
-                        : 'bg-white text-gray-600 border-gray-200 hover:border-[#0ea5e9] hover:text-[#0ea5e9]'
+                        ? 'bg-[#048ED6] text-white border-[#048ED6] shadow-md' 
+                        : 'bg-white text-gray-600 border-gray-200 hover:border-[#048ED6] hover:text-[#048ED6]'
                     }`}
                   >
                     {cat}
@@ -52,7 +52,7 @@ export default function GalleryPage({ params: { locale = 'en' } }: { params: { l
               </div>
 
               {/* Play Videos Button */}
-              <button className="shrink-0 flex items-center gap-2 px-6 py-2.5 bg-[#0ea5e9] text-white font-bold rounded-full hover:bg-sky-500 transition-colors shadow-md">
+              <button className="shrink-0 flex items-center gap-2 px-6 py-2.5 bg-[#048ED6] text-white font-bold rounded-full hover:bg-sky-500 transition-colors shadow-md">
                 <PlayCircle className="w-5 h-5" />
                 <span>Play Videos</span>
               </button>
@@ -79,7 +79,7 @@ export default function GalleryPage({ params: { locale = 'en' } }: { params: { l
           </div>
 
           <div className="flex justify-center">
-            <button className="px-8 py-3 bg-[#0ea5e9] text-white font-bold rounded-full hover:bg-sky-500 transition-colors shadow-md">
+            <button className="px-8 py-3 bg-[#048ED6] text-white font-bold rounded-full hover:bg-sky-500 transition-colors shadow-md">
               Load More
             </button>
           </div>
@@ -87,7 +87,7 @@ export default function GalleryPage({ params: { locale = 'en' } }: { params: { l
       </section>
 
       {/* Video Highlights Section */}
-      <section className="py-20 bg-[#0ea5e9] text-white overflow-hidden">
+      <section className="py-20 bg-[#048ED6] text-white overflow-hidden">
         <Container>
           <div className="flex items-end justify-between mb-12">
             <div>
@@ -101,7 +101,7 @@ export default function GalleryPage({ params: { locale = 'en' } }: { params: { l
               <button className="w-10 h-10 rounded-full border border-white flex items-center justify-center hover:bg-white/10 transition-colors">
                 <ChevronLeft className="w-5 h-5" />
               </button>
-              <button className="w-10 h-10 rounded-full bg-white text-[#0ea5e9] flex items-center justify-center hover:bg-sky-50 transition-colors shadow-md">
+              <button className="w-10 h-10 rounded-full bg-white text-[#048ED6] flex items-center justify-center hover:bg-sky-50 transition-colors shadow-md">
                 <ChevronRight className="w-5 h-5" />
               </button>
             </div>
@@ -117,7 +117,7 @@ export default function GalleryPage({ params: { locale = 'en' } }: { params: { l
               <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors duration-300" />
               
               <div className="absolute inset-0 flex items-center justify-center z-10">
-                <div className="w-20 h-20 bg-[#0ea5e9] rounded-full flex items-center justify-center shadow-2xl transform group-hover:scale-110 transition-transform">
+                <div className="w-20 h-20 bg-[#048ED6] rounded-full flex items-center justify-center shadow-2xl transform group-hover:scale-110 transition-transform">
                   <PlayCircle className="w-10 h-10 text-white ml-1" />
                 </div>
               </div>
@@ -156,7 +156,7 @@ export default function GalleryPage({ params: { locale = 'en' } }: { params: { l
             <div className="absolute bottom-0 left-0 w-64 h-64 bg-amber-50 rounded-full blur-3xl opacity-50 translate-y-1/2 -translate-x-1/2" />
             
             <div className="relative z-10 flex flex-col items-center">
-              <div className="w-16 h-16 rounded-full bg-sky-100 text-[#0ea5e9] flex items-center justify-center mb-6">
+              <div className="w-16 h-16 rounded-full bg-sky-100 text-[#048ED6] flex items-center justify-center mb-6">
                 <BookOpen className="w-8 h-8" />
               </div>
               
@@ -170,7 +170,7 @@ export default function GalleryPage({ params: { locale = 'en' } }: { params: { l
               
               <Link 
                 href={getHref('/contact')}
-                className="inline-flex items-center gap-2 px-8 py-3.5 bg-[#0ea5e9] text-white font-bold rounded-full hover:bg-sky-500 transition-colors shadow-md"
+                className="inline-flex items-center gap-2 px-8 py-3.5 bg-[#048ED6] text-white font-bold rounded-full hover:bg-sky-500 transition-colors shadow-md"
               >
                 <span>Book a Campus Tour</span>
                 <ArrowRight className="w-4 h-4" />

@@ -11,7 +11,7 @@ const newsData = [
     title: 'Expanding Our Horizons: New Office Opening',
     excerpt: 'We are thrilled to announce the opening of our newest innovation hub, designed to foster...',
     category: 'CORPORATE',
-    image: 'https://images.unsplash.com/photo-1577896851231-70ef18881754?auto=format&fit=crop&w=600&q=80',
+    image: '/images/figma-home/02-about.jpeg',
     link: '/news/expanding-horizons'
   },
   {
@@ -19,7 +19,7 @@ const newsData = [
     title: 'Innovation Through Collaboration: Our Annual Tech Summit',
     excerpt: 'This year\'s summit brought together the brightest minds in the industry to discuss the...',
     category: 'EVENTS',
-    image: 'https://images.unsplash.com/photo-1529390079861-591de354faf5?auto=format&fit=crop&w=600&q=80',
+    image: '/images/figma-home/14-news.jpeg',
     link: '/news/tech-summit'
   },
   {
@@ -27,7 +27,7 @@ const newsData = [
     title: 'TrustVibe 2.0: Reimagining Security for the Modern Web',
     excerpt: 'Discover the next generation of our platform, featuring advanced threat detection and an...',
     category: 'EVENTS',
-    image: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&w=600&q=80',
+    image: '/images/figma-home/15-news.jpeg',
     link: '/news/trustvibe-update'
   },
   {
@@ -35,7 +35,7 @@ const newsData = [
     title: 'Global Educational Standards and Modern Pedagogies',
     excerpt: 'Exploring how integrating worldwide educational standards empowers our students to compete globally...',
     category: 'CORPORATE',
-    image: 'https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?auto=format&fit=crop&w=600&q=80',
+    image: '/images/figma-home/03-programs.jpeg',
     link: '/news/global-standards'
   },
   {
@@ -43,12 +43,12 @@ const newsData = [
     title: 'The Importance of Bilingual Education in Today\'s World',
     excerpt: 'Our bilingual programs offer unparalleled cognitive and social advantages. Read more about the benefits...',
     category: 'EVENTS',
-    image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=600&q=80',
+    image: '/images/figma-home/20-news.jpeg',
     link: '/news/bilingual-education'
   }
 ];
 
-export function NewsGridSection({ locale = 'en', data }: { locale?: string; data?: any }) {
+export function NewsGridSection({ locale = 'en', data }: { locale?: string; data?: unknown }) {
   const sliderRef = useRef<HTMLDivElement>(null);
 
   const scroll = (direction: 'left' | 'right') => {
@@ -62,7 +62,7 @@ export function NewsGridSection({ locale = 'en', data }: { locale?: string; data
   };
 
   return (
-    <section className="py-24 bg-[#FAFAFA] w-full">
+    <section className="py-20 bg-[#FAFAFA] w-full">
       <Container>
         
         {/* Header with Navigation Arrows */}
@@ -71,30 +71,30 @@ export function NewsGridSection({ locale = 'en', data }: { locale?: string; data
           {/* Left Arrow */}
           <button 
             onClick={() => scroll('left')}
-            className="absolute left-0 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full border border-sky-200 flex items-center justify-center text-[#0ea5e9] hover:bg-sky-50 transition-colors z-10 bg-white"
+            className="absolute left-0 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full border border-sky-200 flex items-center justify-center text-[#048ED6] hover:bg-sky-50 transition-colors z-10 bg-white"
           >
             <ChevronLeft className="w-6 h-6" />
           </button>
           
           <div className="flex flex-col items-center text-center">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-sky-50 text-[#0ea5e9] text-sm font-semibold mb-6">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-sky-50 text-[#048ED6] text-sm font-semibold mb-6">
               <BookOpen className="w-4 h-4" />
               <span>News & Events</span>
             </div>
             
-            <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-6">
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
               Latest News & Updates
             </h2>
             
-            <p className="text-slate-600 max-w-2xl mx-auto">
-              Contribute to modern facilities and learning environments equipped with the latest educational technology. Contribute to modern facilities and learning environments equipped with the latest educational technology.
+            <p className="text-slate-600 max-w-2xl mx-auto text-sm">
+              Follow the latest updates, news, and activities from the Yahaya School community.
             </p>
           </div>
           
           {/* Right Arrow */}
           <button 
             onClick={() => scroll('right')}
-            className="absolute right-0 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full border border-[#0ea5e9] flex items-center justify-center text-[#0ea5e9] hover:bg-sky-50 transition-colors z-10 bg-white"
+            className="absolute right-0 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full border border-[#048ED6] flex items-center justify-center text-[#048ED6] hover:bg-sky-50 transition-colors z-10 bg-white"
           >
             <ChevronRight className="w-6 h-6" />
           </button>
@@ -121,7 +121,7 @@ export function NewsGridSection({ locale = 'en', data }: { locale?: string; data
               <div className="p-8 flex flex-col flex-grow">
                 {/* Category Pill */}
                 <div className="mb-4">
-                  <span className="inline-block px-3 py-1 rounded-full border border-sky-200 text-[#0ea5e9] text-[10px] font-bold tracking-widest uppercase">
+                  <span className="inline-block px-3 py-1 rounded-full border border-sky-200 text-[#048ED6] text-[10px] font-bold tracking-widest uppercase">
                     {item.category}
                   </span>
                 </div>
@@ -136,7 +136,7 @@ export function NewsGridSection({ locale = 'en', data }: { locale?: string; data
                 
                 <Link
                   href={item.link}
-                  className="inline-flex items-center gap-2 text-[#0ea5e9] text-sm font-semibold hover:text-sky-600 transition-colors mt-auto"
+                  className="inline-flex items-center gap-2 text-[#048ED6] text-sm font-semibold hover:text-sky-600 transition-colors mt-auto"
                 >
                   <span>Read More</span>
                   <ArrowRight className="w-4 h-4" />

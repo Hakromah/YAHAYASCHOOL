@@ -9,8 +9,8 @@ const testimonials = [
     id: 1,
     name: 'Mia Thompson',
     role: 'PARENT',
-    image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=150&q=80',
-    fullImage: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=600&q=80',
+    image: '/images/figma-home/01-hero.jpeg',
+    fullImage: '/images/figma-home/01-hero.jpeg',
     title: 'A transformative experience for our child.',
     quote: '"Since enrolling our daughter at Yahaya International, we have seen remarkable growth not just in her academic performance but in her character. The seamless integration of Islamic values with rigorous modern education is exactly what we were looking for."',
     rating: 5
@@ -19,8 +19,8 @@ const testimonials = [
     id: 2,
     name: 'James Miller',
     role: 'ALUMNUS',
-    image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80',
-    fullImage: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=600&q=80',
+    image: '/images/figma-home/20-news.jpeg',
+    fullImage: '/images/figma-home/20-news.jpeg',
     title: 'It highlights academic satisfaction, testimonials.',
     quote: '"My years at Yahaya International completely transformed my worldview. The attention to detail in the curriculum and the ease of access to mentors allowed me to maintain my faith identity while delivering world-class academic performance. It\'s not just a school; it\'s a competitive advantage."',
     rating: 5
@@ -29,8 +29,8 @@ const testimonials = [
     id: 3,
     name: 'Olivia Carter',
     role: 'COMMUNITY LEADER',
-    image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80',
-    fullImage: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=600&q=80',
+    image: '/images/figma-home/08-activity.jpeg',
+    fullImage: '/images/figma-home/08-activity.jpeg',
     title: 'An institution built on true excellence.',
     quote: '"The leadership at Yahaya International demonstrates a profound commitment to educational excellence. I have witnessed firsthand how they nurture students into well-rounded individuals ready to tackle global challenges with moral integrity."',
     rating: 5
@@ -39,15 +39,15 @@ const testimonials = [
     id: 4,
     name: 'Matthew Bennett',
     role: 'PARENT',
-    image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=150&q=80',
-    fullImage: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=600&q=80',
+    image: '/images/figma-home/14-news.jpeg',
+    fullImage: '/images/figma-home/14-news.jpeg',
     title: 'The best decision we made.',
     quote: '"We evaluated many schools before choosing Yahaya International. The facilities are modern, the teachers are highly qualified, and the emphasis on both D\'awah and STEM makes it a unique and invaluable environment for our children."',
     rating: 5
   }
 ];
 
-export function TestimonialsSection({ locale = 'en', data }: { locale?: string; data?: any }) {
+export function TestimonialsSection({ locale = 'en', data }: { locale?: string; data?: unknown }) {
   const [activeIndex, setActiveIndex] = useState(1); // Default to James Miller (index 1) to match design
 
   const activeTestimonial = testimonials[activeIndex];
@@ -55,14 +55,14 @@ export function TestimonialsSection({ locale = 'en', data }: { locale?: string; 
   return (
     <section className="w-full">
       {/* Top Half: Blue Background */}
-      <div className="bg-[#0ea5e9] pt-24 pb-0">
+      <div className="bg-[#0d92d3] pt-16 pb-0">
         <Container>
           <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-3">
               Kind Words From Our Community
             </h2>
             <p className="text-sky-100 text-[15px] md:text-base leading-relaxed">
-              Discover why thousands of families trust Yahaya International to elevate their children's educational journey and nurture their moral development.
+              Discover why thousands of families trust Yahaya International to elevate their children&apos;s educational journey and nurture their moral development.
             </p>
           </div>
 
@@ -92,13 +92,13 @@ export function TestimonialsSection({ locale = 'en', data }: { locale?: string; 
       </div>
 
       {/* Bottom Half: White Background */}
-      <div className="bg-white py-16 md:py-24">
+      <div className="bg-white py-14 md:py-18">
         <Container>
           <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center gap-12 lg:gap-16">
             
             {/* Left: Big Image */}
             <div className="w-full md:w-2/5 shrink-0">
-              <div className="aspect-square bg-slate-100 overflow-hidden relative">
+              <div className="aspect-square bg-slate-100 overflow-hidden relative rounded-sm">
                  <img 
                    src={activeTestimonial.fullImage} 
                    alt={activeTestimonial.name}
@@ -110,7 +110,7 @@ export function TestimonialsSection({ locale = 'en', data }: { locale?: string; 
 
             {/* Right: Quote Details */}
             <div className="w-full md:w-3/5 flex flex-col">
-              <Quote className="w-12 h-12 text-[#0ea5e9]/20 mb-6 shrink-0" fill="currentColor" />
+              <Quote className="w-12 h-12 text-[#048ED6]/20 mb-6 shrink-0" fill="currentColor" />
               
               <h3 className="text-3xl md:text-4xl font-bold text-slate-900 mb-2 leading-tight">
                 {activeTestimonial.title}
@@ -118,7 +118,7 @@ export function TestimonialsSection({ locale = 'en', data }: { locale?: string; 
               
               <div className="flex flex-col mb-8">
                 <span className="text-xl font-bold text-slate-900">{activeTestimonial.name}</span>
-                <span className="text-[#0ea5e9] text-xs font-bold tracking-widest uppercase mt-1">
+                <span className="text-[#048ED6] text-xs font-bold tracking-widest uppercase mt-1">
                   {activeTestimonial.role}
                 </span>
               </div>
