@@ -399,6 +399,7 @@ function getStudentNav(): NavSection[] {
         { label: 'Homework', href: '/lms/homework', icon: BookCheck },
         { label: 'Attendance', href: '/lms/attendance', icon: SquareCheckBig },
         { label: 'My Results', href: '/results/report-cards', icon: FileText },
+        { label: 'Transcripts', href: '/dashboard?view=transcript', icon: ScrollText },
         { label: 'Certificates', href: '/results/certificates', icon: BadgeCheck },
         { label: 'Achievements', href: '/results/rankings', icon: Trophy },
       ],
