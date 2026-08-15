@@ -6,7 +6,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-@custom-variant dark (&:is(.dark *));
+@custom-variant dark (&:is(.dark, .dark *));
 
 /* ─────────────────────────────────────────────────────────────────────────────
    Tailwind v4 Theme — YAHAYASCOOL Design System

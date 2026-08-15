@@ -20,7 +20,7 @@ import {
   QrCode, Coins, PiggyBank, Scale, Percent, ShoppingBag, Bed, KeyRound, ShieldAlert,
   Briefcase, Book
 } from 'lucide-react';
-import { useTheme } from 'next-themes';
+import { useTheme } from '@/providers/theme.provider';
 import { toast } from 'sonner';
 
 import { useAuth } from '@/hooks/useAuth';
