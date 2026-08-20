@@ -3,11 +3,11 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import {
   BookOpen, Users, FileText, CheckCircle2, Clock, Calendar,
-  Award, RefreshCw, Activity, ArrowRight, Star,
-  UserCheck, ShieldCheck, Mail, ArrowUpRight, CheckSquare, Square,
-  Download, Sparkles, Upload, X, PenTool, ClipboardList, Lock, Unlock,
-  MessageSquare, Settings, AlertCircle, AlertTriangle, ShieldAlert,
-  Plus, Trash2, Edit3, Eye, BarChart2, TrendingDown, TrendingUp, Send
+  RefreshCw, Activity,
+  UserCheck, ShieldCheck, CheckSquare, Square,
+  Sparkles, Upload, X, PenTool, ClipboardList, Lock, Unlock,
+  AlertCircle, AlertTriangle, ShieldAlert,
+  Plus, Trash2, Eye, Send
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { apiClient } from '@/services/api.service';
@@ -115,7 +115,7 @@ const sortBps = (bps: AssessmentBlueprint[]) =>
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function TeacherDashboardPage() {
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const teacher = user?.profile as any;
 
   const [isLoading, setIsLoading] = useState(true);
@@ -173,7 +173,12 @@ export default function TeacherDashboardPage() {
 
   // ── 1. Load offerings + compute real attendance rates ──────────────────────
   const loadOfferings = useCallback(async () => {
-    if (!teacher?.id) { setIsLoading(false); return; }
+    // Wait for auth to fully settle before checking teacher profile
+    if (authLoading) return;
+    if (!teacher?.id) {
+      setIsLoading(false);
+      return;
+    }
     setIsLoading(true);
     try {
       const [offeringsRes, ttRes] = await Promise.all([
@@ -227,7 +232,7 @@ export default function TeacherDashboardPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [teacher?.id]);
+  }, [teacher?.id, authLoading]);
 
   useEffect(() => { loadOfferings(); }, [loadOfferings]);
 
@@ -720,16 +725,16 @@ export default function TeacherDashboardPage() {
       <PageHeader
         title={selectedOffering
           ? `Workspace: ${selectedOffering.subject?.name} (${selectedOffering.gradeLevel?.name})`
-          : 'Teaching Portal'}
+          : `Teaching Portal${teacher?.displayName ? ` — ${teacher.displayName}` : ''}`}
         description={selectedOffering
           ? `${selectedOffering.academicSection?.name} · ${selectedOffering.academicYear?.name} · Term: ${selectedOffering.academicTerm?.name}`
-          : 'Manage assigned Course Offerings, grades, attendance and curriculum delivery.'}
+          : 'Manage your assigned Course Offerings, attendance, assessments and curriculum delivery.'}
       >
         <div className="flex gap-2">
           {selectedOffering && (
             <button
               onClick={() => { setSelectedOffering(null); setActiveWorkspaceTab('overview'); }}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-emerald-400 dark:bg-slate-900 text-xs font-bold hover:bg-yellow-400 cursor-pointer dark:hover:bg-slate-800 transition"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 text-xs font-bold hover:bg-emerald-100 cursor-pointer dark:hover:bg-emerald-900/40 transition"
             >
               <X className="w-3.5 h-3.5" />
               <span>Exit Workspace</span>
@@ -737,24 +742,43 @@ export default function TeacherDashboardPage() {
           )}
           <button
             onClick={loadOfferings}
-            disabled={isLoading}
+            disabled={isLoading || authLoading}
             className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-700 dark:hover:bg-slate-800 transition disabled:opacity-60"
           >
-            <RefreshCw className={cn('w-3.5 h-3.5', isLoading && 'animate-spin')} />
-            <span>Sync DB</span>
+            <RefreshCw className={cn('w-3.5 h-3.5', (isLoading || authLoading) && 'animate-spin')} />
+            <span>Sync</span>
           </button>
         </div>
       </PageHeader>
 
-      {isLoading && (
+      {/* ── Auth / Profile loading ─────────────────────────────────────── */}
+      {(isLoading || authLoading) && (
         <div className="flex flex-col items-center justify-center min-h-[300px]">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mb-3" />
-          <p className="text-slate-400 text-xs font-semibold">Syncing live data...</p>
+          <p className="text-slate-400 text-xs font-semibold">Syncing academic data...</p>
+        </div>
+      )}
+
+      {/* ── No teacher profile linked ─────────────────────────────────── */}
+      {!authLoading && !isLoading && !teacher?.id && (
+        <div className="flex flex-col items-center justify-center min-h-[400px] text-center p-8">
+          <div className="w-16 h-16 rounded-2xl bg-amber-50 dark:bg-amber-950/30 flex items-center justify-center mb-4 border border-amber-200 dark:border-amber-800">
+            <AlertCircle className="w-8 h-8 text-amber-500" />
+          </div>
+          <h2 className="text-xl font-extrabold text-slate-900 dark:text-white mb-2">Teacher Profile Not Linked</h2>
+          <p className="text-slate-500 dark:text-slate-400 text-sm max-w-md mb-6">
+            Your user account has not been linked to a Teacher profile in the system.
+            Please contact the Administrator or Registrar to complete your profile setup.
+          </p>
+          <div className="flex items-center gap-3 text-xs text-slate-400">
+            <span className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-lg font-mono">User ID: {user?.id}</span>
+            <span className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-lg font-mono">{user?.email}</span>
+          </div>
         </div>
       )}
 
       {/* ── OFFERINGS LIST VIEW ────────────────────────────────────────────── */}
-      {!isLoading && !selectedOffering && (
+      {!isLoading && !authLoading && !!teacher?.id && !selectedOffering && (
         <div className="space-y-6">
           {/* Stats Row */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -865,7 +889,7 @@ export default function TeacherDashboardPage() {
       )}
 
       {/* ── WORKSPACE DETAIL VIEW ─────────────────────────────────────────── */}
-      {!isLoading && selectedOffering && (
+      {!isLoading && !authLoading && selectedOffering && (
         <div className="space-y-6">
           {/* Tab bar */}
           <div className="flex items-center gap-1.5 px-1.5 py-1 bg-slate-100 dark:bg-slate-800 border rounded-2xl overflow-x-auto no-scrollbar max-w-6xl">

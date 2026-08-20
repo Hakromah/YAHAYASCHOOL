@@ -54,6 +54,11 @@
       "relation": "oneToMany",
       "target": "api::memorization.memorization",
       "mappedBy": "quran_group"
+    },
+    "courseOffering": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::course-offering.course-offering"
     }
   }
 }

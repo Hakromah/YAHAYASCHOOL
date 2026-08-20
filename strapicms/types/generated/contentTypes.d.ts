@@ -5112,11 +5112,19 @@ export interface ApiLanguagePortfolioLanguagePortfolio
     draftAndPublish: true;
   };
   attributes: {
+    academicTerm: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::academic-term.academic-term'
+    >;
     attachments: Schema.Attribute.Media<
       'images' | 'files' | 'videos' | 'audios',
       true
     >;
     content: Schema.Attribute.RichText;
+    courseOffering: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::course-offering.course-offering'
+    >;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -5352,6 +5360,10 @@ export interface ApiMemorizationMemorization
       'manyToOne',
       'api::academic-term.academic-term'
     >;
+    courseOffering: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::course-offering.course-offering'
+    >;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -5408,6 +5420,10 @@ export interface ApiMurajaahMurajaah extends Struct.CollectionTypeSchema {
     assignedPortions: Schema.Attribute.Text;
     completedPortions: Schema.Attribute.Text;
     completionDate: Schema.Attribute.Date;
+    courseOffering: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::course-offering.course-offering'
+    >;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -6111,6 +6127,10 @@ export interface ApiQuranAssessmentQuranAssessment
   };
   attributes: {
     comments: Schema.Attribute.Text;
+    courseOffering: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::course-offering.course-offering'
+    >;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -6169,6 +6189,10 @@ export interface ApiQuranAttendanceQuranAttendance
       'api::academic-term.academic-term'
     >;
     arrivalTime: Schema.Attribute.Time;
+    courseOffering: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::course-offering.course-offering'
+    >;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -6300,6 +6324,10 @@ export interface ApiQuranGroupQuranGroup extends Struct.CollectionTypeSchema {
   attributes: {
     capacity: Schema.Attribute.Integer;
     code: Schema.Attribute.String & Schema.Attribute.Unique;
+    courseOffering: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::course-offering.course-offering'
+    >;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -6794,6 +6822,10 @@ export interface ApiSkillAssessmentSkillAssessment
     draftAndPublish: true;
   };
   attributes: {
+    courseOffering: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::course-offering.course-offering'
+    >;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -7293,6 +7325,14 @@ export interface ApiTajweedEvaluationTajweedEvaluation
     draftAndPublish: true;
   };
   attributes: {
+    academicTerm: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::academic-term.academic-term'
+    >;
+    courseOffering: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::course-offering.course-offering'
+    >;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;

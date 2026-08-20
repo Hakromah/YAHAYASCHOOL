@@ -334,19 +334,16 @@ function getDirectorNav(): NavSection[] {
 
 function getTeacherNav(): NavSection[] {
   return [
-    { title: 'Overview', items: [{ label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard }] },
+    { title: 'Overview', items: [{ label: 'Course Offering Portal', href: '/dashboard', icon: LayoutDashboard }] },
     {
-      title: 'My Work',
+      title: 'Academic Workspace',
       items: [
+        { label: 'My Course Offerings', href: '/dashboard', icon: BookOpen },
         { label: 'My Timetable', href: '/lms/timetables', icon: School },
-        { label: 'My Classes', href: '/lms/subjects', icon: BookOpen },
-        { label: 'My Students', href: '/students', icon: GraduationCap },
-        { label: 'Attendance', href: '/lms/attendance', icon: SquareCheckBig },
         { label: 'Lesson Plans', href: '/lms/lesson-plans', icon: PenTool },
+        { label: 'Teaching Workload', href: '/lms/teacher/workload', icon: BarChart3 },
+        { label: 'Curriculum Progress', href: '/lms/curriculum', icon: Clipboard },
         { label: 'Homework', href: '/lms/homework', icon: BookCheck },
-        { label: 'Assessments', href: '/assessment/teacher', icon: FileText },
-        { label: 'Marks Entry', href: '/assessment/marks-entry', icon: Award },
-        { label: 'Gradebook', href: '/lms/gradebook', icon: BarChart3 },
       ],
     },
     {
@@ -1092,6 +1089,11 @@ export function Sidebar({ className }: SidebarProps) {
         'Integrations': 'الربط البرمجي والأنظمة',
         'Academic Clearance': 'المخالصة الأكاديمية',
         'AI Advisor Alerts': 'تنبيهات مستشار الذكاء الاصطناعي',
+        'Course Offering Portal': 'بوابة المواد المطروحة',
+        'My Course Offerings': 'مواد التدريس المطروحة',
+        'Academic Workspace': 'مساحة العمل الأكاديمية',
+        'Curriculum Progress': 'تقدم المنهج الدراسي',
+        'Teaching Workload': 'العبء التدريسي',
       },
       fr: {
         'Activity Logs': "Journaux d'activité",
@@ -1195,6 +1197,11 @@ export function Sidebar({ className }: SidebarProps) {
         'Integrations': 'Intégrations',
         'Academic Clearance': 'Clairance académique',
         'AI Advisor Alerts': 'Alertes du conseiller IA',
+        'Course Offering Portal': 'Portail des cours proposés',
+        'My Course Offerings': 'Mes cours proposés',
+        'Academic Workspace': 'Espace de travail académique',
+        'Curriculum Progress': 'Progression du curriculum',
+        'Teaching Workload': "Charge d'enseignement",
       },
       tr: {
         'Activity Logs': 'Aktivite Günlükleri',
@@ -1296,9 +1303,14 @@ export function Sidebar({ className }: SidebarProps) {
         'Settings': 'Ayarlar',
         'School Profile': 'Okul Profili',
         'Integrations': 'Entegrasyonlar',
-        'Academic Clearance': 'Akademik İlişik Kesme',
-        'AI Advisor Alerts': 'Yapay Zeka Uyarıları',
-      }
+        'Academic Clearance': 'Akademik Tahliye',
+        'AI Advisor Alerts': 'YZ Danışman Uyarıları',
+        'Course Offering Portal': 'Ders Teklif Portalı',
+        'My Course Offerings': 'Ders Tekliflerim',
+        'Academic Workspace': 'Akademik Çalışma Alanı',
+        'Curriculum Progress': 'Müfredat İlerlemesi',
+        'Teaching Workload': 'Öğretim Yükü',
+      },
     };
 
     return localDict[locale]?.[label] || label;
@@ -1333,6 +1345,8 @@ export function Sidebar({ className }: SidebarProps) {
         'Enterprise Operations ERP': 'العمليات والخدمات اللوجستية',
         'Hostel ERP Suite': 'إدارة السكن الداخلي',
         'Enterprise Audits': 'التدقيق والتحليل الذكي',
+        'Academic Workspace': 'مساحة العمل الأكاديمية',
+        'My Work': 'أعمالي التدريسية',
       },
       fr: {
         'Academic Management': 'Gestion académique',
@@ -1347,7 +1361,9 @@ export function Sidebar({ className }: SidebarProps) {
         'Events & CMS': 'Événements et CMS',
         'Enterprise Operations ERP': 'Opérations d\'entreprise',
         'Hostel ERP Suite': 'Hébergement ERP',
-        'Enterprise Audits': 'Audits d\'entreprise',
+        'Enterprise Audits': "Audits d'entreprise",
+        'Academic Workspace': 'Espace académique',
+        'My Work': 'Mon espace de cours',
       },
       tr: {
         'Academic Management': 'Akademik Yönetim',
@@ -1363,6 +1379,8 @@ export function Sidebar({ className }: SidebarProps) {
         'Enterprise Operations ERP': 'Operasyonel ERP',
         'Hostel ERP Suite': 'Yurt ERP',
         'Enterprise Audits': 'Kurumsal Denetim',
+        'Academic Workspace': 'Akademik Çalışma Alanı',
+        'My Work': 'Ders Alanım',
       }
     };
 
