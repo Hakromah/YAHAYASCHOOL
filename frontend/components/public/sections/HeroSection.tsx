@@ -18,10 +18,21 @@ interface HeroProps {
 
 export function HeroSection({ data, locale = 'en' }: HeroProps) {
   const [isOpen, setIsOpen] = React.useState(false);
+
+  // Escape closes the contact menu — the backdrop handles pointer dismissal,
+  // this covers keyboard users.
+  React.useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsOpen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isOpen]);
   const [paginationEl, setPaginationEl] = React.useState<HTMLElement | null>(null);
   const [swiperInstance, setSwiperInstance] = React.useState<any>(null);
   const ctaText = data?.primaryCtaText || "Start Application";
-  const ctaUrl = data?.primaryCtaUrl || "/online-registration";
+  const ctaUrl = data?.primaryCtaUrl || "/contact";
   React.useEffect(() => {
     if (swiperInstance && paginationEl && swiperInstance.params.pagination) {
       // @ts-ignore - params.pagination can be typed as boolean in swiper's types
@@ -122,9 +133,26 @@ export function HeroSection({ data, locale = 'en' }: HeroProps) {
         .swiper-slide-active .hero-bg-image {
           animation: zoomIn 7s linear forwards; /* 7s duration to match autoplay delay + transition speed */
         }
+
+        /* Swiper's stylesheet is injected AFTER Tailwind's, so its bare rules
+           (.swiper{position:relative} .swiper-slide{display:block;height:100%})
+           beat equal-specificity utility classes. Two-class selectors win. */
+        .hero-swiper.swiper { height: auto; }
+        .hero-swiper .swiper-wrapper { height: auto; }
+        .hero-swiper .swiper-slide {
+          display: flex;
+          flex-direction: column;
+          height: auto;
+        }
+        /* keep in sync with --breakpoint-lg in globals.css */
+        @media (min-width: 1281px) {
+          .hero-swiper.swiper,
+          .hero-swiper .swiper-wrapper,
+          .hero-swiper .swiper-slide { height: 100%; }
+        }
       `}</style>
 
-      <section className="w-full h-full relative bg-amber-500 lg:h-[calc(100vh-100px)] overflow-hidden border-b-[1px] max-h-[1100px] border-white">
+      <section className="w-full relative lg:h-[calc(100vh-100px)] z-20 overflow-hidden border-b max-h-275 border-white">
         <div className='w-full h-full relative'>
           <Swiper
             modules={[Pagination, Autoplay, EffectFade]}
@@ -135,21 +163,21 @@ export function HeroSection({ data, locale = 'en' }: HeroProps) {
             speed={1500}
             autoplay={{ delay: 5000, disableOnInteraction: false }}
             loop={true}
-            className="absolute inset-0"
+            className="hero-swiper"
           >
             {slides.map((slide) => (
-              <SwiperSlide key={slide.id} className='group/slide  flex bg-black flex-col w-full h-full self-stretch relative max-h-[1100px] lg:h-[calc(100vh-100px)]'>
+              <SwiperSlide key={slide.id} className='group/slide bg-black w-full relative'>
                 {/* Background Image Container */}
-                <div className="absolute inset-0 z-0 w-full hidden h-full pointer-events-none overflow-hidden">
-                  <div className="w-full h-full relative">
-                    <div className="absolute inset-0 bg-yellow-500 z-10" />
+                <div className="absolute inset-0 z-0 w-full h-full pointer-events-none overflow-hidden">
+                  <div className="w-full h-full relative hero-bg-image">
                     <img src={slide.image} alt="hero" className="w-full h-full object-cover" />
                   </div>
                   {/* Dark gradient overlay for text readability (kept above the image so it doesn't scale) */}
+                  <div className="absolute inset-0 bg-black/40 z-10" />
                 </div>
                 {/* Content Container */}
                 <div className='max-w-[1920px] mx-auto  relative  h-full w-full'>
-                  <div className='main-container pb-(--spacing-side) max-lg:pb-[80px] pt-[100px] px-(--spacing-side) mx-auto grid grid-cols-1 justify-end items-end w-full h-full relative'>
+                  <div className='main-container pb-(--spacing-side) max-lg:pb-[80px] max-sm:pt-[150px] sm:pt-[100px] px-(--spacing-side) mx-auto grid grid-cols-1 justify-end items-end w-full h-full relative'>
                     <div className="flex flex-col lg:flex-row max-lg:h-fit justify-between items-end gap-5 lg:gap-12 md:gap-8 w-full max-md:pr-[50px]">
 
                       {/* Left Column */}
@@ -161,15 +189,15 @@ export function HeroSection({ data, locale = 'en' }: HeroProps) {
                           <span className="tracking-widest uppercase">EST. 2020</span>
                         </div>
 
-                        <h1 className="text-4xl md:text-5xl lg:text-[3.5rem] font-bold leading-[1.03] tracking-tight text-white drop-shadow-md opacity-0 group-[&.swiper-slide-active]/slide:opacity-100 duration-500 group-[&.swiper-slide-active]/slide:delay-500 translate-y-5 group-[&.swiper-slide-active]/slide:translate-y-0 overflow-hidden">
+                        <h1 className="text-4xl line-clamp-3 md:text-5xl lg:text-[3.5rem] font-bold leading-[1.03] tracking-tight text-white drop-shadow-md opacity-0 group-[&.swiper-slide-active]/slide:opacity-100 duration-500 group-[&.swiper-slide-active]/slide:delay-500 translate-y-5 group-[&.swiper-slide-active]/slide:translate-y-0 overflow-hidden">
                           {slide.titlePart1} <br className="max-md:hidden" />
                           <span className="italic font-medium">{slide.titlePart2}</span>
                         </h1>
                       </div>
 
                       {/* Right Column */}
-                      <div data-lenis-prevent className="flex-1 w-full xl:max-w-[450px]  lg:max-w-[350px] text-white">
-                        <p className="max-md:text-[16px] max-h-[150px] overflow-y-auto text-[18px] leading-relaxed md:mb-6 mb-5 text-gray-100 drop-shadow-sm font-regular opacity-0 group-[&.swiper-slide-active]/slide:opacity-100 duration-500 group-[&.swiper-slide-active]/slide:delay-600 translate-y-5 group-[&.swiper-slide-active]/slide:translate-y-0 overflow-hidden">
+                      <div className="flex-1 w-full xl:max-w-[450px]  lg:max-w-[350px] text-white">
+                        <p className="max-md:text-[16px] line-clamp-4 text-[18px] leading-relaxed md:mb-6 mb-5 text-gray-100 drop-shadow-sm font-regular opacity-0 group-[&.swiper-slide-active]/slide:opacity-100 duration-500 group-[&.swiper-slide-active]/slide:delay-600 translate-y-5 group-[&.swiper-slide-active]/slide:translate-y-0 overflow-hidden">
                           {slide.description}
                         </p>
                         <div className='opacity-0 group-[&.swiper-slide-active]/slide:opacity-100 duration-500 group-[&.swiper-slide-active]/slide:delay-700 translate-y-5 group-[&.swiper-slide-active]/slide:translate-y-0 overflow-hidden'>
@@ -188,8 +216,24 @@ export function HeroSection({ data, locale = 'en' }: HeroProps) {
               </SwiperSlide>
             ))}
           </Swiper>
+          {/* Backdrop — blurs the page behind the menu; click anywhere to dismiss.
+              z sits above the bottom curve (z-500) so the blur covers it, and
+              below the menu itself. */}
+          <button
+            type="button"
+            aria-label="Close contact menu"
+            tabIndex={isOpen ? 0 : -1}
+            onClick={() => setIsOpen(false)}
+            className={`fixed inset-0 z-[900] cursor-default bg-black/25 transition-opacity duration-300 ${
+              // Filter only while open. Left on permanently, an invisible
+              // backdrop-filter still forces the compositor to keep filtering
+              // the page behind it, which some engines render badly.
+              isOpen ? 'opacity-100 backdrop-blur-md' : 'opacity-0 pointer-events-none'
+            }`}
+          />
+
           {/* Floating Contact Menu */}
-          <div className="absolute right-0 top-1/2 -translate-y-1/2 z-30 flex items-center">
+          <div className="absolute right-0 top-1/2 -translate-y-1/2 z-[901] flex items-center">
             {/* Expanded items */}
             <div
               className={`absolute right-14 flex flex-col gap-3 transition-all duration-300 origin-right ${isOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-50 pointer-events-none'
@@ -249,9 +293,8 @@ export function HeroSection({ data, locale = 'en' }: HeroProps) {
               className="object-contain max-w-[800px] max-h-[169px] pointer-events-none max-sm:hidden  w-full h-full"
               style={{ objectFit: 'fill' }}
             />
-
             {/* Slider Dots */}
-            <div className="absolute sm:bottom-[70px] bottom-8 left-1/2 -translate-x-1/2 flex items-center justify-center pointer-events-auto z-[100]">
+            <div className="absolute sm:bottom-[70px] bottom-8 left-1/2 -translate-x-1/2 flex items-center justify-center pointer-events-auto z-10">
               <div ref={setPaginationEl} onClick={handlePaginationClick} className="hero-pagination flex items-center justify-center pointer-events-auto"></div>
             </div>
           </div>

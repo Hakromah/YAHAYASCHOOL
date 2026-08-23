@@ -89,7 +89,7 @@ export function FeatureCardsSection({ data }: FeatureCardsProps) {
                 <h3 className="text-xl font-bold text-emerald-950 mb-3 group-hover:text-emerald-800 transition-colors">
                   {card.title}
                 </h3>
-                <p className="text-gray-600 text-sm sm:text-base leading-relaxed">
+                <p className="text-gray-600 text-base sm:text-base leading-relaxed">
                   {card.description}
                 </p>
               </div>

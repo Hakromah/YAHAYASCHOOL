@@ -116,7 +116,7 @@ export function EnrollmentModal({ isOpen, onClose }: EnrollmentModalProps) {
                     <span>Pay Securely Now</span>
                   </button>
 
-                  <p className="text-center text-gray-400 text-sm mt-4">
+                  <p className="text-center text-gray-400 text-base mt-4">
                     Your payment is safe, secure and encrypted.
                   </p>
                 </>

@@ -3,145 +3,283 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Container } from '../ui/Container';
-import { Mail, Phone, BookOpen, GraduationCap, LifeBuoy } from 'lucide-react';
+import { useState } from 'react';
+import {
+  BookOpen,
+  ChevronDown,
+  GraduationCap,
+  LifeBuoy,
+  Mail,
+  Phone,
+  Sparkles,
+  Sunrise,
+} from 'lucide-react';
 import type { FooterConfig } from '../../types/cms.types';
+import { SOCIALS } from './shared/socials';
 
-interface FooterProps {
-  config?: FooterConfig | null;
-  locale?: string;
+/**
+ * Site footer.
+ * Implemented from Figma node 549-744 (measured off the footer of the 1920-wide
+ * page exports, since there is no standalone footer frame in pages-png).
+ *
+ * Design reference values (at the 1920 frame):
+ *   brand #048ED6 · ink #111C2D · strip border #BCD5EE
+ *   contact strip 1710×129 with the 104px crest straddling its top edge
+ *   heading 48 · eyebrow 15 · link 15 (36 pitch) · pill h38 · bottom bar h79
+ *   link columns at x 1108 / 1346 / 1605 — a 248px pitch
+ */
+
+// SOCIALS now lives in shared/socials so the staff cards can use it too.
+
+const LINK_COLUMNS = [
+  {
+    title: 'Quick Links',
+    Icon: BookOpen,
+    links: [
+      { label: 'About Us', href: '/about' },
+      { label: 'Academic Programs', href: '/programs' },
+      { label: 'News & Events', href: '/news' },
+      { label: 'Gallery', href: '/gallery' },
+      { label: 'Careers', href: '/career' },
+      { label: 'Contact', href: '/contact' },
+    ],
+  },
+  {
+    title: 'Academics',
+    Icon: GraduationCap,
+    links: [
+      { label: 'Quran Department', href: '/departments' },
+      { label: 'Arabic Language', href: '/programs/arabic' },
+      { label: 'English Department', href: '/programs/english' },
+      { label: 'Online Learning', href: '/online-learning' },
+      { label: 'Student Life', href: '/gallery' },
+    ],
+  },
+  {
+    title: 'Support',
+    Icon: LifeBuoy,
+    links: [
+      { label: 'FAQS', href: '/faq' },
+      { label: 'Help Center', href: '/contact' },
+    ],
+  },
+];
+
+const PILLS = [
+  { label: 'Islamic Education', Icon: BookOpen },
+  { label: 'Modern Learning', Icon: Sparkles },
+  { label: 'Bright Future', Icon: Sunrise },
+];
+
+type ColType = (typeof LINK_COLUMNS)[number];
+
+function FooterAccordion({ col, open, onToggle }: { col: ColType; open: boolean; onToggle: () => void }) {
+
+  return (
+    <div className="sm:contents">
+      {/* Mobile: accordion trigger (hidden on sm+) */}
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={open}
+        className="sm:hidden w-full flex items-center justify-between py-4 text-left"
+      >
+        <span className="flex items-center gap-2 font-semibold text-[#111C2D] text-[0.9375rem]">
+          <col.Icon className="w-[17px] h-[17px] text-[#048ED6]" />
+          {col.title}
+        </span>
+        <ChevronDown
+          className={`w-5 h-5 text-[#048ED6] transition-transform duration-300 ${open ? 'rotate-180' : ''}`}
+          aria-hidden
+        />
+      </button>
+
+      {/* Mobile: collapsible list via grid row trick */}
+      <div
+        className={`sm:hidden grid transition-[grid-template-rows] duration-300 ease-in-out ${open ? 'grid-rows-[1fr] pb-4' : 'grid-rows-[0fr]'
+          }`}
+      >
+        <ul className="overflow-hidden flex flex-col gap-4 ">
+          {col.links.map((l) => (
+            <li key={l.label}>
+              <Link
+                href={l.href}
+                className="text-[#545F73] text-[0.9375rem] transition-colors md:hover:text-[#048ED6]"
+              >
+                {l.label}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {/* Desktop: plain visible block (hidden on max-sm) */}
+      <div className="hidden sm:block">
+        <h3 className="flex items-center gap-2 font-semibold text-[#111C2D] text-[clamp(0.9375rem,0.83vw,1rem)]">
+          <col.Icon className="w-[17px] h-[17px] text-[#048ED6]" />
+          {col.title}
+        </h3>
+        <ul className="mt-[clamp(1.25rem,1.6vw,1.9rem)] flex flex-col gap-[clamp(0.9rem,1.16vw,1.4rem)]">
+          {col.links.map((l) => (
+            <li key={l.label}>
+              <Link
+                href={l.href}
+                className="text-[#545F73] text-[clamp(0.875rem,0.78vw,0.9375rem)] transition-colors md:hover:text-[#048ED6]"
+              >
+                {l.label}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
 }
 
-export function Footer({ locale = 'en' }: FooterProps) {
+export function Footer({ locale = 'en' }: { config?: FooterConfig | null; locale?: string }) {
+  void locale;
+  const [activeAccordion, setActiveAccordion] = useState<string | null>(null);
+
   return (
-    <footer className="bg-white pt-12">
-      {/* Top Contact Strip */}
-      <Container>
-        <div className="flex flex-col md:flex-row items-center justify-between py-8 border-b border-gray-100 gap-8">
-          <div className="flex items-center gap-4">
-            <span className="text-sm font-semibold text-gray-500">Follow us here on Social Media</span>
-            <div className="flex items-center gap-2">
-              <a href="#" className="w-8 h-8 rounded-full bg-sky-50 text-[#048ED6] flex items-center justify-center hover:bg-[#048ED6] hover:text-white transition-colors">
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
-              </a>
-              <a href="#" className="w-8 h-8 rounded-full bg-sky-50 text-[#048ED6] flex items-center justify-center hover:bg-[#048ED6] hover:text-white transition-colors">
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
-              </a>
-              <a href="#" className="w-8 h-8 rounded-full bg-sky-50 text-[#048ED6] flex items-center justify-center hover:bg-[#048ED6] hover:text-white transition-colors">
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M9 8h-3v4h3v12h5v-12h3.642l.358-4h-4v-1.667c0-.955.192-1.333 1.115-1.333h2.885v-5h-3.808c-3.596 0-5.192 1.583-5.192 4.615v3.385z"/></svg>
-              </a>
-              <a href="#" className="w-8 h-8 rounded-full bg-sky-50 text-[#048ED6] flex items-center justify-center hover:bg-[#048ED6] hover:text-white transition-colors">
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>
-              </a>
-              <a href="#" className="w-8 h-8 rounded-full bg-sky-50 text-[#048ED6] flex items-center justify-center hover:bg-[#048ED6] hover:text-white transition-colors">
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"/></svg>
-              </a>
+    <footer className="w-full bg-white">
+      <div className="max-w-[1920px] mx-auto px-(--spacing-side)">
+
+        {/* ── Contact strip, crest straddling its top edge ─────────── */}
+        <div className="relative pt-[52px] max-sm:pt-[80px] max-xs:pt-[100px]">
+          <span style={{ fill: '#FFF', filter: 'drop-shadow(0 2px 2px rgba(15, 108, 189, 0.20))' }} className="absolute top-0 left-1/2 -translate-x-1/2 z-10 md:w-[184px] md:h-[184px] w-[140px] h-[140px] rounded-full bg-white grid place-items-center overflow-hidden">
+            <div className='relative w-full h-full flex justify-center items-center '>
+              <Image src="/headerlogo.png" alt="Yahaya International" width={78} height={78} className="object-contain w-full h-full max-h-[150px] max-w-[100px]" />
             </div>
-          </div>
-          
-          <div className="shrink-0 -mt-12 relative z-10 bg-white p-4 rounded-full">
-            <Image
-              src="/headerlogo.png"
-              alt="YAHAYASCHOOL Logo"
-              width={80}
-              height={95}
-              className="object-contain"
-            />
-          </div>
-          
-          <div className="flex flex-col sm:flex-row items-center gap-8">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-sky-50 flex items-center justify-center text-[#048ED6]">
-                <Mail className="w-5 h-5" />
+          </span>
+
+          <div className="relative rounded-2xl overflow-hidden bg-linear-to-r from-(--color-primary) sm:via-white to-(--color-primary)">
+            {/* Social */}
+            <div className="relative rounded-2xl bg-white m-[1px] px-[clamp(1.25rem,2.1vw,2.5rem)] py-[31px] max-lg:pt-[66px] flex flex-col lg:flex-row lg:items-center justify-between gap-8 max-md:gap-5">
+              <div className="flex flex-col gap-[14px]">
+                <span className="text-[13px] text-[#6B7280]">Follow us on Social Media</span>
+                <div className="flex items-center gap-[20px]">
+                  {SOCIALS.map((s) => (
+                    <a
+                      key={s.name}
+                      href={s.href}
+                      aria-label={s.name}
+                      className="w-[30px] h-[30px] grid place-items-center rounded-md bg-[#E6F0FB] text-[#048ED6] transition-colors hover:bg-[#048ED6] md:hover:text-white"
+                    >
+                      <svg viewBox="0 0 24 24" fill="currentColor" className="w-[15px] h-[15px]" aria-hidden>
+                        <path d={s.path} />
+                      </svg>
+                    </a>
+                  ))}
+                </div>
               </div>
-              <div>
-                <p className="text-xs text-gray-400 font-medium uppercase tracking-wider mb-0.5">Email</p>
-                <p className="text-sm font-semibold text-gray-900">Yahayahighschool@Gmail.com</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-sky-50 flex items-center justify-center text-[#048ED6]">
-                <Phone className="w-5 h-5" />
-              </div>
-              <div>
-                <p className="text-xs text-gray-400 font-medium uppercase tracking-wider mb-0.5">Telephone</p>
-                <p className="text-sm font-semibold text-gray-900">+23188368801</p>
+
+              {/* Email / phone */}
+              <div className="flex flex-col sm:flex-row sm:items-center gap-6 sm:gap-0">
+                <a href="mailto:Yahayahighschool@Gmail.Com" className="text-[15px] block text-[#111C2D]  transition-colors">
+                  <div className="flex flex-col gap-[10px] sm:pr-[46px]">
+                    <span className="text-[13px] text-[#6B7280]">Email</span>
+                    <span className="flex items-center gap-3">
+                      <span className="w-[30px] h-[30px] shrink-0 grid place-items-center rounded-md bg-[#E6F0FB] text-[#048ED6]">
+                        <Mail className="w-[15px] h-[15px]" />
+                      </span>
+                      <p className="text-[15px] text-[#111C2D] md:hover:text-[#048ED6] transition-colors">
+                        Yahayahighschool@Gmail.Com
+                      </p>
+                    </span>
+                  </div>
+                </a>
+
+                <span className="hidden sm:block w-px self-stretch bg-[#BCD5EE]" />
+                <a href="tel:+23188368801" className="text-[15px] text-[#111C2D] md:hover:text-[#048ED6] transition-colors">
+                  <div className="flex flex-col gap-[10px] sm:pl-[46px]">
+                    <span className="text-[13px] text-[#6B7280]">Telefon</span>
+                    <span className="flex items-center gap-3">
+                      <span className="w-[30px] h-[30px] shrink-0 grid place-items-center rounded-md bg-[#E6F0FB] text-[#048ED6]">
+                        <Phone className="w-[15px] h-[15px]" />
+                      </span>
+                      <p className="text-[15px] block text-[#111C2D] md:hover:text-[#048ED6] transition-colors">
+                        +23188368801
+                      </p>
+                    </span>
+                  </div>
+                </a>
               </div>
             </div>
           </div>
         </div>
-      </Container>
 
-      {/* Main Footer Links */}
-      <Container>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 py-16">
-          <div className="lg:col-span-1 space-y-6">
-            <h4 className="text-xs font-bold text-[#048ED6] uppercase tracking-wider">YAHAYA INTERNATIONAL ISLAMIC AND ENGLISH HIGH SCHOOL</h4>
-            <h3 className="text-2xl font-bold text-gray-900 font-serif leading-tight">Knowledge Faith & <span className="text-[#048ED6]">Excellence</span></h3>
-            <p className="text-gray-600 text-sm leading-relaxed">
-              Building a brighter future through Islamic values, quality education and character development
+        {/* ── Brand block + link columns ───────────────────────────── */}
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_auto] gap-x-[clamp(2rem,5vw,6rem)] gap-y-12 pt-[clamp(1.5rem,4.8vw,5.8rem)] pb-[clamp(1.5rem,4.5vw,5.5rem)]">
+
+          <div>
+            <p className="text-[#048ED6] font-semibold uppercase tracking-[0.02em] text-[1rem]">
+              Yahaya International Islamic and English High School
             </p>
-            <div className="flex flex-wrap gap-2">
-              <span className="px-4 py-1.5 rounded-full bg-[#048ED6] text-white text-xs font-bold">Islamic Education</span>
-              <span className="px-4 py-1.5 rounded-full bg-[#048ED6] text-white text-xs font-bold">Modern Learning</span>
-              <span className="px-4 py-1.5 rounded-full bg-[#048ED6] text-white text-xs font-bold">Bright Future</span>
+
+            <h2 className="mt-[clamp(1.25rem,1.7vw,2.05rem)] font-bold text-[#111C2D] tracking-[-0.015em] leading-[1.1] text-[clamp(1.75rem,2.5vw,3rem)]">
+              Knowledge Faith &amp;{' '}
+              <span className="relative inline-block text-[#048ED6]">
+                Excellence
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 195 9"
+                  fill="none"
+                  className="absolute left-0 -bottom-[6px] w-full"
+                  aria-hidden
+                  preserveAspectRatio="none"
+                >
+                  <path d="M0.078125 8.5C0.078125 8.5 54.1334 -0.127191 94.4565 0.53641C131.155 1.14037 194.078 8.5 194.078 8.5" stroke="url(#footer-excellence-gradient)" />
+                  <defs>
+                    <linearGradient id="footer-excellence-gradient" x1="97.0781" y1="-8.43934" x2="97.0781" y2="8.50112" gradientUnits="userSpaceOnUse">
+                      <stop stopColor="#005396" />
+                      <stop offset="0.5" stopColor="#046ED6" />
+                      <stop offset="1" stopColor="white" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+              </span>
+            </h2>
+
+            <p className="mt-[clamp(1rem,1.2vw,1.45rem)] max-w-[460px] text-[#545F73] leading-[1.6] text-[1rem]">
+              Building a brighter future through Islamic values, quality education and character
+              development
+            </p>
+
+            <div className="mt-[clamp(1.75rem,2.4vw,2.9rem)] flex flex-wrap gap-[14px] max-w-[400px]">
+              {PILLS.map((p) => (
+                <span
+                  key={p.label}
+                  className="inline-flex items-center gap-2 h-[38px] px-4 rounded-full bg-[#048ED6] text-white font-medium text-[13px]"
+                >
+                  <p.Icon className="w-[15px] h-[15px]" />
+                  {p.label}
+                </span>
+              ))}
             </div>
-          </div>
-          
-          <div className="space-y-6">
-            <div className="flex items-center gap-2 text-[#048ED6]">
-              <BookOpen className="w-5 h-5" />
-              <h4 className="font-bold text-gray-900">Quick Links</h4>
-            </div>
-            <ul className="space-y-3">
-              <li><Link href={`/${locale}/about`} className="text-sm text-gray-600 hover:text-[#048ED6]">About Us</Link></li>
-              <li><Link href={`/${locale}/programs`} className="text-sm text-gray-600 hover:text-[#048ED6]">Academic Programs</Link></li>
-              <li><Link href={`/${locale}/news`} className="text-sm text-gray-600 hover:text-[#048ED6]">News & Events</Link></li>
-              <li><Link href={`/${locale}/gallery`} className="text-sm text-gray-600 hover:text-[#048ED6]">Gallery</Link></li>
-              <li><Link href={`/${locale}/careers`} className="text-sm text-gray-600 hover:text-[#048ED6]">Careers</Link></li>
-              <li><Link href={`/${locale}/contact`} className="text-sm text-gray-600 hover:text-[#048ED6]">Contact</Link></li>
-            </ul>
-          </div>
-          
-          <div className="space-y-6">
-            <div className="flex items-center gap-2 text-[#048ED6]">
-              <GraduationCap className="w-5 h-5" />
-              <h4 className="font-bold text-gray-900">Academics</h4>
-            </div>
-            <ul className="space-y-3">
-              <li><Link href={`/${locale}/departments/quran`} className="text-sm text-gray-600 hover:text-[#048ED6]">Qur'an Department</Link></li>
-              <li><Link href={`/${locale}/departments/arabic`} className="text-sm text-gray-600 hover:text-[#048ED6]">Arabic Language</Link></li>
-              <li><Link href={`/${locale}/departments/english`} className="text-sm text-gray-600 hover:text-[#048ED6]">English Department</Link></li>
-              <li><Link href={`/${locale}/online-learning`} className="text-sm text-gray-600 hover:text-[#048ED6]">Online Learning</Link></li>
-              <li><Link href={`/${locale}/student-life`} className="text-sm text-gray-600 hover:text-[#048ED6]">Student Life</Link></li>
-            </ul>
           </div>
 
-          <div className="space-y-6">
-            <div className="flex items-center gap-2 text-[#048ED6]">
-              <LifeBuoy className="w-5 h-5" />
-              <h4 className="font-bold text-gray-900">Support</h4>
-            </div>
-            <ul className="space-y-3">
-              <li><Link href={`/${locale}/faq`} className="text-sm text-gray-600 hover:text-[#048ED6]">FAQS</Link></li>
-              <li><Link href={`/${locale}/help`} className="text-sm text-gray-600 hover:text-[#048ED6]">Help Center</Link></li>
-            </ul>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-[clamp(2rem,5.6vw,6.75rem)] gap-y-10 max-sm:grid-cols-1 max-sm:gap-y-0 max-sm:divide-y max-sm:divide-[#E8EEF5]">
+            {LINK_COLUMNS.map((col) => (
+              <FooterAccordion
+                key={col.title}
+                col={col}
+                open={activeAccordion === col.title}
+                onToggle={() => setActiveAccordion(activeAccordion === col.title ? null : col.title)}
+              />
+            ))}
           </div>
         </div>
-      </Container>
-      
-      {/* Bottom Bar */}
-      <div className="bg-[#048ED6] py-4">
-        <Container>
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="text-white/90 text-sm">© 2026 Yahaya International Islamic and English School. All rights reserved.</p>
-            <div className="flex items-center gap-6">
-              <Link href={`/${locale}/terms`} className="text-white/90 text-sm hover:text-white">Terms of Service</Link>
-              <Link href={`/${locale}/privacy`} className="text-white/90 text-sm hover:text-white">Privacy Policy</Link>
-            </div>
+      </div>
+
+      {/* ── Bottom bar ──────────────────────────────────────────── */}
+      <div className="bg-[#048ED6] text-white">
+        <div className="max-w-[1920px] max-sm:[&_p]:text-center mx-auto px-(--spacing-side) min-h-[79px] py-4 flex flex-col sm:flex-row items-center justify-between max-sm:justify-center gap-3 text-[clamp(0.8125rem,0.73vw,0.875rem)]">
+          <p>© 2026 Yahaya International Islamic and English School. All rights reserved.</p>
+          <div className="flex items-center gap-8">
+            <Link href="/terms" className="transition-opacity hover:opacity-80">Terms of Service</Link>
+            <Link href="/privacy" className="transition-opacity hover:opacity-80">Privacy Policy</Link>
           </div>
-        </Container>
+        </div>
       </div>
     </footer>
   );

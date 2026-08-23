@@ -223,6 +223,7 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    -webkit-tap-highlight-color: transparent;
   }
 
   html {
@@ -232,14 +233,17 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
-    -webkit-tap-highlight-color: transparent;
-  }
 
   body {
     @apply bg-background text-foreground;
+  }
+
+  button, 
+  [type='button'], 
+  [type='reset'], 
+  [type='submit'], 
+  [role='button'] {
+    cursor: pointer;
   }
 }
 
@@ -280,6 +284,7 @@ body::-webkit-scrollbar-thumb {
 .animate-marquee:hover {
   animation-play-state: paused;
 }
+@layer base {
   /* RTL: Use Arabic font when dir=rtl */
   [dir="rtl"] {
     font-family: 'Noto Sans Arabic', 'Noto Naskh Arabic', system-ui, sans-serif;

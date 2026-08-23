@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { motion } from 'framer-motion';
 import { Briefcase, ArrowRight, BookOpen, Users, Building2 } from 'lucide-react';
 import type { DepartmentsGridSectionComponent, DepartmentEntity } from '../../../types/cms.types';
 import { cmsService } from '../../../services/cms.service';
@@ -46,6 +47,34 @@ const FALLBACK_DEPTS: DepartmentEntity[] = [
 export function DepartmentsGridSection({ data, initialDepartments, locale = 'en' }: DepartmentsGridProps) {
   const [departments, setDepartments] = useState<DepartmentEntity[]>(initialDepartments || FALLBACK_DEPTS);
   const [loading, setLoading] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  useEffect(() => {
+    // 1024px is Tailwind's lg breakpoint, matching the 'abover lg' request
+    const mq = window.matchMedia('(min-width: 1024px)');
+    setIsDesktop(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+
+  const containerVariants = {
+    hidden: {},
+    visible: {
+      transition: {
+        staggerChildren: 0.15,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 40 },
+    visible: { 
+      opacity: 1, 
+      y: 0,
+      transition: { duration: 0.6, ease: "easeOut" }
+    },
+  };
 
   const title = data?.title || 'Specialized Departments & Faculties';
   const subtitle = data?.subtitle || 'Dedicated academic departments ensuring comprehensive subject mastery and mentorship';
@@ -68,13 +97,20 @@ export function DepartmentsGridSection({ data, initialDepartments, locale = 'en'
 
   return (
     <section className="bg-gray-50/80 py-20 sm:py-28">
-      <div className="max-w-7xl mx-auto px-4 sm:px-8">
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
+      <div key={isDesktop ? 'desktop' : 'mobile'} className="contents">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8">
+          <motion.div 
+            initial={isDesktop ? "hidden" : "visible"}
+            whileInView="visible"
+            variants={isDesktop ? { hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } } } : {}}
+            viewport={{ once: true, amount: 0.3 }}
+            className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6"
+          >
           <div>
             <span className="inline-block px-3.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-emerald-100 text-emerald-900 mb-3">
               Academic Divisions
             </span>
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-emerald-950 tracking-tight">
+            <h2 className="text-[clamp(1.5rem,2.29vw,2.75rem)] font-extrabold text-emerald-950 tracking-tight">
               {title}
             </h2>
             <p className="text-gray-600 text-base sm:text-lg mt-2 max-w-2xl">
@@ -89,7 +125,7 @@ export function DepartmentsGridSection({ data, initialDepartments, locale = 'en'
             <span>All Departments</span>
             <ArrowRight className="w-4 h-4 rtl:rotate-180" />
           </Link>
-        </div>
+        </motion.div>
 
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-pulse">
@@ -98,10 +134,17 @@ export function DepartmentsGridSection({ data, initialDepartments, locale = 'en'
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <motion.div 
+            className="grid grid-cols-1 md:grid-cols-2 gap-8"
+            initial={isDesktop ? "hidden" : "visible"}
+            whileInView="visible"
+            variants={isDesktop ? containerVariants : {}}
+            viewport={{ once: true, amount: 0.1 }}
+          >
             {departments.map((dept, idx) => (
-              <div
+              <motion.div
                 key={idx}
+                variants={isDesktop ? itemVariants : {}}
                 className="bg-white rounded-3xl p-8 sm:p-10 border border-gray-200/80 shadow-xs hover:shadow-xl transition-all flex flex-col justify-between group"
               >
                 <div>
@@ -137,10 +180,11 @@ export function DepartmentsGridSection({ data, initialDepartments, locale = 'en'
                     <ArrowRight className="w-4 h-4 rtl:rotate-180" />
                   </Link>
                 </div>
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         )}
+        </div>
       </div>
     </section>
   );

@@ -126,7 +126,7 @@ export default function AcademicsPage() {
                     {program.title}
                   </h3>
                   
-                  <p className="text-slate-600 text-[15px] leading-relaxed mb-8 flex-grow">
+                  <p className="text-slate-600 text-[1rem] leading-relaxed mb-8 flex-grow">
                     {program.description}
                   </p>
                   

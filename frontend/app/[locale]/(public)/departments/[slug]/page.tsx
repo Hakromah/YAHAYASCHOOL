@@ -91,7 +91,7 @@ export default async function AcademicDetailPage({
                 The Hifz Pathway
               </h2>
               
-              <p className="text-slate-600 text-[15px] leading-relaxed mb-10">
+              <p className="text-slate-600 text-[1rem] leading-relaxed mb-10">
                 Our Quran Memorization program is more than a curriculum; it is a transformative journey. We combine traditional Ottoman and African memorization techniques with modern pedagogical approaches to ensure deep retention and authentic Tajweed.
               </p>
               
@@ -109,7 +109,7 @@ export default async function AcademicDetailPage({
                     </div>
                     <div>
                       <h3 className="text-lg font-bold text-slate-900 mb-1">{item.title}</h3>
-                      <p className="text-slate-600 text-sm leading-relaxed">{item.desc}</p>
+                      <p className="text-slate-600 text-base leading-relaxed">{item.desc}</p>
                     </div>
                   </div>
                 ))}

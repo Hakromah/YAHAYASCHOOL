@@ -82,17 +82,17 @@ export function EventsGridSection({ data, initialEvents, locale = 'en' }: Events
   };
 
   return (
-    <section className="bg-gray-50/70 py-20 sm:py-28">
+    <section className="bg-gray-50/70 pt-[clamp(1.5rem,5.5vw,6.6rem)] pb-[clamp(1.5rem,5.5vw,6.6rem)]">
       <div className="max-w-7xl mx-auto px-4 sm:px-8">
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-[clamp(1.5rem,5.5vw,6.6rem)] gap-6">
           <div>
             <span className="inline-block px-3.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-emerald-100 text-emerald-900 mb-3 border border-emerald-200">
               Campus Life
             </span>
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-emerald-950 tracking-tight">
+            <h2 className="text-[clamp(1.5rem,2.29vw,2.75rem)] font-extrabold text-emerald-950 tracking-tight">
               {title}
             </h2>
-            <p className="text-gray-600 text-base sm:text-lg mt-2 max-w-2xl">
+            <p className="text-gray-600 text-[clamp(1rem,0.94vw,1.125rem)] mt-2 max-w-2xl">
               {subtitle}
             </p>
           </div>
@@ -147,7 +147,7 @@ export function EventsGridSection({ data, initialEvents, locale = 'en' }: Events
                       {evt.title}
                     </h3>
 
-                    <p className="text-gray-600 text-sm leading-relaxed mb-6 line-clamp-2">
+                    <p className="text-gray-600 text-base leading-relaxed mb-6 line-clamp-2">
                       {evt.description}
                     </p>
                   </div>

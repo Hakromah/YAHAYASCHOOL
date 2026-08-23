@@ -69,7 +69,7 @@ export default async function AdmissionsPage({ params }: AdmissionsPageProps) {
               1
             </div>
             <h3 className="text-xl font-bold text-emerald-950 mb-3">Online Registration</h3>
-            <p className="text-gray-600 text-sm leading-relaxed mb-6">
+            <p className="text-gray-600 text-base leading-relaxed mb-6">
               Complete the digital application form with your child\'s personal details, desired academic track, and parent contact information.
             </p>
             <Link
@@ -86,7 +86,7 @@ export default async function AdmissionsPage({ params }: AdmissionsPageProps) {
               2
             </div>
             <h3 className="text-xl font-bold text-emerald-950 mb-3">Document Upload</h3>
-            <p className="text-gray-600 text-sm leading-relaxed mb-6">
+            <p className="text-gray-600 text-base leading-relaxed mb-6">
               Attach digital copies of your child\'s birth certificate, recent passport photograph, and previous two years\' school report cards.
             </p>
             <div className="text-xs font-semibold text-emerald-800 bg-emerald-100/80 px-3 py-1.5 rounded-lg self-start">
@@ -99,7 +99,7 @@ export default async function AdmissionsPage({ params }: AdmissionsPageProps) {
               3
             </div>
             <h3 className="text-xl font-bold text-emerald-950 mb-3">Assessment & Interview</h3>
-            <p className="text-gray-600 text-sm leading-relaxed mb-6">
+            <p className="text-gray-600 text-base leading-relaxed mb-6">
               Shortlisted candidates sit for a friendly placement test in Mathematics, English, and basic Qur\'an reading alongside a parent interview.
             </p>
             <div className="text-xs font-semibold text-emerald-800 bg-emerald-100/80 px-3 py-1.5 rounded-lg self-start">
@@ -112,7 +112,7 @@ export default async function AdmissionsPage({ params }: AdmissionsPageProps) {
               4
             </div>
             <h3 className="text-xl font-bold text-emerald-950 mb-3">Admission Offer</h3>
-            <p className="text-gray-600 text-sm leading-relaxed mb-6">
+            <p className="text-gray-600 text-base leading-relaxed mb-6">
               Upon successful evaluation, an official Admission Letter is issued with details on tuition payment, uniform sizing, and school orientation.
             </p>
             <div className="text-xs font-semibold text-emerald-800 bg-emerald-100/80 px-3 py-1.5 rounded-lg self-start">

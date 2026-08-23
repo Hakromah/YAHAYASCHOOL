@@ -1,145 +1,272 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Quote, Star } from 'lucide-react';
-import { Container } from '@/components/ui/Container';
+import React, { useEffect, useState } from 'react';
+import { Star } from 'lucide-react';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { EffectFade } from 'swiper/modules';
+import type { Swiper as SwiperClass } from 'swiper';
 
-const testimonials = [
+import 'swiper/css';
+import 'swiper/css/effect-fade';
+
+/**
+ * Home — "Kind Words From Our Community" testimonials.
+ * Implemented from Figma node 542-598 (frame 1920×1080).
+ *
+ * Design reference values (measured at the 1920 frame):
+ *   band #048ED6 (0→429) · panel #FAFDFE · ink #121C2A
+ *   role #02019B · quote mark #C8CBEA · meta #545F73 · idle tab name #A1D4EF
+ *   heading 50 · sub 18/29 · tab name 16 · avatar 64 · portrait 256×256
+ *   card title 34/39 · name 22 · role 14 · quote 18/29 · panel content 1024 wide
+ *
+ * The active tab is marked by a 109×10 panel-coloured notch on the band's
+ * bottom edge, so the tab reads as joined to the panel underneath.
+ *
+ * Copy note: the Figma is filled with template placeholder text (Pagedone,
+ * "Verified Purchase", "PRODUCT AND SALES MANAGER"). The real Yahaya
+ * testimonials already in this component are kept; only the layout is new.
+ */
+
+const TESTIMONIALS = [
   {
     id: 1,
     name: 'Mia Thompson',
     role: 'PARENT',
     image: '/images/figma-home/01-hero.jpeg',
-    fullImage: '/images/figma-home/01-hero.jpeg',
     title: 'A transformative experience for our child.',
-    quote: '"Since enrolling our daughter at Yahaya International, we have seen remarkable growth not just in her academic performance but in her character. The seamless integration of Islamic values with rigorous modern education is exactly what we were looking for."',
-    rating: 5
+    quote:
+      '"Since enrolling our daughter at Yahaya International, we have seen remarkable growth not just in her academic performance but in her character. The seamless integration of Islamic values with rigorous modern education is exactly what we were looking for."',
+    rating: 5,
   },
   {
     id: 2,
     name: 'James Miller',
     role: 'ALUMNUS',
     image: '/images/figma-home/20-news.jpeg',
-    fullImage: '/images/figma-home/20-news.jpeg',
     title: 'It highlights academic satisfaction, testimonials.',
-    quote: '"My years at Yahaya International completely transformed my worldview. The attention to detail in the curriculum and the ease of access to mentors allowed me to maintain my faith identity while delivering world-class academic performance. It\'s not just a school; it\'s a competitive advantage."',
-    rating: 5
+    quote:
+      '"My years at Yahaya International completely transformed my worldview. The attention to detail in the curriculum and the ease of access to mentors allowed me to maintain my faith identity while delivering world-class academic performance. It\'s not just a school; it\'s a competitive advantage."',
+    rating: 5,
   },
   {
     id: 3,
     name: 'Olivia Carter',
     role: 'COMMUNITY LEADER',
-    image: '/images/figma-home/08-activity.jpeg',
-    fullImage: '/images/figma-home/08-activity.jpeg',
+    image: '/images/figma-home/04-programs.jpeg',
     title: 'An institution built on true excellence.',
-    quote: '"The leadership at Yahaya International demonstrates a profound commitment to educational excellence. I have witnessed firsthand how they nurture students into well-rounded individuals ready to tackle global challenges with moral integrity."',
-    rating: 5
+    quote:
+      '"The leadership at Yahaya International demonstrates a profound commitment to educational excellence. I have witnessed firsthand how they nurture students into well-rounded individuals ready to tackle global challenges with moral integrity."',
+    rating: 5,
   },
   {
     id: 4,
     name: 'Matthew Bennett',
     role: 'PARENT',
-    image: '/images/figma-home/14-news.jpeg',
-    fullImage: '/images/figma-home/14-news.jpeg',
+    image: '/images/figma-home/08-activity.jpeg',
     title: 'The best decision we made.',
-    quote: '"We evaluated many schools before choosing Yahaya International. The facilities are modern, the teachers are highly qualified, and the emphasis on both D\'awah and STEM makes it a unique and invaluable environment for our children."',
-    rating: 5
-  }
+    quote:
+      '"We evaluated many schools before choosing Yahaya International. The facilities are modern, the teachers are highly qualified, and the emphasis on both D\'awah and STEM makes it a unique and invaluable environment for our children."',
+    rating: 5,
+  },
 ];
 
-export function TestimonialsSection({ locale = 'en', data }: { locale?: string; data?: unknown }) {
-  const [activeIndex, setActiveIndex] = useState(1); // Default to James Miller (index 1) to match design
+/**
+ * Enter animation for the panel: each block starts pushed down and faded out and
+ * settles once Swiper marks its slide active, staggered by DELAY. Same pattern
+ * HeroSection uses.
+ *
+ * Note the transition list is opacity,translate — NOT transform. Tailwind v4
+ * compiles translate-y-* to the standalone CSS `translate` property, so a
+ * transform-based transition list silently leaves the movement un-animated.
+ */
+const RISE =
+  'transition-[opacity,translate] duration-700 ease-out opacity-0 translate-y-8 ' +
+  'group-[&.swiper-slide-active]/slide:opacity-100 group-[&.swiper-slide-active]/slide:translate-y-0';
+const DELAY = [
+  'group-[&.swiper-slide-active]/slide:delay-100',
+  'group-[&.swiper-slide-active]/slide:delay-200',
+  'group-[&.swiper-slide-active]/slide:delay-300',
+  'group-[&.swiper-slide-active]/slide:delay-[400ms]',
+  'group-[&.swiper-slide-active]/slide:delay-500',
+  'group-[&.swiper-slide-active]/slide:delay-700',
+];
 
-  const activeTestimonial = testimonials[activeIndex];
+const INITIAL = 1;
+
+export function TestimonialsSection({ locale = 'en', data }: { locale?: string; data?: unknown }) {
+  void locale;
+  void data;
+  const [thumbs, setThumbs] = useState<SwiperClass | null>(null);
+  const [main, setMain] = useState<SwiperClass | null>(null);
+  const [active, setActive] = useState(INITIAL);
+
+  // Both sliders are driven directly rather than through Swiper's Thumbs module:
+  // that module repositions the strip on its own (it only keeps the active thumb
+  // *visible*) and overrode the centring below. Do not add update() here — it
+  // re-applies the previous translate to the DOM and the slideTo never lands.
+  useEffect(() => {
+    if (!thumbs || thumbs.destroyed) return;
+    thumbs.slideTo(active);
+  }, [thumbs, active]);
 
   return (
-    <section className="w-full">
-      {/* Top Half: Blue Background */}
-      <div className="bg-[#0d92d3] pt-16 pb-0">
-        <Container>
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-3">
-              Kind Words From Our Community
-            </h2>
-            <p className="text-sky-100 text-[15px] md:text-base leading-relaxed">
-              Discover why thousands of families trust Yahaya International to elevate their children&apos;s educational journey and nurture their moral development.
-            </p>
-          </div>
+    <section className="w-full bg-[#FAFDFE] overflow-hidden">
 
-          {/* Avatars Row */}
-          <div className="flex flex-wrap items-end justify-center gap-4 sm:gap-8 lg:gap-12 px-4">
-            {testimonials.map((t, idx) => {
-              const isActive = activeIndex === idx;
+      {/* ── Blue band ───────────────────────────────────────────── */}
+      <div className="relative bg-[#048ED6] pt-[clamp(1.5rem,5.5vw,6.6rem)]">
+        <div className="max-w-[1920px] mx-auto px-(--spacing-side)">
+          <h2 className="text-center font-bold text-white tracking-[-0.015em] leading-[1.08] text-[clamp(1.5rem,2.6vw,3.125rem)]">
+            Kind Words From Our Community
+          </h2>
+          <p className="mt-[clamp(1rem,1.5vw,1.8rem)] mx-auto max-w-165 text-center text-white/85 leading-[1.61] max-sm:leading-relaxed text-[clamp(1rem,0.94vw,1.125rem)]">
+            Hear from the parents, alumni and community leaders who have shaped — and been
+            shaped by — life at Yahaya International.
+          </p>
+
+          {/*
+            Thumb slider — clicking a face slides it in and drives the panel below.
+            Centring is only wanted where the strip overflows: at md+ every thumb
+            fits, so the CSS below centres them as a group (centeredSlides there
+            would centre the *active* thumb and pull the row off-axis).
+            --breakpoint-md is 1025px.
+          */}
+          <Swiper
+            onSwiper={setThumbs}
+            watchSlidesProgress
+            centeredSlides
+            initialSlide={INITIAL}
+            breakpoints={{ 1025: { centeredSlides: false } }}
+            slidesPerView="auto"
+            spaceBetween={0}
+            speed={800}
+            className="thumbs-swiper mt-[clamp(1.5rem,2.1vw,2.6rem)]"
+          >
+            {TESTIMONIALS.map((item, i) => {
+              const on = i === active;
               return (
-                <div 
-                  key={t.id}
-                  onClick={() => setActiveIndex(idx)}
-                  className="flex flex-col items-center cursor-pointer group"
-                >
-                  <div className={`w-14 h-14 md:w-16 md:h-16 rounded-full overflow-hidden mb-3 border-2 transition-all duration-300 ${isActive ? 'border-white scale-110' : 'border-transparent opacity-70 group-hover:opacity-100'}`}>
-                    <img src={t.image} alt={t.name} className="w-full h-full object-cover" />
-                  </div>
-                  <span className={`text-sm font-semibold transition-colors duration-300 ${isActive ? 'text-white' : 'text-sky-200 group-hover:text-white'}`}>
-                    {t.name}
-                  </span>
-                  {/* Active Indicator Line */}
-                  <div className={`h-1 w-full mt-4 transition-colors duration-300 ${isActive ? 'bg-white' : 'bg-transparent'}`} />
-                </div>
+                <SwiperSlide key={item.id}>
+                  <button
+                    type="button"
+                    onClick={() => main?.slideTo(i)}
+                    aria-pressed={on}
+                    className="relative flex flex-col items-center px-4 py-1 sm:px-6 pb-[clamp(1.5rem,2.23vw,2.7rem)] cursor-pointer group"
+                  >
+                    <span
+                      className={`w-16 h-16 rounded-full overflow-hidden ring-2 transition-all duration-500 ${
+                        on ? 'ring-white/90 opacity-100' : 'ring-transparent opacity-60 group-hover:opacity-85'
+                      }`}
+                    >
+                      <img src={item.image} alt="" className="w-full h-full object-cover" aria-hidden />
+                    </span>
+                    <span
+                      className={`mt-3 whitespace-nowrap font-semibold transition-colors duration-500 text-[clamp(0.875rem,0.83vw,1rem)] ${
+                        on ? 'text-white' : 'text-[#A1D4EF] group-hover:text-white/90'
+                      }`}
+                    >
+                      {item.name}
+                    </span>
+                    {/* Notch joining the active thumb to the panel below. Both widths
+                        live here so only one width utility is ever emitted. */}
+                    <span
+                      className={`absolute bottom-0 left-1/2 -translate-x-1/2 h-[10px] rounded-t-md bg-[#FAFDFE] transition-[width,opacity] duration-500 ease-out ${
+                        on ? 'w-[109px] opacity-100' : 'w-0 opacity-0'
+                      }`}
+                    />
+                  </button>
+                </SwiperSlide>
               );
             })}
-          </div>
-        </Container>
+          </Swiper>
+        </div>
       </div>
 
-      {/* Bottom Half: White Background */}
-      <div className="bg-white py-14 md:py-18">
-        <Container>
-          <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center gap-12 lg:gap-16">
-            
-            {/* Left: Big Image */}
-            <div className="w-full md:w-2/5 shrink-0">
-              <div className="aspect-square bg-slate-100 overflow-hidden relative rounded-sm">
-                 <img 
-                   src={activeTestimonial.fullImage} 
-                   alt={activeTestimonial.name}
-                   className="w-full h-full object-cover transition-opacity duration-500"
-                   key={activeTestimonial.fullImage} // Force re-render for transition if needed, though simple replacement works
-                 />
-              </div>
-            </div>
+      {/* ── Panel ───────────────────────────────────────────────── */}
+      <div className="max-w-[1920px] mx-auto px-(--spacing-side)">
+        <div className="max-w-[1024px] mx-auto pt-[clamp(1.5rem,3.3vw,4rem)] pb-[clamp(1.5rem,5.4vw,6.4rem)]">
+          <Swiper
+            modules={[EffectFade]}
+            effect="fade"
+            fadeEffect={{ crossFade: true }}
+            onSwiper={setMain}
+            onSlideChange={(sw) => setActive(sw.activeIndex)}
+            initialSlide={INITIAL}
+            slidesPerView={1}
+            autoHeight
+            speed={800}
+            className="panel-swiper"
+          >
+            {TESTIMONIALS.map((t) => (
+              <SwiperSlide key={t.id} className="group/slide">
+                <div className="flex flex-col sm:flex-row gap-[34px] max-md:gap-[20px]">
+                  <div
+                    className={`w-[256px] h-[256px] max-sm:w-full max-sm:h-[280px] shrink-0 overflow-hidden ${RISE} ${DELAY[0]}`}
+                  >
+                    <img src={t.image} alt={t.name} className="w-full h-full object-cover" />
+                  </div>
 
-            {/* Right: Quote Details */}
-            <div className="w-full md:w-3/5 flex flex-col">
-              <Quote className="w-12 h-12 text-[#048ED6]/20 mb-6 shrink-0" fill="currentColor" />
-              
-              <h3 className="text-3xl md:text-4xl font-bold text-slate-900 mb-2 leading-tight">
-                {activeTestimonial.title}
-              </h3>
-              
-              <div className="flex flex-col mb-8">
-                <span className="text-xl font-bold text-slate-900">{activeTestimonial.name}</span>
-                <span className="text-[#048ED6] text-xs font-bold tracking-widest uppercase mt-1">
-                  {activeTestimonial.role}
-                </span>
-              </div>
-              
-              <p className="text-slate-600 text-lg italic leading-relaxed mb-8">
-                {activeTestimonial.quote}
-              </p>
-              
-              <div className="flex items-center gap-3">
-                <div className="flex text-black">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className={`w-5 h-5 ${i < activeTestimonial.rating ? 'fill-current' : 'text-slate-300'}`} />
-                  ))}
+                  <div className="min-w-0 pt-[30px] max-sm:pt-0">
+                    <svg
+                      viewBox="0 0 43 30"
+                      className={`w-[43px] h-[30px] max-md:w-[35px] max-md:h-[35px] fill-[#C8CBEA] ${RISE} ${DELAY[1]}`}
+                      aria-hidden
+                    >
+                      <path d="M0 30V17.6C0 12.9 1 9 3 5.9 5.1 2.8 8.2.9 12.4 0l2 4.4c-2.6.9-4.5 2.2-5.6 3.9-1.1 1.7-1.7 4-1.7 6.8h6.6V30H0Zm24.5 0V17.6c0-4.7 1-8.6 3-11.7C29.6 2.8 32.7.9 36.9 0l2 4.4c-2.6.9-4.5 2.2-5.6 3.9-1.1 1.7-1.7 4-1.7 6.8h6.6V30H24.5Z" />
+                    </svg>
+
+                    <h3
+                      className={`mt-[clamp(0.75rem,1vw,1.2rem)] max-w-[560px] font-bold text-[#121C2A] tracking-[-0.015em] leading-[1.15] text-[clamp(1.5rem,1.77vw,2.125rem)] ${RISE} ${DELAY[2]}`}
+                    >
+                      {t.title}
+                    </h3>
+                    <p
+                      className={`mt-[clamp(0.5rem,0.7vw,0.85rem)] font-semibold text-[#121C2A] text-[clamp(1rem,1.15vw,1.375rem)] ${RISE} ${DELAY[3]}`}
+                    >
+                      {t.name}
+                    </p>
+                    <p
+                      className={`mt-[7px] max-sm:mt-[5px] font-bold uppercase tracking-[0.04em] text-[#02019B] text-[1rem] ${RISE} ${DELAY[3]}`}
+                    >
+                      {t.role}
+                    </p>
+                  </div>
                 </div>
-                <span className="text-slate-500 text-sm font-medium">Verified Purchase</span>
-              </div>
-            </div>
-            
-          </div>
-        </Container>
+
+                <p
+                  className={`mt-[clamp(1rem,3.1vw,3.7rem)] italic text-[#121C2A] leading-[1.61] text-[clamp(1rem,0.94vw,1.125rem)] ${RISE} ${DELAY[4]}`}
+                >
+                  {t.quote}
+                </p>
+
+                <div
+                  className={`mt-[clamp(1.75rem,2.3vw,2.8rem)] flex items-center gap-3 ${RISE} ${DELAY[5]}`}
+                >
+                  <span className="flex items-center gap-1">
+                    {Array.from({ length: t.rating }).map((_, i) => (
+                      <Star key={i} className="w-5 h-5 fill-(--color-primary) text-(--color-primary)" aria-hidden />
+                    ))}
+                  </span>
+                  <span className="text-[#545F73] text-[clamp(0.75rem,0.73vw,0.875rem)]">
+                    Verified Review
+                  </span>
+                </div>
+              </SwiperSlide>
+            ))}
+          </Swiper>
+        </div>
       </div>
+
+      <style>{`
+        /* Swiper's stylesheet loads after Tailwind, so its bare .swiper-slide rules
+           beat equal-specificity utilities. Two-class selectors win. */
+        .thumbs-swiper .swiper-slide { width: auto; }
+        /* At md+ all four thumbs fit and Swiper locks the strip (it exposes this only
+           as swiper.isLocked — no class is emitted), so centre them as the Figma does.
+           Revisit if enough testimonials are added to overflow at this width. */
+        @media (min-width: 1025px) {
+          .thumbs-swiper .swiper-wrapper { justify-content: center; }
+        }
+        .panel-swiper .swiper-slide { height: auto; }
+      `}</style>
     </section>
   );
 }

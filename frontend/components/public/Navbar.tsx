@@ -42,6 +42,16 @@ export function Navbar({ locale = 'en' }: { locale?: string }) {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // Close every menu whenever the route changes. Without this the desktop
+  // dropdown's backdrop (fixed inset-0, bg-black/50 + backdrop-blur) survives
+  // client-side navigation and leaves the destination page blurred — and since
+  // that backdrop is pointer-events-none, it cannot be clicked away either.
+  useEffect(() => {
+    setAboutDropdownOpen(false);
+    setMobileMenuOpen(false);
+    setMobileAboutOpen(false);
+  }, [pathname]);
+
   useEffect(() => {
     if (mobileMenuOpen) {
       lenis?.stop();
@@ -72,13 +82,13 @@ export function Navbar({ locale = 'en' }: { locale?: string }) {
     return cleanUrl === '/' ? `/${locale}` : `/${locale}${cleanUrl}`;
   };
 
-  const NavLink = ({ href, children, hasDropdown = false, isOpen = false }: { href: string; children: React.ReactNode; hasDropdown?: boolean; isOpen?: boolean }) => {
+  const NavLink = ({ href, children, hasDropdown = false, isOpen = false, className = '' }: { href: string; children: React.ReactNode; hasDropdown?: boolean; isOpen?: boolean; className?: string }) => {
     const active = isLinkActive(href);
     return (
       <Link
         href={getHref(href)}
-        className={`flex items-center gap-1 text-[15px] font-semibold transition-colors ${active ? 'text-[#048ED6]' : 'text-gray-800 hover:text-[#048ED6]'
-          }`}
+        className={`flex items-center gap-1 text-[15px] font-semibold transition-colors outline-none ${active ? 'text-[#048ED6]' : 'text-gray-800 hover:text-[#048ED6]'
+          } ${className}`}
       >
         {children}
         {hasDropdown && <ChevronDown className={`w-4 h-4 transition-transform duration-500 ${isOpen ? '-rotate-180' : 'lg:group-hover:-rotate-180'}`} />}
@@ -88,7 +98,7 @@ export function Navbar({ locale = 'en' }: { locale?: string }) {
 
   return (
     <>
-    <header className={`sticky top-0 z-50 bg-white border-b border-gray-100 shadow-sm transition-transform duration-500 ${isVisible ? 'translate-y-0' : '-translate-y-[calc(100%+40px)]'}`}>
+    <header className={`sticky top-0 z-50 bg-white border-b border-gray-100 transition-transform duration-500 ${isVisible ? 'translate-y-0' : '-translate-y-[calc(100%+40px)]'}`}>
       <Container className='max-w-[1920px] px-[var(--spacing-side)]'>
         <div className="w-[300px] h-[40px] max-lg:hidden flex justify-center items-end pointer-events-none absolute bottom-[-12px] left-1/2 -translate-x-1/2 z-[10]">
           <Image
@@ -131,12 +141,21 @@ export function Navbar({ locale = 'en' }: { locale?: string }) {
 
                 {/* About Dropdown */}
                 <div
-                  className="group relative h-full flex items-center"
+                  className="group relative h-full flex items-center outline-none cursor-pointer"
                   onClick={() => setAboutDropdownOpen(!aboutDropdownOpen)}
                 >
                   <NavLink href="/about" hasDropdown isOpen={aboutDropdownOpen} className="w-full h-full relative cursor-pointer">About</NavLink>
                   
                   <div
+                    // Clicks inside the panel must not reach the wrapper's toggle above:
+                    // it would flip the dropdown *open*, and since the backdrop is
+                    // pointer-events-none the page would be left blurred with no way to
+                    // dismiss it. Most visible when picking the page you are already on,
+                    // where the route never changes so no navigation reset fires.
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setAboutDropdownOpen(false);
+                    }}
                     className={`lg:absolute lg:top-full z-50 lg:left-[-150px] pointer-events-none w-full lg:w-[clamp(600px,50vw,690px)] bg-white rounded-2xl shadow-2xl border border-gray-100 p-4 transition-all duration-300 origin-top ${aboutDropdownOpen
                       ? 'opacity-100 visible scale-100 pointer-events-auto'
                       : 'opacity-0 invisible scale-95 pointer-events-none lg:group-hover:opacity-100 lg:group-hover:visible lg:group-hover:scale-100 lg:group-hover:pointer-events-auto'
@@ -248,7 +267,7 @@ export function Navbar({ locale = 'en' }: { locale?: string }) {
 
       {/* Mobile Menu Drawer */}
       {mobileMenuOpen && (
-        <div className="lg:hidden bg-white border-t border-gray-100 pt-4 pb-6 shadow-xl absolute w-full left-0 z-50 overflow-hidden transition-all duration-300 origin-top animate-in fade-in slide-in-from-top-2">
+        <div className="lg:hidden bg-white border-t border-gray-100 pt-4 pb-6 shadow-xl absolute w-full left-0 z-550 overflow-hidden transition-all duration-300 origin-top animate-in fade-in slide-in-from-top-2">
           <div className="flex flex-col">
             <Link href={getHref('/')} className="px-[var(--spacing-side)] py-3 rounded-lg text-[18px] font-semibold text-gray-800">Home</Link>
             
@@ -302,10 +321,6 @@ export function Navbar({ locale = 'en' }: { locale?: string }) {
       />
     )}
 
-    {/* Desktop Mega Menu Overlay */}
-    <div 
-      className={`fixed inset-0 z-[145] bg-black/50 backdrop-blur-sm hidden lg:block transition-all duration-300 pointer-events-none ${aboutDropdownOpen ? 'opacity-100 visible' : 'opacity-0 invisible lg:group-hover:opacity-100 lg:group-hover:visible'}`} 
-    />
     </>
   );
 }
