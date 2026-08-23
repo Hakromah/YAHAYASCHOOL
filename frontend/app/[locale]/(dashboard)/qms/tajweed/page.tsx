@@ -72,7 +72,7 @@ export default function TajweedEvaluationsPage() {
       setOfferings(fetchedOfferings);
       setTerms(fetchedTerms);
       
-      if (fetchedOfferings.length > 0) setSelectedOfferingId(String(fetchedOfferings[0].id));
+      if (fetchedOfferings.length > 0) setSelectedOfferingId(fetchedOfferings[0].documentId || String(fetchedOfferings[0].id));
       if (fetchedTerms.length > 0) setSelectedTermId(String(fetchedTerms[0].id));
     } catch (error) {
       console.error(error);
@@ -94,7 +94,7 @@ export default function TajweedEvaluationsPage() {
         apiClient.get('/student-enrollments', {
           params: {
             filters: {
-              courseOffering: { id: { $eq: Number(selectedOfferingId) } },
+              courseOffering: { documentId: { $eq: selectedOfferingId } },
               enrollmentStatus: { $eq: 'active' }
             },
             populate: ['student'],

@@ -9,6 +9,7 @@ export type EnterpriseModulePrefix =
   | 'TRN' // Transport
   | 'LIB' // Library
   | 'INV' // Inventory
+  | 'ISS' // Stock Issue
   | 'AST' // Assets
   | 'PRC' // Procurement
   | 'PR'  // Purchase Requisition

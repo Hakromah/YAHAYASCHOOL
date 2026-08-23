@@ -90,7 +90,7 @@ export default function HifzTrackingWorkspace() {
 
         // Store NUMERIC id — relation filters require integer, not documentId string.
         if (items.length > 0) {
-          setSelectedOfferingId(String(items[0].id));
+          setSelectedOfferingId(items[0].documentId || String(items[0].id));
         }
       } catch (error) {
         toast.error('Failed to load course offerings');
@@ -116,7 +116,7 @@ export default function HifzTrackingWorkspace() {
             apiClient.get('/student-enrollments', {
                 params: {
                     filters: {
-                      courseOffering: { id: { $eq: Number(selectedOfferingId) } },
+                      courseOffering: { documentId: { $eq: selectedOfferingId } },
                       enrollmentStatus: { $eq: 'active' }
                     },
                     populate: ['student'],

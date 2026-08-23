@@ -12,6 +12,8 @@ import { apiClient } from '@/services/api.service';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
+import { useNotifications } from '@/hooks/useNotifications';
+
 interface NotificationItem {
   id: number | string;
   title: string;
@@ -25,95 +27,39 @@ interface NotificationItem {
 
 export function NotificationCenter() {
   const [isOpen, setIsOpen] = useState(false);
-  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [activeTab, setActiveTab] = useState<'all' | 'unread' | 'academic' | 'finance'>('all');
-  const [isLoading, setIsLoading] = useState(true);
 
-  const { userRole } = usePermissions();
+  const {
+    notifications: rawNotifications,
+    unreadCount,
+    isLoading,
+    markAsRead,
+    markAllAsRead,
+    deleteNotification,
+  } = useNotifications();
 
-  useEffect(() => {
-    async function fetchNotifications() {
-      setIsLoading(true);
-      try {
-        const res = await apiClient.get('/notifications?sort[0]=createdAt:desc&pagination[limit]=20');
-        const data = res.data?.data || [];
-        if (data.length > 0) {
-          setNotifications(
-            data.map((item: any) => ({
-              id: item.id,
-              title: item.title || 'Notification',
-              message: item.message || item.content || '',
-              type: item.type || 'info',
-              channel: item.channel || 'in-app',
-              isRead: item.isRead ?? false,
-              createdAt: item.createdAt || new Date().toISOString(),
-              link: item.link,
-            }))
-          );
-        } else {
-          // Generate role-specific live sample notifications if empty in Strapi
-          generateRoleSpecificDefaults(userRole);
-        }
-      } catch (e) {
-        generateRoleSpecificDefaults(userRole);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    fetchNotifications();
-  }, [userRole]);
-
-  function generateRoleSpecificDefaults(role: string | null | undefined) {
-    const now = new Date().toISOString();
-    if (role === 'teacher') {
-      setNotifications([
-        { id: 1, title: 'Homework Submitted', message: 'Ahmad Abdullahi submitted Biology SS3 Homework #4.', type: 'academic', isRead: false, createdAt: now, link: '/lms/homework' },
-        { id: 2, title: 'Exam Timetable Published', message: 'First Term Examination schedule is now live.', type: 'info', isRead: false, createdAt: now, link: '/assessment/exams' },
-        { id: 3, title: 'Student Absent', message: 'Fatima Musa was marked absent in Chemistry Section A.', type: 'warning', isRead: true, createdAt: now, link: '/lms/attendance' },
-      ]);
-    } else if (role === 'student') {
-      setNotifications([
-        { id: 1, title: 'Homework Due Soon', message: 'Mathematics Trigonometry assignment is due tomorrow at 8:00 AM.', type: 'academic', isRead: false, createdAt: now, link: '/lms/homework' },
-        { id: 2, title: 'Results Published', message: 'Mid-term continuous assessment scores are now available.', type: 'success', isRead: false, createdAt: now, link: '/results/report-cards' },
-      ]);
-    } else if (role === 'parent') {
-      setNotifications([
-        { id: 1, title: 'Fee Due Reminder', message: 'Second Term Tuition Fee balance is due by Friday.', type: 'finance', isRead: false, createdAt: now, link: '/finance' },
-        { id: 2, title: 'Child Attendance Alert', message: 'Your ward Yusuf was marked present today at 7:45 AM.', type: 'info', isRead: true, createdAt: now, link: '/lms/attendance' },
-      ]);
-    } else if (role === 'director' || role === 'super-administrator') {
-      setNotifications([
-        { id: 1, title: 'Pending Approval', message: '5 Report Cards require Director signature & verification.', type: 'warning', isRead: false, createdAt: now, link: '/results/director-approval' },
-        { id: 2, title: 'New Student Enrolled', message: 'Zainab Ibrahim completed registration for JSS1.', type: 'success', isRead: false, createdAt: now, link: '/students' },
-        { id: 3, title: 'System Backup Completed', message: 'Database & Media storage snapshot created successfully.', type: 'info', isRead: true, createdAt: now, link: '/settings' },
-      ]);
-    } else {
-      setNotifications([
-        { id: 1, title: 'Welcome to YAHAYASCOOL', message: 'Your enterprise ERP account is active and verified.', type: 'success', isRead: false, createdAt: now },
-      ]);
-    }
-  }
-
-  const unreadCount = notifications.filter((n) => !n.isRead).length;
+  const notifications: NotificationItem[] = rawNotifications.map((n) => ({
+    id: n.id,
+    title: n.title,
+    message: n.body,
+    type: n.priority === 'high' ? 'warning' : n.priority === 'urgent' ? 'alert' : 'info',
+    channel: 'in-app',
+    isRead: n.status === 'read',
+    createdAt: n.createdAt,
+    link: (n as any).link || (n.metadata?.link as string) || undefined,
+  }));
 
   const handleMarkAsRead = async (id: number | string) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
-    );
-    try {
-      if (typeof id === 'number') {
-        await apiClient.put(`/notifications/${id}`, { data: { isRead: true } });
-      }
-    } catch (e) { /* ignore */ }
+    await markAsRead(id);
   };
 
   const handleMarkAllAsRead = async () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+    await markAllAsRead();
     toast.success('All notifications marked as read');
   };
 
-  const handleDelete = (id: number | string) => {
-    setNotifications((prev) => prev.filter((n) => n.id !== id));
+  const handleDelete = async (id: number | string) => {
+    await deleteNotification(id);
     toast.success('Notification removed');
   };
 

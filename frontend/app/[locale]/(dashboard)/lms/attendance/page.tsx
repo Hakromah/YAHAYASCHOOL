@@ -75,9 +75,14 @@ export default function AttendancePage() {
       } else {
         // Teacher/Admin load
         const [yearsRes, termsRes, offeringsRes] = await Promise.all([
-          apiClient.get('/academic-years?pagination[limit]=100'),
-          apiClient.get('/academic-terms?pagination[limit]=100'),
-          apiClient.get('/course-offerings?populate=[\'subject\',\'teacher\',\'gradeLevel\',\'academicSection\']&pagination[limit]=250')
+          apiClient.get('/academic-years', { params: { 'pagination[limit]': 100 } }),
+          apiClient.get('/academic-terms', { params: { 'pagination[limit]': 100 } }),
+          apiClient.get('/course-offerings', {
+            params: {
+              'populate': ['subject', 'teacher', 'gradeLevel', 'academicSection'],
+              'pagination[limit]': 250
+            }
+          })
         ]);
 
         const allYears = yearsRes.data?.data || [];

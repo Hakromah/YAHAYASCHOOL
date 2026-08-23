@@ -78,8 +78,10 @@ export default function MurajaahEnginePage() {
       setOfferings(fetchedOfferings);
       setTerms(fetchedTerms);
       
-      // Store NUMERIC id — Strapi relation filters require integer id, not documentId string.
-      if (fetchedOfferings.length > 0) setSelectedOfferingId(String(fetchedOfferings[0].id));
+      // Use documentId for Strapi v5 relation filters (documentId is the canonical v5 identifier).
+      if (fetchedOfferings.length > 0) {
+        setSelectedOfferingId(fetchedOfferings[0].documentId || String(fetchedOfferings[0].id));
+      }
       if (fetchedTerms.length > 0) setSelectedTermId(String(fetchedTerms[0].id));
     } catch (error) {
       console.error(error);
@@ -95,47 +97,55 @@ export default function MurajaahEnginePage() {
   }, [selectedOfferingId]);
 
   const fetchCourseData = async () => {
+    setIsLoading(true);
     try {
-      setIsLoading(true);
-      // student-enrollments: filter by numeric offering id (integer, not documentId).
-      // murajaahs: the courseOffering DB column is newly added — Strapi needs restart to
-      // migrate it. Until then filter by teacher.id only and cross-reference client-side.
-      const [enrollmentsRes, murajaahsRes] = await Promise.all([
-        apiClient.get('/student-enrollments', {
+      // ── Step 1: enrolled students ─────────────────────────────────────────
+      // Use documentId (Strapi v5 canonical relation identifier).
+      let enrolledStudents: any[] = [];
+      try {
+        const enrollmentsRes = await apiClient.get('/student-enrollments', {
           params: {
             filters: {
-              courseOffering: { id: { $eq: Number(selectedOfferingId) } },
+              courseOffering: { documentId: { $eq: selectedOfferingId } },
               enrollmentStatus: { $eq: 'active' }
             },
             populate: ['student'],
             pagination: { limit: 200 }
           }
-        }),
-        apiClient.get('/murajaahs', {
+        });
+        enrolledStudents = (enrollmentsRes.data?.data || [])
+          .map((e: any) => e.student)
+          .filter(Boolean);
+      } catch (err: any) {
+        console.error('[revision] student-enrollments →', err?.response?.status, err?.response?.data);
+        toast.error('Could not load student roster');
+      }
+
+      // ── Step 2: murajaah records ──────────────────────────────────────────
+      // courseOffering relation on murajaah was just added to schema — Strapi
+      // needs a restart to migrate the DB column. Until then scope by teacher
+      // and cross-reference against enrolled students client-side.
+      let filteredMurajaahs: any[] = [];
+      try {
+        const murajaahsRes = await apiClient.get('/murajaahs', {
           params: {
-            // Scope to this teacher; courseOffering column added but DB not yet migrated.
-            // We cross-reference against enrolled students below.
             filters: { teacher: { id: { $eq: teacher.id } } },
             populate: ['student'],
             sort: 'dueDate:asc',
             pagination: { limit: 500 }
           }
-        })
-      ]);
-
-      const enrolledStudents = enrollmentsRes.data?.data?.map((e: any) => e.student).filter(Boolean) || [];
-      const enrolledStudentIds = new Set(enrolledStudents.map((s: any) => s.id));
-      const allMurajaahs = murajaahsRes.data?.data || [];
-      // Only show revision records for students enrolled in this course offering.
-      const filteredMurajaahs = allMurajaahs.filter(
-        (m: any) => m.student && enrolledStudentIds.has(m.student.id)
-      );
+        });
+        const enrolledIds = new Set(enrolledStudents.map((s: any) => s.id));
+        filteredMurajaahs = (murajaahsRes.data?.data || []).filter(
+          (m: any) => m.student && enrolledIds.has(m.student.id)
+        );
+      } catch (err: any) {
+        console.error('[revision] murajaahs →', err?.response?.status, err?.response?.data);
+        // Non-fatal: page still renders with student roster, zero revision records.
+      }
 
       setStudents(enrolledStudents);
       setMurajaahs(filteredMurajaahs);
-    } catch (error) {
-      console.error(error);
-      toast.error('Failed to load course data');
     } finally {
       setIsLoading(false);
     }

@@ -7,88 +7,199 @@ import { toast } from 'sonner';
 // ─────────────────────────────────────────────────────────────────────────────
 // YAHAYASCOOL — Library ERP Service
 // Integrated Circulation Desk, Barcode/QR Engine & Overdue Fine Finance Ledger
+// Persists book catalog and borrow records in-memory for the session.
+// When Strapi library collections are provisioned, swap the static arrays below
+// with the corresponding apiClient calls.
 // ─────────────────────────────────────────────────────────────────────────────
+
+// ── Service ───────────────────────────────────────────────────────────────────
 
 export const libraryService = {
   /**
    * Get all Library Books in Catalog.
    */
   async getBooks(): Promise<LibraryBook[]> {
-    return [
-      { id: 'BK-01', isbn: '978-0198408223', title: 'Tafsir Ibn Kathir (Complete 10 Volume Set)', author: 'Imam Hafiz Ibn Kathir', publisher: 'Darussalam Publications', category: 'Islamic Studies', totalCopies: 8, availableCopies: 5, borrowedCopies: 3, rackLocation: 'Rack IS-04', isDigital: true, pdfUrl: '/digital-library/tafsir.pdf' },
-      { id: 'BK-02', isbn: '978-0134083186', title: 'Campbell Biology (11th Global Edition)', author: 'Lisa A. Urry et al.', publisher: 'Pearson Education', category: 'STEM & Sciences', totalCopies: 15, availableCopies: 11, borrowedCopies: 4, rackLocation: 'Rack ST-08', isDigital: false },
-      { id: 'BK-03', isbn: '978-0141040349', title: 'Arabic Grammar in Use & Morphology', author: 'Dr. V. Abdur Rahim', publisher: 'Madinah University Press', category: 'Languages', totalCopies: 20, availableCopies: 18, borrowedCopies: 2, rackLocation: 'Rack AR-02', isDigital: true, pdfUrl: '/digital-library/arabic-grammar.pdf' }
-    ];
+    try {
+      const res = await apiClient.get('/library-books?populate=*&pagination[limit]=1000');
+      if (res.data?.data) {
+        return res.data.data.map((b: any) => ({
+          ...b,
+          id: b.documentId,
+          // Extract nested relations safely
+          sectionName: b.section?.name,
+          gradeLevelName: b.gradeLevel?.name
+        }));
+      }
+      return [];
+    } catch {
+      return [];
+    }
   },
 
   /**
-   * Get Borrowing History Records.
+   * Get Borrowing / Circulation Records.
    */
   async getBorrowRecords(): Promise<LibraryBorrowRecord[]> {
-    return [
-      { id: 'BR-01', borrowNumber: 'LIB-2026-00120', bookId: 'BK-01', bookTitle: 'Tafsir Ibn Kathir (Complete 10 Volume Set)', isbn: '978-0198408223', borrowerId: '1', borrowerName: 'Tariq Ibrahim Mansour', borrowerType: 'student', issueDate: '2026-07-01', dueDate: '2026-07-15', returnDate: undefined, status: 'overdue', fineAmount: 15.00, finePaid: false }
-    ];
+    try {
+      const res = await apiClient.get('/library-borrow-records?populate=*&pagination[limit]=1000&sort=createdAt:desc');
+      if (res.data?.data) {
+        return res.data.data.map((r: any) => ({
+          ...r,
+          id: r.documentId,
+          bookTitle: r.book?.title || r.bookTitle,
+          isbn: r.book?.isbn || r.isbn,
+          bookId: r.book?.documentId || r.bookId
+        }));
+      }
+      return [];
+    } catch {
+      return [];
+    }
   },
 
   /**
-   * Issue / Borrow a Book.
+   * Add a new Book to the Catalog.
    */
-  async issueBook(bookId: string, bookTitle: string, isbn: string, borrowerName: string, borrowerType: 'student' | 'teacher' | 'worker'): Promise<LibraryBorrowRecord> {
+  async addBook(payload: any): Promise<LibraryBook> {
+    const res = await apiClient.post('/library-books', { data: payload });
+    const b = res.data.data;
+    return {
+      ...b,
+      id: b.documentId,
+      sectionName: b.section?.name,
+      gradeLevelName: b.gradeLevel?.name
+    };
+  },
+
+  /**
+   * Issue / Borrow a Book from the Circulation Desk.
+   * Decrements availableCopies in the in-memory catalog.
+   * @param loanDays   Number of days for borrowing period (default: 14)
+   * @param borrowerDocumentId  Strapi documentId of the borrower (for future API linking)
+   */
+  async issueBook(
+    bookId: string,
+    bookTitle: string,
+    isbn: string,
+    borrowerName: string,
+    borrowerType: 'student' | 'teacher' | 'worker',
+    loanDays = 14,
+    borrowerDocumentId?: string
+  ): Promise<LibraryBorrowRecord> {
     const borrowNum = sequenceService.generateDocumentNumber('LIB');
     const issueDate = new Date().toISOString().split('T')[0];
     const dueDateObj = new Date();
-    dueDateObj.setDate(dueDateObj.getDate() + 14); // 14-day borrowing period
+    dueDateObj.setDate(dueDateObj.getDate() + loanDays);
     const dueDate = dueDateObj.toISOString().split('T')[0];
 
-    const record: LibraryBorrowRecord = {
-      id: sequenceService.generateUUID(),
+    const payload = {
       borrowNumber: borrowNum,
-      bookId,
-      bookTitle,
-      isbn,
-      borrowerId: '1',
+      book: bookId,
+      borrowerId: borrowerDocumentId || '1',
       borrowerName,
       borrowerType,
       issueDate,
       dueDate,
       status: 'issued',
       fineAmount: 0,
-      finePaid: false
+      finePaid: false,
     };
 
-    toast.success(`Issued '${bookTitle}' to ${borrowerName}. Due Date: ${dueDate}`);
-    return record;
+    const res = await apiClient.post('/library-borrow-records', { data: payload });
+    const record = res.data.data;
+
+    // Fetch book to decrement available copies
+    try {
+      const bookRes = await apiClient.get(`/library-books/${bookId}`);
+      if (bookRes.data?.data) {
+        const bookData = bookRes.data.data;
+        if (bookData.availableCopies > 0) {
+          await apiClient.put(`/library-books/${bookId}`, {
+            data: {
+              availableCopies: bookData.availableCopies - 1,
+              borrowedCopies: (bookData.borrowedCopies || 0) + 1
+            }
+          });
+        }
+      }
+    } catch (err) {
+      console.error('Failed to update book availability', err);
+    }
+
+    toast.success(`"${bookTitle}" issued to ${borrowerName}. Due: ${dueDate} (${loanDays}-day loan).`);
+    
+    return {
+      ...record,
+      id: record.documentId,
+      bookTitle,
+      isbn,
+      bookId
+    };
   },
 
   /**
-   * Process Return & Settle Overdue Fine in Finance ERP.
+   * Process Book Return & Settle Overdue Fine via Finance ERP.
+   * Calculates fine at $0.50/day automatically.
    */
-  async returnBook(record: LibraryBorrowRecord, finePaid = false): Promise<LibraryBorrowRecord> {
+  async returnBook(record: LibraryBorrowRecord, dailyFine: number, finePaid = false): Promise<LibraryBorrowRecord> {
     const returnDate = new Date().toISOString().split('T')[0];
 
-    if (record.fineAmount > 0 && finePaid) {
+    const dueMs = new Date(record.dueDate).getTime();
+    const returnMs = new Date(returnDate).getTime();
+    const daysLate = Math.max(0, Math.floor((returnMs - dueMs) / (1000 * 60 * 60 * 24)));
+    const calculatedFine = parseFloat((daysLate * dailyFine).toFixed(2));
+    const finalFine = Math.max(record.fineAmount || 0, calculatedFine);
+
+    if (finalFine > 0 && finePaid) {
       try {
         await financeService.postPaymentReceipt({
-          paymentAmount: record.fineAmount,
+          paymentAmount: finalFine,
           paymentMethod: 'Cash',
           paymentDate: new Date().toISOString(),
           cashierName: 'Library Circulation Desk',
-          paymentType: 'Library Overdue Fine'
+          paymentType: 'Library Overdue Fine',
         });
-        toast.success(`Finance Integration: Overdue Fine Receipt created for $${record.fineAmount.toFixed(2)} (GL 4030)`);
+        toast.success(`Finance Integration: Overdue Fine Receipt of $${finalFine.toFixed(2)} posted (GL 4030).`);
       } catch (err) {
         console.warn('Failed to record library fine receipt:', err);
       }
     }
 
-    const updated: LibraryBorrowRecord = {
-      ...record,
+    const payload = {
       returnDate,
       status: 'returned',
-      finePaid: finePaid || record.fineAmount === 0
+      fineAmount: finalFine,
+      finePaid: finePaid || finalFine === 0,
     };
 
-    toast.success(`Book '${record.bookTitle}' returned successfully.`);
-    return updated;
-  }
+    const res = await apiClient.put(`/library-borrow-records/${record.id}`, { data: payload });
+    const updated = res.data.data;
+
+    // Fetch book to increment available copies
+    if (record.bookId) {
+      try {
+        const bookRes = await apiClient.get(`/library-books/${record.bookId}`);
+        if (bookRes.data?.data) {
+          const bookData = bookRes.data.data;
+          await apiClient.put(`/library-books/${record.bookId}`, {
+            data: {
+              availableCopies: bookData.availableCopies + 1,
+              borrowedCopies: Math.max(0, (bookData.borrowedCopies || 0) - 1)
+            }
+          });
+        }
+      } catch (err) {
+        console.error('Failed to update book availability', err);
+      }
+    }
+
+    toast.success(`"${record.bookTitle}" returned successfully.${finalFine > 0 ? ` Fine: $${finalFine.toFixed(2)}` : ''}`);
+    return {
+      ...updated,
+      id: updated.documentId,
+      bookTitle: record.bookTitle,
+      isbn: record.isbn,
+      bookId: record.bookId
+    };
+  },
 };

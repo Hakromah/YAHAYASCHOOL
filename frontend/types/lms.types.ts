@@ -235,7 +235,7 @@ export interface AcademicResource {
   url?: string;
   file?: any;
   subject?: Subject;
-  department?: Department;
+  section?: Section;
   author?: Teacher;
   createdAt: string;
   updatedAt: string;

@@ -59,6 +59,14 @@
       "relation": "manyToOne",
       "target": "api::department.department"
     },
+    "section": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::section.section"
+    },
+    "tags": {
+      "type": "json"
+    },
     "author": {
       "type": "relation",
       "relation": "manyToOne",

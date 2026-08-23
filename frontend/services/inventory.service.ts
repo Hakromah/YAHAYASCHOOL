@@ -7,42 +7,277 @@ import { toast } from 'sonner';
 // ─────────────────────────────────────────────────────────────────────────────
 // YAHAYASCOOL — Inventory ERP Service
 // Multi-Warehouse Supply Chain, Valuation Engine (FIFO/WAC) & COGS GL Accounting
+// All data fetched live from Strapi. No in-memory mocks.
 // ─────────────────────────────────────────────────────────────────────────────
 
+const mapItem = (raw: any): InventoryItem => ({
+  id: raw.documentId,
+  itemCode: raw.itemCode,
+  name: raw.name,
+  category: raw.category,
+  unitOfMeasure: raw.unitOfMeasure,
+  warehouseId: raw.warehouse?.documentId || '',
+  warehouseName: raw.warehouse?.name || '—',
+  quantityOnHand: raw.quantityOnHand ?? 0,
+  minimumReorderLevel: raw.minimumReorderLevel ?? 0,
+  unitCostUSD: raw.unitCost ?? 0,
+  totalValueUSD: raw.totalValue ?? 0,
+  valuationMethod: raw.valuationMethod ?? 'FIFO',
+  barcode: raw.barcode || '',
+  status: raw.status ?? 'in_stock',
+  description: raw.description || '',
+});
+
+const mapMovement = (raw: any): InventoryMovement => ({
+  id: raw.documentId,
+  movementNumber: raw.movementNumber,
+  type: raw.type,
+  itemCode: raw.item?.itemCode || '',
+  itemName: raw.item?.name || '',
+  quantity: raw.quantity,
+  sourceWarehouse: raw.sourceWarehouse,
+  destinationWarehouse: raw.destinationWarehouse,
+  unitCostUSD: raw.unitCost ?? 0,
+  totalCostUSD: raw.totalCost ?? 0,
+  performedBy: raw.performedBy || '',
+  date: raw.movementDate || raw.createdAt?.split('T')[0] || '',
+  referenceDocNumber: raw.referenceDocNumber,
+  vendorSupplier: raw.vendorSupplier,
+  notes: raw.notes,
+});
+
 export const inventoryService = {
-  /**
-   * Get All Warehouses.
-   */
+  // ─── Warehouses ─────────────────────────────────────────────────────────────
   async getWarehouses(): Promise<InventoryWarehouse[]> {
-    return [
-      { id: 'WH-01', code: 'WH-MAIN-01', name: 'Central Campus Logistics Depot', location: 'Building C - Ground Level', managerName: 'Brother Musa Kamara', totalItems: 142, totalValuationUSD: 84500.00 },
-      { id: 'WH-02', code: 'WH-STEM-02', name: 'Science & STEM Lab Store', location: 'Science Wing Floor 2', managerName: 'Dr. Sarah Al-Hassan', totalItems: 48, totalValuationUSD: 32100.00 }
-    ];
+    try {
+      const res = await apiClient.get('/inventory-warehouses?pagination[limit]=100&sort=name:asc');
+      const data = res.data?.data || [];
+      return data.map((w: any) => ({
+        id: w.documentId,
+        code: w.code,
+        name: w.name,
+        location: w.location || '',
+        managerName: w.managerName || '',
+        totalItems: 0,
+        totalValuationUSD: 0,
+      }));
+    } catch {
+      return [];
+    }
   },
 
-  /**
-   * Get All Stock Items.
-   */
+  async addWarehouse(payload: { code: string; name: string; location?: string; managerName?: string }): Promise<InventoryWarehouse> {
+    const res = await apiClient.post('/inventory-warehouses', { data: payload });
+    const w = res.data.data;
+    return { id: w.documentId, code: w.code, name: w.name, location: w.location || '', managerName: w.managerName || '', totalItems: 0, totalValuationUSD: 0 };
+  },
+
+  async deleteWarehouse(id: string): Promise<void> {
+    await apiClient.delete(`/inventory-warehouses/${id}`);
+  },
+
+  // ─── Items ──────────────────────────────────────────────────────────────────
   async getItems(): Promise<InventoryItem[]> {
-    return [
-      { id: 'ITEM-01', itemCode: 'INV-SKU-1001', name: 'A4 High-Grade Examination Paper Reams', category: 'Stationery & Books', unitOfMeasure: 'boxes', warehouseId: 'WH-01', warehouseName: 'Central Campus Logistics Depot', quantityOnHand: 250, minimumReorderLevel: 50, unitCostUSD: 18.50, totalValueUSD: 4625.00, valuationMethod: 'FIFO', barcode: '8901234567891', status: 'in_stock' },
-      { id: 'ITEM-02', itemCode: 'INV-SKU-2004', name: 'Microscope Glass Slides & Cover Slips Set', category: 'Lab Consumables', unitOfMeasure: 'sets', warehouseId: 'WH-2', warehouseName: 'Science & STEM Lab Store', quantityOnHand: 14, minimumReorderLevel: 20, unitCostUSD: 45.00, totalValueUSD: 630.00, valuationMethod: 'Weighted Average', barcode: '8901234567892', status: 'low_stock' },
-      { id: 'ITEM-03', itemCode: 'INV-SKU-3012', name: 'HP LaserJet Enterprise Toner Cartridge (Black)', category: 'IT Hardware', unitOfMeasure: 'pcs', warehouseId: 'WH-01', warehouseName: 'Central Campus Logistics Depot', quantityOnHand: 32, minimumReorderLevel: 10, unitCostUSD: 85.00, totalValueUSD: 2720.00, valuationMethod: 'FIFO', barcode: '8901234567893', status: 'in_stock' }
-    ];
+    try {
+      const res = await apiClient.get('/inventory-items?populate=warehouse&pagination[limit]=500&sort=createdAt:desc');
+      return (res.data?.data || []).map(mapItem);
+    } catch {
+      return [];
+    }
   },
 
-  /**
-   * Get Stock Movements Log.
-   */
+  async getItemMovements(itemDocumentId: string): Promise<InventoryMovement[]> {
+    try {
+      const res = await apiClient.get(
+        `/inventory-movements?filters[item][documentId][$eq]=${itemDocumentId}&populate=item&pagination[limit]=50&sort=createdAt:desc`
+      );
+      return (res.data?.data || []).map(mapMovement);
+    } catch {
+      return [];
+    }
+  },
+
+  // ─── Movements ──────────────────────────────────────────────────────────────
   async getMovements(): Promise<InventoryMovement[]> {
-    return [
-      { id: 'MOV-01', movementNumber: 'INV-MOV-2026-088', type: 'goods_receipt', itemCode: 'INV-SKU-1001', itemName: 'A4 High-Grade Examination Paper Reams', quantity: 100, destinationWarehouse: 'Central Campus Logistics Depot', unitCostUSD: 18.50, totalCostUSD: 1850.00, performedBy: 'Brother Musa Kamara', date: '2026-07-12', referenceDocNumber: 'PO-2026-00941' }
-    ];
+    try {
+      const res = await apiClient.get('/inventory-movements?populate=item&pagination[limit]=200&sort=createdAt:desc');
+      return (res.data?.data || []).map(mapMovement);
+    } catch {
+      return [];
+    }
   },
 
-  /**
-   * Post Stock Issue / Goods Receipt & Automatically Generate Inventory Asset Journal Entry.
-   */
+  // ─── Add New SKU ─────────────────────────────────────────────────────────────
+  async addItem(payload: {
+    itemCode: string;
+    name: string;
+    description?: string;
+    category: string;
+    unitOfMeasure: string;
+    warehouseId: string;
+    minimumReorderLevel: number;
+    unitCost: number;
+    valuationMethod: string;
+    barcode?: string;
+  }): Promise<InventoryItem> {
+    const data: any = {
+      itemCode: payload.itemCode,
+      name: payload.name,
+      description: payload.description,
+      category: payload.category,
+      unitOfMeasure: payload.unitOfMeasure,
+      minimumReorderLevel: payload.minimumReorderLevel,
+      unitCost: payload.unitCost,
+      totalValue: 0,
+      quantityOnHand: 0,
+      valuationMethod: payload.valuationMethod,
+      barcode: payload.barcode,
+      status: 'in_stock',
+    };
+    if (payload.warehouseId) data.warehouse = payload.warehouseId;
+
+    const res = await apiClient.post('/inventory-items', { data });
+    return mapItem(res.data.data);
+  },
+
+  // ─── Goods Receipt (GRN) ─────────────────────────────────────────────────────
+  async recordGoodsReceipt(payload: {
+    itemId: string;
+    itemCode: string;
+    itemName: string;
+    quantity: number;
+    unitCost: number;
+    warehouseName: string;
+    vendorSupplier?: string;
+    referenceDocNumber?: string;
+    performedBy: string;
+    notes?: string;
+    currentQty: number;
+    currentUnitCost: number;
+    valuationMethod: string;
+  }): Promise<InventoryMovement> {
+    const movNum = sequenceService.generateDocumentNumber('GRN');
+    const totalCost = payload.quantity * payload.unitCost;
+
+    // Weighted Average or FIFO new cost computation
+    const newQty = payload.currentQty + payload.quantity;
+    const newUnitCost =
+      payload.valuationMethod === 'Weighted Average'
+        ? (payload.currentQty * payload.currentUnitCost + totalCost) / newQty
+        : payload.unitCost;
+    const newTotalValue = newQty * newUnitCost;
+    const newStatus = newQty > 0 ? 'in_stock' : 'out_of_stock';
+
+    // 1. Post movement record
+    const movRes = await apiClient.post('/inventory-movements', {
+      data: {
+        movementNumber: movNum,
+        type: 'goods_receipt',
+        quantity: payload.quantity,
+        unitCost: payload.unitCost,
+        totalCost,
+        performedBy: payload.performedBy,
+        referenceDocNumber: payload.referenceDocNumber,
+        vendorSupplier: payload.vendorSupplier,
+        destinationWarehouse: payload.warehouseName,
+        notes: payload.notes,
+        movementDate: new Date().toISOString().split('T')[0],
+        item: payload.itemId,
+      },
+    });
+
+    // 2. Update item stock levels
+    await apiClient.put(`/inventory-items/${payload.itemId}`, {
+      data: {
+        quantityOnHand: newQty,
+        unitCost: newUnitCost,
+        totalValue: newTotalValue,
+        status: newStatus,
+      },
+    });
+
+    // 3. Finance GL integration: Dr. Inventory Asset 1050 / Cr. Accounts Payable 2010
+    try {
+      await financeService.postManualJournalEntry({
+        reference: movNum,
+        description: `Inventory Goods Receipt (GRN): ${payload.itemName} — ${payload.quantity} ${payload.quantity === 1 ? 'unit' : 'units'} @ ${payload.unitCost.toFixed(2)}`,
+        lines: [
+          { id: '1', accountCode: '1050', accountName: 'Inventory Stock Assets', debit: totalCost, credit: 0 },
+          { id: '2', accountCode: '2010', accountName: 'Accounts Payable — Vendor Liabilities', debit: 0, credit: totalCost },
+        ],
+      });
+    } catch (err) {
+      console.warn('[Inventory] GRN finance journal failed:', err);
+    }
+
+    toast.success(`GRN ${movNum} posted — ${payload.quantity} units of "${payload.itemName}" received.`);
+    return mapMovement(movRes.data.data);
+  },
+
+  // ─── Issue Stock ──────────────────────────────────────────────────────────────
+  async recordStockIssue(payload: {
+    itemId: string;
+    itemCode: string;
+    itemName: string;
+    quantity: number;
+    unitCost: number;
+    warehouseName: string;
+    issuedTo: string;
+    purpose?: string;
+    performedBy: string;
+    currentQty: number;
+  }): Promise<InventoryMovement> {
+    const movNum = sequenceService.generateDocumentNumber('ISS');
+    const totalCost = payload.quantity * payload.unitCost;
+
+    const newQty = payload.currentQty - payload.quantity;
+    const newTotalValue = newQty * payload.unitCost;
+
+    // 1. Post movement record
+    const movRes = await apiClient.post('/inventory-movements', {
+      data: {
+        movementNumber: movNum,
+        type: 'goods_issue',
+        quantity: payload.quantity,
+        unitCost: payload.unitCost,
+        totalCost,
+        performedBy: payload.performedBy,
+        sourceWarehouse: payload.warehouseName,
+        destinationWarehouse: payload.issuedTo,
+        notes: payload.purpose,
+        movementDate: new Date().toISOString().split('T')[0],
+        item: payload.itemId,
+      },
+    });
+
+    // 2. Update item stock levels
+    await apiClient.put(`/inventory-items/${payload.itemId}`, {
+      data: {
+        quantityOnHand: newQty,
+        totalValue: Math.max(0, newTotalValue),
+        status: newQty <= 0 ? 'out_of_stock' : newQty <= 5 ? 'low_stock' : 'in_stock',
+      },
+    });
+
+    // 3. Finance GL integration: Dr. COGS/Supplies Expense 5040 / Cr. Inventory Asset 1050
+    try {
+      await financeService.postManualJournalEntry({
+        reference: movNum,
+        description: `Inventory Stock Issue (COGS): ${payload.itemName} — ${payload.quantity} units issued to ${payload.issuedTo}`,
+        lines: [
+          { id: '1', accountCode: '5040', accountName: 'Academic Supplies & Consumables Expense', debit: totalCost, credit: 0 },
+          { id: '2', accountCode: '1050', accountName: 'Inventory Stock Assets', debit: 0, credit: totalCost },
+        ],
+      });
+    } catch (err) {
+      console.warn('[Inventory] Issue finance journal failed:', err);
+    }
+
+    toast.success(`ISS ${movNum} posted — ${payload.quantity} units of "${payload.itemName}" issued to ${payload.issuedTo}.`);
+    return mapMovement(movRes.data.data);
+  },
+
+  // ─── Legacy compat (for any old callers) ────────────────────────────────────
   async recordStockMovement(
     type: InventoryMovement['type'],
     itemCode: string,
@@ -51,52 +286,29 @@ export const inventoryService = {
     unitCostUSD: number,
     warehouseName: string,
     performedBy: string
-  ): Promise<InventoryMovement> {
+  ): Promise<void> {
     const movNum = sequenceService.generateDocumentNumber('INV');
     const totalCostUSD = quantity * unitCostUSD;
-
-    const movement: InventoryMovement = {
-      id: sequenceService.generateUUID(),
-      movementNumber: movNum,
-      type,
-      itemCode,
-      itemName,
-      quantity,
-      destinationWarehouse: warehouseName,
-      unitCostUSD,
-      totalCostUSD,
-      performedBy,
-      date: new Date().toISOString().split('T')[0]
-    };
-
-    // Auto Finance Integration: Capitalize inventory asset or post COGS expense
     try {
       if (type === 'goods_receipt') {
         await financeService.postManualJournalEntry({
           reference: movNum,
-          description: `Inventory Goods Receipt: ${itemName} (${quantity} units)`,
+          description: `Inventory GRN: ${itemName} (${quantity} units)`,
           lines: [
             { id: '1', accountCode: '1050', accountName: 'Inventory Stock Assets', debit: totalCostUSD, credit: 0 },
-            { id: '2', accountCode: '2010', accountName: 'Accounts Payable Vendor Liabilities', debit: 0, credit: totalCostUSD }
-          ]
+            { id: '2', accountCode: '2010', accountName: 'Accounts Payable', debit: 0, credit: totalCostUSD },
+          ],
         });
-        toast.success(`Finance Integration: Posted Inventory Asset Journal (${movNum})`);
       } else if (type === 'goods_issue') {
         await financeService.postManualJournalEntry({
           reference: movNum,
-          description: `Inventory Goods Issue (COGS): ${itemName} (${quantity} units)`,
+          description: `Inventory Issue (COGS): ${itemName} (${quantity} units)`,
           lines: [
-            { id: '1', accountCode: '5040', accountName: 'Academic Supplies & Consumables Expense', debit: totalCostUSD, credit: 0 },
-            { id: '2', accountCode: '1050', accountName: 'Inventory Stock Assets', debit: 0, credit: totalCostUSD }
-          ]
+            { id: '1', accountCode: '5040', accountName: 'Supplies Expense', debit: totalCostUSD, credit: 0 },
+            { id: '2', accountCode: '1050', accountName: 'Inventory Stock Assets', debit: 0, credit: totalCostUSD },
+          ],
         });
-        toast.success(`Finance Integration: Posted COGS Expense Journal (${movNum})`);
       }
-    } catch (err) {
-      console.warn('Failed to post inventory journal entry:', err);
-    }
-
-    toast.success(`Registered Stock Movement ${movNum} for ${itemName}`);
-    return movement;
-  }
+    } catch { }
+  },
 };

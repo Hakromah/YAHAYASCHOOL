@@ -602,6 +602,12 @@ async function seedPublicPermissions(strapi: Core.Strapi): Promise<void> {
       'api::student.student',
       'api::teacher.teacher',
       'api::finance-expense.finance-expense',
+      'api::library-book.library-book',
+      'api::library-borrow-record.library-borrow-record',
+      'api::inventory-warehouse.inventory-warehouse',
+      'api::inventory-item.inventory-item',
+      'api::inventory-movement.inventory-movement',
+      'api::fixed-asset.fixed-asset',
     ];
 
     const actions = ['find', 'findOne', 'create', 'update'];
@@ -654,6 +660,12 @@ async function seedFinancePermissions(strapi: Core.Strapi): Promise<void> {
       'api::finance-currency.finance-currency',
       'api::finance-account.finance-account',
       'api::finance-financial-statement.finance-financial-statement',
+      'api::library-book.library-book',
+      'api::library-borrow-record.library-borrow-record',
+      'api::inventory-warehouse.inventory-warehouse',
+      'api::inventory-item.inventory-item',
+      'api::inventory-movement.inventory-movement',
+      'api::fixed-asset.fixed-asset',
     ];
 
     const actions = [

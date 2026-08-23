@@ -830,7 +830,9 @@ export interface ApiAcademicResourceAcademicResource
     > &
       Schema.Attribute.Private;
     publishedAt: Schema.Attribute.DateTime;
+    section: Schema.Attribute.Relation<'manyToOne', 'api::section.section'>;
     subject: Schema.Attribute.Relation<'manyToOne', 'api::subject.subject'>;
+    tags: Schema.Attribute.JSON;
     title: Schema.Attribute.String & Schema.Attribute.Required;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
@@ -3116,6 +3118,68 @@ export interface ApiFinanceSequenceCounterFinanceSequenceCounter
   };
 }
 
+export interface ApiFixedAssetFixedAsset extends Struct.CollectionTypeSchema {
+  collectionName: 'fixed_assets';
+  info: {
+    displayName: 'Fixed Asset';
+    pluralName: 'fixed-assets';
+    singularName: 'fixed-asset';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    accumulatedDepreciation: Schema.Attribute.Decimal &
+      Schema.Attribute.DefaultTo<0>;
+    assetTag: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique;
+    assignedDepartment: Schema.Attribute.String;
+    assignedStaffName: Schema.Attribute.String;
+    barcode: Schema.Attribute.String;
+    category: Schema.Attribute.Enumeration<
+      [
+        'Buildings & Facilities',
+        'Furniture & Fixtures',
+        'Vehicles & Transport',
+        'IT & Computers',
+        'Lab Equipment',
+        'Printers & Office Supplies',
+        'Network & Telecom',
+      ]
+    > &
+      Schema.Attribute.Required;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    currentBookValue: Schema.Attribute.Decimal & Schema.Attribute.DefaultTo<0>;
+    depreciationMethod: Schema.Attribute.Enumeration<
+      ['Straight Line', 'Declining Balance']
+    > &
+      Schema.Attribute.DefaultTo<'Straight Line'>;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::fixed-asset.fixed-asset'
+    > &
+      Schema.Attribute.Private;
+    location: Schema.Attribute.String;
+    name: Schema.Attribute.String & Schema.Attribute.Required;
+    publishedAt: Schema.Attribute.DateTime;
+    purchaseCost: Schema.Attribute.Decimal & Schema.Attribute.DefaultTo<0>;
+    purchaseDate: Schema.Attribute.Date;
+    salvageValue: Schema.Attribute.Decimal & Schema.Attribute.DefaultTo<0>;
+    status: Schema.Attribute.Enumeration<
+      ['active', 'in_repair', 'disposed', 'impaired']
+    > &
+      Schema.Attribute.DefaultTo<'active'>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    usefulLifeYears: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<5>;
+  };
+}
+
 export interface ApiFooterConfigFooterConfig extends Struct.SingleTypeSchema {
   collectionName: 'footer_configs';
   info: {
@@ -4889,6 +4953,172 @@ export interface ApiHostelWardenHostelWarden
   };
 }
 
+export interface ApiInventoryItemInventoryItem
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'inventory_items';
+  info: {
+    displayName: 'Inventory Item';
+    pluralName: 'inventory-items';
+    singularName: 'inventory-item';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    barcode: Schema.Attribute.String;
+    category: Schema.Attribute.Enumeration<
+      [
+        'Stationery & Books',
+        'Lab Consumables',
+        'IT Hardware',
+        'Cleaning Supplies',
+        'Maintenance Parts',
+        'Uniforms',
+        'Sports Equipment',
+        'Medical Supplies',
+        'Kitchen & Catering',
+        'Other',
+      ]
+    >;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    description: Schema.Attribute.Text;
+    itemCode: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::inventory-item.inventory-item'
+    > &
+      Schema.Attribute.Private;
+    minimumReorderLevel: Schema.Attribute.Decimal &
+      Schema.Attribute.DefaultTo<0>;
+    name: Schema.Attribute.String & Schema.Attribute.Required;
+    publishedAt: Schema.Attribute.DateTime;
+    quantityOnHand: Schema.Attribute.Decimal & Schema.Attribute.DefaultTo<0>;
+    status: Schema.Attribute.Enumeration<
+      ['in_stock', 'low_stock', 'out_of_stock']
+    > &
+      Schema.Attribute.DefaultTo<'in_stock'>;
+    totalValue: Schema.Attribute.Decimal & Schema.Attribute.DefaultTo<0>;
+    unitCost: Schema.Attribute.Decimal & Schema.Attribute.DefaultTo<0>;
+    unitOfMeasure: Schema.Attribute.Enumeration<
+      [
+        'pcs',
+        'boxes',
+        'kg',
+        'liters',
+        'sets',
+        'reams',
+        'pairs',
+        'meters',
+        'units',
+      ]
+    >;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    valuationMethod: Schema.Attribute.Enumeration<
+      ['FIFO', 'Weighted Average']
+    > &
+      Schema.Attribute.DefaultTo<'FIFO'>;
+    warehouse: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::inventory-warehouse.inventory-warehouse'
+    >;
+  };
+}
+
+export interface ApiInventoryMovementInventoryMovement
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'inventory_movements';
+  info: {
+    displayName: 'Inventory Movement';
+    pluralName: 'inventory-movements';
+    singularName: 'inventory-movement';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    destinationWarehouse: Schema.Attribute.String;
+    item: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::inventory-item.inventory-item'
+    >;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::inventory-movement.inventory-movement'
+    > &
+      Schema.Attribute.Private;
+    movementDate: Schema.Attribute.Date;
+    movementNumber: Schema.Attribute.String;
+    notes: Schema.Attribute.Text;
+    performedBy: Schema.Attribute.String;
+    publishedAt: Schema.Attribute.DateTime;
+    quantity: Schema.Attribute.Decimal & Schema.Attribute.Required;
+    referenceDocNumber: Schema.Attribute.String;
+    sourceWarehouse: Schema.Attribute.String;
+    totalCost: Schema.Attribute.Decimal & Schema.Attribute.DefaultTo<0>;
+    type: Schema.Attribute.Enumeration<
+      [
+        'goods_receipt',
+        'goods_issue',
+        'stock_transfer',
+        'adjustment',
+        'cycle_count',
+      ]
+    > &
+      Schema.Attribute.Required;
+    unitCost: Schema.Attribute.Decimal & Schema.Attribute.DefaultTo<0>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    vendorSupplier: Schema.Attribute.String;
+  };
+}
+
+export interface ApiInventoryWarehouseInventoryWarehouse
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'inventory_warehouses';
+  info: {
+    displayName: 'Inventory Warehouse';
+    pluralName: 'inventory-warehouses';
+    singularName: 'inventory-warehouse';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    code: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::inventory-warehouse.inventory-warehouse'
+    > &
+      Schema.Attribute.Private;
+    location: Schema.Attribute.String;
+    managerName: Schema.Attribute.String;
+    name: Schema.Attribute.String & Schema.Attribute.Required;
+    notes: Schema.Attribute.Text;
+    publishedAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
 export interface ApiIslamicExtensionIslamicExtension
   extends Struct.CollectionTypeSchema {
   collectionName: 'islamic_extensions';
@@ -5291,6 +5521,105 @@ export interface ApiLessonPlanLessonPlan extends Struct.CollectionTypeSchema {
     teacher: Schema.Attribute.Relation<'manyToOne', 'api::teacher.teacher'>;
     teachingMethod: Schema.Attribute.Text;
     title: Schema.Attribute.String & Schema.Attribute.Required;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
+export interface ApiLibraryBookLibraryBook extends Struct.CollectionTypeSchema {
+  collectionName: 'library_books';
+  info: {
+    displayName: 'Library Book';
+    pluralName: 'library-books';
+    singularName: 'library-book';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    author: Schema.Attribute.String;
+    availableCopies: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<1>;
+    borrowedCopies: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<0>;
+    category: Schema.Attribute.Enumeration<
+      [
+        'Islamic Studies',
+        'STEM & Sciences',
+        'Languages',
+        'Literature',
+        'History',
+        'General Reference',
+      ]
+    >;
+    coverUrl: Schema.Attribute.String;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    gradeLevel: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::grade-level.grade-level'
+    >;
+    isbn: Schema.Attribute.String & Schema.Attribute.Required;
+    isDigital: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::library-book.library-book'
+    > &
+      Schema.Attribute.Private;
+    pdfUrl: Schema.Attribute.String;
+    publishedAt: Schema.Attribute.DateTime;
+    publisher: Schema.Attribute.String;
+    rackLocation: Schema.Attribute.String;
+    section: Schema.Attribute.Relation<'manyToOne', 'api::section.section'>;
+    title: Schema.Attribute.String & Schema.Attribute.Required;
+    totalCopies: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<1>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
+export interface ApiLibraryBorrowRecordLibraryBorrowRecord
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'library_borrow_records';
+  info: {
+    displayName: 'Library Borrow Record';
+    pluralName: 'library-borrow-records';
+    singularName: 'library-borrow-record';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    book: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::library-book.library-book'
+    >;
+    borrowerId: Schema.Attribute.String;
+    borrowerName: Schema.Attribute.String;
+    borrowerType: Schema.Attribute.Enumeration<
+      ['student', 'teacher', 'worker']
+    >;
+    borrowNumber: Schema.Attribute.String;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    dueDate: Schema.Attribute.Date;
+    fineAmount: Schema.Attribute.Decimal;
+    finePaid: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
+    issueDate: Schema.Attribute.Date;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::library-borrow-record.library-borrow-record'
+    > &
+      Schema.Attribute.Private;
+    publishedAt: Schema.Attribute.DateTime;
+    returnDate: Schema.Attribute.Date;
+    status: Schema.Attribute.Enumeration<
+      ['issued', 'returned', 'overdue', 'lost', 'damaged']
+    >;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -8488,6 +8817,7 @@ declare module '@strapi/strapi' {
       'api::finance-receipt.finance-receipt': ApiFinanceReceiptFinanceReceipt;
       'api::finance-scholarship.finance-scholarship': ApiFinanceScholarshipFinanceScholarship;
       'api::finance-sequence-counter.finance-sequence-counter': ApiFinanceSequenceCounterFinanceSequenceCounter;
+      'api::fixed-asset.fixed-asset': ApiFixedAssetFixedAsset;
       'api::footer-config.footer-config': ApiFooterConfigFooterConfig;
       'api::gallery-item.gallery-item': ApiGalleryItemGalleryItem;
       'api::gpa-configuration.gpa-configuration': ApiGpaConfigurationGpaConfiguration;
@@ -8525,6 +8855,9 @@ declare module '@strapi/strapi' {
       'api::hostel-vacation.hostel-vacation': ApiHostelVacationHostelVacation;
       'api::hostel-visitor.hostel-visitor': ApiHostelVisitorHostelVisitor;
       'api::hostel-warden.hostel-warden': ApiHostelWardenHostelWarden;
+      'api::inventory-item.inventory-item': ApiInventoryItemInventoryItem;
+      'api::inventory-movement.inventory-movement': ApiInventoryMovementInventoryMovement;
+      'api::inventory-warehouse.inventory-warehouse': ApiInventoryWarehouseInventoryWarehouse;
       'api::islamic-extension.islamic-extension': ApiIslamicExtensionIslamicExtension;
       'api::language-achievement.language-achievement': ApiLanguageAchievementLanguageAchievement;
       'api::language-certificate.language-certificate': ApiLanguageCertificateLanguageCertificate;
@@ -8534,6 +8867,8 @@ declare module '@strapi/strapi' {
       'api::language-program.language-program': ApiLanguageProgramLanguageProgram;
       'api::lesson-delivery.lesson-delivery': ApiLessonDeliveryLessonDelivery;
       'api::lesson-plan.lesson-plan': ApiLessonPlanLessonPlan;
+      'api::library-book.library-book': ApiLibraryBookLibraryBook;
+      'api::library-borrow-record.library-borrow-record': ApiLibraryBorrowRecordLibraryBorrowRecord;
       'api::marks-entry.marks-entry': ApiMarksEntryMarksEntry;
       'api::memorization.memorization': ApiMemorizationMemorization;
       'api::murajaah.murajaah': ApiMurajaahMurajaah;

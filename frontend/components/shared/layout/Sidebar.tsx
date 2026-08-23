@@ -946,6 +946,49 @@ interface SidebarProps {
   className?: string;
 }
 
+const getSectionIconAndColor = (title: string) => {
+  const normalized = title.toLowerCase();
+  
+  if (normalized.includes('overview') || normalized.includes('dashboard')) {
+    return { icon: LayoutGrid, color: 'text-sky-500 bg-sky-500/10 dark:bg-sky-500/20' };
+  }
+  if (normalized.includes('administration') || normalized.includes('system') || normalized.includes('settings')) {
+    return { icon: Settings, color: 'text-slate-500 bg-slate-500/10 dark:bg-slate-500/20' };
+  }
+  if (normalized.includes('school erp') || normalized.includes('people') || normalized.includes('academic administration')) {
+    return { icon: School, color: 'text-indigo-500 bg-indigo-500/10 dark:bg-indigo-500/20' };
+  }
+  if (normalized.includes('operations erp') || normalized.includes('hostel') || normalized.includes('transport') || normalized.includes('operations')) {
+    if (normalized.includes('payroll') || normalized.includes('expenses') || normalized.includes('budgets')) {
+      return { icon: Coins, color: 'text-rose-500 bg-rose-500/10 dark:bg-rose-500/20' };
+    }
+    return { icon: Landmark, color: 'text-blue-500 bg-blue-500/10 dark:bg-blue-500/20' };
+  }
+  if (normalized.includes('academic management') || normalized.includes('academic workspace') || normalized.includes('my academics')) {
+    return { icon: BookOpen, color: 'text-violet-500 bg-violet-500/10 dark:bg-violet-500/20' };
+  }
+  if (normalized.includes('qur\'an') || normalized.includes('halaqah')) {
+    return { icon: BookCheck, color: 'text-emerald-500 bg-emerald-500/10 dark:bg-emerald-500/20' };
+  }
+  if (normalized.includes('language') || normalized.includes('placement')) {
+    return { icon: Globe, color: 'text-amber-500 bg-amber-500/10 dark:bg-amber-500/20' };
+  }
+  if (normalized.includes('assessment') || normalized.includes('exam')) {
+    return { icon: ClipboardList, color: 'text-pink-500 bg-pink-500/10 dark:bg-pink-500/20' };
+  }
+  if (normalized.includes('results') || normalized.includes('cert')) {
+    return { icon: Award, color: 'text-teal-500 bg-teal-500/10 dark:bg-teal-500/20' };
+  }
+  if (normalized.includes('finance') || normalized.includes('billing') || normalized.includes('payroll') || normalized.includes('cashier') || normalized.includes('accounting') || normalized.includes('expenses') || normalized.includes('ledger') || normalized.includes('payment') || normalized.includes('budget')) {
+    return { icon: Coins, color: 'text-rose-500 bg-rose-500/10 dark:bg-rose-500/20' };
+  }
+  if (normalized.includes('cms') || normalized.includes('event')) {
+    return { icon: Megaphone, color: 'text-fuchsia-500 bg-fuchsia-500/10 dark:bg-fuchsia-500/20' };
+  }
+  
+  return { icon: Layers, color: 'text-slate-400 bg-slate-500/5 dark:bg-slate-500/10' };
+};
+
 export function Sidebar({ className }: SidebarProps) {
   const { user, logout } = useAuth();
   const { theme, setTheme } = useTheme();
@@ -1560,18 +1603,27 @@ export function Sidebar({ className }: SidebarProps) {
           }
           return (
           <div key={section.title} className="mb-1">
-            {/* Section Header */}
-            {!isCollapsed && (
-              <button
-                onClick={() => toggleSection(section.title)}
-                className="w-full flex items-center justify-between px-2 py-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70 hover:text-muted-foreground transition-colors"
-              >
-                <span>{getTranslatedSectionTitle(section.title)}</span>
-                {isSectionExpanded(section.title)
-                  ? <ChevronUp className="w-3 h-3" />
-                  : <ChevronDown className="w-3 h-3" />}
-              </button>
-            )}
+            {!isCollapsed && (() => {
+              const { icon: Icon, color } = getSectionIconAndColor(section.title);
+              return (
+                <button
+                  onClick={() => toggleSection(section.title)}
+                  className="w-full flex items-center justify-between px-2 py-2 text-[10px] font-black uppercase tracking-wider text-muted-foreground hover:text-foreground hover:bg-muted/40 rounded-xl transition-all duration-200 group mt-3 mb-1 border-none bg-transparent cursor-pointer"
+                >
+                  <div className="flex items-center gap-2">
+                    <div className={cn("p-1 rounded-lg transition-transform group-hover:scale-105", color)}>
+                      <Icon className="w-3.5 h-3.5" />
+                    </div>
+                    <span className="font-extrabold text-[10.5px] text-slate-600 dark:text-slate-300 group-hover:text-foreground transition-colors">
+                      {getTranslatedSectionTitle(section.title)}
+                    </span>
+                  </div>
+                  {isSectionExpanded(section.title)
+                    ? <ChevronUp className="w-3.5 h-3.5 text-muted-foreground/60 group-hover:text-foreground transition-colors" />
+                    : <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/60 group-hover:text-foreground transition-colors" />}
+                </button>
+              );
+            })()}
 
             {/* Section Items */}
             <AnimatePresence initial={false}>

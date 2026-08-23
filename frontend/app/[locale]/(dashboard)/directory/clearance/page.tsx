@@ -39,7 +39,7 @@ export default function ClearancePage() {
       const data = res.data?.data || [];
       setStudents(data);
       if (data.length > 0) {
-        setSelectedStudentId(data[0].id);
+        setSelectedStudentId(data[0].documentId);
       }
     } catch (e) {
       toast.error('Failed to load student registry');
@@ -57,7 +57,7 @@ export default function ClearancePage() {
     setIsAuditing(true);
     setAuditDone(false);
     try {
-      // 1. Fetch full details for the student
+      // 1. Fetch full details for the student using documentId
       const studRes = await apiClient.get(`/students/${selectedStudentId}`, {
         params: {
           populate: ['user', 'parents', 'timeline']
@@ -66,10 +66,10 @@ export default function ClearancePage() {
       const student = studRes.data?.data || null;
       setSelectedStudent(student);
 
-      // 2. Query invoices to check finance balance
-      const financeRes = await apiClient.get('/invoices', {
+      // 2. Query invoices to check finance balance using documentId
+      const financeRes = await apiClient.get('/finance-invoices', {
         params: {
-          'filters[student][id][$eq]': selectedStudentId,
+          'filters[student][documentId][$eq]': selectedStudentId,
           'pagination[limit]': 50
         }
       });
@@ -86,10 +86,10 @@ export default function ClearancePage() {
       });
       const libraryHolds = libraryRes.data?.data || [];
 
-      // 4. Query student attendance logs
+      // 4. Query student attendance logs using documentId
       const attRes = await apiClient.get('/attendance-records', {
         params: {
-          'filters[student][id][$eq]': selectedStudentId,
+          'filters[student][documentId][$eq]': selectedStudentId,
           'pagination[limit]': 100
         }
       });
@@ -157,7 +157,7 @@ export default function ClearancePage() {
             className="px-3.5 py-2 rounded-xl border border-slate-205 dark:border-slate-700 bg-card text-foreground focus:outline-none text-xs font-bold w-60"
           >
             {students.map(s => (
-              <option key={s.id} value={s.id}>
+              <option key={s.id} value={s.documentId}>
                 {s.firstName} {s.lastName} ({s.schoolId || `ID ${s.id}`})
               </option>
             ))}

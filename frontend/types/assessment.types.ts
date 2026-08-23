@@ -98,6 +98,10 @@ export interface Question {
   correctAnswer?: string;
   explanation?: string;
   tags?: any;
+  optionA?: string;
+  optionB?: string;
+  optionC?: string;
+  optionD?: string;
   subject?: { data: StrapiSingleResponse<Subject> };
   question_pool?: { data: StrapiSingleResponse<QuestionPool> };
 }

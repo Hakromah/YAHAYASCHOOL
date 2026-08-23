@@ -21,7 +21,17 @@ interface ThemeProviderProps {
 }
 
 export function ThemeProvider({ children }: ThemeProviderProps) {
-  const [theme, setThemeState] = useState<Theme>('light');
+  const [theme, setThemeState] = useState<Theme>(() => {
+    // Lazy initializer: runs once synchronously on mount (client-only)
+    if (typeof window === 'undefined') return 'light';
+    try {
+      const saved = localStorage.getItem('yahaya_theme') || localStorage.getItem('theme');
+      if (saved === 'dark' || saved === 'light' || saved === 'system') return saved as Theme;
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    } catch {
+      return 'light';
+    }
+  });
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {

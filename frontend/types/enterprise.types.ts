@@ -369,6 +369,8 @@ export interface LibraryBook {
   isDigital: boolean;
   pdfUrl?: string;
   coverUrl?: string;
+  sectionName?: string;
+  gradeLevelName?: string;
 }
 
 export interface LibraryBorrowRecord {
@@ -406,8 +408,9 @@ export interface InventoryItem {
   id: string;
   itemCode: string; // e.g. INV-SKU-9021
   name: string;
-  category: 'Stationery & Books' | 'Lab Consumables' | 'IT Hardware' | 'Cleaning Supplies' | 'Maintenance Parts' | 'Uniforms';
-  unitOfMeasure: 'pcs' | 'boxes' | 'kg' | 'liters' | 'sets';
+  description?: string;
+  category: string;
+  unitOfMeasure: string;
   warehouseId: string;
   warehouseName: string;
   quantityOnHand: number;
@@ -433,6 +436,8 @@ export interface InventoryMovement {
   performedBy: string;
   date: string;
   referenceDocNumber?: string; // e.g. PO-2026-004
+  vendorSupplier?: string;
+  notes?: string;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
