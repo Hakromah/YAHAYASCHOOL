@@ -1,5 +1,6 @@
 import React from 'react';
 import type { Metadata } from 'next';
+import { useTranslations } from 'next-intl';
 import { MissionVisionSection } from '@/components/public/about/MissionVisionSection';
 import { AboutIntroSection } from '@/components/public/about/AboutIntroSections';
 import { PageHeader } from '@/components/public/shared/PageHeader';
@@ -14,12 +15,13 @@ export const metadata: Metadata = {
 };
 
 export default function AboutUsPage() {
+  const t = useTranslations('pageHeaders.about');
+
   return (
     <main className="min-h-screen bg-white">
       
-      <PageHeader title="About Us">
-        We&apos;re here to answer your questions and guide your child&apos;s educational journey
-        towards Modern Islamic Excellence.
+      <PageHeader title={t('title')}>
+        {t('description')}
       </PageHeader>
 
       <AboutIntroSection />

@@ -5,6 +5,7 @@ import { Star } from 'lucide-react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { EffectFade } from 'swiper/modules';
 import type { Swiper as SwiperClass } from 'swiper';
+import { useTranslations } from 'next-intl';
 
 import 'swiper/css';
 import 'swiper/css/effect-fade';
@@ -27,48 +28,20 @@ import 'swiper/css/effect-fade';
  * testimonials already in this component are kept; only the layout is new.
  */
 
-const TESTIMONIALS = [
-  {
-    id: 1,
-    name: 'Mia Thompson',
-    role: 'PARENT',
-    image: '/images/figma-home/01-hero.jpeg',
-    title: 'A transformative experience for our child.',
-    quote:
-      '"Since enrolling our daughter at Yahaya International, we have seen remarkable growth not just in her academic performance but in her character. The seamless integration of Islamic values with rigorous modern education is exactly what we were looking for."',
-    rating: 5,
-  },
-  {
-    id: 2,
-    name: 'James Miller',
-    role: 'ALUMNUS',
-    image: '/images/figma-home/20-news.jpeg',
-    title: 'It highlights academic satisfaction, testimonials.',
-    quote:
-      '"My years at Yahaya International completely transformed my worldview. The attention to detail in the curriculum and the ease of access to mentors allowed me to maintain my faith identity while delivering world-class academic performance. It\'s not just a school; it\'s a competitive advantage."',
-    rating: 5,
-  },
-  {
-    id: 3,
-    name: 'Olivia Carter',
-    role: 'COMMUNITY LEADER',
-    image: '/images/figma-home/04-programs.jpeg',
-    title: 'An institution built on true excellence.',
-    quote:
-      '"The leadership at Yahaya International demonstrates a profound commitment to educational excellence. I have witnessed firsthand how they nurture students into well-rounded individuals ready to tackle global challenges with moral integrity."',
-    rating: 5,
-  },
-  {
-    id: 4,
-    name: 'Matthew Bennett',
-    role: 'PARENT',
-    image: '/images/figma-home/08-activity.jpeg',
-    title: 'The best decision we made.',
-    quote:
-      '"We evaluated many schools before choosing Yahaya International. The facilities are modern, the teachers are highly qualified, and the emphasis on both D\'awah and STEM makes it a unique and invaluable environment for our children."',
-    rating: 5,
-  },
-];
+// Moved into component to use translations
+// const TESTIMONIALS = [
+//   {
+//     id: 1,
+//     name: 'Mia Thompson',
+//     role: 'PARENT',
+//     image: '/images/figma-home/01-hero.jpeg',
+//     title: 'A transformative experience for our child.',
+//     quote:
+//       '"Since enrolling our daughter at Yahaya International, we have seen remarkable growth not just in her academic performance but in her character. The seamless integration of Islamic values with rigorous modern education is exactly what we were looking for."',
+//     rating: 5,
+//   },
+//   ...
+// ];
 
 /**
  * Enter animation for the panel: each block starts pushed down and faded out and
@@ -96,9 +69,37 @@ const INITIAL = 1;
 export function TestimonialsSection({ locale = 'en', data }: { locale?: string; data?: unknown }) {
   void locale;
   void data;
+  const t = useTranslations('testimonialsSection');
   const [thumbs, setThumbs] = useState<SwiperClass | null>(null);
   const [main, setMain] = useState<SwiperClass | null>(null);
   const [active, setActive] = useState(INITIAL);
+
+  const TESTIMONIALS = [
+    {
+      id: 1,
+      key: 't1',
+      image: '/images/figma-home/01-hero.jpeg',
+      rating: 5,
+    },
+    {
+      id: 2,
+      key: 't2',
+      image: '/images/figma-home/20-news.jpeg',
+      rating: 5,
+    },
+    {
+      id: 3,
+      key: 't3',
+      image: '/images/figma-home/04-programs.jpeg',
+      rating: 5,
+    },
+    {
+      id: 4,
+      key: 't4',
+      image: '/images/figma-home/08-activity.jpeg',
+      rating: 5,
+    },
+  ];
 
   // Both sliders are driven directly rather than through Swiper's Thumbs module:
   // that module repositions the strip on its own (it only keeps the active thumb
@@ -116,11 +117,10 @@ export function TestimonialsSection({ locale = 'en', data }: { locale?: string; 
       <div className="relative bg-[#048ED6] pt-[clamp(1.5rem,5.5vw,6.6rem)]">
         <div className="max-w-[1920px] mx-auto px-(--spacing-side)">
           <h2 className="text-center font-bold text-white tracking-[-0.015em] leading-[1.08] text-[clamp(1.5rem,2.6vw,3.125rem)]">
-            Kind Words From Our Community
+            {t('heading')}
           </h2>
           <p className="mt-[clamp(1rem,1.5vw,1.8rem)] mx-auto max-w-165 text-center text-white/85 leading-[1.61] max-sm:leading-relaxed text-[clamp(1rem,0.94vw,1.125rem)]">
-            Hear from the parents, alumni and community leaders who have shaped — and been
-            shaped by — life at Yahaya International.
+            {t('subtitle')}
           </p>
 
           {/*
@@ -156,14 +156,15 @@ export function TestimonialsSection({ locale = 'en', data }: { locale?: string; 
                         on ? 'ring-white/90 opacity-100' : 'ring-transparent opacity-60 group-hover:opacity-85'
                       }`}
                     >
-                      <img src={item.image} alt="" className="w-full h-full object-cover" aria-hidden />
+                      <img src={item.image} alt={t(`items.${item.key}.name`)} className="w-full h-full object-cover" />
+                      <span className="absolute inset-0 bg-[#048ED6]/40 opacity-0 transition-opacity" />
                     </span>
                     <span
                       className={`mt-3 whitespace-nowrap font-semibold transition-colors duration-500 text-[clamp(0.875rem,0.83vw,1rem)] ${
                         on ? 'text-white' : 'text-[#A1D4EF] group-hover:text-white/90'
                       }`}
                     >
-                      {item.name}
+                      {t(`items.${item.key}.name`)}
                     </span>
                     {/* Notch joining the active thumb to the panel below. Both widths
                         live here so only one width utility is ever emitted. */}
@@ -195,13 +196,13 @@ export function TestimonialsSection({ locale = 'en', data }: { locale?: string; 
             speed={800}
             className="panel-swiper"
           >
-            {TESTIMONIALS.map((t) => (
-              <SwiperSlide key={t.id} className="group/slide">
+            {TESTIMONIALS.map((tItem) => (
+              <SwiperSlide key={tItem.id} className="group/slide">
                 <div className="flex flex-col sm:flex-row gap-[34px] max-md:gap-[20px]">
                   <div
                     className={`w-[256px] h-[256px] max-sm:w-full max-sm:h-[280px] shrink-0 overflow-hidden ${RISE} ${DELAY[0]}`}
                   >
-                    <img src={t.image} alt={t.name} className="w-full h-full object-cover" />
+                    <img src={tItem.image} alt={t(`items.${tItem.key}.name`)} className="w-full h-full object-cover" />
                   </div>
 
                   <div className="min-w-0 pt-[30px] max-sm:pt-0">
@@ -216,17 +217,17 @@ export function TestimonialsSection({ locale = 'en', data }: { locale?: string; 
                     <h3
                       className={`mt-[clamp(0.75rem,1vw,1.2rem)] max-w-[560px] font-bold text-[#121C2A] tracking-[-0.015em] leading-[1.15] text-[clamp(1.5rem,1.77vw,2.125rem)] ${RISE} ${DELAY[2]}`}
                     >
-                      {t.title}
+                      {t(`items.${tItem.key}.title`)}
                     </h3>
                     <p
                       className={`mt-[clamp(0.5rem,0.7vw,0.85rem)] font-semibold text-[#121C2A] text-[clamp(1rem,1.15vw,1.375rem)] ${RISE} ${DELAY[3]}`}
                     >
-                      {t.name}
+                      {t(`items.${tItem.key}.name`)}
                     </p>
                     <p
                       className={`mt-[7px] max-sm:mt-[5px] font-bold uppercase tracking-[0.04em] text-[#02019B] text-[1rem] ${RISE} ${DELAY[3]}`}
                     >
-                      {t.role}
+                      {t(`items.${tItem.key}.role`)}
                     </p>
                   </div>
                 </div>
@@ -234,19 +235,19 @@ export function TestimonialsSection({ locale = 'en', data }: { locale?: string; 
                 <p
                   className={`mt-[clamp(1rem,3.1vw,3.7rem)] italic text-[#121C2A] leading-[1.61] text-[clamp(1rem,0.94vw,1.125rem)] ${RISE} ${DELAY[4]}`}
                 >
-                  {t.quote}
+                  {t(`items.${tItem.key}.quote`)}
                 </p>
 
                 <div
                   className={`mt-[clamp(1.75rem,2.3vw,2.8rem)] flex items-center gap-3 ${RISE} ${DELAY[5]}`}
                 >
                   <span className="flex items-center gap-1">
-                    {Array.from({ length: t.rating }).map((_, i) => (
+                    {Array.from({ length: tItem.rating }).map((_, i) => (
                       <Star key={i} className="w-5 h-5 fill-(--color-primary) text-(--color-primary)" aria-hidden />
                     ))}
                   </span>
                   <span className="text-[#545F73] text-[clamp(0.75rem,0.73vw,0.875rem)]">
-                    Verified Review
+                    {t('verifiedReview')}
                   </span>
                 </div>
               </SwiperSlide>

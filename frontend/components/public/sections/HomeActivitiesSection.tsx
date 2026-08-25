@@ -2,6 +2,7 @@
 
 import React, { useCallback, useRef } from 'react';
 import { useScrollProgress } from '@/hooks/useScrollProgress';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 
@@ -24,14 +25,15 @@ import { ArrowRight } from 'lucide-react';
  * media query never applies and --p stays 0) this is a plain static grid.
  */
 
-const CARDS = [
-  { key: 'lt', title: 'Mosque Activities', image: '/images/figma-home/09.png' },
-  { key: 'lb', title: 'Public Speaking', image: '/images/figma-home/17.png' },
-  { key: 'rt', title: 'Arts & Creativity', image: '/images/figma-home/07-activity.png' },
-  { key: 'rb', title: 'Arts & Creativity', image: '/images/figma-home/13.png' },
-] as const;
+// Moved inside component to use translations
+// const CARDS = [
+//   { key: 'lt', title: 'Mosque Activities', image: '/images/figma-home/09.png' },
+//   { key: 'lb', title: 'Public Speaking', image: '/images/figma-home/17.png' },
+//   { key: 'rt', title: 'Arts & Creativity', image: '/images/figma-home/07-activity.png' },
+//   { key: 'rb', title: 'Arts & Creativity', image: '/images/figma-home/13.png' },
+// ] as const;
 
-function Card({ card }: { card: (typeof CARDS)[number] }) {
+function Card({ card }: { card: { key: string; title: string; image: string } }) {
   return (
     <div className={`act-card act-${card.key} relative w-full aspect-[490/345] rounded-lg overflow-hidden`}>
       <img src={card.image} alt={card.title} className="w-full h-full object-cover" />
@@ -44,7 +46,15 @@ function Card({ card }: { card: (typeof CARDS)[number] }) {
 }
 
 export function HomeActivitiesSection() {
+  const t = useTranslations('homeActivities');
   const sectionRef = useRef<HTMLElement>(null);
+
+  const CARDS = [
+    { key: 'lt', title: t('mosqueActivities'), image: '/images/figma-home/09.png' },
+    { key: 'lb', title: t('publicSpeaking'), image: '/images/figma-home/17.png' },
+    { key: 'rt', title: t('artsCreativity'), image: '/images/figma-home/07-activity.png' },
+    { key: 'rb', title: t('artsCreativity'), image: '/images/figma-home/13.png' },
+  ];
 
   // Gate on the same breakpoint the CSS uses; below it --p stays 0 and every
   // transform resolves to identity.
@@ -78,7 +88,7 @@ export function HomeActivitiesSection() {
             {/* Centre column */}
             <div className="flex flex-col items-center text-center max-lg:order-1">
               <h2 className="act-text font-normal text-black leading-[1.17] text-[clamp(1.1rem,1.87vw,2.25rem)] max-w-[460px]">
-                Seeking knowledge is a path to goodness.
+                {t('heading')}
               </h2>
 
               <div className="act-hero relative w-full aspect-[616/355] rounded-lg overflow-hidden mt-[clamp(1.5rem,2vw,2.45rem)]">
@@ -90,15 +100,15 @@ export function HomeActivitiesSection() {
               </div>
 
               <p className="act-text mt-[clamp(1.25rem,1.7vw,2.05rem)] max-w-[420px] text-black leading-[1.33] text-[clamp(1rem,0.94vw,1.125rem)]">
-                Every action tells a story—see what&apos;s been happening.
+                {t('subtitle')}
               </p>
 
               <Link
                 href="/gallery"
                 className="act-text mt-[clamp(1.25rem,1.3vw,1.6rem)] inline-flex items-center justify-center gap-3 h-[43px] px-6 rounded-full bg-[#048ED6] text-white font-medium text-[15px] transition-colors hover:bg-[#037ab8]"
               >
-                <span>Join us</span>
-                <ArrowRight className="w-4 h-4" />
+                <span>{t('joinUs')}</span>
+                <ArrowRight className="w-4 h-4 rtl:rotate-180" />
               </Link>
             </div>
 

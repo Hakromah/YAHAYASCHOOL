@@ -4,6 +4,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { useTranslations, useLocale } from 'next-intl';
 
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger);
@@ -23,11 +24,12 @@ if (typeof window !== 'undefined') {
  * why the columns are expressed as ratios rather than the frame's fixed widths.
  */
 
-const STATS = [
-  { icon: '/home/graduate.png', w: 33, h: 27, value: '250+', label: 'Students' },
-  { icon: '/home/people.png', w: 20, h: 20, value: '25+', label: 'Employees' },
-  { icon: '/home/approve.png', w: 20, h: 19, value: '6+', label: 'Years' },
-] as const;
+// Moved to component scope to use translations
+// const STATS = [
+//   { icon: '/home/graduate.png', w: 33, h: 27, value: '250+', label: 'Students' },
+//   { icon: '/home/people.png', w: 20, h: 20, value: '25+', label: 'Employees' },
+//   { icon: '/home/approve.png', w: 20, h: 19, value: '6+', label: 'Years' },
+// ] as const;
 
 // Sampled from the Figma wave every 20px, normalised to a 660×126 box.
 const WAVE_EDGE =
@@ -36,8 +38,16 @@ const WAVE_FILL =
   'M0,7 L20,12 L40,17 L60,20 L80,22 L100,24 L120,28 L140,32 L160,37 L180,43 L200,49 L220,56 L240,62 L260,70 L280,77 L300,84 L320,89 L340,94 L360,99 L380,102 L400,106 L420,109 L440,112 L460,114 L480,117 L500,119 L520,121 L540,123 L560,124 L580,126 L660,126 L0,126 Z';
 
 export function HomeAboutSection() {
+  const t = useTranslations('homeAbout');
+  const locale = useLocale();
   const [isDesktop, setIsDesktop] = useState(false);
   const sectionRef = useRef<HTMLElement>(null);
+
+  const STATS = [
+    { icon: '/home/graduate.png', w: 33, h: 27, num: 250, suffix: '+', label: t('students') },
+    { icon: '/home/people.png', w: 20, h: 20, num: 25, suffix: '+', label: t('employees') },
+    { icon: '/home/approve.png', w: 20, h: 19, num: 6, suffix: '+', label: t('years') },
+  ] as const;
 
   useEffect(() => {
     // 1280px is Tailwind's xl breakpoint
@@ -54,9 +64,8 @@ export function HomeAboutSection() {
     const ctx = gsap.context(() => {
       const counters = gsap.utils.toArray<HTMLElement>('.stat-value');
       counters.forEach((counter) => {
-        const targetText = counter.getAttribute('data-target') || '0';
-        const targetVal = parseInt(targetText.replace(/\D/g, ''), 10);
-        const suffix = targetText.replace(/\d/g, '');
+        const targetVal = parseInt(counter.getAttribute('data-target') || '0', 10);
+        const suffix = counter.getAttribute('data-suffix') || '';
 
         const obj = { val: 0 };
         gsap.to(obj, {
@@ -68,7 +77,8 @@ export function HomeAboutSection() {
             start: 'top 85%',
           },
           onUpdate: () => {
-            counter.innerText = Math.floor(obj.val) + suffix;
+            const formatted = new Intl.NumberFormat(locale === 'ar' ? 'ar-EG' : locale).format(Math.floor(obj.val));
+            counter.innerText = formatted + suffix;
           },
         });
       });
@@ -129,7 +139,7 @@ export function HomeAboutSection() {
               </span>
               <span className="relative inline-block pb-[11px]">
                 <span className="text-xs sm:text-[clamp(0.875rem,0.94vw,1.125rem)] tracking-[0.02em] uppercase text-[#048ED6]">
-                  About Our Legacy
+                  {t('eyebrow')}
                 </span>
                 <span className="absolute bottom-0 left-0 w-[56%] h-[3px] rounded-full bg-(--color-primary)" />
               </span>
@@ -143,8 +153,8 @@ export function HomeAboutSection() {
               transition={{ duration: 0.7, delay: 0.1, ease: "easeOut" }}
               className="mt-[clamp(2rem,3.1vw,3.7rem)] font-bold text-[#111C2D] text-[clamp(1.5rem,2.29vw,2.75rem)] leading-[1.09] tracking-[-0.01em]"
             >
-              Fostering Excellence <br className="max-sm:hidden" />
-              Through <span className="text-[#048ED6]">Faith and Science</span>
+              {t('headingLine1')} <br className="max-sm:hidden" />
+              {t('headingLine2')} <span className="text-[#048ED6]">{t('headingHighlight')}</span>
             </motion.h2>
 
             {/* Body */}
@@ -155,10 +165,7 @@ export function HomeAboutSection() {
               transition={{ duration: 0.7, delay: 0.2, ease: "easeOut" }}
               className="mt-[clamp(1.25rem,1.5vw,1.8rem)] max-w-[38rem] text-[#414751] text-[clamp(1rem,0.94vw,1.125rem)] leading-[1.61]"
             >
-              Yahaya International Islamic &amp; English High School is more than just an
-              educational institution; it is a community dedicated to shaping the holistic
-              development of every child. We bridge the gap between traditional Islamic ethics
-              and modern Western education.
+              {t('body')}
             </motion.p>
 
             {/* Stats */}
@@ -177,9 +184,10 @@ export function HomeAboutSection() {
                   </span>
                   <span 
                     className="stat-value mt-[30px] font-bold text-[#111C2D] text-[clamp(1.5rem,1.46vw,1.75rem)] leading-none whitespace-nowrap"
-                    data-target={s.value}
+                    data-target={s.num}
+                    data-suffix={s.suffix}
                   >
-                    {s.value}
+                    {new Intl.NumberFormat(locale === 'ar' ? 'ar-EG' : locale).format(s.num)}{s.suffix}
                   </span>
                   <span className="mt-[16px] text-[#414751] text-[clamp(0.875rem,0.83vw,1rem)] leading-none whitespace-nowrap">
                     {s.label}
@@ -216,8 +224,7 @@ export function HomeAboutSection() {
               </span>
               <span className="w-px self-stretch shrink-0 bg-white/40" />
               <p className="text-white text-[clamp(1rem,1.04vw,1.25rem)] leading-[1.5]">
-                Yahaya International Islamic &amp; English High School is more than just an
-                educational institution
+                {t('caption')}
               </p>
             </div>
           </motion.div>

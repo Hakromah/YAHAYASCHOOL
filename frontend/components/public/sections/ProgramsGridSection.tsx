@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import { ArrowRight, BookOpen, BookOpenText, GraduationCap, Laptop } from 'lucide-react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Pagination } from 'swiper/modules';
+import { useTranslations } from 'next-intl';
 
 import 'swiper/css';
 import 'swiper/css/pagination';
@@ -40,37 +41,24 @@ function MosqueIcon({ className }: { className?: string }) {
 const PROGRAMS = [
   {
     id: 'arabic',
-    title: 'Arabic Programs',
-    description:
-      'Contribute to modern facilities and learning environments equipped with the latest educational technology. Contribute to modern facilities and learning environments equipped with the latest educational technology.',
-    // The Figma's Arabic icon is a colour illustration, exported as 11.png.
     iconImg: '/images/figma-home/11.png',
     image: '/images/figma-home/19.png',
     link: '/programs/arabic',
   },
   {
     id: 'english',
-    title: 'English Programs',
-    description:
-      'Immerse in an environment where language skills flourish. Our English programs are designed to build confidence, fluency, and a deep understanding of global literature and communication.',
     Icon: BookOpen,
     image: '/images/figma-home/03-programs.jpeg',
     link: '/programs/english',
   },
   {
     id: 'dawah',
-    title: 'D’awah Programs',
-    description:
-      'Develop a strong foundation in Islamic theology and the principles of inviting others to the beautiful teachings of Islam through wisdom and excellent preaching.',
     Icon: MosqueIcon,
     image: '/images/figma-home/17.png',
     link: '/programs/dawah',
   },
   {
     id: 'online',
-    title: 'Online learning Programs',
-    description:
-      'Access our world-class curriculum from anywhere. Flexible, engaging, and interactive online modules tailored for modern students seeking excellence from home.',
     Icon: Laptop,
     image: '/images/figma-home/03-programs.jpeg',
     link: '/online-learning',
@@ -78,7 +66,7 @@ const PROGRAMS = [
 ] as const;
 
 /** Rows carry either a lucide component or an exported illustration. */
-function RowIcon({ p, className }: { p: { Icon?: React.ElementType; iconImg?: string; title: string }; className?: string }) {
+function RowIcon({ p, className }: { p: { Icon?: React.ElementType; iconImg?: string }; className?: string }) {
   if (p.iconImg) return <img src={p.iconImg} alt="" aria-hidden className={className} />;
   const I = p.Icon!;
   return <I className={className} />;
@@ -88,14 +76,14 @@ const TITLE_CLS =
   'font-bold text-black leading-[1.05] tracking-[-0.015em] text-[clamp(1.5rem,2.6vw,3.125rem)]';
 const BODY_CLS = 'text-[#576059] leading-[1.31] text-[clamp(0.9375rem,0.83vw,1rem)]';
 
-function LearnMore({ href }: { href: string }) {
+function LearnMore({ href, text }: { href: string; text: string }) {
   return (
     <Link
       href={href}
       className="inline-flex items-center justify-center gap-2 h-[52px] px-8 rounded-full bg-[#048ED6] text-white font-semibold text-[15px] shadow-md transition-colors hover:bg-[#037ab8]"
     >
-      <span>Learn More</span>
-      <ArrowRight className="w-4 h-4" />
+      <span>{text}</span>
+      <ArrowRight className="w-4 h-4 rtl:rotate-180" />
     </Link>
   );
 }
@@ -103,6 +91,7 @@ function LearnMore({ href }: { href: string }) {
 export function ProgramsGridSection({ locale = 'en', data }: { locale?: string; data?: unknown }) {
   void locale;
   void data;
+  const t = useTranslations('programsSection');
   const [active, setActive] = useState(0);
   const [isDesktop, setIsDesktop] = useState(false);
 
@@ -142,21 +131,19 @@ export function ProgramsGridSection({ locale = 'en', data }: { locale?: string; 
             className="inline-flex items-center gap-2 h-10 px-4 rounded-full bg-[#E6F0FB] text-[#048ED6] font-semibold text-[15px]"
           >
             <GraduationCap className="w-5 h-5" />
-            Our Programs
+            {t('eyebrow')}
           </motion.span>
           <motion.h2 
             variants={isDesktop ? itemVariants : {}}
             className="mt-[clamp(0.75rem,1.1vw,1.3rem)] font-bold text-black tracking-[-0.015em] leading-[1.09] text-[clamp(1.5rem,2.29vw,2.75rem)]"
           >
-            Explore Our Programs
+            {t('heading')}
           </motion.h2>
           <motion.p 
             variants={isDesktop ? itemVariants : {}}
             className={`mt-[clamp(0.75rem,1.1vw,1.3rem)] max-w-[620px] ${BODY_CLS}`}
           >
-            Contribute to modern facilities and learning environments equipped with the latest
-            educational technology. Contribute to modern facilities and learning environments
-            equipped with the latest educational technology.
+            {t('description')}
           </motion.p>
         </motion.div>
 
@@ -191,7 +178,7 @@ export function ProgramsGridSection({ locale = 'en', data }: { locale?: string; 
                     <RowIcon p={p} className="w-6 h-6 object-contain" />
                   </span>
                   <div className="min-w-0">
-                    <h3 className={TITLE_CLS}>{p.title}</h3>
+                    <h3 className={TITLE_CLS}>{t(`programs.${p.id}.title`)}</h3>
                     {/* Collapsed rows keep the copy in the DOM but at zero height. */}
                     <div
                       className={`grid transition-[grid-template-rows,opacity] duration-500 ease-out ${open ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
@@ -199,10 +186,10 @@ export function ProgramsGridSection({ locale = 'en', data }: { locale?: string; 
                     >
                       <div className="overflow-hidden">
                         <p className={`mt-[clamp(1.1rem,2vw,2.4rem)] max-w-[620px] ${BODY_CLS}`}>
-                          {p.description}
+                          {t(`programs.${p.id}.desc`)}
                         </p>
                         <div className="mt-[clamp(1.1rem,1.9vw,2.3rem)] pb-1">
-                          <LearnMore href={p.link} />
+                          <LearnMore href={p.link} text={t('learnMore')} />
                         </div>
                       </div>
                     </div>
@@ -214,7 +201,7 @@ export function ProgramsGridSection({ locale = 'en', data }: { locale?: string; 
                   className={`shrink-0 w-[34.6%] rounded-lg overflow-hidden transition-[height] duration-500 ease-out ${open ? 'h-[255px]' : 'h-[101px]'
                     }`}
                 >
-                  <img src={p.image} alt={p.title} className="w-full h-full object-cover" />
+                  <img src={p.image} alt={t(`programs.${p.id}.title`)} className="w-full h-full object-cover" />
                 </div>
               </motion.div>
             );
@@ -247,17 +234,17 @@ export function ProgramsGridSection({ locale = 'en', data }: { locale?: string; 
               <SwiperSlide key={p.id}>
                 <div className="flex flex-col">
                   <div className="w-full h-[210px] rounded-lg overflow-hidden">
-                    <img src={p.image} alt={p.title} className="w-full h-full object-cover" />
+                    <img src={p.image} alt={t(`programs.${p.id}.title`)} className="w-full h-full object-cover" />
                   </div>
                   <div className="flex items-center gap-4 mt-5">
                     <span className="w-[50px] h-[50px] shrink-0 grid place-items-center rounded-full bg-[#E6F0FB] text-[#048ED6]">
                       <RowIcon p={p} className="w-6 h-6 object-contain" />
                     </span>
-                    <h3 className={TITLE_CLS}>{p.title}</h3>
+                    <h3 className={TITLE_CLS}>{t(`programs.${p.id}.title`)}</h3>
                   </div>
-                  <p className={`mt-4 ${BODY_CLS}`}>{p.description}</p>
+                  <p className={`mt-4 ${BODY_CLS}`}>{t(`programs.${p.id}.desc`)}</p>
                   <div className="mt-6">
-                    <LearnMore href={p.link} />
+                    <LearnMore href={p.link} text={t('learnMore')} />
                   </div>
                 </div>
               </SwiperSlide>

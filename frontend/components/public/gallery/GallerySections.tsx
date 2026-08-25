@@ -11,6 +11,9 @@ import { MediaLightbox, type MediaItem } from '@/components/public/shared/MediaL
 import 'swiper/css';
 import 'swiper/css/free-mode';
 
+import { useTranslations } from 'next-intl';
+import type { GalleryItemEntity } from '@/types/cms.types';
+
 /**
  * Gallery page. Implemented from Figma node 384-3717 (frame 1920×4655).
  *
@@ -204,12 +207,15 @@ export function GalleryHero() {
   );
 }
 
-export function PhotoGrid() {
-  const [filter, setFilter] = useState<Category>('All');
+export function PhotoGrid({ items = [] }: { items?: GalleryItemEntity[] }) {
+  const [filter, setFilter] = useState<string>('All');
   const [shown, setShown] = useState(PAGE);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const t = useTranslations('galleryPage');
 
-  const matching = filter === 'All' ? SHOTS : SHOTS.filter((s) => s.category === filter);
+  const categories = ['All', ...Array.from(new Set(items.map(i => i.category).filter(Boolean)))];
+
+  const matching = filter === 'All' ? items : items.filter((s) => s.category === filter);
   const visible = matching.slice(0, shown);
   const more = shown < matching.length;
 
@@ -217,25 +223,25 @@ export function PhotoGrid() {
     <section className="w-full bg-white">
       <div className="max-w-[1920px] mx-auto px-(--spacing-side) py-[clamp(2rem,3.7vw,4.4rem)]">
         <h2 className="font-serif text-[#121C2A] leading-tight text-[clamp(1.5rem,1.87vw,2.25rem)]">
-          Life at Yahaya
+          {t('photoGrid.title')}
         </h2>
 
         <div className="mt-[clamp(1.25rem,1.9vw,2.25rem)] flex flex-wrap items-center justify-between gap-4">
           <div className="flex flex-wrap items-center gap-3">
-            {CATEGORIES.map((c) => {
+            {categories.map((c) => {
               const on = c === filter;
               return (
                 <button
-                  key={c}
+                  key={c as string}
                   type="button"
-                  onClick={() => { setFilter(c); setShown(PAGE); }}
+                  onClick={() => { setFilter(c as string); setShown(PAGE); }}
                   aria-pressed={on}
                   className={`h-[34px] px-4 rounded-full border transition-colors text-[clamp(1rem,0.63vw,1.1rem)] cursor-pointer ${on
                     ? 'bg-[#048ED6] border-[#048ED6] text-white'
                     : 'bg-white border-[#DCE4EC] text-[#3F4941] hover:border-[#9CCBEC] hover:text-[#048ED6]'
                     }`}
                 >
-                  {c}
+                  {c === 'All' ? t('categories.All') : c}
                 </button>
               );
             })}
@@ -246,20 +252,22 @@ export function PhotoGrid() {
             className="inline-flex items-center gap-2 h-[38px] px-5 rounded-full bg-[#048ED6] text-white transition-colors hover:bg-[#037ab8] text-[clamp(1rem,0.68vw,1.5rem)]"
           >
             <Play className="w-3.5 h-3.5 fill-current" />
-            Play Videos
+            {t('photoGrid.playVideos')}
           </a>
         </div>
 
         <div className="mt-[clamp(1.5rem,2.1vw,2.5rem)] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 md:gap-x-[42px] max-md:gap-5 md:gap-y-[60px]">
-          {visible.map((s, i) => (
-            <figure key={`${s.src}-${i}`} className="w-full aspect-[518/364] cursor-pointer overflow-hidden rounded-md">
+          {visible.map((s, i) => {
+            const src = s.mediaFile?.url || '/images/figma-home/13.png';
+            return (
+            <figure key={`${src}-${i}`} className="w-full aspect-[518/364] cursor-pointer overflow-hidden rounded-md">
               <button
                 type="button"
-                aria-label={`Open photo: ${s.alt}`}
+                aria-label={`Open photo: ${s.title}`}
                 onClick={() => setLightboxIndex(i)}
                 className="group relative block w-full h-full cursor-pointer"
               >
-                <img src={s.src} alt={s.alt} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                <img src={src} alt={s.title || ''} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
                 <span className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 grid place-items-center">
                   <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 w-10 h-10 grid place-items-center rounded-full bg-white/90 text-[#048ED6]">
                     <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
@@ -269,11 +277,11 @@ export function PhotoGrid() {
                 </span>
               </button>
             </figure>
-          ))}
+            )})}
         </div>
 
         {visible.length === 0 && (
-          <p className="mt-10 text-center text-[#3F4941]">Nothing in this category yet.</p>
+          <p className="mt-10 text-center text-[#3F4941]">{t('photoGrid.empty')}</p>
         )}
 
         {more && (
@@ -283,13 +291,13 @@ export function PhotoGrid() {
               onClick={() => setShown((n) => n + PAGE)}
               className="h-[38px] px-6 rounded-full bg-[#048ED6] text-white transition-colors hover:bg-[#037ab8] text-[clamp(0.6875rem,0.68vw,0.8125rem)]"
             >
-              Load More
+              {t('photoGrid.loadMore')}
             </button>
           </div>
         )}
 
         <MediaLightbox
-          items={visible.map((s) => ({ type: 'image' as const, src: s.src, alt: s.alt, title: s.alt }))}
+          items={visible.map((s) => ({ type: s.mediaType as 'image'|'video', src: s.mediaFile?.url || '', alt: s.title || '', title: s.title || '' }))}
           index={lightboxIndex}
           onClose={() => setLightboxIndex(null)}
           onIndexChange={(next) => setLightboxIndex(next)}
@@ -304,14 +312,12 @@ export function PhotoGrid() {
 // change.
 const PROMO = '/videos/promo1.mp4';
 const CLIPS = [
-  { title: 'Student Testimonials', poster: '/images/figma-home/09.png', src: PROMO },
-  { title: 'Inside the Library', poster: '/images/figma-home/17.png', src: PROMO },
-  { title: 'Reading Together', poster: '/images/figma-home/13.png', src: PROMO },
-  { title: 'Campus Life', poster: '/images/figma-home/19.png', src: PROMO },
-  { title: 'Assembly Day', poster: '/images/figma-home/07-activity.png', src: PROMO },
+  { key: 'testimonials', poster: '/images/figma-home/09.png', src: PROMO },
+  { key: 'library', poster: '/images/figma-home/17.png', src: PROMO },
+  { key: 'reading', poster: '/images/figma-home/13.png', src: PROMO },
+  { key: 'campus', poster: '/images/figma-home/19.png', src: PROMO },
+  { key: 'assembly', poster: '/images/figma-home/07-activity.png', src: PROMO },
 ];
-const CLIP_BLURB =
-  'Experience the vibrant energy and spirit of Yahaya International through our curated video collection.';
 
 /**
  * Two linked sliders: the feature runs horizontally, the rail beside it runs
@@ -324,6 +330,7 @@ export function VideoHighlights() {
   const [rail, setRail] = useState<SwiperClass | null>(null);
   const [active, setActive] = useState(0);
   const [playing, setPlaying] = useState<number | null>(null);
+  const t = useTranslations('galleryPage');
 
   // Swiper's own resizeObserver doesn't re-fire for these two (the rail is
   // absolutely positioned, the feature is sized by an aspect-ratio box), so a
@@ -368,10 +375,10 @@ export function VideoHighlights() {
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <h2 className="font-serif text-white leading-tight text-[clamp(1.5rem,2.29vw,2.75rem)]">
-              Video Highlights
+              {t('videoHighlights.title')}
             </h2>
             <p className="mt-3 max-w-[720px] text-white/85 text-[1rem]">
-              {CLIP_BLURB}
+              {t('videoHighlights.blurb')}
             </p>
           </div>
 
@@ -383,7 +390,7 @@ export function VideoHighlights() {
               disabled={active === 0}
               className="w-[34px] h-[34px] grid place-items-center cursor-pointer rounded-full bg-white/25 text-white transition-colors hover:bg-white/40 disabled:opacity-40 disabled:hover:bg-white/25"
             >
-              <ArrowLeft className="w-4 h-4" />
+              <ArrowLeft className="w-4 h-4 rtl:-scale-x-100" />
             </button>
             <button
               type="button"
@@ -392,7 +399,7 @@ export function VideoHighlights() {
               disabled={active === CLIPS.length - 1}
               className="w-[34px] h-[34px] grid place-items-center cursor-pointer rounded-full bg-white text-[#048ED6] transition-opacity hover:opacity-90 disabled:opacity-40"
             >
-              <ArrowRight className="w-4 h-4" />
+              <ArrowRight className="w-4 h-4 rtl:-scale-x-100" />
             </button>
           </div>
         </div>
@@ -480,10 +487,10 @@ export function VideoHighlights() {
                         className={`block font-semibold text-[clamp(1rem,1.04vw,1.35rem)] line-clamp-2 transition-colors duration-300 ${i === active ? 'text-[#036CA3]' : 'text-[#121C2A]'
                           }`}
                       >
-                        {clip.title}
+                        {t(`videoHighlights.clips.${clip.key}`)}
                       </span>
                       <span className="mt-[0.35em] block text-[#5A636D] leading-[1.47] line-clamp-3 text-[clamp(0.8rem,0.83vw,1.1rem)]">
-                        {CLIP_BLURB}
+                        {t('videoHighlights.blurb')}
                       </span>
                     </span>
                   </button>
@@ -495,7 +502,7 @@ export function VideoHighlights() {
       </div>
 
       <MediaLightbox
-        items={CLIPS.map((c) => ({ type: 'video', src: c.src, title: c.title, poster: c.poster }))}
+        items={CLIPS.map((c) => ({ type: 'video', src: c.src, title: t(`videoHighlights.clips.${c.key}`), poster: c.poster }))}
         index={playing}
         onClose={() => setPlaying(null)}
       />
@@ -515,6 +522,8 @@ export function VideoHighlights() {
 }
 
 export function VisitCta() {
+  const t = useTranslations('galleryPage');
+
   return (
     <section className="w-full bg-white">
       <div className="max-w-[1920px] mx-auto px-(--spacing-side) py-[clamp(1.5rem,4.2vw,5rem)]">
@@ -524,20 +533,19 @@ export function VisitCta() {
           </span>
 
           <h2 className="mt-[clamp(1.5rem,1.5vw,1.8rem)] font-serif text-[#121C2A] leading-tight text-[clamp(1.375rem,1.77vw,2.125rem)]">
-            Experience Yahaya International in Person
+            {t('visitCta.title')}
           </h2>
 
           <p className="mt-[clamp(1rem,1.1vw,1.3rem)] mx-auto max-w-[660px] text-[#7A828C] leading-[1.7] text-[1rem]">
-            Visit our campus, meet our students and faculty, and see how we nurture excellence in
-            both faith and knowledge.
+            {t('visitCta.description')}
           </p>
 
           <Link
             href="/contact"
             className="mt-[clamp(1.25rem,1.9vw,2.25rem)] inline-flex items-center gap-3 h-[44px] px-7 rounded-full bg-[#048ED6] text-white font-medium transition-colors hover:bg-[#037ab8] text-[clamp(0.75rem,0.73vw,0.875rem)]"
           >
-            Contact Us
-            <ArrowRight className="w-4 h-4" />
+            {t('visitCta.contactUs')}
+            <ArrowRight className="w-4 h-4 rtl:-scale-x-100" />
           </Link>
         </div>
       </div>

@@ -6,6 +6,7 @@ import { ArrowRight, Phone, Mail, X, Container } from 'lucide-react';
 import type { HeroSectionComponent } from '../../../types/cms.types';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Pagination, Autoplay, EffectFade } from 'swiper/modules';
+import { useTranslations } from 'next-intl';
 
 import 'swiper/css';
 import 'swiper/css/pagination';
@@ -17,6 +18,7 @@ interface HeroProps {
 }
 
 export function HeroSection({ data, locale = 'en' }: HeroProps) {
+  const t = useTranslations('hero');
   const [isOpen, setIsOpen] = React.useState(false);
 
   // Escape closes the contact menu — the backdrop handles pointer dismissal,
@@ -31,7 +33,7 @@ export function HeroSection({ data, locale = 'en' }: HeroProps) {
   }, [isOpen]);
   const [paginationEl, setPaginationEl] = React.useState<HTMLElement | null>(null);
   const [swiperInstance, setSwiperInstance] = React.useState<any>(null);
-  const ctaText = data?.primaryCtaText || "Start Application";
+  const ctaText = data?.primaryCtaText || t('startApplication');
   const ctaUrl = data?.primaryCtaUrl || "/contact";
   React.useEffect(() => {
     if (swiperInstance && paginationEl && swiperInstance.params.pagination) {
@@ -70,30 +72,30 @@ export function HeroSection({ data, locale = 'en' }: HeroProps) {
     {
       id: 1,
       image: '/images/figma-home/19.png',
-      titlePart1: "Education, Practice",
-      titlePart2: "and Advocacy.",
-      description: data?.subtitle || "Yahaya International Islamic & English School blends the depth of traditional Islamic values with the rigorous standards of modern international education, fostering a nurturing environment for holistic student growth.",
+      titlePart1: t('slide1Title1'),
+      titlePart2: t('slide1Title2'),
+      description: data?.subtitle || t('slide1Desc'),
     },
     {
       id: 2,
       image: '/images/figma-home/slide2-new.png',
-      titlePart1: "Nurturing Minds,",
-      titlePart2: "Building Futures.",
-      description: "Our comprehensive curriculum is designed to challenge students intellectually while supporting their emotional and spiritual well-being.",
+      titlePart1: t('slide2Title1'),
+      titlePart2: t('slide2Title2'),
+      description: t('slide2Desc'),
     },
     {
       id: 3,
       image: '/images/figma-home/17.png',
-      titlePart1: "Excellence in",
-      titlePart2: "Every Step.",
-      description: "Join a community dedicated to academic excellence, moral integrity, and lifelong learning in a supportive environment.",
+      titlePart1: t('slide3Title1'),
+      titlePart2: t('slide3Title2'),
+      description: t('slide3Desc'),
     },
     {
       id: 4,
       image: '/images/figma-home/17.png',
-      titlePart1: "Excellence in",
-      titlePart2: "Every Step.",
-      description: "Join a community dedicated to academic excellence, moral integrity, and lifelong learning in a supportive environment.",
+      titlePart1: t('slide3Title1'),
+      titlePart2: t('slide3Title2'),
+      description: t('slide3Desc'),
     }
   ];
 
@@ -186,7 +188,7 @@ export function HeroSection({ data, locale = 'en' }: HeroProps) {
                           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
-                          <span className="tracking-widest uppercase">EST. 2020</span>
+                          <span className="tracking-widest uppercase">{t('established')}</span>
                         </div>
 
                         <h1 className="text-4xl line-clamp-3 md:text-5xl lg:text-[3.5rem] font-bold leading-[1.03] tracking-tight text-white drop-shadow-md opacity-0 group-[&.swiper-slide-active]/slide:opacity-100 duration-500 group-[&.swiper-slide-active]/slide:delay-500 translate-y-5 group-[&.swiper-slide-active]/slide:translate-y-0 overflow-hidden">
@@ -206,7 +208,7 @@ export function HeroSection({ data, locale = 'en' }: HeroProps) {
                             className="inline-flex items-center gap-3 px-6 py-3 rounded-full bg-white text-gray-900 font-bold text-xs hover:bg-gray-100 transition-colors shadow-xl"
                           >
                             <span>{ctaText}</span>
-                            <ArrowRight className="w-4 h-4" />
+                            <ArrowRight className="w-4 h-4 rtl:rotate-180" />
                           </Link>
                         </div>
                       </div>
@@ -233,7 +235,7 @@ export function HeroSection({ data, locale = 'en' }: HeroProps) {
           />
 
           {/* Floating Contact Menu */}
-          <div className="absolute right-0 top-1/2 -translate-y-1/2 z-[901] flex items-center">
+          <div dir="ltr" className="absolute right-0 top-1/2 -translate-y-1/2 z-[901] flex items-center">
             {/* Expanded items */}
             <div
               className={`absolute right-14 flex flex-col gap-3 transition-all duration-300 origin-right ${isOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-50 pointer-events-none'

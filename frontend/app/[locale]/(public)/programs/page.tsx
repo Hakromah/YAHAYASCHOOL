@@ -1,5 +1,6 @@
 import React from 'react';
 import type { Metadata } from 'next';
+import { cmsService } from '@/services/cms.service';
 import {
   AcademicHero,
   AcademicPrograms,
@@ -11,11 +12,14 @@ export const metadata: Metadata = {
   description: 'Rigorous academics, Islamic character, and global readiness.',
 };
 
-export default function ProgramsPage({ params: { locale = 'en' } }: { params: { locale?: string } }) {
+export default async function ProgramsPage({ params }: { params: Promise<{ locale?: string }> }) {
+  const { locale = 'en' } = await params;
+  const programs = await cmsService.getPrograms(locale, false, 50);
+
   return (
     <main className="min-h-screen bg-white">
-      <AcademicHero locale={locale} />
-      <AcademicPrograms locale={locale} />
+      <AcademicHero />
+      <AcademicPrograms locale={locale} programs={programs} />
       <AcademicApproach />
     </main>
   );

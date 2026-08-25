@@ -1,7 +1,8 @@
 import React from 'react';
 import Link from 'next/link';
 import { ArrowRight, BookOpen, CheckCircle2, ChevronRight, Download } from 'lucide-react';
-import type { Program } from '@/components/public/academic/programs';
+import type { ProgramEntity } from '@/types/cms.types';
+import { useTranslations, useLocale } from 'next-intl';
 
 /**
  * Programme detail page. Implemented from Figma node 384-3088 (frame 1920x3262).
@@ -17,7 +18,10 @@ import type { Program } from '@/components/public/academic/programs';
  * The approach panel below is the same component the listing page uses.
  */
 
-export function ProgramHero({ program, locale = 'en' }: { program: Program; locale?: string }) {
+export function ProgramHero({ program }: { program: ProgramEntity }) {
+  const locale = useLocale();
+  const t = useTranslations('academicDetail.hero');
+  const tp = useTranslations(`academicPage.programsList.${program.slug}`);
   const href = (url: string) => (locale === 'en' ? url : `/${locale}${url}`);
 
   return (
@@ -25,26 +29,26 @@ export function ProgramHero({ program, locale = 'en' }: { program: Program; loca
       <div className="mx-auto grid max-w-[1920px] grid-cols-1 items-center gap-[clamp(2rem,3vw,3.5rem)] px-(--spacing-side) py-[clamp(2.5rem,4.7vw,5.6rem)] lg:grid-cols-[minmax(0,818fr)_minmax(0,820fr)]">
         <div className="min-w-0">
           <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-[#6F757D] text-[clamp(0.75rem,0.68vw,0.8125rem)]">
-            <Link href={href('/')} className="transition-colors hover:text-[#048ED6]">Home</Link>
-            <ChevronRight className="h-3.5 w-3.5" aria-hidden />
-            <Link href={href('/programs')} className="text-[#048ED6] transition-opacity hover:opacity-80">Academics</Link>
-            <ChevronRight className="h-3.5 w-3.5" aria-hidden />
-            <span className="text-[#048ED6]">Academics-details</span>
+            <Link href={href('/')} className="transition-colors hover:text-[#048ED6]">{t('home')}</Link>
+            <ChevronRight className="h-3.5 w-3.5 rtl:-scale-x-100" aria-hidden />
+            <Link href={href('/programs')} className="text-[#048ED6] transition-opacity hover:opacity-80">{t('academics')}</Link>
+            <ChevronRight className="h-3.5 w-3.5 rtl:-scale-x-100" aria-hidden />
+            <span className="text-[#048ED6]">{t('details')}</span>
           </nav>
 
           {/* 30 tall in the design */}
           <span className="mt-[clamp(1.75rem,3.4vw,4.1rem)] inline-flex h-[clamp(1.5rem,1.56vw,1.875rem)] items-center gap-2 rounded-full bg-[#E1EFF6] px-3 font-semibold uppercase tracking-[0.14em] text-[#048ED6] text-[clamp(0.5625rem,0.57vw,0.6875rem)]">
             <BookOpen className="h-3 w-3" aria-hidden />
-            {program.eyebrow}
+            {tp('eyebrow')}
           </span>
 
           <h1 className="mt-[clamp(0.75rem,1.15vw,1.375rem)] font-serif leading-[1.09] max-sm:leading-tight text-[clamp(1.5rem,2.29vw,2.75rem)]">
-            <span className="block text-[#121C2A]">Knowledge Rooted in Faith.</span>
-            <span className="block text-[#048ED6]">Excellence Built for Life.</span>
+            <span className="block text-[#121C2A]">{t('headline_1')}</span>
+            <span className="block text-[#048ED6]">{t('headline_2')}</span>
           </h1>
 
           <p className="mt-[clamp(1rem,1.5vw,1.75rem)] max-w-[32rem] leading-[1.6] text-[#5A636D] text-[1rem]">
-            {program.lede}
+            {tp('lede')}
           </p>
 
           <div className="mt-[clamp(1.5rem,2.5vw,3rem)] flex flex-wrap items-center gap-[clamp(0.75rem,1vw,1.25rem)]">
@@ -52,8 +56,8 @@ export function ProgramHero({ program, locale = 'en' }: { program: Program; loca
               href={href('/contact')}
               className="inline-flex h-[clamp(2.75rem,3.33vw,4rem)] items-center gap-2 rounded-full bg-[#048ED6] px-[clamp(1.25rem,1.77vw,2.125rem)] font-semibold text-white transition-colors hover:bg-[#037ab8] text-[clamp(0.8125rem,0.94vw,1.125rem)]"
             >
-              Contact Us
-              <ArrowRight className="h-4 w-4" />
+              {t('contactUs')}
+              <ArrowRight className="h-4 w-4 rtl:-scale-x-100" />
             </Link>
 
             {/* No prospectus file exists yet, so this points at contact rather
@@ -62,7 +66,7 @@ export function ProgramHero({ program, locale = 'en' }: { program: Program; loca
               href={href('/contact')}
               className="inline-flex h-[clamp(2.75rem,3.33vw,4rem)] items-center gap-2 rounded-full border border-[#048ED6] bg-white px-[clamp(1.25rem,1.77vw,2.125rem)] font-semibold text-[#048ED6] transition-colors hover:bg-[#EAF5FD] text-[clamp(0.8125rem,0.94vw,1.125rem)]"
             >
-              Download Pdf
+              {t('downloadPdf')}
               <Download className="h-4 w-4" />
             </Link>
           </div>
@@ -72,8 +76,8 @@ export function ProgramHero({ program, locale = 'en' }: { program: Program; loca
             listing page's hero, not this one. */}
         <div className="w-full">
           <img
-            src={program.image}
-            alt={program.alt}
+            src={program.coverImage?.url || program.images?.[0]?.url || '/images/figma-home/09.png'}
+            alt={program.title || ''}
             className="aspect-[820/605] w-full rounded-lg object-cover"
           />
         </div>
@@ -82,7 +86,9 @@ export function ProgramHero({ program, locale = 'en' }: { program: Program; loca
   );
 }
 
-export function ProgramPathway({ program }: { program: Program }) {
+export function ProgramPathway({ program }: { program: ProgramEntity }) {
+  const tp = useTranslations(`academicPage.programsList.${program.slug}`);
+
   return (
     <section className="w-full bg-white">
       <div className="mx-auto max-w-[1920px] px-(--spacing-side) py-[clamp(1.5rem,4.7vw,5.6rem)]">
@@ -92,23 +98,23 @@ export function ProgramPathway({ program }: { program: Program }) {
             <span className="block h-1 w-[clamp(2rem,2.6vw,3.125rem)] rounded bg-[#048ED6]" />
 
             <h2 className="mt-[clamp(0.75rem,1.15vw,1.375rem)] font-serif text-[#121C2A] text-[clamp(1.375rem,1.77vw,2.125rem)]">
-              {program.pathwayTitle}
+              {tp('pathwayTitle')}
             </h2>
 
             <p className="mt-[clamp(0.75rem,1.15vw,1.375rem)] leading-[1.7] text-[#5A636D] text-[1rem]">
-              {program.pathwayLede}
+              {tp('pathwayLede')}
             </p>
 
             <ul className="mt-[clamp(1.25rem,2.08vw,2.5rem)] space-y-[clamp(1rem,1.35vw,1.625rem)]">
-              {program.steps.map((s) => (
-                <li key={s.title} className="flex gap-3">
+              {[0, 1, 2, 3].map((_, idx) => (
+                <li key={idx} className="flex gap-3">
                   <CheckCircle2 className="mt-[0.2em] h-4 w-4 shrink-0 text-[#048ED6]" aria-hidden />
                   <span className="min-w-0">
                     <span className="block text-[#121C2A] text-[clamp(0.9375rem,1.04vw,1.25rem)]">
-                      {s.title}
+                      {tp(`steps.${idx}.title`)}
                     </span>
                     <span className="mt-1 block leading-[1.6] text-[#5A636D] text-[clamp(0.6875rem,0.73vw,0.875rem)]">
-                      {s.desc}
+                      {tp(`steps.${idx}.desc`)}
                     </span>
                   </span>
                 </li>

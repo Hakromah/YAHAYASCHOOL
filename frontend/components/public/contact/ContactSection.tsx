@@ -2,6 +2,11 @@
 
 import React, { useId, useState } from 'react';
 import { Clock, Mail, MapPin, Phone, Send } from 'lucide-react';
+import PhoneInput from 'react-phone-input-2';
+import 'react-phone-input-2/lib/style.css';
+import Link from 'next/link';
+
+import { useTranslations, useLocale } from 'next-intl';
 
 /**
  * Contact — enquiry form and the Campus Information panel.
@@ -14,28 +19,28 @@ import { Clock, Mail, MapPin, Phone, Send } from 'lucide-react';
  *   map 1152×500 at y1165
  */
 
-const SUBJECTS = [
-  'Admissions Inquiry',
-  'Academic Programs',
-  'Fees and Payments',
-  'Careers',
-  'General Enquiry',
+const SUBJECT_KEYS = [
+  'admissions',
+  'academic',
+  'fees',
+  'careers',
+  'general',
 ];
 
 const CAMPUS = [
   {
     Icon: MapPin,
-    label: 'Main Campus',
-    lines: ['123 Wisdom Avenue', 'Educational District, ED 45678', 'Monrovia, Liberia'],
+    key: 'mainCampus',
+    lines: ['address1', 'address2', 'address3'],
     url: 'https://www.google.com/maps/search/Monrovia+Liberia',
   },
-  { Icon: Phone, label: 'Administration', lines: ['+971 4 123 4567'], url: 'tel:+97141234567' },
-  { Icon: null, label: 'WhatsApps Us', lines: ['+971 4 123 4567'], whatsapp: true, url: 'https://wa.me/97141234567' },
-  { Icon: Mail, label: 'Admissions Desk', lines: ['admissions@yahaya.edu'], url: 'mailto:admissions@yahaya.edu' },
+  { Icon: Phone, key: 'administration', lines: ['+971 4 123 4567'], isRaw: true, url: 'tel:+97141234567' },
+  { Icon: null, key: 'whatsapp', lines: ['+971 4 123 4567'], isRaw: true, whatsapp: true, url: 'https://wa.me/97141234567' },
+  { Icon: Mail, key: 'admissionsDesk', lines: ['admissions@yahaya.edu'], isRaw: true, url: 'mailto:admissions@yahaya.edu' },
   {
     Icon: Clock,
-    label: 'Office Hours',
-    lines: ['Monday - Friday: 8:00 AM - 4:00 PM', 'Friday Prayer Break: 12:00 PM - 2:00 PM'],
+    key: 'officeHours',
+    lines: ['hours1', 'hours2'],
     url: '#',
   },
 ] as const;
@@ -47,11 +52,128 @@ const LABEL = 'block mb-2 text-[#3F4941] text-[clamp(1rem,0.68vw,1.1rem)]';
 
 export function ContactSection() {
   const id = useId();
+  const t = useTranslations('contactPage');
+  const locale = useLocale();
+  const isRtl = locale === 'ar';
   const [accepted, setAccepted] = useState(false);
   const [sent, setSent] = useState(false);
+  const [phoneValue, setPhoneValue] = useState('');
 
   return (
     <section className="w-full bg-white">
+      <style>{`
+        .contact-phone .form-control {
+          width: 100% !important;
+          height: 52px !important;
+          border-radius: 0.5rem !important;
+          border: none !important;
+          background-color: #EFF4FF !important;
+          color: #121C2A !important;
+          font-size: clamp(0.8125rem,0.78vw,0.9375rem) !important;
+          padding-left: 3rem !important;
+          font-family: inherit !important;
+        }
+        .contact-phone .form-control:focus {
+          box-shadow: 0 0 0 2px rgba(4, 142, 214, 0.4) !important;
+        }
+        .contact-phone .flag-dropdown {
+          border: none !important;
+          background: transparent !important;
+          border-radius: 0.5rem 0 0 0.5rem !important;
+        }
+        .contact-phone .flag-dropdown.open {
+          background: transparent !important;
+          border: none !important;
+        }
+        .contact-phone .flag-dropdown:hover, 
+        .contact-phone .flag-dropdown:focus {
+          background: transparent !important;
+        }
+        .contact-phone .selected-flag {
+          background: transparent !important;
+          width: 48px !important;
+          padding: 0 0 0 16px !important;
+        }
+        .contact-phone .selected-flag:hover, 
+        .contact-phone .selected-flag:focus {
+          background: transparent !important;
+        }
+        .contact-phone .selected-flag .arrow {
+          display: none !important;
+        }
+        .contact-phone .country-list {
+          border-radius: 0.5rem !important;
+          box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+          border: 1px solid #D6E9F6 !important;
+          margin-top: 4px !important;
+          width: 260px !important;
+          max-width: 85vw !important;
+          font-family: inherit !important;
+          color: #121C2A !important;
+          background-color: white !important;
+        }
+        .contact-phone .country-list .search {
+          padding: 10px !important;
+          background-color: white !important;
+        }
+        .contact-phone .country-list .search-box {
+          width: 100% !important;
+          margin: 0 !important;
+          border-radius: 0.375rem !important;
+          border: 1px solid #D6E9F6 !important;
+          padding: 0.5rem 0.75rem !important;
+          background-color: #F7FBFE !important;
+          font-size: 0.875rem !important;
+          outline: none !important;
+          transition: border-color 0.2s !important;
+          color: #121C2A !important;
+        }
+        .contact-phone .country-list .search-box::placeholder {
+          color: #8A939C !important;
+        }
+        .contact-phone .country-list .search-emoji,
+        .contact-phone .country-list .search-icon {
+          display: none !important;
+        }
+        .contact-phone .country-list .search-box:focus {
+          border-color: #048ED6 !important;
+        }
+        .contact-phone .country-list .country {
+          padding: 0.5rem 1rem !important;
+        }
+        .contact-phone .country-list .country-name {
+          display: none !important;
+        }
+        .contact-phone .country-list .dial-code {
+          color: #121C2A !important;
+          margin-left: 0.5rem !important;
+        }
+        .contact-phone .country-list .country.highlight {
+          background-color: #EAF5FD !important;
+        }
+        .contact-phone .country-list .country:hover {
+          background-color: #F7FBFE !important;
+        }
+        .contact-phone .country-list .no-entries-message {
+          color: #8A939C !important;
+          padding: 0.5rem 1rem !important;
+        }
+        
+        /* RTL overrides */
+        html[dir="rtl"] .contact-phone .form-control {
+          padding-left: 1rem !important;
+          padding-right: 3rem !important;
+          text-align: right !important;
+        }
+        html[dir="rtl"] .contact-phone .flag-dropdown {
+          left: auto !important;
+          right: 0 !important;
+          border-radius: 0 0.5rem 0.5rem 0 !important;
+        }
+        html[dir="rtl"] .contact-phone .selected-flag {
+          padding: 0 16px 0 0 !important;
+        }
+      `}</style>
       <div className="max-w-[1920px] mx-auto px-(--spacing-side) py-[clamp(1.3rem,4.2vw,5rem)]">
         <div className="max-w-[1152px] mx-auto grid grid-cols-1 lg:grid-cols-[minmax(0,657fr)_minmax(0,466fr)] gap-[29px] items-stretch">
 
@@ -69,38 +191,49 @@ export function ContactSection() {
             >
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-[31px] gap-y-5">
                 <div>
-                  <label className={LABEL} htmlFor={`${id}-first`}>First Name</label>
-                  <input id={`${id}-first`} name="firstName" className={FIELD} placeholder="Musa" required />
+                  <label className={LABEL} htmlFor={`${id}-first`}>{t('form.firstName')}</label>
+                  <input id={`${id}-first`} name="firstName" className={FIELD} placeholder={t('form.firstNamePlaceholder')} required />
                 </div>
                 <div>
-                  <label className={LABEL} htmlFor={`${id}-last`}>Last Name</label>
-                  <input id={`${id}-last`} name="lastName" className={FIELD} placeholder="Kamara" required />
+                  <label className={LABEL} htmlFor={`${id}-last`}>{t('form.lastName')}</label>
+                  <input id={`${id}-last`} name="lastName" className={FIELD} placeholder={t('form.lastNamePlaceholder')} required />
                 </div>
                 <div>
-                  <label className={LABEL} htmlFor={`${id}-email`}>Email Address</label>
-                  <input id={`${id}-email`} name="email" type="email" className={FIELD} placeholder="musakamara@gmail.com" required />
+                  <label className={LABEL} htmlFor={`${id}-email`}>{t('form.email')}</label>
+                  <input id={`${id}-email`} name="email" type="email" className={FIELD} placeholder={t('form.emailPlaceholder')} dir="ltr" style={{ textAlign: isRtl ? 'right' : 'left' }} required />
                 </div>
                 <div>
-                  <label className={LABEL} htmlFor={`${id}-phone`}>Phone Number</label>
-                  <input id={`${id}-phone`} name="phone" type="tel" className={FIELD} placeholder="+1 (555) 000-0000" />
+                  <label className={LABEL} htmlFor={`${id}-phone`}>{t('form.phone')}</label>
+                  <PhoneInput
+                    country={'lr'}
+                    enableSearch={true}
+                    value={phoneValue}
+                    onChange={setPhoneValue}
+                    inputProps={{
+                      name: 'phone',
+                      id: `${id}-phone`,
+                      dir: 'ltr'
+                    }}
+                    containerClass="w-full contact-phone"
+                  />
                 </div>
               </div>
 
               <div className="mt-5">
-                <label className={LABEL} htmlFor={`${id}-subject`}>Subject Area</label>
-                <select id={`${id}-subject`} name="subject" className={`${FIELD} appearance-none bg-[url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%239AA3AE%22 stroke-width=%222%22><path d=%22M6 9l6 6 6-6%22/></svg>')] bg-no-repeat bg-[right_1rem_center] bg-[length:18px_18px] pr-12`}>
-                  {SUBJECTS.map((s) => <option key={s}>{s}</option>)}
+                <label className={LABEL} htmlFor={`${id}-subject`}>{t('form.subject')}</label>
+                <select id={`${id}-subject`} name="subject" className={`${FIELD} appearance-none bg-[url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%239AA3AE%22 stroke-width=%222%22><path d=%22M6 9l6 6 6-6%22/></svg>')] bg-no-repeat ltr:bg-[right_1rem_center] rtl:bg-[left_1rem_center] bg-[length:18px_18px] ltr:pr-12 rtl:pl-12`}>
+                  {SUBJECT_KEYS.map((s) => <option key={s}>{t(`subjects.${s}`)}</option>)}
                 </select>
               </div>
 
               <div className="mt-5">
-                <label className={LABEL} htmlFor={`${id}-message`}>Your Message</label>
+                <label className={LABEL} htmlFor={`${id}-message`}>{t('form.message')}</label>
                 <textarea
                   id={`${id}-message`}
                   name="message"
                   rows={5}
                   className={`${FIELD} h-auto py-3 resize-y`}
-                  placeholder="How can we assist you today?"
+                  placeholder={t('form.messagePlaceholder')}
                   required
                 />
               </div>
@@ -115,8 +248,8 @@ export function ContactSection() {
                     required
                   />
                   <span className="leading-[1.5] text-[clamp(0.6875rem,0.68vw,0.8125rem)]">
-                    <span className="font-semibold text-[#121C2A]">Read the legal terms and service,</span>{' '}
-                    <span className="text-[#7A828C]">I have accept it</span>
+                    <Link href="?policy=terms" scroll={false} onClick={(e) => e.stopPropagation()} className="font-semibold text-[#121C2A] hover:underline hover:text-[#048ED6] transition-colors">{t('form.terms1')}</Link>{' '}
+                    <span className="text-[#7A828C]">{t('form.terms2')}</span>
                   </span>
                 </label>
 
@@ -125,14 +258,14 @@ export function ContactSection() {
                   disabled={!accepted}
                   className="inline-flex items-center justify-center gap-3 h-[52px] px-7 shrink-0 rounded-full bg-[#048ED6] text-white font-medium transition-colors hover:bg-[#037ab8] disabled:opacity-40 disabled:hover:bg-[#048ED6] disabled:cursor-not-allowed text-[clamp(0.8125rem,0.78vw,0.9375rem)]"
                 >
-                  Send Message
-                  <Send className="w-4 h-4" />
+                  {t('form.send')}
+                  <Send className="w-4 h-4 rtl:-scale-x-100" />
                 </button>
               </div>
 
               {sent && (
                 <p role="status" className="mt-4 text-[#048ED6] text-[1rem]">
-                  Thank you — we&apos;ll be in touch shortly.
+                  {t('form.success')}
                 </p>
               )}
             </form>
@@ -147,12 +280,12 @@ export function ContactSection() {
             />
 
             <h2 className="relative font-serif leading-tight text-[clamp(1.5rem,1.77vw,2.125rem)]">
-              Campus Information
+              {t('campus.title')}
             </h2>
 
             <ul className="relative mt-[clamp(1.5rem,2.1vw,2.5rem)] flex flex-col gap-[clamp(1.25rem,1.7vw,2rem)]">
               {CAMPUS.map((item) => (
-                <li key={item.label} className="w-full relative">
+                <li key={item.key} className="w-full relative">
                   <a href={item.url} target="_blank" rel="noopener noreferrer">
                     <div className="flex gap-4">
                       <span className="mt-[2px] shrink-0">
@@ -166,10 +299,10 @@ export function ContactSection() {
                       </span>
 
                       <div className="min-w-0">
-                        <p className="font-semibold text-[1rem]">{item.label}</p>
+                        <p className="font-semibold text-[1rem]">{t(`campus.${item.key}`)}</p>
                         {item.lines.map((l) => (
-                          <p key={l} className="text-white/85 leading-[1.55] text-[1rem]">
-                            {l}
+                          <p key={l} className="text-white/85 leading-[1.55] text-[1rem]" dir={'isRaw' in item && item.isRaw ? 'ltr' : 'auto'}>
+                            {'isRaw' in item && item.isRaw ? l : t(`campus.${l}`)}
                           </p>
                         ))}
                       </div>

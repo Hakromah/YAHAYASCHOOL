@@ -1,36 +1,35 @@
 import React from 'react';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { ARTICLES } from '@/components/public/news/articles';
+import { cmsService } from '@/services/cms.service';
 import { NewsArticleHero, NewsArticleBody } from '@/components/public/news/NewsDetail';
 
-interface ArticleDetailProps {
+interface NewsDetailProps {
   params: Promise<{ locale: string; slug: string }>;
 }
 
-export function generateStaticParams() {
-  return ARTICLES.map((a) => ({ slug: a.slug }));
+export async function generateStaticParams() {
+  const { data: articles } = await cmsService.getArticles('en', 1, 100);
+  return articles.map((a) => ({ slug: a.slug }));
 }
 
-export async function generateMetadata({ params }: ArticleDetailProps): Promise<Metadata> {
-  const { slug } = await params;
-  const article = ARTICLES.find((a) => a.slug === slug);
-  if (!article) return { title: 'Article not found | YAHAYASCHOOL' };
-  return { title: `${article.title} | YAHAYASCHOOL`, description: article.desc };
+export async function generateMetadata({ params }: NewsDetailProps): Promise<Metadata> {
+  const { slug, locale } = await params;
+  const article = await cmsService.getArticleBySlug(slug, locale);
+  if (!article) return { title: 'Article Not Found | YAHAYASCHOOL' };
+  return { title: `${article.title} | YAHAYASCHOOL`, description: article.summary };
 }
 
-export default async function ArticleDetailPage({ params }: ArticleDetailProps) {
+export default async function NewsDetailPage({ params }: NewsDetailProps) {
   const { locale, slug } = await params;
 
-  // The listing links here by slug, so an unknown one is a genuine 404 rather
-  // than something to paper over with the first article.
-  const article = ARTICLES.find((a) => a.slug === slug);
+  const article = await cmsService.getArticleBySlug(slug, locale);
   if (!article) notFound();
 
   return (
     <main className="min-h-screen bg-white">
-      <NewsArticleHero article={article} locale={locale} />
-      <NewsArticleBody locale={locale} />
+      <NewsArticleHero article={article} />
+      <NewsArticleBody locale={locale} article={article} />
     </main>
   );
 }

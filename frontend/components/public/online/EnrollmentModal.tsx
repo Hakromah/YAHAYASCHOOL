@@ -5,6 +5,8 @@ import { CreditCard, X } from 'lucide-react';
 import { useLenis } from 'lenis/react';
 import PhoneInput from 'react-phone-input-2';
 import 'react-phone-input-2/lib/style.css';
+import { useTranslations, useLocale } from 'next-intl';
+import Link from 'next/link';
 
 /**
  * Enrollment modal. Implemented from the Figma popup frames (789 x 780).
@@ -20,20 +22,9 @@ import 'react-phone-input-2/lib/style.css';
  * is the hand-off point to a payment provider, which is not yet connected.
  */
 
-const COURSES = [
-  'Advanced Arabic Grammar',
-  'Tajweed Foundations',
-  'Islamic History',
-  'English for Academic Study',
-  'Qur’anic Arabic',
-  'Fiqh Essentials',
-  'English (speaking, Writing, and Listening)',
-  'Arabic — Classical and Modern',
-  "Qur'an Memorization (Hifz)",
-  'Islamic Studies',
-];
-
-const CURRENCIES = ['USD - US Dollar', 'EUR - Euro', 'GBP - British Pound', 'LRD - Liberian Dollar'];
+// We only define length here; actual titles come from onlineLearningPage namespace
+const COURSES = Array.from({ length: 6 });
+const CURRENCIES = ['usd', 'eur', 'gbp', 'lrd'];
 
 type Tab = 'pay' | 'paid';
 
@@ -54,6 +45,14 @@ export function EnrollmentModal({
   const closeRef = useRef<HTMLButtonElement>(null);
   const restoreTo = useRef<HTMLElement | null>(null);
   const lenis = useLenis();
+  const t = useTranslations('enrollmentModal');
+  const tOnline = useTranslations('onlineLearningPage');
+  const tContact = useTranslations('contactPage');
+  const locale = useLocale();
+  const isRtl = locale === 'ar';
+
+  const [accepted, setAccepted] = useState(false);
+  const [acceptedPay, setAcceptedPay] = useState(false);
 
   // Same scroll lock the mobile menu and the media lightbox use; Lenis owns
   // scrolling, so overflow:hidden alone would not hold, but we need both.
@@ -239,6 +238,21 @@ export function EnrollmentModal({
           color: #8A939C !important;
           padding: 0.5rem 1rem !important;
         }
+
+        /* RTL overrides */
+        html[dir="rtl"] .react-tel-input .form-control {
+          padding-left: 1rem !important;
+          padding-right: 3rem !important;
+          text-align: right !important;
+        }
+        html[dir="rtl"] .react-tel-input .flag-dropdown {
+          left: auto !important;
+          right: 0 !important;
+          border-radius: 0 0.5rem 0.5rem 0 !important;
+        }
+        html[dir="rtl"] .react-tel-input .selected-flag {
+          padding: 0 16px 0 0 !important;
+        }
       `}</style>
 
       <div
@@ -257,7 +271,7 @@ export function EnrollmentModal({
 
         {/* Tabs */}
         <div role="tablist" aria-label="Enrollment options" className="flex items-center justify-center gap-3">
-          {([['pay', 'Pay Online'], ['paid', 'Already Paid']] as const).map(([id, text]) => {
+          {([['pay', t('payOnline')], ['paid', t('alreadyPaid')]] as const).map(([id, text]) => {
             const on = tab === id;
             return (
               <button
@@ -290,22 +304,22 @@ export function EnrollmentModal({
               }}
             >
               <p className="grid h-[clamp(2.5rem,2.3vw,2.75rem)] place-items-center rounded-lg bg-[#048ED6] font-semibold text-white text-[1rem]">
-                Pay Online
+                {t('payOnline')}
               </p>
 
               <div className="mt-[clamp(1rem,1.66vw,2rem)] grid grid-cols-1 gap-[clamp(1rem,1.5vw,1.75rem)] sm:grid-cols-2">
                 <div className="sm:col-span-2">
-                  <label htmlFor="enr-name" className={label}>Full Name</label>
-                  <input id="enr-name" name="name" required placeholder="e.g. John Doe" className={`${field} mt-2`} />
+                  <label htmlFor="enr-name" className={label}>{t('firstName')} & {t('lastName')}</label>
+                  <input id="enr-name" name="name" required placeholder={t('placeholders.name')} className={`${field} mt-2`} />
                 </div>
                 
                 <div>
-                  <label htmlFor="enr-email" className={label}>Email Address</label>
-                  <input id="enr-email" name="email" type="email" required placeholder="e.g. john@example.com" className={`${field} mt-2`} />
+                  <label htmlFor="enr-email" className={label}>{t('email')}</label>
+                  <input id="enr-email" name="email" type="email" required placeholder={t('placeholders.email')} dir="ltr" style={{ textAlign: isRtl ? 'right' : 'left' }} className={`${field} mt-2`} />
                 </div>
 
                 <div>
-                  <label htmlFor="enr-phone" className={label}>Phone Number</label>
+                  <label htmlFor="enr-phone" className={label}>{t('phone')}</label>
                   <PhoneInput
                     country={'lr'}
                     enableSearch={true}
@@ -313,7 +327,8 @@ export function EnrollmentModal({
                     onChange={setPhoneValue}
                     inputProps={{
                       name: 'phone',
-                      id: 'enr-phone'
+                      id: 'enr-phone',
+                      dir: 'ltr'
                     }}
                     containerClass="w-full mt-2"
                   />
@@ -321,44 +336,59 @@ export function EnrollmentModal({
               </div>
 
               <div className="mt-[clamp(1rem,1.66vw,2rem)]">
-                <label htmlFor="enr-course" className={label}>Course Selection</label>
-                <select id="enr-course" name="course" className={`${selectField} mt-2`} defaultValue={selectedCourse || COURSES[0]}>
-                  {COURSES.map((c) => <option key={c} value={c}>{c}</option>)}
+                <label htmlFor="enr-course" className={label}>{t('selectCourse')}</label>
+                <select id="enr-course" name="course" className={`${selectField} mt-2`} defaultValue={selectedCourse || tOnline('coursesList.0.title')}>
+                  {COURSES.map((_, i) => <option key={i} value={tOnline(`coursesList.${i}.title`)}>{tOnline(`coursesList.${i}.title`)}</option>)}
                 </select>
               </div>
 
               <div className="mt-[clamp(1rem,1.66vw,2rem)] grid grid-cols-2 gap-[clamp(0.75rem,1.04vw,1.25rem)]">
                 <div>
-                  <label htmlFor="enr-amount" className={label}>Amount</label>
+                  <label htmlFor="enr-amount" className={label}>{t('selectAmount')}</label>
                   <input
                     id="enr-amount"
                     name="amount"
-                    defaultValue="$500"
+                    defaultValue={t('amountDefault')}
                     inputMode="decimal"
                     className={`${field} mt-2`}
                   />
                 </div>
                 <div>
-                  <label htmlFor="enr-currency" className={label}>Currency</label>
+                  <label htmlFor="enr-currency" className={label}>{t('selectCurrency')}</label>
                   <select id="enr-currency" name="currency" className={`${selectField} mt-2`}>
-                    {CURRENCIES.map((c) => <option key={c}>{c}</option>)}
+                    {CURRENCIES.map((c) => <option key={c}>{t(`currencies.${c}`)}</option>)}
                   </select>
                 </div>
               </div>
 
+              <label className="mt-[clamp(1rem,1.25vw,1.5rem)] flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={acceptedPay}
+                  onChange={(e) => setAcceptedPay(e.target.checked)}
+                  className="mt-[3px] w-4 h-4 shrink-0 accent-[#048ED6]"
+                  required
+                />
+                <span className="leading-[1.5] text-[clamp(0.6875rem,0.68vw,0.8125rem)] text-start">
+                  <Link href="?policy=terms" scroll={false} onClick={(e) => e.stopPropagation()} className="font-semibold text-[#121C2A] hover:underline hover:text-[#048ED6] transition-colors">{tContact('form.terms1')}</Link>{' '}
+                  <span className="text-[#7A828C]">{tContact('form.terms2')}</span>
+                </span>
+              </label>
+
               <button
                 type="submit"
-                className="mt-[clamp(1.25rem,2vw,2.4rem)] cursor-pointer flex h-[clamp(2.75rem,3.1vw,3.75rem)] w-full items-center justify-center gap-2 rounded-lg bg-[#048ED6] font-semibold text-white transition-colors hover:bg-[#037ab8] text-[clamp(0.875rem,0.94vw,1.125rem)]"
+                disabled={!acceptedPay}
+                className="mt-[clamp(1.25rem,2vw,2.4rem)] cursor-pointer flex h-[clamp(2.75rem,3.1vw,3.75rem)] w-full items-center justify-center gap-2 rounded-lg bg-[#048ED6] font-semibold text-white transition-colors hover:bg-[#037ab8] disabled:opacity-40 disabled:hover:bg-[#048ED6] disabled:cursor-not-allowed text-[clamp(0.875rem,0.94vw,1.125rem)]"
               >
                 <CreditCard className="h-4 w-4" />
-                Pay Securely Now
+                {t('checkout')}
               </button>
 
               {/* The design's caption reads "safe, secure and tax-deductible".
                   Tax-deductibility is a claim about the payer's jurisdiction
                   and is not true of a course fee, so it is not repeated here. */}
               <p className="mt-3 text-center text-[#8A939C] text-[1rem]">
-                Your payment is processed securely.
+                {t('securePayment')}
               </p>
             </form>
           ) : (
@@ -368,17 +398,17 @@ export function EnrollmentModal({
                 setSent(true);
               }}
             >
-              <h2 className="font-serif text-[#121C2A] text-[clamp(1.5rem,2.08vw,2.5rem)]">Enroll Now</h2>
+              <h2 className="font-serif text-[#121C2A] text-[clamp(1.5rem,2.08vw,2.5rem)]">{t('enrollNow')}</h2>
 
               {sent ? (
                 <p role="status" className="mt-6 rounded-lg bg-[#EAF5FD] px-4 py-3 text-[#036CA3] text-[1rem]">
-                  Thanks — we have your details and will be in touch shortly.
+                  {t('successThanks')}
                 </p>
               ) : (
                 <>
                   <div className="mt-[clamp(1rem,1.66vw,2rem)] grid grid-cols-1 gap-[clamp(0.75rem,1.04vw,1.25rem)] sm:grid-cols-2">
-                    <input name="name" required placeholder="Full Name" aria-label="Full name" className={field} />
-                    <input name="email" type="email" required placeholder="Email Address" aria-label="Email address" className={field} />
+                    <input name="name" required placeholder={t('placeholders.name')} aria-label={t('fullName')} className={field} />
+                    <input name="email" type="email" required placeholder={t('placeholders.email')} aria-label={t('email')} dir="ltr" style={{ textAlign: isRtl ? 'right' : 'left' }} className={field} />
                     <div className="sm:col-span-2 md:col-span-1">
                       <PhoneInput
                         country={'lr'}
@@ -387,29 +417,45 @@ export function EnrollmentModal({
                         onChange={setPhoneValue}
                         inputProps={{
                           name: 'phone',
-                          'aria-label': 'Phone'
+                          'aria-label': 'Phone',
+                          dir: 'ltr'
                         }}
                         containerClass="w-full"
                       />
                     </div>
-                    <input name="country" placeholder="Country" aria-label="Country" className={field} />
+                    <input name="country" placeholder={t('country')} aria-label={t('country')} className={field} />
                   </div>
 
-                  <input name="topic" placeholder="Inquiry Topic" aria-label="Inquiry topic" className={`${field} mt-[clamp(0.75rem,1.04vw,1.25rem)]`} />
+                  <input name="topic" placeholder={t('inquiryTopic')} aria-label={t('inquiryTopic')} className={`${field} mt-[clamp(0.75rem,1.04vw,1.25rem)]`} />
 
                   <textarea
                     name="message"
                     rows={5}
-                    placeholder="Your Message"
-                    aria-label="Your message"
+                    placeholder={t('message')}
+                    aria-label={t('message')}
                     className="mt-[clamp(0.75rem,1.04vw,1.25rem)] w-full rounded-lg border border-[#D6E9F6] bg-[#F7FBFE] p-4 text-[#121C2A] outline-none transition-colors placeholder:text-[#8A939C] focus-visible:border-[#048ED6] text-[clamp(0.8125rem,0.83vw,1rem)]"
                   />
 
+                  <label className="mt-[clamp(1rem,1.25vw,1.5rem)] flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={accepted}
+                      onChange={(e) => setAccepted(e.target.checked)}
+                      className="mt-[3px] w-4 h-4 shrink-0 accent-[#048ED6]"
+                      required
+                    />
+                    <span className="leading-[1.5] text-[clamp(0.6875rem,0.68vw,0.8125rem)] text-start">
+                      <Link href="?policy=terms" scroll={false} onClick={(e) => e.stopPropagation()} className="font-semibold text-[#121C2A] hover:underline hover:text-[#048ED6] transition-colors">{tContact('form.terms1')}</Link>{' '}
+                      <span className="text-[#7A828C]">{tContact('form.terms2')}</span>
+                    </span>
+                  </label>
+
                   <button
                     type="submit"
-                    className="mt-[clamp(1rem,1.66vw,2rem)] cursor-pointer h-[clamp(2.75rem,3.1vw,3.75rem)] w-full rounded-lg bg-[#048ED6] font-semibold text-white transition-colors hover:bg-[#037ab8] text-[clamp(0.875rem,0.94vw,1.125rem)]"
+                    disabled={!accepted}
+                    className="mt-[clamp(1rem,1.66vw,2rem)] cursor-pointer h-[clamp(2.75rem,3.1vw,3.75rem)] w-full rounded-lg bg-[#048ED6] font-semibold text-white transition-colors hover:bg-[#037ab8] disabled:opacity-40 disabled:hover:bg-[#048ED6] disabled:cursor-not-allowed text-[clamp(0.875rem,0.94vw,1.125rem)]"
                   >
-                    Send Message
+                    {t('sendMessage')}
                   </button>
                 </>
               )}

@@ -1,3 +1,5 @@
+import { apiClient } from './api.service';
+import qs from 'qs';
 import type {
   HomepageEntity,
   CustomPageEntity,
@@ -20,77 +22,183 @@ import type {
 } from '../types/cms.types';
 
 export const cmsService = {
+  /** Helper for robust querying */
+  async fetchStrapi<T>(endpoint: string, queryParams: any = {}): Promise<T | null> {
+    try {
+      const queryString = qs.stringify(queryParams, { encodeValuesOnly: true });
+      const url = `${endpoint}${queryString ? `?${queryString}` : ''}`;
+      const { data } = await apiClient.get<{ data: T }>(url);
+      return data.data;
+    } catch (error) {
+      console.error(`Error fetching ${endpoint}:`, error);
+      return null;
+    }
+  },
+
   async getHomepage(locale = 'en'): Promise<HomepageEntity | null> {
-    return {
-      id: 1,
-      title: 'Home',
-      sections: [
-        {
-          __component: 'sections.hero',
-          title: 'Welcome to YAHAYASCOOL',
-          subtitle: 'Empowering future Muslim leaders.',
-          primaryCtaText: 'Apply Now',
-          primaryCtaUrl: '/admissions',
+    const query = {
+      locale,
+      populate: {
+        sections: {
+          populate: '*'
         }
-      ]
+      }
     };
+    const data = await this.fetchStrapi<HomepageEntity>('/homepage', query);
+    // If not found, return empty fallback
+    return data || { id: 0, title: 'Home', sections: [] };
   },
   
   async getPageBySlug(slug: string, locale = 'en'): Promise<CustomPageEntity | null> {
-    return { id: 1, title: slug, slug };
+    const query = {
+      locale,
+      filters: { slug: { $eq: slug } },
+      populate: {
+        sections: { populate: '*' }
+      }
+    };
+    const data = await this.fetchStrapi<CustomPageEntity[]>('/pages', query);
+    return data && data.length > 0 ? data[0] : null;
   },
   
   async getPrograms(locale = 'en', featuredOnly = false, limit = 20): Promise<ProgramEntity[]> {
-    return [];
+    const query: any = {
+      locale,
+      populate: ['coverImage', 'department'],
+      pagination: { limit }
+    };
+    if (featuredOnly) {
+      query.filters = { isFeatured: { $eq: true } };
+    }
+    const data = await this.fetchStrapi<ProgramEntity[]>('/programs', query);
+    return data || [];
   },
   
   async getProgramBySlug(slug: string, locale = 'en'): Promise<ProgramEntity | null> {
-    return null;
+    const query = {
+      locale,
+      filters: { slug: { $eq: slug } },
+      populate: '*'
+    };
+    const data = await this.fetchStrapi<ProgramEntity[]>('/programs', query);
+    return data && data.length > 0 ? data[0] : null;
   },
   
   async getDepartments(locale = 'en', limit = 20): Promise<DepartmentEntity[]> {
-    return [];
+    const query = {
+      locale,
+      populate: ['coverImage'],
+      pagination: { limit }
+    };
+    const data = await this.fetchStrapi<DepartmentEntity[]>('/departments', query);
+    return data || [];
   },
   
   async getDepartmentBySlug(slug: string, locale = 'en'): Promise<DepartmentEntity | null> {
-    return null;
+    const query = {
+      locale,
+      filters: { slug: { $eq: slug } },
+      populate: '*'
+    };
+    const data = await this.fetchStrapi<DepartmentEntity[]>('/departments', query);
+    return data && data.length > 0 ? data[0] : null;
   },
   
   async getArticles(locale = 'en', page = 1, pageSize = 6, categorySlug?: string): Promise<{ data: ArticleEntity[]; total: number }> {
-    return { data: [], total: 0 };
+    const query: any = {
+      locale,
+      populate: ['coverImage', 'category', 'author'],
+      pagination: { page, pageSize }
+    };
+    if (categorySlug) {
+      query.filters = { category: { slug: { $eq: categorySlug } } };
+    }
+    try {
+      const queryString = qs.stringify(query, { encodeValuesOnly: true });
+      const { data } = await apiClient.get(`/articles?${queryString}`);
+      return {
+        data: data.data || [],
+        total: data.meta?.pagination?.total || 0
+      };
+    } catch (e) {
+      return { data: [], total: 0 };
+    }
   },
   
   async getArticleBySlug(slug: string, locale = 'en'): Promise<ArticleEntity | null> {
-    return null;
+    const query = {
+      locale,
+      filters: { slug: { $eq: slug } },
+      populate: '*'
+    };
+    const data = await this.fetchStrapi<ArticleEntity[]>('/articles', query);
+    return data && data.length > 0 ? data[0] : null;
   },
   
   async getEvents(locale = 'en', limit = 10): Promise<EventEntity[]> {
-    return [];
+    const query = {
+      locale,
+      populate: ['coverImage'],
+      pagination: { limit },
+      sort: ['startDate:asc']
+    };
+    const data = await this.fetchStrapi<EventEntity[]>('/events', query);
+    return data || [];
   },
   
   async getAnnouncements(locale = 'en'): Promise<AnnouncementEntity[]> {
-    return [];
+    const query = {
+      locale,
+      pagination: { limit: 5 },
+      sort: ['createdAt:desc']
+    };
+    const data = await this.fetchStrapi<AnnouncementEntity[]>('/announcements', query);
+    return data || [];
   },
   
   async getTestimonials(locale = 'en', limit = 6): Promise<TestimonialEntity[]> {
-    return [];
+    const query = {
+      locale,
+      populate: ['avatar'],
+      pagination: { limit }
+    };
+    const data = await this.fetchStrapi<TestimonialEntity[]>('/testimonials', query);
+    return data || [];
   },
   
   async getGalleryItems(locale = 'en', limit = 12): Promise<GalleryItemEntity[]> {
-    return [];
+    const query = {
+      locale,
+      populate: ['image'],
+      pagination: { limit }
+    };
+    const data = await this.fetchStrapi<GalleryItemEntity[]>('/gallery-items', query);
+    return data || [];
   },
   
   async getDownloadItems(locale = 'en'): Promise<DownloadItemEntity[]> {
-    return [];
+    const query = {
+      locale,
+      populate: ['file', 'category']
+    };
+    const data = await this.fetchStrapi<DownloadItemEntity[]>('/download-items', query);
+    return data || [];
   },
   
   async getFaqs(locale = 'en', category?: string): Promise<FaqEntity[]> {
-    return [];
+    const query: any = { locale };
+    if (category) {
+      query.filters = { category: { slug: { $eq: category } } };
+    }
+    const data = await this.fetchStrapi<FaqEntity[]>('/faqs', query);
+    return data || [];
   },
   
   async getContactInfo(locale = 'en'): Promise<ContactInfo | null> {
-    return {
-      id: 1,
+    const data = await this.fetchStrapi<ContactInfo>('/contact-info', { locale, populate: '*' });
+    // Fallback if not configured in Strapi yet
+    return data || {
+      id: 0,
       address: '123 School St',
       phone: '+1234567890',
       email: 'info@yahayaschool.com'
@@ -98,13 +206,27 @@ export const cmsService = {
   },
   
   async getFooterConfig(locale = 'en'): Promise<FooterConfig | null> {
-    return {
-      id: 1,
+    const data = await this.fetchStrapi<FooterConfig>('/footer-config', { locale, populate: '*' });
+    return data || {
+      id: 0,
       copyrightText: '© 2026 YAHAYASCOOL'
     };
   },
   
   async getNavigationMenu(location: 'header' | 'footer' | 'topbar', locale = 'en'): Promise<NavigationMenu | null> {
+    const query = {
+      locale,
+      filters: { location: { $eq: location } },
+      populate: {
+        items: {
+          populate: '*'
+        }
+      }
+    };
+    const data = await this.fetchStrapi<NavigationMenu[]>('/navigation-menus', query);
+    if (data && data.length > 0) return data[0];
+    
+    // Fallback for header if Strapi returns nothing
     if (location === 'header') {
       return {
         id: 1,
@@ -123,19 +245,39 @@ export const cmsService = {
   },
   
   async getPartners(locale = 'en'): Promise<PartnerEntity[]> {
-    return [];
+    const query = {
+      locale,
+      populate: ['logo']
+    };
+    const data = await this.fetchStrapi<PartnerEntity[]>('/partners', query);
+    return data || [];
   },
   
   async getDonationCampaigns(locale = 'en'): Promise<DonationCampaignEntity[]> {
-    return [];
+    const query = {
+      locale,
+      populate: ['coverImage']
+    };
+    const data = await this.fetchStrapi<DonationCampaignEntity[]>('/donation-campaigns', query);
+    return data || [];
   },
   
   async submitContactForm(payload: ContactSubmissionPayload): Promise<{ success: boolean; message?: string }> {
-    return { success: true };
+    try {
+      await apiClient.post('/contact-submissions', { data: payload });
+      return { success: true };
+    } catch (e) {
+      return { success: false, message: 'Failed to submit form' };
+    }
   },
   
   async submitAdmissionApplication(payload: AdmissionApplicationPayload): Promise<{ success: boolean; applicationNumber?: string; message?: string }> {
-    return { success: true, applicationNumber: 'APP-12345' };
+    try {
+      const res = await apiClient.post('/admission-applications', { data: payload });
+      return { success: true, applicationNumber: res.data?.data?.applicationNumber || 'APP-00000' };
+    } catch (e) {
+      return { success: false, message: 'Failed to submit application' };
+    }
   }
 };
 

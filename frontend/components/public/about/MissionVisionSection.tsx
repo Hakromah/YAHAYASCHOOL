@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useId, useRef, useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 
 /**
  * About — Mission / Vision panel.
@@ -22,15 +23,11 @@ const MASK_PATH =
 const TABS = [
   {
     id: 'mission',
-    label: 'Our Mission',
     image: '/images/vission.png',
-    body: 'To provide a comprehensive, balanced education that equips students with both academic excellence and profound moral character grounded in Islamic principles.',
   },
   {
     id: 'vision',
-    label: 'Our Vision',
     image: '/images/figma-home/02-about.jpeg',
-    body: 'To be a leading institution recognised for nurturing confident, principled graduates who carry Islamic values into every field they enter and serve their communities with distinction.',
   },
 ] as const;
 
@@ -61,6 +58,7 @@ function VisionIcon({ className }: { className?: string }) {
 export function MissionVisionSection() {
   const [active, setActive] = useState(0);
   const clipId = useId();
+  const t = useTranslations('aboutPage.missionVision');
 
   // Right slider height measurement
   const rightInnerRef = useRef<HTMLDivElement>(null);
@@ -90,21 +88,20 @@ export function MissionVisionSection() {
 
             {/* ── LEFT: static tab buttons — opacity only, no sliding ── */}
             <div className="flex md:flex-col flex-wrap gap-[clamp(1.25rem,2.2vw,2.6rem)] lg:self-start lg:mt-[clamp(0.5rem,2.5vw,3rem)] lg:pl-[clamp(0.5rem,2vw,2.5rem)]">
-              {TABS.map((t, i) => {
+              {TABS.map((tItem, i) => {
                 const Icon = tabIcons[i];
                 return (
                   <button
-                    key={t.id}
+                    key={tItem.id}
                     type="button"
                     onClick={() => setActive(i)}
                     aria-pressed={i === active}
-                    className={`flex items-center gap-4 text-left transition-opacity duration-300 cursor-pointer ${
-                      i === active ? 'opacity-100' : 'opacity-55 hover:opacity-80'
-                    }`}
+                    className={`flex items-center gap-[clamp(0.75rem,0.9vw,1.1rem)] px-[clamp(1rem,1.25vw,1.5rem)] py-[clamp(0.5rem,0.6vw,0.75rem)] rounded-full transition-opacity duration-300 text-left cursor-pointer ${i === active ? 'bg-white text-(--color-primary)' : 'text-white hover:opacity-80'
+                      }`}
                   >
-                    <Icon className="w-[clamp(1.5rem,1.7vw,2rem)] h-[clamp(1.5rem,1.7vw,2rem)] shrink-0 text-white" />
-                    <span className="font-semibold text-white whitespace-nowrap text-[clamp(1.25rem,1.87vw,2.25rem)]">
-                      {t.label}
+                    <Icon className="w-[clamp(1.1rem,1.15vw,1.375rem)] h-[clamp(1.1rem,1.15vw,1.375rem)]" />
+                    <span className="font-semibold tracking-[0.04em] whitespace-nowrap text-[clamp(0.75rem,0.73vw,0.875rem)]">
+                      {t(`${tItem.id}.label`)}
                     </span>
                   </button>
                 );
@@ -149,7 +146,7 @@ export function MissionVisionSection() {
 
               {/* Mobile */}
               <p className="lg:hidden text-white leading-[1.71] text-[clamp(1rem,1.25vw,1.5rem)]">
-                {TABS[active].body}
+                {t(`${TABS[active].id}.body`)}
               </p>
 
               {/* Desktop — vertical slider */}
@@ -159,18 +156,23 @@ export function MissionVisionSection() {
               >
                 <div
                   ref={rightInnerRef}
-                  className="flex flex-col transition-transform duration-500 ease-in-out"
-                  style={{ transform: `translateY(-${active * (rightH || 0)}px)` }}
+                  className="flex flex-col gap-10 lg:gap-0 transition-transform duration-[600ms] ease-out lg:w-full"
+                  style={{
+                    transform: `translateY(calc(-${active * rightH}px - ${active} * 1.5rem))`,
+                  }}
                 >
-                  {TABS.map((t, i) => (
+                  {TABS.map((tItem, i) => (
                     <div
-                      key={t.id}
-                      className="shrink-0 flex items-center"
-                      style={rightH ? { height: rightH } : undefined}
+                      key={tItem.id}
+                      className="lg:flex lg:flex-col lg:justify-center"
+                      style={{ height: rightH > 0 ? rightH : 'auto' }}
                       aria-hidden={i !== active}
                     >
-                      <p className="text-white leading-[1.71] text-[clamp(1rem,1.25vw,1.5rem)]">
-                        {t.body}
+                      <h3 className="font-serif text-white/90 leading-[1.25] text-[clamp(1.5rem,2.1vw,2.5rem)]">
+                        {t(`${tItem.id}.label`)}
+                      </h3>
+                      <p className="mt-[clamp(1rem,1.25vw,1.5rem)] text-white/80 leading-[1.78] text-[clamp(0.875rem,0.94vw,1.125rem)]">
+                        {t(`${tItem.id}.body`)}
                       </p>
                     </div>
                   ))}

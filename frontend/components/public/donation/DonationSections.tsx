@@ -8,8 +8,10 @@ import {
 } from 'lucide-react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import type { Swiper as SwiperClass } from 'swiper';
+import { useTranslations, useLocale } from 'next-intl';
 import { LeafImage } from '@/components/public/shared/LeafImage';
 import PhoneInput from 'react-phone-input-2';
+import type { DonationCampaignEntity } from '@/types/cms.types';
 
 import 'swiper/css';
 import 'react-phone-input-2/lib/style.css';
@@ -93,7 +95,9 @@ const PATRONS = [
   { name: 'The Kromah Trust', quote: 'Education is the surest investment a community can make.' },
 ];
 
-export function DonationHero({ locale = 'en' }: { locale?: string }) {
+export function DonationHero() {
+  const locale = useLocale();
+  const t = useTranslations('donationsPage.hero');
   const href = (url: string) => (locale === 'en' ? url : `/${locale}${url}`);
 
   return (
@@ -101,23 +105,22 @@ export function DonationHero({ locale = 'en' }: { locale?: string }) {
       <div className="mx-auto grid max-w-[1920px] grid-cols-1 items-center md:gap-[clamp(2rem,3vw,3.5rem)] px-(--spacing-side) lg:grid-cols-[minmax(0,996fr)_minmax(0,647fr)]">
         <div className="min-w-0  py-[clamp(1.5rem,3.1vw,3.75rem)]">
           <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-[#6F757D] text-[clamp(0.75rem,0.68vw,0.8125rem)]">
-            <Link href={href('/')} className="transition-colors hover:text-[#048ED6]">Home</Link>
-            <ChevronRight className="h-3.5 w-3.5" aria-hidden />
-            <span className="text-[#048ED6]">Donation</span>
+            <Link href={href('/')} className="transition-colors hover:text-[#048ED6]">{t('breadcrumbHome')}</Link>
+            <ChevronRight className="h-3.5 w-3.5 rtl:-scale-x-100" aria-hidden />
+            <span className="text-[#048ED6]">{t('breadcrumbDonation')}</span>
           </nav>
 
           <h1 className="mt-[clamp(1.25rem,2.1vw,2.5rem)] font-serif leading-[1.1] text-[clamp(1.75rem,2.81vw,3.375rem)]">
-            <span className="text-[#121C2A]">Invest in the </span>
-            <span className="italic text-[#048ED6]">Leaders of Tomorrow</span>
+            <span className="text-[#121C2A]">{t('headline_1')}</span>
+            <span className="italic text-[#048ED6]">{t('headline_2')}</span>
           </h1>
 
           <p className="mt-[clamp(1rem,1.5vw,1.75rem)] max-w-[26rem] leading-[1.6] text-[#5A636D] text-[1rem]">
-            Your contribution nurtures faith, knowledge, and character. Together, we can provide a
-            world-class Islamic and modern education for every child.
+            {t('lede')}
           </p>
 
           <ul className="mt-[clamp(1.5rem,2.4vw,2.9rem)] flex flex-wrap items-center gap-[clamp(1rem,1.35vw,1.625rem)]">
-            {[[ShieldCheck, 'Secure & Transparent'], [HeartHandshake, '100% Impact Focused']].map(
+            {[[ShieldCheck, t('bullet_1')], [HeartHandshake, t('bullet_2')]].map(
               ([Icon, text]) => {
                 const I = Icon as typeof ShieldCheck;
                 return (
@@ -145,8 +148,9 @@ export function DonationHero({ locale = 'en' }: { locale?: string }) {
 }
 
 export function GiveSection() {
+  const t = useTranslations('donationsPage.give');
   const [openAccount, setOpenAccount] = useState<string | null>('intl');
-  const [amount, setAmount] = useState('$100');
+  const [amountIdx, setAmountIdx] = useState(2);
   const [frequency, setFrequency] = useState<'one-time' | 'monthly'>('one-time');
   const [copied, setCopied] = useState<string | null>(null);
   const [phoneValue, setPhoneValue] = useState('');
@@ -210,6 +214,16 @@ export function GiveSection() {
           background: transparent !important;
           width: 48px !important;
           padding: 0 0 0 16px !important;
+        }
+        [dir="rtl"] .react-tel-input {
+          direction: ltr !important;
+        }
+        [dir="rtl"] .react-tel-input .form-control {
+          text-align: left !important;
+        }
+        [dir="rtl"] .react-tel-input .flag-dropdown {
+          left: 0 !important;
+          right: auto !important;
         }
         .react-tel-input .selected-flag:hover, 
         .react-tel-input .selected-flag:focus {
@@ -283,11 +297,13 @@ export function GiveSection() {
           <div className="flex flex-col gap-[clamp(1.25rem,2.29vw,2.75rem)]">
             <div className="rounded-lg bg-[#F8FAFC] p-[clamp(1.25rem,2.08vw,2.5rem)]">
               <h2 className="text-center font-semibold uppercase tracking-[0.18em] text-[#048ED6] text-[clamp(0.6875rem,0.68vw,0.8125rem)]">
-                Prefer a bank transfer?
+                {t('preferBank')}
               </h2>
 
             <div className="mt-[clamp(1.25rem,1.66vw,2rem)] space-y-[clamp(0.75rem,1.04vw,1.25rem)]">
-              {BANK_ACCOUNTS.map(({ id, icon: Icon, label, rows }) => {
+              {[0, 1].map((idx) => {
+                const id = BANK_ACCOUNTS[idx].id;
+                const Icon = BANK_ACCOUNTS[idx].icon;
                 const on = openAccount === id;
                 return (
                   <div key={id} className="overflow-hidden rounded-lg border border-[#E5EBF2] bg-white">
@@ -301,7 +317,7 @@ export function GiveSection() {
                         <Icon className="h-[45%] w-[45%]" aria-hidden />
                       </span>
                       <span className={`min-w-0 flex-1 font-semibold text-[clamp(0.75rem,0.83vw,1rem)] ${on ? 'text-[#048ED6]' : 'text-[#121C2A]'}`}>
-                        {label}
+                        {t(`bankAccounts.${idx}.label`)}
                       </span>
                       <ChevronDown className={`h-4 w-4 shrink-0 text-[#6F757D] transition-transform ${on ? 'rotate-180' : ''}`} aria-hidden />
                     </button>
@@ -310,22 +326,37 @@ export function GiveSection() {
                     <div className={`grid transition-[grid-template-rows] duration-300 ${on ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
                       <div className="overflow-hidden">
                         <dl className="grid grid-cols-1 gap-[clamp(0.75rem,1.04vw,1.25rem)] border-t border-[#E5EBF2] p-[clamp(0.875rem,1.15vw,1.375rem)] sm:grid-cols-2">
-                          {rows.map((r) => (
+                          {BANK_ACCOUNTS[idx].rows.map((r) => {
+                            const keyMap: Record<string, string> = {
+                              'Bank Name': t('bankKeys.bankName'),
+                              'Account Name': t('bankKeys.accountName'),
+                              'Account Number (IBAN)': t('bankKeys.iban'),
+                              'Swift / BIC Code': t('bankKeys.swift'),
+                              'Account Number': t('bankKeys.accountNum')
+                            };
+                            const valMap: Record<string, string> = {
+                              'Bank Name': t(`bankAccounts.${idx}.bankName`),
+                              'Account Name': t(`bankAccounts.${idx}.accountName`)
+                            };
+                            return (
                             <div key={r.k} className="min-w-0">
                               <dt className="font-semibold uppercase tracking-[0.1em] text-[#8A939C] text-[clamp(0.5rem,0.52vw,0.625rem)]">
-                                {r.k}
+                                {keyMap[r.k] || r.k}
                               </dt>
                               <dd className="mt-1 flex items-start gap-2">
                                 <span className="min-w-0 break-words text-[#121C2A] text-[clamp(0.6875rem,0.73vw,0.875rem)]">
-                                  {r.v}
+                                  {valMap[r.k] || r.v}
                                 </span>
                                 {r.copy ? (
                                   <button
                                     type="button"
                                     onClick={() => copy(r.v, `${id}-${r.k}`)}
                                     aria-label={`Copy ${r.k}`}
-                                    className="shrink-0 text-[#048ED6] transition-opacity hover:opacity-70"
+                                    className="relative shrink-0 text-[#048ED6] transition-opacity hover:opacity-70"
                                   >
+                                    <span className="absolute -top-8 left-1/2 -translate-x-1/2 rounded bg-gray-900 px-2 py-1 text-xs text-white opacity-0 transition-opacity group-hover:opacity-100 whitespace-nowrap">
+                                      {copied === `${id}-${r.k}` ? t('copiedBtn') : t('copyBtn')}
+                                    </span>
                                     {copied === `${id}-${r.k}` ? (
                                       <CheckCircle2 className="h-4 w-4" />
                                     ) : (
@@ -335,7 +366,7 @@ export function GiveSection() {
                                 ) : null}
                               </dd>
                             </div>
-                          ))}
+                          )})}
                         </dl>
                       </div>
                     </div>
@@ -365,21 +396,22 @@ export function GiveSection() {
               }}
             >
               <p className="grid h-[clamp(2.5rem,2.3vw,2.75rem)] place-items-center rounded-lg bg-[#048ED6] font-semibold text-white text-[1rem]">
-                Give Online
+                {t('title')}
               </p>
 
               <fieldset className="mt-[clamp(1.25rem,1.66vw,2rem)]">
                 <legend className="font-semibold text-[#121C2A] text-[clamp(0.75rem,0.78vw,0.9375rem)]">
-                  Choose amount
+                  {t('amountLabel')}
                 </legend>
                 <div className="mt-2 flex flex-wrap gap-2">
-                  {AMOUNTS.map((a) => {
-                    const on = amount === a;
+                  {[0, 1, 2, 3, 4, 5].map((idx) => {
+                    const a = t(`amounts.${idx}`);
+                    const on = amountIdx === idx;
                     return (
                       <button
-                        key={a}
+                        key={idx}
                         type="button"
-                        onClick={() => setAmount(a)}
+                        onClick={() => setAmountIdx(idx)}
                         aria-pressed={on}
                         className={`h-[clamp(2.25rem,2.29vw,2.75rem)] min-w-[clamp(3.25rem,3.6vw,4.375rem)] rounded-lg border px-3 font-semibold transition-colors text-[clamp(0.6875rem,0.73vw,0.875rem)] ${
                           on
@@ -396,7 +428,7 @@ export function GiveSection() {
 
               <div className="mt-[clamp(1.25rem,1.66vw,2rem)] grid grid-cols-1 gap-[clamp(0.75rem,1.04vw,1.25rem)] sm:grid-cols-2">
                 <fieldset>
-                  <legend className="font-semibold text-[#121C2A] text-[clamp(0.75rem,0.78vw,0.9375rem)]">Frequency</legend>
+                  <legend className="font-semibold text-[#121C2A] text-[clamp(0.75rem,0.78vw,0.9375rem)]">{t('freqTitle')}</legend>
                   <div className="mt-2 grid grid-cols-2 gap-2">
                     {(['one-time', 'monthly'] as const).map((f) => {
                       const on = frequency === f;
@@ -412,7 +444,7 @@ export function GiveSection() {
                               : 'border-[#DCE6F0] bg-white text-[#121C2A] hover:border-[#048ED6]'
                           }`}
                         >
-                          {f === 'one-time' ? 'One-time' : 'Monthly'}
+                          {f === 'one-time' ? t('oneTime') : t('monthly')}
                         </button>
                       );
                     })}
@@ -420,40 +452,40 @@ export function GiveSection() {
                 </fieldset>
 
                 <div>
-                  <label htmlFor="don-currency" className="font-semibold text-[#121C2A] text-[clamp(0.75rem,0.78vw,0.9375rem)]">Currency</label>
+                  <label htmlFor="don-currency" className="font-semibold text-[#121C2A] text-[clamp(0.75rem,0.78vw,0.9375rem)]">{t('currencyLabel')}</label>
                   <select id="don-currency" name="currency" className={`${customSelect} mt-2`}>
-                    {CURRENCIES.map((c) => <option key={c}>{c}</option>)}
+                    {[0, 1, 2, 3].map((idx) => <option key={idx}>{t(`currencies.${idx}`)}</option>)}
                   </select>
                 </div>
               </div>
 
               <div className="mt-[clamp(1.25rem,1.66vw,2rem)]">
                 <label htmlFor="don-designation" className="font-semibold text-[#121C2A] text-[clamp(0.75rem,0.78vw,0.9375rem)]">
-                  Where would you like your gift to go?
+                  {t('designationLabel')}
                 </label>
                 <select id="don-designation" name="designation" className={`${customSelect} mt-2`}>
-                  {DESIGNATIONS.map((c) => <option key={c}>{c}</option>)}
+                  {[0, 1, 2, 3, 4].map((idx) => <option key={idx}>{t(`designations.${idx}`)}</option>)}
                 </select>
               </div>
 
               <div className="mt-[clamp(1.5rem,2vw,2.5rem)] border-t border-[#E5EBF2] pt-[clamp(1.25rem,1.66vw,2rem)]">
                 <h3 className="font-semibold text-[#121C2A] text-[clamp(0.875rem,0.94vw,1.125rem)] mb-4">
-                  Donor Information
+                  {t('donorInfo')}
                 </h3>
                 
                 <div className="grid grid-cols-1 gap-[clamp(1rem,1.25vw,1.5rem)] sm:grid-cols-2">
                   <div className="sm:col-span-2">
-                    <label htmlFor="don-name" className="font-semibold text-[#121C2A] text-[clamp(0.75rem,0.78vw,0.9375rem)]">Full Name</label>
-                    <input id="don-name" name="name" required placeholder="e.g. John Doe" className={`${select} mt-2`} />
+                    <label htmlFor="don-name" className="font-semibold text-[#121C2A] text-[clamp(0.75rem,0.78vw,0.9375rem)]">{t('fullName')}</label>
+                    <input id="don-name" name="name" required placeholder={t('fullNamePlaceholder')} className={`${select} mt-2`} />
                   </div>
                   
                   <div>
-                    <label htmlFor="don-email" className="font-semibold text-[#121C2A] text-[clamp(0.75rem,0.78vw,0.9375rem)]">Email Address</label>
-                    <input id="don-email" name="email" type="email" required placeholder="e.g. john@example.com" className={`${select} mt-2`} />
+                    <label htmlFor="don-email" className="font-semibold text-[#121C2A] text-[clamp(0.75rem,0.78vw,0.9375rem)]">{t('email')}</label>
+                    <input id="don-email" name="email" type="email" required placeholder={t('emailPlaceholder')} className={`${select} mt-2`} />
                   </div>
 
                   <div>
-                    <label htmlFor="don-phone" className="font-semibold text-[#121C2A] text-[clamp(0.75rem,0.78vw,0.9375rem)]">Phone Number</label>
+                    <label htmlFor="don-phone" className="font-semibold text-[#121C2A] text-[clamp(0.75rem,0.78vw,0.9375rem)]">{t('phone')}</label>
                     <PhoneInput
                       country={'lr'}
                       enableSearch={true}
@@ -474,14 +506,14 @@ export function GiveSection() {
                 className="mt-[clamp(1.25rem,1.66vw,2rem)] flex h-[clamp(2.75rem,3.1vw,3.75rem)] w-full items-center justify-center gap-2 rounded-lg bg-[#048ED6] font-semibold text-white transition-colors hover:bg-[#037ab8] text-[clamp(0.875rem,0.94vw,1.125rem)]"
               >
                 <HeartHandshake className="h-4 w-4" />
-                Donate Securely Now
+                {t('donateButton')}
               </button>
 
               {/* The design reads "safe, secure and tax-deductible". Whether a
                   gift is deductible depends on the donor's jurisdiction and the
                   school's registered status, so that claim is not repeated. */}
               <p className="mt-3 text-center text-[#8A939C] text-[1rem]">
-                Your donation is processed securely.
+                {t('secureInfo')}
               </p>
             </form>
           </div>
@@ -491,17 +523,18 @@ export function GiveSection() {
   );
 }
 
-export function TargetedGiving() {
+export function TargetedGiving({ campaigns = [] }: { campaigns?: DonationCampaignEntity[] }) {
+  const t = useTranslations('donationsPage.targeted');
   const [sw, setSw] = useState<SwiperClass | null>(null);
   const [active, setActive] = useState(0);
 
   return (
     <section className="w-full bg-white">
       <div className="mx-auto max-w-[1920px] px-(--spacing-side) max-sm:pb-5 sm:py-[clamp(1.5rem,4vw,4.8rem)]">
-        <h2 className="text-center font-serif text-[#121C2A] text-[clamp(1.5rem,2.08vw,2.5rem)]">Targeted Giving</h2>
+        <h2 className="text-center font-serif text-[#121C2A] text-[clamp(1.5rem,2.08vw,2.5rem)]">{t('title_1')} <span className="italic text-[#048ED6]">{t('title_2')}</span></h2>
         <span className="mx-auto mt-3 block h-[3px] w-[clamp(2rem,2.6vw,3.125rem)] rounded bg-[#048ED6]" />
         <p className="mx-auto mt-4 max-w-[38rem] text-center text-[#5A636D] text-[1rem]">
-          Direct your generous contribution to a specific area of growth and excellence.
+          {t('subtitle')}
         </p>
 
         <div className="relative mt-[clamp(1.5rem,2.6vw,3.125rem)]">
@@ -514,30 +547,67 @@ export function TargetedGiving() {
             breakpoints={{ 769: { slidesPerView: 2 }, 1025: { slidesPerView: 3 }, 1281: { slidesPerView: 4 } }}
             className="dn-causes"
           >
-            {CAUSES.map((c) => (
-              <SwiperSlide key={c.title} className="!h-auto py-1">
+            {campaigns.length > 0 ? campaigns.map((c, idx) => {
+              const progress = c.targetAmount > 0 ? (c.raisedAmount / c.targetAmount) * 100 : 0;
+              return (
+              <SwiperSlide key={c.slug || idx} className="!h-auto py-1">
                 <article className="group flex h-full flex-col cursor-pointer overflow-hidden rounded-lg bg-white shadow-[0_6px_24px_rgba(4,45,80,0.10)]">
                   <div className="relative overflow-hidden">
-                    <img src={c.image} alt={c.alt} className="aspect-[4/3] w-full object-cover transition-transform duration-500 ease-in-out lg:group-hover:scale-110" />
+                    <img src={c.banner?.url || '/images/figma-home/13.png'} alt={c.title} className="aspect-[4/3] w-full object-cover transition-transform duration-500 ease-in-out lg:group-hover:scale-110 rtl:-scale-x-100" />
                     <span className="absolute left-3 top-3 rounded bg-[#048ED6] px-2 py-1 font-semibold uppercase tracking-[0.08em] text-white text-[clamp(0.5rem,0.52vw,0.625rem)]">
-                      {c.tag}
+                      {t(`causes.${Math.min(idx, 4)}.tag`)}
                     </span>
                   </div>
 
                   <div className="flex flex-1 flex-col p-[clamp(1rem,1.15vw,1.375rem)]">
+                    <div className="mb-[clamp(0.75rem,1vw,1.25rem)]">
+                      <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+                        <div className="h-full bg-[#048ED6]" style={{ width: `${Math.min(progress, 100)}%` }} />
+                      </div>
+                      <div className="mt-2 flex justify-between text-[0.75rem] font-medium text-slate-500">
+                        <span>${c.raisedAmount?.toLocaleString() || 0} raised</span>
+                        {c.targetAmount > 0 && <span>${c.targetAmount.toLocaleString()} goal</span>}
+                      </div>
+                    </div>
+
                     <h3 className="font-serif text-[#048ED6] text-[clamp(1rem,1.15vw,1.375rem)]">{c.title}</h3>
-                    <p className="mt-2 flex-1 leading-[1.6] text-[#5A636D] text-[1rem]">{c.desc}</p>
+                    <p className="mt-2 flex-1 leading-[1.6] text-[#5A636D] text-[1rem]">{c.description}</p>
                     <button
                       type="button"
                       onClick={() => document.getElementById('give-online-form')?.scrollIntoView({ behavior: 'smooth' })}
                       className="mt-[clamp(1rem,1.35vw,1.625rem)] rounded-full h-[clamp(2.25rem,2.4vw,2.875rem)] w-full bg-[#048ED6] font-semibold text-white transition-colors hover:bg-[#037ab8] text-[clamp(0.625rem,0.68vw,0.8125rem)]"
                     >
-                      {c.cta}
+                      {t(`causes.${Math.min(idx, 4)}.cta`)}
                     </button>
                   </div>
                 </article>
               </SwiperSlide>
-            ))}
+            )}) : [0, 1, 2, 3, 4].map((idx) => {
+              const c = CAUSES[idx];
+              return (
+              <SwiperSlide key={c.title} className="!h-auto py-1">
+                <article className="group flex h-full flex-col cursor-pointer overflow-hidden rounded-lg bg-white shadow-[0_6px_24px_rgba(4,45,80,0.10)]">
+                  <div className="relative overflow-hidden">
+                    <img src={c.image} alt={c.alt} className="aspect-[4/3] w-full object-cover transition-transform duration-500 ease-in-out lg:group-hover:scale-110 rtl:-scale-x-100" />
+                    <span className="absolute left-3 top-3 rounded bg-[#048ED6] px-2 py-1 font-semibold uppercase tracking-[0.08em] text-white text-[clamp(0.5rem,0.52vw,0.625rem)]">
+                      {t(`causes.${idx}.tag`)}
+                    </span>
+                  </div>
+
+                  <div className="flex flex-1 flex-col p-[clamp(1rem,1.15vw,1.375rem)]">
+                    <h3 className="font-serif text-[#048ED6] text-[clamp(1rem,1.15vw,1.375rem)]">{t(`causes.${idx}.title`)}</h3>
+                    <p className="mt-2 flex-1 leading-[1.6] text-[#5A636D] text-[1rem]">{t(`causes.${idx}.desc`)}</p>
+                    <button
+                      type="button"
+                      onClick={() => document.getElementById('give-online-form')?.scrollIntoView({ behavior: 'smooth' })}
+                      className="mt-[clamp(1rem,1.35vw,1.625rem)] rounded-full h-[clamp(2.25rem,2.4vw,2.875rem)] w-full bg-[#048ED6] font-semibold text-white transition-colors hover:bg-[#037ab8] text-[clamp(0.625rem,0.68vw,0.8125rem)]"
+                    >
+                      {t(`causes.${idx}.cta`)}
+                    </button>
+                  </div>
+                </article>
+              </SwiperSlide>
+            )})}
           </Swiper>
 
           <button
@@ -569,6 +639,7 @@ export function TargetedGiving() {
 }
 
 export function WallOfGratitude() {
+  const t = useTranslations('donationsPage.wall');
   const [sw, setSw] = useState<SwiperClass | null>(null);
   // Track Swiper's snap grid rather than dividing the slide index by the page
   // size: with 6 patrons at 4 per view the last page clamps to index 2, so
@@ -580,10 +651,10 @@ export function WallOfGratitude() {
   return (
     <section className="w-full bg-[#048ED6] mb-10 max-sm:mb-5">
       <div className="mx-auto max-w-[1920px] px-(--spacing-side) py-[clamp(1.5rem,4.7vw,5.6rem)]">
-        <h2 className="text-center font-serif text-white text-[clamp(1.5rem,2.08vw,2.5rem)]">Wall of Gratitude</h2>
+        <h2 className="text-center font-serif text-white text-[clamp(1.5rem,2.08vw,2.5rem)]">{t('title')}</h2>
         <span className="mx-auto mt-3 block h-[3px] w-[clamp(2rem,2.6vw,3.125rem)] rounded bg-white/70" />
         <p className="mx-auto mt-4 max-w-[38rem] text-center text-white/85 text-[1rem]">
-          Honoring the visionary patrons who invest in the future of our youth.
+          {t('subtitle')}
         </p>
 
         <Swiper
@@ -602,18 +673,20 @@ export function WallOfGratitude() {
           }}
           className="dn-patrons mt-[clamp(1.5rem,2.6vw,3.125rem)]"
         >
-          {PATRONS.map((p) => (
+          {[0, 1, 2, 3, 4, 5].map((idx) => {
+            const p = PATRONS[idx];
+            return (
             <SwiperSlide key={p.name} className="!h-auto">
               <figure className="flex h-full flex-col items-center rounded-lg border border-white/40 p-[clamp(1.25rem,1.66vw,2rem)] text-center">
                 <Star className="h-5 w-5 fill-white text-white" aria-hidden />
-                <figcaption className="mt-4 font-serif text-white text-[clamp(1rem,1.15vw,1.375rem)]">{p.name}</figcaption>
+                <figcaption className="mt-4 font-serif text-white text-[clamp(1rem,1.15vw,1.375rem)]">{t(`patrons.${idx}.name`)}</figcaption>
                 <span className="mx-auto mt-3 block h-px w-16 bg-white/40" />
                 <blockquote className="mt-3 leading-[1.6] text-white/85 text-[clamp(0.625rem,0.68vw,0.8125rem)]">
-                  “{p.quote}”
+                  “{t(`patrons.${idx}.quote`)}”
                 </blockquote>
               </figure>
             </SwiperSlide>
-          ))}
+          )})}
         </Swiper>
 
         <div className="mt-[clamp(1.5rem,2.1vw,2.5rem)] flex items-center justify-center gap-2">

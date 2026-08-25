@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useCallback, useRef } from 'react';
+import React, { useCallback, useRef, useMemo } from 'react';
 import { useScrollProgress } from '@/hooks/useScrollProgress';
+import { useTranslations } from 'next-intl';
 
 /**
  * Home — hadith quote with a scroll-driven 3D book.
@@ -25,10 +26,13 @@ import { useScrollProgress } from '@/hooks/useScrollProgress';
  * end state is held — book open, quote fully black.
  */
 
-const QUOTE = 'Actions are judged by intentions, and every person will have only what they intended.';
-const WORDS = QUOTE.split(' ');
+// Moved into the component to use translations
+// const QUOTE = 'Actions are judged by intentions, and every person will have only what they intended.';
+// const WORDS = QUOTE.split(' ');
 
 export function HomeAnimationSection() {
+  const t = useTranslations('homeAnimation');
+  const WORDS = useMemo(() => t('quote').split(' '), [t]);
   const sectionRef = useRef<HTMLElement>(null);
 
   const apply = useCallback((el: HTMLElement, p: number) => {
@@ -56,7 +60,7 @@ export function HomeAnimationSection() {
 
         <div className="w-full max-w-[1320px] text-center">
           <p className="font-bold text-black text-[clamp(1rem,0.89vw,1.0625rem)]">
-            — Sahih al-Bukhari and Sahih Muslim
+            {t('attribution')}
           </p>
 
           <h2
@@ -78,9 +82,9 @@ export function HomeAnimationSection() {
             <div className="bk-back" />
             <div className="bk-pages">
               <div className="bk-leaf">
-                <p className="bk-ar">إِنَّمَا الأَعْمَالُ بِالنِّيَّاتِ</p>
+                <p className="bk-ar">{t('bookAr')}</p>
                 <span className="bk-rule" />
-                <p className="bk-en">and every man shall have only that which he intended</p>
+                <p className="bk-en">{t('bookTranslation')}</p>
               </div>
             </div>
             <div className="bk-cover">

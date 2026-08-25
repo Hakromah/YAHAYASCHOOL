@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { ChevronDown, Mail } from 'lucide-react';
 import { SOCIALS } from '@/components/public/shared/socials';
+import { useTranslations } from 'next-intl';
 
 /**
  * Staffs — the faculty card grid.
@@ -17,37 +18,20 @@ import { SOCIALS } from '@/components/public/shared/socials';
  * hover state being shown — so it is wired as a hover/focus reveal here.
  */
 
-type Member = {
-  name: string;
-  role: string;
-  email: string;
-  image: string;
-};
-
-const STAFF: Member[] = [
-  { name: 'Dr. Amina Al-Hassan', role: 'Head of Islamic Sciences', email: 'Yahayahighschool@Gmail.Com', image: '/images/figma-home/01-hero.jpeg' },
-  { name: 'Prof. Julian Sterling', role: 'Dean of British Curriculum', email: 'Yahayahighschool@Gmail.Com', image: '/images/figma-home/20-news.jpeg' },
-  { name: 'Dr. Farah Ibrahim', role: 'Lead, Science & Tech', email: 'Yahayahighschool@Gmail.Com', image: '/images/figma-home/04-programs.jpeg' },
-  { name: 'Mr. Marcus Chen', role: 'Director of Arts', email: 'Yahayahighschool@Gmail.Com', image: '/images/figma-home/08-activity.jpeg' },
-  { name: 'Ms. Layla Haruna', role: 'Head of Arabic Language', email: 'Yahayahighschool@Gmail.Com', image: '/images/figma-home/01-hero.jpeg' },
-  { name: 'Mr. David Okoro', role: 'Head of Mathematics', email: 'Yahayahighschool@Gmail.Com', image: '/images/figma-home/08-activity.jpeg' },
-  { name: 'Dr. Zainab Bello', role: 'Student Welfare Lead', email: 'Yahayahighschool@Gmail.Com', image: '/images/figma-home/04-programs.jpeg' },
-  { name: 'Prof. Samuel Adeyemi', role: 'Dean of Admissions', email: 'Yahayahighschool@Gmail.Com', image: '/images/figma-home/20-news.jpeg' },
-  // second page — the design shows eight cards plus a Load More control,
-  // so the list has to run past PAGE_SIZE for that button to have a job
-  { name: 'Mrs. Hauwa Sanni', role: 'Head of Early Years', email: 'Yahayahighschool@Gmail.Com', image: '/images/figma-home/01-hero.jpeg' },
-  { name: 'Mr. Ibrahim Toure', role: 'Head of Qur’anic Studies', email: 'Yahayahighschool@Gmail.Com', image: '/images/figma-home/08-activity.jpeg' },
-  { name: 'Ms. Grace Mensah', role: 'Head of Humanities', email: 'Yahayahighschool@Gmail.Com', image: '/images/figma-home/04-programs.jpeg' },
-  { name: 'Mr. Yusuf Danladi', role: 'Head of Physical Education', email: 'Yahayahighschool@Gmail.Com', image: '/images/figma-home/20-news.jpeg' },
-];
-
+const STAFF_COUNT = 12;
 const PAGE_SIZE = 8;
 
-function StaffCard({ m }: { m: Member }) {
+function StaffCard({ index }: { index: number }) {
+  const t = useTranslations('staffsPage.members');
+  const name = t(`${index}.name`);
+  const image = t(`${index}.image`);
+  const role = t(`${index}.role`);
+  const email = t(`${index}.email`);
+
   return (
     <article className="group rounded-xl overflow-hidden bg-white border border-black/[0.06] shadow-[0_2px_14px_rgba(16,24,40,0.06)]">
       <div className="relative w-full aspect-[398/390] cursor-pointer overflow-hidden">
-        <img src={m.image} alt={m.name} className="w-full h-full object-cover" />
+        <img src={image} alt={name} className="w-full h-full object-cover" />
 
         {/* Socials ride in over the photo on hover; keyboard focus counts too. */}
         <div
@@ -59,7 +43,7 @@ function StaffCard({ m }: { m: Member }) {
             <a
               key={s.name}
               href={s.href}
-              aria-label={`${m.name} on ${s.name}`}
+              aria-label={`${name} on ${s.name}`}
               className="w-[30px] h-[30px] grid place-items-center rounded-full bg-[#048ED6] text-white transition-colors hover:bg-[#037ab8]"
             >
               <svg viewBox="0 0 24 24" fill="currentColor" className="w-[14px] h-[14px]" aria-hidden>
@@ -72,23 +56,23 @@ function StaffCard({ m }: { m: Member }) {
 
       <div className="px-[clamp(0.9rem,1.15vw,1.4rem)] pt-[clamp(1rem,1.25vw,1.5rem)] pb-[clamp(1rem,1.15vw,1.4rem)]">
         <h3 className="font-serif text-[#121C2A] leading-[1.25] text-[clamp(1rem,1.04vw,1.25rem)]">
-          {m.name}
+          {name}
         </h3>
         <p className="mt-1 uppercase tracking-[0.04em] text-[#7A828C] text-[1rem]">
-          {m.role}
+          {role}
         </p>
 
         <hr className="my-[clamp(0.75rem,0.94vw,1.125rem)] border-0 border-t border-[#EBEFF3]" />
 
         <a
-          href={`mailto:${m.email}`}
+          href={`mailto:${email}`}
           className="flex items-center gap-3 group/mail"
         >
           <span className="w-[30px] h-[30px] shrink-0 grid place-items-center rounded-md bg-[#E6F0FB] text-[#048ED6]">
             <Mail className="w-[15px] h-[15px]" />
           </span>
           <span className="min-w-0 truncate text-[#3F4941] transition-colors group-hover/mail:text-[#048ED6] text-[clamp(0.6875rem,0.68vw,0.8125rem)]">
-            {m.email}
+            {email}
           </span>
         </a>
       </div>
@@ -98,15 +82,16 @@ function StaffCard({ m }: { m: Member }) {
 
 export function StaffGrid() {
   const [shown, setShown] = useState(PAGE_SIZE);
-  const visible = STAFF.slice(0, shown);
-  const more = shown < STAFF.length;
+  const visible = Array.from({ length: Math.min(shown, STAFF_COUNT) }, (_, i) => i);
+  const more = shown < STAFF_COUNT;
+  const t = useTranslations('staffsPage');
 
   return (
     <section className="w-full bg-white">
       <div className="max-w-[1920px] mx-auto px-(--spacing-side) py-[clamp(2.5rem,4.2vw,5rem)]">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[18px]">
-          {visible.map((m, i) => (
-            <StaffCard key={`${m.name}-${i}`} m={m} />
+          {visible.map((i) => (
+            <StaffCard key={i} index={i} />
           ))}
         </div>
 
@@ -118,7 +103,7 @@ export function StaffGrid() {
               className="inline-flex items-center justify-center gap-2 h-[58px] px-8 rounded-full border border-[#D7E3EE] bg-white text-[#121C2A] font-medium transition-colors hover:bg-[#F2F9FD] text-[clamp(0.8125rem,0.78vw,0.9375rem)]"
             >
               <ChevronDown className="w-4 h-4" />
-              Load More
+              {t('loadMore')}
             </button>
           </div>
         )}

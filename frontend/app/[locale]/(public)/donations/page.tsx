@@ -6,6 +6,7 @@ import {
   TargetedGiving,
   WallOfGratitude,
 } from '@/components/public/donation/DonationSections';
+import { cmsService } from '@/services/cms.service';
 
 export const metadata: Metadata = {
   title: 'Donation | YAHAYASCHOOL',
@@ -13,12 +14,15 @@ export const metadata: Metadata = {
     'Your contribution nurtures faith, knowledge, and character at Yahaya International.',
 };
 
-export default function DonationsPage({ params: { locale = 'en' } }: { params: { locale?: string } }) {
+export default async function DonationsPage({ params }: { params: Promise<{ locale?: string }> }) {
+  const { locale = 'en' } = await params;
+  const campaigns = await cmsService.getDonationCampaigns(locale);
+
   return (
     <main className="min-h-screen bg-white">
       <DonationHero locale={locale} />
       <GiveSection />
-      <TargetedGiving />
+      <TargetedGiving campaigns={campaigns} />
       <WallOfGratitude />
     </main>
   );

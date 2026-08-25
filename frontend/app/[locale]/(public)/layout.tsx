@@ -2,6 +2,7 @@ import React from 'react';
 import { Topbar } from '@/components/public/Topbar';
 import { Navbar } from '@/components/public/Navbar';
 import { Footer } from '@/components/public/Footer';
+import { PolicyModal } from '@/components/public/shared/PolicyModal';
 import { cmsService } from '@/services/cms.service';
 
 interface PublicLayoutProps {
@@ -26,6 +27,7 @@ export default async function PublicLayout({ children, params }: PublicLayoutPro
         {children}
       </div>
       <Footer config={footerConfig} locale={locale} />
+      <PolicyModal />
     </div>
   );
 }

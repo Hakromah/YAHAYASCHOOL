@@ -16,6 +16,7 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import { Thumbs, Controller, EffectFade, Autoplay, A11y, Parallax } from 'swiper/modules';
 import type { Swiper as SwiperType } from 'swiper';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { useTranslations, useLocale } from 'next-intl';
 
 import 'swiper/css';
 import 'swiper/css/thumbs';
@@ -25,44 +26,30 @@ import 'swiper/css/effect-fade';
 const ENTRIES = [
   {
     year: '2020',
-    title: 'Foundation & First Intake',
-    body: 'Yahaya International opened its doors with a founding cohort and a simple conviction: that rigorous academics and Islamic character formation belong in the same classroom, not in competition with one another.',
     image: '/images/figma-home/09.png',
   },
   {
     year: '2021',
-    title: 'Curriculum & Faculty Growth',
-    body: "We doubled our teaching faculty and completed the integration of the international curriculum with our Qur'anic and Arabic programmes, establishing the dual-track model the school is known for today.",
     image: '/images/figma-home/17.png',
   },
   {
     year: '2022',
-    title: 'Global Accreditation & Leadership Expansion',
-    body: 'A pivotal year marked by our recognition as a leading global institution. We converged knowledge and faith, cultivating future leaders who advocate for justice, embody empathy, and drive positive change in their communities worldwide.',
     image: '/images/figma-home/07-activity.png',
   },
   {
     year: '2023',
-    title: 'Campus & Facilities Investment',
-    body: 'New science laboratories, an expanded library and dedicated sports facilities came online, alongside the launch of our online learning platform for students studying beyond the campus.',
     image: '/images/figma-home/13.png',
   },
   {
     year: '2024',
-    title: 'Community & Alumni Network',
-    body: "Our first graduating classes moved into universities at home and abroad, and the alumni network was formally established to mentor current students and extend the school's reach into the wider community.",
     image: '/images/figma-home/19.png',
   },
-   {
+  {
     year: '2025',
-    title: 'Campus & Facilities Investment',
-    body: 'New science laboratories, an expanded library and dedicated sports facilities came online, alongside the launch of our online learning platform for students studying beyond the campus.',
     image: '/images/figma-home/13.png',
   },
   {
     year: '2026',
-    title: 'Community & Alumni Network',
-    body: "Our first graduating classes moved into universities at home and abroad, and the alumni network was formally established to mentor current students and extend the school's reach into the wider community.",
     image: '/images/figma-home/19.png',
   },
 ];
@@ -86,7 +73,7 @@ function NavBtn({ dir, onClick, disabled }: { dir: 'prev' | 'next'; onClick(): v
       aria-label={dir === 'prev' ? 'Previous milestone' : 'Next milestone'}
       className="w-[34px] h-[34px] cursor-pointer shrink-0 grid place-items-center rounded-full border border-[#81B6EB] text-[#048ED6] bg-white transition-colors hover:bg-[#E6F0FB] disabled:opacity-35 disabled:cursor-default"
     >
-      <Icon className="w-[15px] h-[15px]" />
+      <Icon className="w-[15px] h-[15px] rtl:-scale-x-100" />
     </button>
   );
 }
@@ -98,6 +85,9 @@ export function AboutTimelineSection() {
   const [imageSwiper, setImageSwiper] = useState<SwiperType | null>(null);
   const [textSwiper, setTextSwiper] = useState<SwiperType | null>(null);
   const [activeIdx, setActiveIdx] = useState(2);
+  const t = useTranslations('aboutPage.timeline');
+  const locale = useLocale();
+  const yearFormatter = new Intl.NumberFormat(locale === 'ar' ? 'ar-EG' : locale, { useGrouping: false });
 
   const goTo = useCallback((i: number) => {
     imageSwiper?.slideTo(i);
@@ -114,9 +104,11 @@ export function AboutTimelineSection() {
   return (
     <section className="w-full bg-[#F7F7F7]">
       <div className="max-w-[1920px] mx-auto px-(--spacing-side) py-[clamp(1.5rem,4.2vw,5rem)]">
-        <h2 className="text-center font-serif text-[#121C2A] leading-[1.15] text-[clamp(1.625rem,2.29vw,2.75rem)]">
-          Our Timeline
-        </h2>
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 px-(--spacing-side)">
+          <h2 className="font-serif text-[#121C2A] text-[clamp(1.75rem,2.6vw,3.125rem)]">
+            {t('title')}
+          </h2>
+        </div>
 
         <div className="mt-[clamp(2rem,3.4vw,4rem)] max-w-[1480px] mx-auto grid grid-cols-1 lg:grid-cols-[auto_minmax(0,569fr)_minmax(0,666fr)] items-stretch">
 
@@ -170,7 +162,7 @@ export function AboutTimelineSection() {
                         onClick={() => goTo(i)}
                         className={`flex items-center gap-3 font-serif leading-none transition-colors duration-[800ms] cursor-pointer text-[clamp(1.5rem,2.6vw,3.125rem)] w-full ${isActive ? 'text-(--color-primary)' : 'text-black/50 lg:hover:text-[#B6BCC2]'}`}
                       >
-                        {e.year}
+                        {yearFormatter.format(Number(e.year))}
                         <span style={{background: 'linear-gradient(90deg, rgba(4, 110, 214, 0.10) 0%, #048ED6 50%, rgba(4, 142, 214, 0.10) 100%)'}} aria-hidden className={`block h-[2px] flex-1 max-lg:hidden w-[70px] transition-opacity duration-[800ms] ${isActive ? 'opacity-100' : 'opacity-0'}`} />
                       </button>
                     )}
@@ -213,7 +205,7 @@ export function AboutTimelineSection() {
                       height: '100%',
                     }}
                     role="img"
-                    aria-label={e.title}
+                    aria-label={e.year}
                   />
                 </SwiperSlide>
               ))}
@@ -238,13 +230,13 @@ export function AboutTimelineSection() {
               {ENTRIES.map((e) => (
                 <SwiperSlide key={e.year} className="!h-auto group/slide">
                   <p className="font-serif opacity-0 group-[&.swiper-slide-active]/slide:opacity-100 group-[&.swiper-slide-active]/slide:translate-y-0 translate-y-5 overflow-hidden duration-500 text-[#121C2A] text-[clamp(1.125rem,1.25vw,1.5rem)]">
-                    {e.year}
+                    {yearFormatter.format(Number(e.year))}
                   </p>
                   <h3 className="mt-[clamp(0.75rem,1vw,1.2rem)] font-serif opacity-0 group-[&.swiper-slide-active]/slide:opacity-100 group-[&.swiper-slide-active]/slide:translate-y-0 translate-y-5 overflow-hidden duration-500 text-[#048ED6] leading-[1.3] text-[clamp(1.25rem,1.56vw,1.875rem)]">
-                    {e.title}
+                    {t(`entries.${e.year}.title`)}
                   </h3>
                   <p className="mt-[clamp(1rem,1.4vw,1.7rem)] text-[#3F4941] leading-[1.85] text-[1rem] opacity-0 group-[&.swiper-slide-active]/slide:opacity-100 group-[&.swiper-slide-active]/slide:translate-y-0 translate-y-5 overflow-hidden duration-500">
-                    {e.body}
+                    {t(`entries.${e.year}.body`)}
                   </p>
                 </SwiperSlide>
               ))}

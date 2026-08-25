@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import { ArrowLeft, ArrowRight, GraduationCap } from 'lucide-react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import type { Swiper as SwiperClass } from 'swiper';
+import { useTranslations } from 'next-intl';
 
 import 'swiper/css';
 
@@ -24,53 +25,18 @@ import 'swiper/css';
  * news — this list is the static fallback until Strapi is wired up.
  */
 
-const NEWS = [
-  {
-    id: 1,
-    title: 'Expanding Our Horizons: New Office Opening',
-    excerpt:
-      'We are thrilled to announce the opening of our newest innovation hub, designed to foster...',
-    category: 'CORPORATE',
-    image: '/images/figma-home/02-about.jpeg',
-    link: '/news/expanding-horizons',
-  },
-  {
-    id: 2,
-    title: 'Innovation Through Collaboration: Our Annual Tech Summit',
-    excerpt:
-      "This year's summit brought together the brightest minds in the industry to discuss the...",
-    category: 'EVENTS',
-    image: '/images/figma-home/09.png',
-    link: '/news/tech-summit',
-  },
-  {
-    id: 3,
-    title: 'TrustVibe 2.0: Reimagining Security for the Modern Web',
-    excerpt:
-      'Discover the next generation of our platform, featuring advanced threat detection and an...',
-    category: 'EVENTS',
-    image: '/images/figma-home/15-news.jpeg',
-    link: '/news/trustvibe-update',
-  },
-  {
-    id: 4,
-    title: 'Global Educational Standards and Modern Pedagogies',
-    excerpt:
-      'Exploring how integrating worldwide educational standards empowers our students to compete globally...',
-    category: 'CORPORATE',
-    image: '/images/figma-home/03-programs.jpeg',
-    link: '/news/global-standards',
-  },
-  {
-    id: 5,
-    title: "The Importance of Bilingual Education in Today's World",
-    excerpt:
-      'Our bilingual programs offer unparalleled cognitive and social advantages. Read more about the benefits...',
-    category: 'EVENTS',
-    image: '/images/figma-home/13.png',
-    link: '/news/bilingual-education',
-  },
-];
+// const NEWS = [
+//   {
+//     id: 1,
+//     title: 'Expanding Our Horizons: New Office Opening',
+//     excerpt:
+//       'We are thrilled to announce the opening of our newest innovation hub, designed to foster...',
+//     category: 'CORPORATE',
+//     image: '/images/figma-home/02-about.jpeg',
+//     link: '/news/expanding-horizons',
+//   },
+// ...
+// ];
 
 function NavButton({
   dir,
@@ -90,7 +56,7 @@ function NavButton({
       aria-label={dir === 'prev' ? 'Previous news' : 'Next news'}
       className="w-[45px] h-[45px] shrink-0 grid place-items-center rounded-full border border-[#81B6EB] text-[#048ED6] bg-white transition-colors hover:bg-[#E6F0FB] disabled:opacity-35 disabled:hover:bg-white disabled:cursor-default"
     >
-      <Icon className="w-[18px] h-[18px]" />
+      <Icon className="w-[18px] h-[18px] rtl:rotate-180" />
     </button>
   );
 }
@@ -98,10 +64,44 @@ function NavButton({
 export function NewsGridSection({ locale = 'en', data }: { locale?: string; data?: unknown }) {
   void locale;
   void data;
+  const t = useTranslations('newsSection');
   const [swiper, setSwiper] = useState<SwiperClass | null>(null);
   const [atStart, setAtStart] = useState(true);
   const [atEnd, setAtEnd] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
+
+  const NEWS = [
+    {
+      id: 1,
+      key: 'n1',
+      image: '/images/figma-home/02-about.jpeg',
+      link: '/news/expanding-horizons',
+    },
+    {
+      id: 2,
+      key: 'n2',
+      image: '/images/figma-home/09.png',
+      link: '/news/tech-summit',
+    },
+    {
+      id: 3,
+      key: 'n3',
+      image: '/images/figma-home/15-news.jpeg',
+      link: '/news/trustvibe-update',
+    },
+    {
+      id: 4,
+      key: 'n4',
+      image: '/images/figma-home/03-programs.jpeg',
+      link: '/news/global-standards',
+    },
+    {
+      id: 5,
+      key: 'n5',
+      image: '/images/figma-home/13.png',
+      link: '/news/bilingual-education',
+    },
+  ];
 
   useEffect(() => {
     const mq = window.matchMedia('(min-width: 1024px)');
@@ -148,21 +148,19 @@ export function NewsGridSection({ locale = 'en', data }: { locale?: string; data
                 className="inline-flex items-center gap-2 h-10 px-4 rounded-full bg-[#E6F0FB] text-[#048ED6] font-semibold text-[15px]"
               >
                 <GraduationCap className="w-5 h-5" />
-                News &amp; Events
+                {t('eyebrow')}
               </motion.span>
               <motion.h2
                 variants={isDesktop ? itemVariants : {}}
                 className="mt-[clamp(0.75rem,1.2vw,1.45rem)] font-bold text-[#1A1C1C] tracking-[-0.015em] leading-[1.1] text-[clamp(1.5rem,1.82vw,2.1875rem)]"
               >
-                Latest News &amp; Updates
+                {t('heading')}
               </motion.h2>
               <motion.p
                 variants={isDesktop ? itemVariants : {}}
                 className="mt-[clamp(0.75rem,1.4vw,1.7rem)] max-w-[620px] text-[#3F4941] leading-[1.31] text-[1rem]"
               >
-                Contribute to modern facilities and learning environments equipped with the latest
-                educational technology. Contribute to modern facilities and learning environments
-                equipped with the latest educational technology.
+                {t('description')}
               </motion.p>
             </motion.div>
 
@@ -202,28 +200,28 @@ export function NewsGridSection({ locale = 'en', data }: { locale?: string; data
                     className="h-full flex flex-col rounded-xl overflow-hidden bg-white border border-black/[0.06] shadow-[0_2px_14px_rgba(16,24,40,0.06)]"
                   >
                     <div className="w-full aspect-[392/257] overflow-hidden">
-                      <img src={n.image} alt={n.title} className="w-full h-full object-cover" />
+                      <img src={n.image} alt={t(`items.${n.key}.title`)} className="w-full h-full object-cover" />
                     </div>
 
                     <div className="flex flex-col flex-1 max-sm:p-[15px] sm:px-[25px] sm:pt-[29px] sm:pb-[clamp(2rem,2.8vw,3.3rem)]">
                       <span className="self-start px-3 py-[3px] rounded-full border border-[#C9D8EA] text-[#048ED6] font-semibold uppercase tracking-[0.08em] text-[11px]">
-                        {n.category}
+                        {t(`items.${n.key}.category`)}
                       </span>
 
                       <h3 className="mt-[18px] font-medium text-[#1A1C1C] leading-[1.19] text-[clamp(1.0625rem,1.09vw,1.3125rem)]">
-                        {n.title}
+                        {t(`items.${n.key}.title`)}
                       </h3>
 
                       <p className="mt-[16px] text-[#545F73] leading-[1.33] text-[1rem]">
-                        {n.excerpt}
+                        {t(`items.${n.key}.excerpt`)}
                       </p>
 
                       <Link
                         href={n.link}
                         className="mt-auto pt-[15px] sm:pt-[34px] inline-flex items-center gap-2 self-start text-[#048ED6] text-[clamp(0.875rem,0.78vw,0.9375rem)] transition-colors hover:text-[#037ab8]"
                       >
-                        <span>Read More</span>
-                        <ArrowRight className="w-4 h-4" />
+                        <span>{t('readMore')}</span>
+                        <ArrowRight className="w-4 h-4 rtl:rotate-180" />
                       </Link>
                     </div>
                   </motion.article>

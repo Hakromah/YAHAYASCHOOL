@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef } from 'react';
+import { useTranslations, useLocale } from 'next-intl';
 
 /**
  * About — page header and the "Education, Practice and Advocacy" intro.
@@ -21,6 +22,10 @@ import React, { useEffect, useRef } from 'react';
 export function AboutIntroSection() {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const imgRef     = useRef<HTMLImageElement>(null);
+  const t = useTranslations('aboutPage.intro');
+  const locale = useLocale();
+  const yearFormatter = new Intl.NumberFormat(locale === 'ar' ? 'ar-EG' : locale, { useGrouping: false });
+  const yearStr = yearFormatter.format(2020);
 
   useEffect(() => {
     const onScroll = () => {
@@ -54,19 +59,17 @@ export function AboutIntroSection() {
 
           <div>
             <span className="inline-flex items-center h-[30px] px-4 rounded-full bg-[#048ED6] text-white font-semibold tracking-[0.06em] text-[clamp(0.6875rem,0.63vw,0.75rem)]">
-              EST. 2020
+              {t('badge', { year: yearStr })}
             </span>
 
             <h2 className="mt-[clamp(1.25rem,1.7vw,2rem)] font-bold text-[#121C2A] tracking-[-0.015em] leading-[1.1] text-[clamp(1.5rem,2.5vw,3rem)]">
-              Education, Practice
+              {t('title1')}
               <br  className='max-md:hidden'/>
-              <span className="italic text-(--color-primary) max-md:pl-[1px]">and Advocacy.</span>
+              <span className="italic text-(--color-primary) max-md:pl-[1px]"> {t('title2')}</span>
             </h2>
 
             <p className="mt-[clamp(1.25rem,1.5vw,1.8rem)] max-w-[600px] text-[#3F4941] leading-[1.81] text-[1rem]">
-              Yahaya International Islamic &amp; English School blends the depth of traditional
-              Islamic values with the rigorous standards of modern international education,
-              fostering a nurturing environment for holistic student growth.
+              {t('description')}
             </p>
           </div>
 

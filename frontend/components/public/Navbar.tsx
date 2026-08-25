@@ -24,6 +24,7 @@ export function Navbar({ locale = 'en' }: { locale?: string }) {
   const pathname = usePathname();
   const [isVisible, setIsVisible] = useState(true);
   const lastScrollY = useRef(0);
+  const t = useTranslations('publicNav');
 
   useEffect(() => {
     const handleScroll = () => {
@@ -64,9 +65,9 @@ export function Navbar({ locale = 'en' }: { locale?: string }) {
   }, [mobileMenuOpen, lenis]);
 
   const aboutMenuOptions = [
-    { id: 'about', label: 'About Us', href: '/about', image: '/images/figma-home/02-about.jpeg', badge: 'Our Community' },
-    { id: 'staffs', label: 'Staffs', href: '/staffs', image: '/images/figma-home/20-news.jpeg', badge: 'Our Team' },
-    { id: 'career', label: 'Career', href: '/career', image: '/images/figma-home/15-news.jpeg', badge: 'Join Us' },
+    { id: 'about', label: t('aboutUs'), href: '/about', image: '/images/figma-home/02-about.jpeg', badge: t('ourCommunity') },
+    { id: 'staffs', label: t('staffs'), href: '/staffs', image: '/images/figma-home/20-news.jpeg', badge: t('ourTeam') },
+    { id: 'career', label: t('career'), href: '/career', image: '/images/figma-home/15-news.jpeg', badge: t('joinUs') },
   ];
 
   // Basic link active check
@@ -115,10 +116,10 @@ export function Navbar({ locale = 'en' }: { locale?: string }) {
           {/* Left Navigation */}
           <nav className='w-full h-24.75 bg-white flex justify-between items-center lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,auto)_minmax(0,1fr)]'>
             <div className="hidden lg:flex items-center gap-2 xl:gap-(--spacing-gap)  lg:[&_*]:text-[18px] [&_*]:text-[16px]">
-              <NavLink href="/">Home</NavLink>
-              <NavLink href="/programs">Academic programs</NavLink>
-              <NavLink href="/online-learning">Online learning</NavLink>
-              <NavLink href="/news">News and events</NavLink>
+              <NavLink href="/">{t('home')}</NavLink>
+              <NavLink href="/programs">{t('academicPrograms')}</NavLink>
+              <NavLink href="/online-learning">{t('onlineLearning')}</NavLink>
+              <NavLink href="/news">{t('newsAndEvents')}</NavLink>
 
             </div>
 
@@ -144,7 +145,7 @@ export function Navbar({ locale = 'en' }: { locale?: string }) {
                   className="group relative h-full flex items-center outline-none cursor-pointer"
                   onClick={() => setAboutDropdownOpen(!aboutDropdownOpen)}
                 >
-                  <NavLink href="/about" hasDropdown isOpen={aboutDropdownOpen} className="w-full h-full relative cursor-pointer">About</NavLink>
+                  <NavLink href="/about" hasDropdown isOpen={aboutDropdownOpen} className="w-full h-full relative cursor-pointer">{t('about')}</NavLink>
                   
                   <div
                     // Clicks inside the panel must not reach the wrapper's toggle above:
@@ -224,8 +225,8 @@ export function Navbar({ locale = 'en' }: { locale?: string }) {
                   </div>
                 </div>
 
-                <NavLink href="/gallery">Gallery</NavLink>
-                <NavLink href="/contact">Contact</NavLink>
+                <NavLink href="/gallery">{t('gallery')}</NavLink>
+                <NavLink href="/contact">{t('contact')}</NavLink>
               </nav>
 
               <div className="flex items-center h-full gap-(--spacing-gap)  border-gray-200">
@@ -234,8 +235,8 @@ export function Navbar({ locale = 'en' }: { locale?: string }) {
                   href={getHref('/donations')}
                   className="flex items-center gap-2 px-[32px] py-[13px] rounded-full text-sm font-bold text-white bg-[#048ED6] hover:bg-sky-500 shadow-md transition-all"
                 >
-                  <span>Donations</span>
-                  <ArrowRight className="w-4 h-4" />
+                  <span>{t('donations')}</span>
+                  <ArrowRight className="w-4 h-4 rtl:rotate-180" />
                 </Link>
               </div>
             </div>
@@ -269,7 +270,7 @@ export function Navbar({ locale = 'en' }: { locale?: string }) {
       {mobileMenuOpen && (
         <div className="lg:hidden bg-white border-t border-gray-100 pt-4 pb-6 shadow-xl absolute w-full left-0 z-550 overflow-hidden transition-all duration-300 origin-top animate-in fade-in slide-in-from-top-2">
           <div className="flex flex-col">
-            <Link href={getHref('/')} className="px-[var(--spacing-side)] py-3 rounded-lg text-[18px] font-semibold text-gray-800">Home</Link>
+            <Link href={getHref('/')} className="px-[var(--spacing-side)] py-3 rounded-lg text-[18px] font-semibold text-gray-800">{t('home')}</Link>
             
             {/* Mobile About Accordion */}
             <div className="flex flex-col">
@@ -277,7 +278,7 @@ export function Navbar({ locale = 'en' }: { locale?: string }) {
                 onClick={() => setMobileAboutOpen(!mobileAboutOpen)}
                 className={`flex justify-between items-center px-[var(--spacing-side)] py-3 text-[18px] font-semibold text-gray-800 transition-colors ${mobileAboutOpen ? 'bg-primary/5' : 'bg-white'}`}
               >
-                About
+                {t('about')}
                 <ChevronDown className={`w-5 h-5 transition-transform duration-300 ${mobileAboutOpen ? 'rotate-180' : ''}`} />
               </button>
               <div className={`grid transition-all duration-300 ease-in-out ${mobileAboutOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
@@ -292,19 +293,19 @@ export function Navbar({ locale = 'en' }: { locale?: string }) {
                 </div>
               </div>
             </div>
-            <Link href={getHref('/programs')} className="px-[var(--spacing-side)] py-3 rounded-lg text-[18px] font-semibold text-gray-800 ">Academic programs</Link>
-            <Link href={getHref('/online-learning')} className="px-[var(--spacing-side)] py-3 rounded-lg text-[18px] font-semibold text-gray-800 ">Online learning</Link>
-            <Link href={getHref('/news')} className="px-[var(--spacing-side)] py-3 rounded-lg text-[18px] font-semibold text-gray-800 ">News and events</Link>
-            <Link href={getHref('/gallery')} className="px-[var(--spacing-side)] py-3 rounded-lg text-[18px] font-semibold text-gray-800 ">Gallery</Link>
-            <Link href={getHref('/contact')} className="px-[var(--spacing-side)] py-3 rounded-lg text-[18px] font-semibold text-gray-800 ">Contact</Link>
+            <Link href={getHref('/programs')} className="px-[var(--spacing-side)] py-3 rounded-lg text-[18px] font-semibold text-gray-800 ">{t('academicPrograms')}</Link>
+            <Link href={getHref('/online-learning')} className="px-[var(--spacing-side)] py-3 rounded-lg text-[18px] font-semibold text-gray-800 ">{t('onlineLearning')}</Link>
+            <Link href={getHref('/news')} className="px-[var(--spacing-side)] py-3 rounded-lg text-[18px] font-semibold text-gray-800 ">{t('newsAndEvents')}</Link>
+            <Link href={getHref('/gallery')} className="px-[var(--spacing-side)] py-3 rounded-lg text-[18px] font-semibold text-gray-800 ">{t('gallery')}</Link>
+            <Link href={getHref('/contact')} className="px-[var(--spacing-side)] py-3 rounded-lg text-[18px] font-semibold text-gray-800 ">{t('contact')}</Link>
             <div className="pt-4 mt-2 flex flex-col gap-4 px-[var(--spacing-side)]">
             
               <Link
                 href={getHref('/donations')}
                 className="w-full py-3 rounded-full text-center font-bold text-white bg-[#048ED6] flex items-center justify-center gap-2"
               >
-                <span>Donations</span>
-                <ArrowRight className="w-4 h-4" />
+                <span>{t('donations')}</span>
+                <ArrowRight className="w-4 h-4 rtl:rotate-180" />
               </Link>
             </div>
           </div>

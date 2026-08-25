@@ -229,6 +229,7 @@ export interface ProgramEntity {
   objectives?: string;
   duration?: string;
   requirements?: string;
+  coverImage?: StrapiMediaFile;
   images?: StrapiMediaFile[];
   downloads?: StrapiMediaFile[];
   isFeatured?: boolean;
