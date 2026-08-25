@@ -4938,6 +4938,11 @@ export interface ApiHostelWardenHostelWarden
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    dutyShift: Schema.Attribute.Enumeration<
+      ['morning', 'afternoon', 'evening', 'night', 'full_day']
+    > &
+      Schema.Attribute.DefaultTo<'full_day'>;
+    email: Schema.Attribute.Email;
     emergencyContacts: Schema.Attribute.JSON;
     employee: Schema.Attribute.String & Schema.Attribute.Required;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
@@ -4946,7 +4951,15 @@ export interface ApiHostelWardenHostelWarden
       'api::hostel-warden.hostel-warden'
     > &
       Schema.Attribute.Private;
+    notes: Schema.Attribute.Text;
+    phone: Schema.Attribute.String;
     publishedAt: Schema.Attribute.DateTime;
+    role: Schema.Attribute.Enumeration<
+      ['chief_warden', 'warden', 'assistant_warden', 'resident_assistant']
+    > &
+      Schema.Attribute.DefaultTo<'warden'>;
+    status: Schema.Attribute.Enumeration<['active', 'inactive', 'on_leave']> &
+      Schema.Attribute.DefaultTo<'active'>;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -6325,6 +6338,59 @@ export interface ApiPromotionRecordPromotionRecord
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+  };
+}
+
+export interface ApiPurchaseOrderPurchaseOrder
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'purchase_orders';
+  info: {
+    displayName: 'Purchase Order';
+    pluralName: 'purchase-orders';
+    singularName: 'purchase-order';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    approvalStatus: Schema.Attribute.Enumeration<
+      ['pending_finance', 'approved', 'rejected']
+    > &
+      Schema.Attribute.DefaultTo<'approved'>;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    expectedDeliveryDate: Schema.Attribute.Date;
+    fulfillmentStatus: Schema.Attribute.Enumeration<
+      ['unfulfilled', 'partially_received', 'fully_received']
+    > &
+      Schema.Attribute.DefaultTo<'unfulfilled'>;
+    invoiceId: Schema.Attribute.String;
+    items: Schema.Attribute.JSON;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::purchase-order.purchase-order'
+    > &
+      Schema.Attribute.Private;
+    orderDate: Schema.Attribute.Date;
+    poNumber: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique;
+    publishedAt: Schema.Attribute.DateTime;
+    requisitionNumber: Schema.Attribute.String;
+    subtotal: Schema.Attribute.Decimal & Schema.Attribute.DefaultTo<0>;
+    tax: Schema.Attribute.Decimal & Schema.Attribute.DefaultTo<0>;
+    threeWayMatchStatus: Schema.Attribute.Enumeration<
+      ['pending', 'matched', 'discrepancy']
+    > &
+      Schema.Attribute.DefaultTo<'pending'>;
+    totalAmount: Schema.Attribute.Decimal & Schema.Attribute.DefaultTo<0>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    vendorId: Schema.Attribute.String;
+    vendorName: Schema.Attribute.String & Schema.Attribute.Required;
   };
 }
 
@@ -8089,6 +8155,47 @@ export interface ApiTranscriptVersionTranscriptVersion
   };
 }
 
+export interface ApiVendorVendor extends Struct.CollectionTypeSchema {
+  collectionName: 'vendors';
+  info: {
+    displayName: 'Vendor';
+    pluralName: 'vendors';
+    singularName: 'vendor';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    bankAccountDetails: Schema.Attribute.Text;
+    category: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'General Supplies'>;
+    companyName: Schema.Attribute.String & Schema.Attribute.Required;
+    contactPerson: Schema.Attribute.String;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    email: Schema.Attribute.Email;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::vendor.vendor'
+    > &
+      Schema.Attribute.Private;
+    phone: Schema.Attribute.String;
+    publishedAt: Schema.Attribute.DateTime;
+    ratingScore: Schema.Attribute.Decimal & Schema.Attribute.DefaultTo<5>;
+    status: Schema.Attribute.Enumeration<['approved', 'pending', 'suspended']> &
+      Schema.Attribute.DefaultTo<'approved'>;
+    taxRegistrationNumber: Schema.Attribute.String;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    vendorCode: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique;
+  };
+}
+
 export interface ApiWalletTransactionWalletTransaction
   extends Struct.CollectionTypeSchema {
   collectionName: 'wallet_transactions';
@@ -8881,6 +8988,7 @@ declare module '@strapi/strapi' {
       'api::placement-test.placement-test': ApiPlacementTestPlacementTest;
       'api::program.program': ApiProgramProgram;
       'api::promotion-record.promotion-record': ApiPromotionRecordPromotionRecord;
+      'api::purchase-order.purchase-order': ApiPurchaseOrderPurchaseOrder;
       'api::question-pool.question-pool': ApiQuestionPoolQuestionPool;
       'api::question.question': ApiQuestionQuestion;
       'api::quran-achievement.quran-achievement': ApiQuranAchievementQuranAchievement;
@@ -8911,6 +9019,7 @@ declare module '@strapi/strapi' {
       'api::timetable-slot.timetable-slot': ApiTimetableSlotTimetableSlot;
       'api::topic.topic': ApiTopicTopic;
       'api::transcript-version.transcript-version': ApiTranscriptVersionTranscriptVersion;
+      'api::vendor.vendor': ApiVendorVendor;
       'api::wallet-transaction.wallet-transaction': ApiWalletTransactionWalletTransaction;
       'api::worker.worker': ApiWorkerWorker;
       'plugin::content-releases.release': PluginContentReleasesRelease;

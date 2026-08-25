@@ -16,6 +16,27 @@
       "type": "string",
       "required": true
     },
+    "phone": {
+      "type": "string"
+    },
+    "email": {
+      "type": "email"
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": ["active", "inactive", "on_leave"],
+      "default": "active"
+    },
+    "dutyShift": {
+      "type": "enumeration",
+      "enum": ["morning", "afternoon", "evening", "night", "full_day"],
+      "default": "full_day"
+    },
+    "role": {
+      "type": "enumeration",
+      "enum": ["chief_warden", "warden", "assistant_warden", "resident_assistant"],
+      "default": "warden"
+    },
     "assignedBuilding": {
       "type": "relation",
       "relation": "manyToOne",
@@ -27,6 +48,9 @@
     },
     "emergencyContacts": {
       "type": "json"
+    },
+    "notes": {
+      "type": "text"
     }
   }
 }

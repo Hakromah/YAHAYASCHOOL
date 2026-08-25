@@ -83,6 +83,24 @@ export default function HostelERPPage() {
     }
   }, [tabParam]);
 
+  const [hostelSettings, setHostelSettings] = useState({
+    currency: 'USD',
+    curfew: '10:00 PM',
+    visitorAccess: '09:00 AM - 08:00 PM',
+    standardDeposit: 30.00
+  });
+
+  useEffect(() => {
+    const stored = localStorage.getItem('hostelSettings');
+    if (stored) {
+      try {
+        setHostelSettings(JSON.parse(stored));
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  }, []);
+
   const loadData = async () => {
     setLoading(true);
     try {
@@ -248,11 +266,17 @@ export default function HostelERPPage() {
   // Section 11: Wardens Duty List
   const wardensMapped = useMemo(() => {
     if (wardens.length > 0) {
-      return wardens.slice(0, 3).map(w => ({
-        name: w.name || 'Warden Staff',
-        building: w.buildingName || 'Al-Farooq Hall',
-        status: w.status === 'active' || w.status === 'On Duty' ? 'On Duty' : 'Off Duty',
-        contact: w.phone || 'N/A'
+      return wardens.map(w => ({
+        id: w.documentId || w.id,
+        documentId: w.documentId || w.id,
+        name: w.employee || w.name || 'Warden Staff',
+        building: w.assignedBuilding?.name || w.buildingName || 'Al-Farooq Hall',
+        status: w.status === 'active' ? 'On Duty' : (w.status === 'inactive' || w.status === 'on_leave') ? 'Off Duty' : (w.status || 'Off Duty'),
+        dutyShift: w.dutyShift || 'full_day',
+        role: w.role || 'warden',
+        phone: w.phone || 'N/A',
+        email: w.email || '',
+        notes: w.notes || ''
       }));
     }
     return [];
@@ -264,7 +288,7 @@ export default function HostelERPPage() {
       return payments.slice(0, 3).map((p, idx) => ({
         id: p.id || String(idx),
         title: p.description || `Accommodation payment from student`,
-        amount: `+$${(p.amount || 250.0).toFixed(2)}`,
+        amount: `+${hostelSettings.currency} ${(p.amount || 250.0).toFixed(2)}`,
         time: p.createdAt ? new Date(p.createdAt).toLocaleDateString() : 'Today',
         type: 'plus'
       }));
@@ -401,21 +425,21 @@ export default function HostelERPPage() {
       {
         id: 'hostel_revenue',
         title: 'Collected Revenue (GL 4020)',
-        value: `$${stats.collectedThisMonth.toLocaleString('en-US')}`,
-        subtitle: `Outstanding AR: $${stats.outstandingFees.toLocaleString('en-US')}`,
+        value: `${hostelSettings.currency} ${stats.collectedThisMonth.toLocaleString('en-US')}`,
+        subtitle: `Outstanding AR: ${hostelSettings.currency} ${stats.outstandingFees.toLocaleString('en-US')}`,
         trendDirection: 'up',
         icon: <FileText className="w-5 h-5 text-sky-500" />
       },
       {
         id: 'security_deposits',
         title: 'Security Deposits Held (GL 2050)',
-        value: `$${stats.depositsHeld.toLocaleString('en-US')}`,
+        value: `${hostelSettings.currency} ${stats.depositsHeld.toLocaleString('en-US')}`,
         subtitle: `${stats.refundsPendingCount} Payouts Pending Release`,
         trendDirection: 'up',
         icon: <ShieldCheck className="w-5 h-5 text-amber-500" />
       }
     ];
-  }, [stats]);
+  }, [stats, hostelSettings]);
 
   const columns = useMemo(() => {
     const getActionColumn = (tabType: string) => ({
@@ -530,8 +554,8 @@ export default function HostelERPPage() {
                   </span>
                 ) : (
                   <>
-                    <span className="font-mono text-xs font-extrabold text-emerald-600 dark:text-emerald-400 block">${a.termFee.toFixed(2)} / term</span>
-                    <span className="text-[11px] text-slate-500 font-semibold">Deposit: ${a.securityDeposit.toFixed(2)} (GL 2050)</span>
+                    <span className="font-mono text-xs font-extrabold text-emerald-600 dark:text-emerald-400 block">{hostelSettings.currency} {a.termFee.toFixed(2)} / term</span>
+                    <span className="text-[11px] text-slate-500 font-semibold">Deposit: {hostelSettings.currency} {a.securityDeposit.toFixed(2)} (GL 2050)</span>
                   </>
                 )}
               </div>
@@ -936,8 +960,8 @@ export default function HostelERPPage() {
           header: 'Rates / Deposit',
           cell: ({ row }: any) => (
             <div>
-              <span className="font-bold text-emerald-600 dark:text-emerald-400 block">${row.original.dailyChargeUSD || 50.0}/day</span>
-              <span className="text-[10px] text-slate-500">Deposit: ${row.original.securityDepositUSD || 30.0} (GL 2050)</span>
+              <span className="font-bold text-emerald-600 dark:text-emerald-400 block">{hostelSettings.currency} {row.original.dailyChargeUSD || 50.0}/day</span>
+              <span className="text-[10px] text-slate-500">Deposit: {hostelSettings.currency} {row.original.securityDepositUSD || 30.0} (GL 2050)</span>
             </div>
           )
         },
@@ -1061,20 +1085,20 @@ export default function HostelERPPage() {
         },
         {
           accessorKey: 'accommodationFee',
-          header: 'Accommodation Fee ($)',
+          header: `Accommodation Fee (${hostelSettings.currency})`,
           cell: ({ row }: any) => {
             const fee = row.original.accommodationFee !== undefined ? row.original.accommodationFee : row.original.termFee;
-            return <span className="font-mono font-bold text-emerald-600">${Number(fee || 0).toFixed(2)}</span>;
+            return <span className="font-mono font-bold text-emerald-600">{hostelSettings.currency} {Number(fee || 0).toFixed(2)}</span>;
           }
         },
         {
           accessorKey: 'securityDeposit',
-          header: 'Security Deposit ($)',
-          cell: ({ row }: any) => <span className="font-mono font-bold text-slate-500 dark:text-slate-400">${Number(row.original.securityDeposit || 0).toFixed(2)}</span>
+          header: `Security Deposit (${hostelSettings.currency})`,
+          cell: ({ row }: any) => <span className="font-mono font-bold text-slate-500 dark:text-slate-400">{hostelSettings.currency} {Number(row.original.securityDeposit || 0).toFixed(2)}</span>
         },
         {
           id: 'optionalFees',
-          header: 'Additional Services ($)',
+          header: `Additional Services (${hostelSettings.currency})`,
           cell: ({ row }: any) => {
             const plan = row.original;
             const laundry = Number(plan.laundryFee || 0);
@@ -1084,10 +1108,10 @@ export default function HostelERPPage() {
 
             return (
               <div className="flex flex-wrap gap-1 max-w-[280px]">
-                {laundry > 0 && <span className="px-1.5 py-0.5 rounded bg-sky-50 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400 text-[10px] font-mono">Laundry: ${laundry.toFixed(2)}</span>}
-                {meal > 0 && <span className="px-1.5 py-0.5 rounded bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 text-[10px] font-mono">Meal: ${meal.toFixed(2)}</span>}
-                {transport > 0 && <span className="px-1.5 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 text-[10px] font-mono">Trans: ${transport.toFixed(2)}</span>}
-                {utility > 0 && <span className="px-1.5 py-0.5 rounded bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 text-[10px] font-mono">Util: ${utility.toFixed(2)}</span>}
+                {laundry > 0 && <span className="px-1.5 py-0.5 rounded bg-sky-50 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400 text-[10px] font-mono">Laundry: {hostelSettings.currency} {laundry.toFixed(2)}</span>}
+                {meal > 0 && <span className="px-1.5 py-0.5 rounded bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 text-[10px] font-mono">Meal: {hostelSettings.currency} {meal.toFixed(2)}</span>}
+                {transport > 0 && <span className="px-1.5 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 text-[10px] font-mono">Trans: {hostelSettings.currency} {transport.toFixed(2)}</span>}
+                {utility > 0 && <span className="px-1.5 py-0.5 rounded bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 text-[10px] font-mono">Util: {hostelSettings.currency} {utility.toFixed(2)}</span>}
                 {laundry === 0 && meal === 0 && transport === 0 && utility === 0 && <span className="text-slate-400 text-[11px]">None</span>}
               </div>
             );
@@ -1230,7 +1254,7 @@ export default function HostelERPPage() {
         {
           accessorKey: 'securityDeposit',
           header: 'Security Deposit (GL 2050)',
-          cell: ({ row }: any) => <span className="font-mono font-bold text-slate-900 dark:text-white">${row.original.securityDeposit?.toFixed(2)}</span>
+          cell: ({ row }: any) => <span className="font-mono font-bold text-slate-900 dark:text-white">{hostelSettings.currency} {row.original.securityDeposit?.toFixed(2)}</span>
         },
         {
           accessorKey: 'status',
@@ -1269,77 +1293,206 @@ export default function HostelERPPage() {
       return [
         {
           accessorKey: 'studentName',
-          header: 'Scholar Name',
-          cell: ({ row }: any) => <span className="font-bold text-slate-900 dark:text-white">{row.original.studentName}</span>
-        },
-        {
-          accessorKey: 'schoolId',
-          header: 'School ID',
-          cell: ({ row }: any) => <span className="font-mono text-xs text-slate-500">{row.original.schoolId}</span>
+          header: 'Scholar & ID',
+          cell: ({ row }: any) => (
+            <div className="space-y-0.5">
+              <span className="font-bold text-slate-900 dark:text-white block">{row.original.studentName}</span>
+              <span className="font-mono text-[10px] text-slate-500">{row.original.schoolId}</span>
+            </div>
+          )
         },
         {
           accessorKey: 'date',
           header: 'Date',
-          cell: ({ row }: any) => <span className="font-semibold text-slate-600 dark:text-slate-400">{row.original.date}</span>
+          cell: ({ row }: any) => <span className="font-semibold text-slate-600 dark:text-slate-400 font-mono text-xs">{row.original.date}</span>
         },
         {
           accessorKey: 'attendanceStatus',
           header: 'Status',
-          cell: ({ row }: any) => (
-            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-              row.original.attendanceStatus === 'present' ? 'bg-emerald-100 text-emerald-800' :
-              row.original.attendanceStatus === 'absent' ? 'bg-rose-100 text-rose-800' :
-              row.original.attendanceStatus === 'late' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-800'
-            }`}>
-              {row.original.attendanceStatus}
-            </span>
-          )
+          cell: ({ row }: any) => {
+            const s = row.original.attendanceStatus;
+            const cfg: Record<string, string> = {
+              present: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300',
+              absent: 'bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-300',
+              late: 'bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300',
+              excused: 'bg-sky-100 text-sky-800 dark:bg-sky-950/40 dark:text-sky-300'
+            };
+            return (
+              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${cfg[s] || 'bg-slate-100 text-slate-700'}`}>
+                {s}
+              </span>
+            );
+          }
         },
         {
           accessorKey: 'checkInTime',
           header: 'Check-In Time',
-          cell: ({ row }: any) => <span className="font-mono text-xs text-slate-500">{row.original.checkInTime}</span>
+          cell: ({ row }: any) => (
+            <span className="font-mono text-xs text-slate-500">{row.original.checkInTime || '—'}</span>
+          )
         },
         {
           accessorKey: 'notes',
           header: 'Notes',
-          cell: ({ row }: any) => <span className="text-slate-500 italic">{row.original.notes || 'None'}</span>
+          cell: ({ row }: any) => (
+            <span className="text-slate-500 dark:text-slate-400 italic text-xs">{row.original.notes || '—'}</span>
+          )
         },
-        getActionColumn('attendance')
+        {
+          id: 'attendance-actions',
+          header: 'Actions',
+          cell: ({ row }: any) => {
+            const item = row.original;
+            return (
+              <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                {item.attendanceStatus !== 'present' && (
+                  <button
+                    onClick={async () => {
+                      try {
+                        const docId = item.documentId || item.id;
+                        await apiClient.put(`/hostel-attendances/${docId}`, {
+                          data: { attendanceStatus: 'present', checkInTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }
+                        });
+                        toast.success('Marked as Present');
+                        loadData();
+                      } catch {
+                        toast.error('Failed to update attendance');
+                      }
+                    }}
+                    className="px-2 py-1 rounded bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold shadow-xs"
+                  >
+                    Present
+                  </button>
+                )}
+                <button
+                  onClick={() => {
+                    setCrudModalType('attendance');
+                    setSelectedEditItem(item);
+                    setIsCrudModalOpen(true);
+                  }}
+                  className="px-2 py-1 rounded bg-slate-100 hover:bg-indigo-50 dark:bg-slate-800 dark:hover:bg-slate-700/60 text-indigo-600 dark:text-indigo-400 font-bold text-[10px] border border-slate-200 dark:border-slate-700"
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={async () => {
+                    if (confirm('Delete this attendance record?')) {
+                      try {
+                        const docId = item.documentId || item.id;
+                        await apiClient.delete(`/hostel-attendances/${docId}`);
+                        toast.success('Attendance record deleted.');
+                        loadData();
+                      } catch (err) {
+                        console.error(err);
+                        toast.error('Failed to delete record.');
+                      }
+                    }
+                  }}
+                  className="px-2 py-1 rounded bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 dark:hover:bg-rose-900/30 text-rose-600 dark:text-rose-400 font-bold text-[10px] border border-rose-200/50 dark:border-rose-900/30"
+                >
+                  Delete
+                </button>
+              </div>
+            );
+          }
+        }
       ] as ColumnDef<any, any>[];
     }
+
 
     if (activeTab === 'wardens') {
       return [
         {
           accessorKey: 'name',
-          header: 'Warden Name',
-          cell: ({ row }: any) => <span className="font-bold text-slate-900 dark:text-white">{row.original.name}</span>
+          header: 'Warden Name & Role',
+          cell: ({ row }: any) => {
+            const w = row.original;
+            const roleLabel = w.role === 'chief_warden' ? 'Chief Warden' : w.role === 'assistant_warden' ? 'Asst. Warden' : w.role === 'resident_assistant' ? 'Resident Asst.' : 'Warden';
+            return (
+              <div className="space-y-0.5">
+                <span className="font-bold text-slate-900 dark:text-white block">{w.name}</span>
+                <span className="text-[10px] font-semibold text-indigo-600 dark:text-indigo-400 uppercase tracking-wide">{roleLabel}</span>
+              </div>
+            );
+          }
         },
         {
           accessorKey: 'building',
-          header: 'Assigned Boarding Hall',
+          header: 'Assigned Building',
           cell: ({ row }: any) => <span className="font-semibold text-slate-600 dark:text-slate-400">{row.original.building}</span>
         },
         {
-          accessorKey: 'contact',
+          accessorKey: 'dutyShift',
+          header: 'Duty Shift',
+          cell: ({ row }: any) => {
+            const shift = row.original.dutyShift || 'full_day';
+            const shiftLabel: Record<string, string> = { morning: 'Morning', afternoon: 'Afternoon', evening: 'Evening', night: 'Night', full_day: 'Full Day' };
+            const shiftColor: Record<string, string> = { morning: 'bg-sky-50 text-sky-700 dark:bg-sky-950/20 dark:text-sky-400', afternoon: 'bg-amber-50 text-amber-700 dark:bg-amber-950/20', evening: 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/20', night: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300', full_day: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20' };
+            return (
+              <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${shiftColor[shift] || shiftColor.full_day}`}>
+                {shiftLabel[shift] || shift}
+              </span>
+            );
+          }
+        },
+        {
+          accessorKey: 'phone',
           header: 'Phone / Contact',
-          cell: ({ row }: any) => <span className="font-mono text-xs text-slate-500">{row.original.contact}</span>
+          cell: ({ row }: any) => <span className="font-mono text-xs text-slate-500">{row.original.phone}</span>
         },
         {
           accessorKey: 'status',
           header: 'Duty Status',
           cell: ({ row }: any) => (
             <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-              row.original.status === 'On Duty' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-500'
+              row.original.status === 'On Duty' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
             }`}>
               {row.original.status}
             </span>
           )
         },
-        getActionColumn('wardens')
+        {
+          id: 'warden-actions',
+          header: 'Actions',
+          cell: ({ row }: any) => {
+            const item = row.original;
+            return (
+              <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                <button
+                  onClick={() => {
+                    setCrudModalType('wardens');
+                    setSelectedEditItem({ ...item, employee: item.name, documentId: item.documentId });
+                    setIsCrudModalOpen(true);
+                  }}
+                  className="px-2 py-1 rounded bg-slate-100 hover:bg-indigo-50 dark:bg-slate-800 dark:hover:bg-slate-700/60 text-indigo-600 dark:text-indigo-400 font-bold text-[10px] border border-slate-200 dark:border-slate-700"
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={async () => {
+                    if (confirm('Are you sure you want to remove this warden?')) {
+                      try {
+                        const docId = item.documentId || item.id;
+                        await apiClient.delete(`/hostel-wardens/${docId}`);
+                        toast.success('Warden record deleted.');
+                        loadData();
+                      } catch (err) {
+                        console.error(err);
+                        toast.error('Failed to delete warden record.');
+                      }
+                    }
+                  }}
+                  className="px-2 py-1 rounded bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 dark:hover:bg-rose-900/30 text-rose-600 dark:text-rose-400 font-bold text-[10px] border border-rose-200/50 dark:border-rose-900/30"
+                >
+                  Delete
+                </button>
+              </div>
+            );
+          }
+        }
       ] as ColumnDef<any, any>[];
     }
+
 
     return [] as ColumnDef<any, any>[];
   }, [activeTab, stats, buildingSubTab, roomSubTab, payments]);
@@ -1646,19 +1799,19 @@ export default function HostelERPPage() {
               <div className="grid grid-cols-2 gap-3 text-xs">
                 <div className="p-3.5 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-100 dark:border-slate-800/60">
                   <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">Accommodation Revenue</span>
-                  <p className="text-sm font-black text-emerald-600 mt-1">${stats.collectedThisMonth.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
+                  <p className="text-sm font-black text-emerald-600 mt-1">{hostelSettings.currency} {stats.collectedThisMonth.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
                 </div>
                 <div className="p-3.5 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-100 dark:border-slate-800/60">
                   <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">Deposits Liability</span>
-                  <p className="text-sm font-black text-slate-950 dark:text-white mt-1">${stats.depositsHeld.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
+                  <p className="text-sm font-black text-slate-950 dark:text-white mt-1">{hostelSettings.currency} {stats.depositsHeld.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
                 </div>
                 <div className="p-3.5 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-100 dark:border-slate-800/60">
                   <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">Receivables Dues</span>
-                  <p className="text-sm font-black text-rose-600 mt-1">${stats.outstandingFees.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
+                  <p className="text-sm font-black text-rose-600 mt-1">{hostelSettings.currency} {stats.outstandingFees.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
                 </div>
                 <div className="p-3.5 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-100 dark:border-slate-800/60">
                   <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">Damage Charges Invoiced</span>
-                  <p className="text-sm font-black text-amber-600 mt-1">$0.00</p>
+                  <p className="text-sm font-black text-amber-600 mt-1">{hostelSettings.currency} 0.00</p>
                 </div>
               </div>
             </div>
@@ -1738,11 +1891,11 @@ export default function HostelERPPage() {
             <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs">
               <h4 className="font-extrabold text-sm text-slate-900 dark:text-white mb-3 font-sans">Active Chief Wardens</h4>
               <div className="space-y-2.5">
-                {wardensMapped.map((w) => (
+                {wardensMapped.slice(0, 3).map((w) => (
                   <div key={w.name} className="flex justify-between items-center py-1 border-b last:border-0 border-slate-100 dark:border-slate-800">
                     <div>
                       <p className="font-bold text-slate-900 dark:text-white">{w.name}</p>
-                      <span className="text-[10px] text-slate-500">{w.building}</span>
+                      <span className="text-[10px] text-slate-500">{w.building} • {w.phone}</span>
                     </div>
                     <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
                       w.status === 'On Duty' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-500'
@@ -1870,7 +2023,11 @@ export default function HostelERPPage() {
             </div>
           </div>
 
-          <form onSubmit={(e) => { e.preventDefault(); toast.success('Hostel ERP configuration saved successfully.'); }} className="space-y-5 text-xs">
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            localStorage.setItem('hostelSettings', JSON.stringify(hostelSettings));
+            toast.success('Hostel ERP configuration saved successfully.');
+          }} className="space-y-5 text-xs">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div className="space-y-1.5">
                 <label className="block font-bold text-slate-700 dark:text-slate-300">Active Boarding Academic Year</label>
@@ -1882,19 +2039,57 @@ export default function HostelERPPage() {
 
               <div className="space-y-1.5">
                 <label className="block font-bold text-slate-700 dark:text-slate-300">Curfew Lockout Deadline</label>
-                <input type="text" defaultValue="10:00 PM" className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-mono font-bold" />
+                <input
+                  type="text"
+                  value={hostelSettings.curfew}
+                  onChange={(e) => setHostelSettings({ ...hostelSettings, curfew: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-mono font-bold"
+                />
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div className="space-y-1.5">
                 <label className="block font-bold text-slate-700 dark:text-slate-300">Visitor Access Window</label>
-                <input type="text" defaultValue="09:00 AM - 08:00 PM" className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-mono font-bold" />
+                <input
+                  type="text"
+                  value={hostelSettings.visitorAccess}
+                  onChange={(e) => setHostelSettings({ ...hostelSettings, visitorAccess: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-mono font-bold"
+                />
               </div>
 
               <div className="space-y-1.5">
-                <label className="block font-bold text-slate-700 dark:text-slate-300">Standard Security Deposit Fee ($)</label>
-                <input type="number" defaultValue="30.00" className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-mono font-bold" />
+                <label className="block font-bold text-slate-700 dark:text-slate-300">Standard Security Deposit Fee ({hostelSettings.currency})</label>
+                <input
+                  type="number"
+                  value={hostelSettings.standardDeposit}
+                  onChange={(e) => setHostelSettings({ ...hostelSettings, standardDeposit: parseFloat(e.target.value) || 0 })}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-mono font-bold"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div className="space-y-1.5">
+                <label className="block font-bold text-slate-700 dark:text-slate-300">Display Currency</label>
+                <input
+                  type="text"
+                  required
+                  list="hostel-currencies"
+                  value={hostelSettings.currency}
+                  onChange={(e) => setHostelSettings({ ...hostelSettings, currency: e.target.value.toUpperCase() })}
+                  placeholder="e.g. USD, GNF, LD, NGN"
+                  className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-bold"
+                />
+                <datalist id="hostel-currencies">
+                  <option value="USD" />
+                  <option value="LD" />
+                  <option value="GNF" />
+                  <option value="NGN" />
+                  <option value="EUR" />
+                </datalist>
+                <p className="text-[10px] text-slate-400">Select or type any custom currency symbol or code.</p>
               </div>
             </div>
 
@@ -1921,7 +2116,7 @@ export default function HostelERPPage() {
             </div>
 
             <div className="flex justify-end gap-2 pt-4 border-t border-slate-100 dark:border-slate-800">
-              <button type="submit" className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-md transition-all">
+              <button type="submit" className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-md transition-all cursor-pointer">
                 Save Settings
               </button>
             </div>

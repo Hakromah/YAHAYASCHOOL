@@ -32,7 +32,7 @@ import { resultsService } from '@/services/results.service';
 import { usePermissions } from '@/hooks/usePermissions';
 import { toast } from 'sonner';
 import { jsPDF } from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 
 interface StudentGradeRow {
   id: number | string;
@@ -467,8 +467,8 @@ export default function GradebookAndReportCardsPage() {
     const verificationUrl = `https://yahayascool.edu.ng/verify/certificate?hash=${verificationHash}`;
 
     // Theme Config (Islamic & Premium Gold/Emerald tones)
-    const primaryColor = [16, 185, 129]; // Emerald green
-    const darkSlate = [15, 23, 42]; // Slate-900
+    const primaryColor: [number, number, number] = [16, 185, 129]; // Emerald green
+    const darkSlate: [number, number, number] = [15, 23, 42]; // Slate-900
 
     // Title / Header branding
     doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
@@ -523,17 +523,17 @@ export default function GradebookAndReportCardsPage() {
       tableBody.push(['Tajweed Evaluation', '95 / 100', 'Distinction']);
     }
 
-    (doc as any).autoTable({
+    autoTable(doc, {
       startY: 85,
       head: [['Assessment Type', 'Score / Weight', 'Performance Status']],
       body: tableBody,
-      headStyles: { fillColor: primaryColor, textColor: [255, 255, 255], fontStyle: 'bold' },
+      headStyles: { fillColor: primaryColor, textColor: [255, 255, 255] as [number, number, number], fontStyle: 'bold' },
       bodyStyles: { fontSize: 9 },
       margin: { left: 15, right: 15 },
     });
 
     // Summary Performance
-    const finalY = (doc as any).lastAutoTable.finalY + 12;
+    const finalY = ((doc as any).lastAutoTable?.finalY ?? 160) + 12;
     doc.setFillColor(248, 250, 252); // Very light grey bg
     doc.rect(15, finalY, 180, 25, 'F');
     doc.setDrawColor(226, 232, 240);

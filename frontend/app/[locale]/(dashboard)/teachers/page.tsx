@@ -35,6 +35,10 @@ export default function TeachersListPage() {
   const [density, setDensity] = useState<TableDensity>('cozy');
   const [selectedRow, setSelectedRow] = useState<any | null>(null);
 
+  // Sections / Departments — fetched dynamically from Strapi
+  const [sections, setSections] = useState<Section[]>([]);
+  const [departments, setDepartments] = useState<any[]>([]);
+
   // Modals
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [exportModalOpen, setExportModalOpen] = useState(false);
@@ -44,7 +48,8 @@ export default function TeachersListPage() {
   const [editingTeacher, setEditingTeacher] = useState<any | null>(null);
   const [formName, setFormName] = useState('');
   const [formEmployeeId, setFormEmployeeId] = useState('');
-  const [formDepartment, setFormDepartment] = useState('Hifz & Quranic Studies');
+  const [formDepartment, setFormDepartment] = useState('');
+  const [formSections, setFormSections] = useState<string[]>([]);
   const [formQualification, setFormQualification] = useState('');
   const [formPhone, setFormPhone] = useState('');
   const [formEmail, setFormEmail] = useState('');
@@ -63,10 +68,36 @@ export default function TeachersListPage() {
     }
   };
 
+  const loadMetadata = async () => {
+    try {
+      const [deptRes, secRes] = await Promise.all([
+        apiClient.get('/departments?pagination[limit]=100'),
+        apiClient.get('/sections?pagination[limit]=100')
+      ]);
+      setDepartments(deptRes.data?.data || []);
+      setSections(secRes.data?.data || []);
+    } catch (err) {
+      console.warn('Failed to load departments or sections metadata:', err);
+    }
+  };
+
+  useEffect(() => {
+    loadMetadata();
+  }, []);
+
   useEffect(() => {
     const timer = setTimeout(loadTeachers, 200);
     return () => clearTimeout(timer);
-  }, [query, statusFilter, departmentFilter]);
+  }, [query, statusFilter]);
+
+  const filteredTeachers = useMemo(() => {
+    return teachers.filter((tch: any) => {
+      if (departmentFilter === 'all') return true;
+      return tch.departments?.some((d: any) => (
+        d.documentId === departmentFilter || d.id?.toString() === departmentFilter || (d.title && d.title.toLowerCase() === departmentFilter.toLowerCase())
+      ));
+    });
+  }, [teachers, departmentFilter]);
 
   const activeFiltersCount = (statusFilter !== 'all' ? 1 : 0) + (departmentFilter !== 'all' ? 1 : 0);
 
@@ -81,7 +112,8 @@ export default function TeachersListPage() {
     setEditingTeacher(null);
     setFormName('');
     setFormEmployeeId(`EMP-${Date.now().toString().slice(-4)}`);
-    setFormDepartment('Hifz & Quranic Studies');
+    setFormDepartment('');
+    setFormSections([]);
     setFormQualification('');
     setFormPhone('');
     setFormEmail('');
@@ -92,12 +124,13 @@ export default function TeachersListPage() {
   const handleEditOpen = (tch: any) => {
     setEditingTeacher(tch);
     setFormName(tch.name || '');
-    setFormEmployeeId(tch.employeeId || '');
-    setFormDepartment(tch.department || 'Hifz & Quranic Studies');
-    setFormQualification(tch.qualification || '');
+    setFormEmployeeId(tch.schoolId || tch.employeeId || '');
+    setFormDepartment(tch.departments?.[0]?.documentId || tch.departments?.[0]?.id || '');
+    setFormSections(tch.sections?.map((s: any) => s.documentId || s.id) || []);
+    setFormQualification(tch.qualifications || tch.qualification || '');
     setFormPhone(tch.phone || '');
     setFormEmail(tch.email || '');
-    setFormStatus(tch.status || 'active');
+    setFormStatus(tch.status || tch.employmentStatus || 'active');
     setOnboardModalOpen(true);
   };
 
@@ -111,11 +144,15 @@ export default function TeachersListPage() {
     try {
       const payload = {
         name: formName,
+        schoolId: formEmployeeId,
         employeeId: formEmployeeId,
-        department: formDepartment,
+        departments: formDepartment ? [formDepartment] : [],
+        sections: formSections,
+        qualifications: formQualification,
         qualification: formQualification,
         phone: formPhone,
         email: formEmail,
+        employmentStatus: formStatus,
         status: formStatus
       };
 
@@ -292,8 +329,9 @@ export default function TeachersListPage() {
         header: 'Academic Department & Qualification',
         cell: ({ row }: any) => {
           const tch = row.original;
-          const dept = tch.department
-            || (tch.departments && tch.departments.length > 0 ? tch.departments.map((d: any) => d.name).join(', ') : null);
+          const dept = (tch.departments && tch.departments.length > 0
+            ? tch.departments.map((d: any) => d.title || d.name).join(', ')
+            : null) || tch.department;
           return (
             <div className="space-y-0.5">
               <span className="font-bold text-slate-800 dark:text-slate-200 block text-xs">{dept || <span className="text-slate-400 italic">No department</span>}</span>
@@ -488,9 +526,9 @@ export default function TeachersListPage() {
               className="px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-700 dark:text-slate-300 font-medium focus:outline-none"
             >
               <option value="all">All Departments</option>
-              <option value="Hifz & Quranic Studies">Hifz & Quranic Studies</option>
-              <option value="Islamic & Arabic Sciences">Islamic & Arabic Sciences</option>
-              <option value="STEM & Standard Curriculum">STEM & Standard Curriculum</option>
+              {departments.map((d: any) => (
+                <option key={d.id} value={d.documentId || d.id}>{d.title}</option>
+              ))}
             </select>
           </div>
         }
@@ -498,7 +536,7 @@ export default function TeachersListPage() {
 
       {/* Grid Table */}
       <EnterpriseDataGrid
-        data={teachers}
+        data={filteredTeachers}
         columns={columns}
         isLoading={loading}
         density={density}
@@ -571,9 +609,10 @@ export default function TeachersListPage() {
                     onChange={(e) => setFormDepartment(e.target.value)}
                     className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none"
                   >
-                    <option value="Hifz & Quranic Studies">Hifz & Quranic Studies</option>
-                    <option value="Islamic & Arabic Sciences">Islamic & Arabic Sciences</option>
-                    <option value="STEM & Standard Curriculum">STEM & Standard Curriculum</option>
+                    <option value="">Select Department...</option>
+                    {departments.map((d: any) => (
+                      <option key={d.id} value={d.documentId || d.id}>{d.title}</option>
+                    ))}
                   </select>
                 </div>
 
@@ -588,6 +627,36 @@ export default function TeachersListPage() {
                     <option value="on_leave">On Leave</option>
                     <option value="part_time">Part-Time / Visiting</option>
                   </select>
+                </div>
+
+                <div className="space-y-1 sm:col-span-2">
+                  <label className="font-bold text-slate-700 dark:text-slate-300 block">Assigned Academic Sections (Divisions)</label>
+                  <div className="grid grid-cols-2 gap-2 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 max-h-36 overflow-y-auto">
+                    {sections.map((sec: any) => {
+                      const val = sec.documentId || sec.id;
+                      const checked = formSections.includes(val);
+                      return (
+                        <label key={sec.id} className="flex items-center gap-2 text-slate-700 dark:text-slate-300 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setFormSections([...formSections, val]);
+                              } else {
+                                setFormSections(formSections.filter((id) => id !== val));
+                              }
+                            }}
+                            className="rounded border-slate-300 dark:border-slate-700 text-emerald-600 focus:ring-emerald-500"
+                          />
+                          <span>{sec.name || sec.sectionName} ({sec.code})</span>
+                        </label>
+                      );
+                    })}
+                    {sections.length === 0 && (
+                      <p className="text-slate-400 italic col-span-2">No active sections available.</p>
+                    )}
+                  </div>
                 </div>
 
                 <div className="space-y-1">
