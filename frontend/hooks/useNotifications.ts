@@ -48,48 +48,36 @@ function generateDefaultNotifications(role: string | null): Partial<Notification
 }
 
 export function useNotifications() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const { userRole } = usePermissions();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
 
   const loadNotifications = useCallback(async () => {
-    if (!isAuthenticated) return;
+    if (!isAuthenticated || !user?.id) return;
     setLoading(true);
     try {
-      // 1. Try API
-      const res = await notificationService.getMyNotifications({ pageSize: 50 });
+      // 1. Try API with current user's ID
+      const res = await notificationService.getMyNotifications({ 
+        recipientId: user.id,
+        pageSize: 50 
+      });
       const apiList = res?.data || [];
-
-      const localStr = localStorage.getItem(STORAGE_KEY);
-      const localData = localStr ? JSON.parse(localStr) : null;
-
-      if (apiList.length > 0) {
-        setNotifications(apiList);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(apiList));
-      } else {
-        if (localData && localData.length > 0) {
-          setNotifications(localData);
-        } else {
-          const defaults = generateDefaultNotifications(userRole) as Notification[];
-          setNotifications(defaults);
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(defaults));
-        }
-      }
+      
+      setNotifications(apiList);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(apiList));
     } catch (err) {
       // Offline fallback
       const localStr = localStorage.getItem(STORAGE_KEY);
       if (localStr) {
         setNotifications(JSON.parse(localStr));
       } else {
-        const defaults = generateDefaultNotifications(userRole) as Notification[];
-        setNotifications(defaults);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(defaults));
+        setNotifications([]);
       }
     } finally {
       setLoading(false);
     }
-  }, [isAuthenticated, userRole]);
+  }, [isAuthenticated, user?.id]);
 
   useEffect(() => {
     loadNotifications();
@@ -111,7 +99,7 @@ export function useNotifications() {
 
   const markAsRead = async (id: number | string) => {
     const updated = notifications.map(n => 
-      n.id === id ? { ...n, status: 'read' as any, readAt: new Date().toISOString() } : n
+      n.id === id ? { ...n, status: NotificationStatusEnum.Read, recordStatus: NotificationStatusEnum.Read, readAt: new Date().toISOString() } : n
     );
     setNotifications(updated);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
@@ -121,7 +109,7 @@ export function useNotifications() {
       if (typeof id === 'number') {
         await notificationService.markAsRead(id);
       } else {
-        await apiClient.put(`/notifications/${id}`, { data: { status: 'read', readAt: new Date().toISOString() } });
+        await apiClient.put(`/notifications/${id}`, { data: { recordStatus: 'read', readAt: new Date().toISOString() } });
       }
     } catch {
       // Silent catch for offline capability
@@ -131,7 +119,8 @@ export function useNotifications() {
   const markAllAsRead = async () => {
     const updated = notifications.map(n => ({ 
       ...n, 
-      status: 'read' as any, 
+      status: NotificationStatusEnum.Read, 
+      recordStatus: NotificationStatusEnum.Read,
       readAt: new Date().toISOString() 
     }));
     setNotifications(updated);
@@ -139,7 +128,9 @@ export function useNotifications() {
     notifyChange();
 
     try {
-      await notificationService.markAllAsRead();
+      if (user?.id) {
+        await notificationService.markAllAsRead(user.id);
+      }
     } catch {
       // Silent catch
     }
@@ -158,7 +149,7 @@ export function useNotifications() {
     }
   };
 
-  const unreadCount = notifications.filter(n => n.status !== 'read').length;
+  const unreadCount = notifications.filter(n => n.status !== NotificationStatusEnum.Read).length;
 
   return {
     notifications,

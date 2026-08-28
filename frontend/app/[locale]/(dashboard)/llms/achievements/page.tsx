@@ -11,6 +11,8 @@ import { apiClient } from '@/services/api.service';
 import { usePermissions } from '@/hooks/usePermissions';
 import { toast } from 'sonner';
 import qs from 'qs';
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -116,6 +118,8 @@ function AchievementModal({
   onSaved: () => void;
 }) {
   const isEdit = !!editItem;
+  const locale = useLocale();
+  const t = (key: string) => i18nT(key, locale);
   const [form, setForm] = useState({
     student: editItem?.student?.documentId || String(editItem?.student?.id || ''),
     title: editItem?.title || '',
@@ -145,11 +149,11 @@ function AchievementModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.student) {
-      toast.error('Please select a student');
+      toast.error(t('Please select a student'));
       return;
     }
     if (!form.title) {
-      toast.error('Title is required');
+      toast.error(t('Title is required'));
       return;
     }
     setSaving(true);
@@ -163,15 +167,15 @@ function AchievementModal({
 
       if (isEdit) {
         await apiClient.put(`/language-achievements/${editItem!.documentId || editItem!.id}`, { data: payload });
-        toast.success('Achievement updated successfully');
+        toast.success(t('Achievement updated successfully'));
       } else {
         await apiClient.post('/language-achievements', { data: payload });
-        toast.success('Achievement recorded successfully');
+        toast.success(t('Achievement recorded successfully'));
       }
       onSaved();
       onClose();
     } catch (err: any) {
-      toast.error(err?.response?.data?.error?.message || 'Failed to save achievement');
+      toast.error(err?.response?.data?.error?.message || t('Failed to save achievement'));
     } finally {
       setSaving(false);
     }
@@ -192,9 +196,9 @@ function AchievementModal({
             </div>
             <div>
               <h2 className="font-extrabold text-slate-900 dark:text-white text-sm">
-                {isEdit ? 'Edit Achievement Record' : 'Record New Achievement'}
+                {isEdit ? t('Edit Achievement Record') : t('Record New Achievement')}
               </h2>
-              <p className="text-[11px] text-slate-400">Award honors, milestone badges, or certificate awards</p>
+              <p className="text-[11px] text-slate-400">{t('Award honors, milestone badges, or certificate awards')}</p>
             </div>
           </div>
           <button onClick={onClose} className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 cursor-pointer border-none bg-transparent">
@@ -205,7 +209,7 @@ function AchievementModal({
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="overflow-y-auto px-6 py-5 space-y-4">
           <div className="space-y-1.5">
-            <label className={labelClass}>Scholar / Student *</label>
+            <label className={labelClass}>{t('Scholar / Student *')}</label>
             <select
               required
               disabled={isEdit}
@@ -213,7 +217,7 @@ function AchievementModal({
               onChange={e => setForm(f => ({ ...f, student: e.target.value }))}
               className={inpClass}
             >
-              <option value="">{loadingStudents ? 'Loading scholars...' : '— Select Student —'}</option>
+              <option value="">{loadingStudents ? t('Loading scholars...') : t('— Select Student —')}</option>
               {students.map(s => (
                 <option key={s.id} value={s.documentId || s.id}>
                   {s.name || [s.firstName, s.lastName].filter(Boolean).join(' ')} ({s.schoolId || s.id})
@@ -223,11 +227,11 @@ function AchievementModal({
           </div>
 
           <div className="space-y-1.5">
-            <label className={labelClass}>Achievement Title *</label>
+            <label className={labelClass}>{t('Achievement Title *')}</label>
             <input
               required
               type="text"
-              placeholder="e.g. Arabic Declamation Cup — 1st Place"
+              placeholder={t('e.g. Arabic Declamation Cup — 1st Place')}
               value={form.title}
               onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
               className={inpClass}
@@ -235,7 +239,7 @@ function AchievementModal({
           </div>
 
           <div className="space-y-1.5">
-            <label className={labelClass}>Date Earned *</label>
+            <label className={labelClass}>{t('Date Earned *')}</label>
             <input
               required
               type="date"
@@ -246,9 +250,9 @@ function AchievementModal({
           </div>
 
           <div className="space-y-1.5">
-            <label className={labelClass}>Achievement Description / Notes</label>
+            <label className={labelClass}>{t('Achievement Description / Notes')}</label>
             <textarea
-              placeholder="Record details about the milestone, scores, performance reasons..."
+              placeholder={t('Record details about the milestone, scores, performance reasons...')}
               value={form.description}
               onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
               rows={4}
@@ -263,7 +267,7 @@ function AchievementModal({
               onClick={onClose}
               className="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-400 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-xl cursor-pointer border-none transition-colors"
             >
-              Cancel
+              {t('Cancel')}
             </button>
             <button
               type="submit"
@@ -271,7 +275,7 @@ function AchievementModal({
               className="flex items-center gap-2 px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-md cursor-pointer border-none transition-colors disabled:opacity-60"
             >
               {saving ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
-              {saving ? 'Saving...' : (isEdit ? 'Update Record' : 'Record Achievement')}
+              {saving ? t('Saving...') : (isEdit ? t('Update Record') : t('Record Achievement'))}
             </button>
           </div>
         </form>
@@ -292,12 +296,14 @@ function InspectDrawer({
   onClose: () => void;
 }) {
   const badge = getBadgeInfo(record.title);
+  const locale = useLocale();
+  const t = (key: string) => i18nT(key, locale);
   return (
     <div className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col animate-in slide-in-from-right duration-200">
       
       {/* Header */}
       <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0">
-        <h3 className="font-extrabold text-slate-900 dark:text-white text-sm">Achievement Details</h3>
+        <h3 className="font-extrabold text-slate-900 dark:text-white text-sm">{t('Achievement Details')}</h3>
         <button onClick={onClose} className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 cursor-pointer border-none bg-transparent">
           <X className="w-4 h-4" />
         </button>
@@ -316,7 +322,7 @@ function InspectDrawer({
           )}
           <div className="min-w-0">
             <h4 className="font-black text-slate-900 dark:text-white text-xs truncate">{record.studentName}</h4>
-            <p className="text-[10px] text-slate-400 font-mono mt-0.5">School ID: {record.studentSchoolId}</p>
+            <p className="text-[10px] text-slate-400 font-mono mt-0.5">{t('School ID')}: {record.studentSchoolId}</p>
           </div>
         </div>
 
@@ -326,7 +332,7 @@ function InspectDrawer({
             {badge.icon}
           </div>
           <div>
-            <p className="text-[10px] text-slate-400 font-extrabold uppercase">Milestone Honor</p>
+            <p className="text-[10px] text-slate-400 font-extrabold uppercase">{t('Milestone Honor')}</p>
             <p className="text-xs font-black mt-0.5">{record.title}</p>
           </div>
         </div>
@@ -334,7 +340,7 @@ function InspectDrawer({
         {/* Date completed details */}
         <div className="border-t border-slate-100 dark:border-slate-800 pt-4 space-y-2.5 text-xs">
           <div className="flex justify-between">
-            <span className="text-slate-400 font-semibold">Date Earned</span>
+            <span className="text-slate-400 font-semibold">{t('Date Earned')}</span>
             <span className="text-slate-700 dark:text-slate-300 font-bold">{formatDate(record.dateEarned)}</span>
           </div>
         </div>
@@ -342,7 +348,7 @@ function InspectDrawer({
         {/* Description Notes */}
         {record.description && (
           <div className="border-t border-slate-100 dark:border-slate-800 pt-4 space-y-1.5">
-            <h4 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Achievement Citation</h4>
+            <h4 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">{t('Achievement Citation')}</h4>
             <p className="text-xs text-slate-655 leading-relaxed bg-slate-50 dark:bg-slate-850 p-3 rounded-2xl italic border border-slate-100 dark:border-slate-800">
               "{record.description}"
             </p>
@@ -355,7 +361,7 @@ function InspectDrawer({
           onClick={onClose}
           className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl cursor-pointer border-none shadow-md transition-colors"
         >
-          Done
+          {t('Done')}
         </button>
       </div>
     </div>
@@ -367,6 +373,8 @@ function InspectDrawer({
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function LanguageAchievementsPage() {
+  const locale = useLocale();
+  const t = (key: string) => i18nT(key, locale);
   const [records, setRecords] = useState<AchievementRecord[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -394,7 +402,7 @@ export default function LanguageAchievementsPage() {
       const res = await apiClient.get(`/language-achievements?${q}`);
       setRecords((res.data?.data || []).map(mapAchievementRecord));
     } catch {
-      toast.error('Failed to load language achievements');
+      toast.error(t('Failed to load language achievements'));
     } finally {
       setLoading(false);
     }
@@ -405,13 +413,13 @@ export default function LanguageAchievementsPage() {
   }, [loadRecords]);
 
   const handleDelete = async (record: AchievementRecord) => {
-    if (!confirm(`Are you sure you want to delete the achievement for ${record.studentName}?`)) return;
+    if (!confirm(t('Are you sure you want to delete the achievement for') + ` ${record.studentName}?`)) return;
     try {
       await apiClient.delete(`/language-achievements/${record.documentId || record.id}`);
-      toast.success('Achievement record deleted');
+      toast.success(t('Achievement record deleted'));
       loadRecords();
     } catch {
-      toast.error('Failed to delete achievement record');
+      toast.error(t('Failed to delete achievement record'));
     }
   };
 
@@ -495,10 +503,10 @@ export default function LanguageAchievementsPage() {
             <div className="p-2 bg-indigo-600 rounded-xl shadow-md shadow-indigo-200 dark:shadow-indigo-950">
               <Award className="w-5 h-5 text-white" />
             </div>
-            <h1 className="text-xl font-black text-slate-900 dark:text-white">Language Achievements</h1>
+            <h1 className="text-xl font-black text-slate-900 dark:text-white">{t('Language Achievements')}</h1>
           </div>
           <p className="text-sm text-slate-500 dark:text-slate-400 ml-11">
-            Track honors, curriculum level completion tokens, speaking awards, and memorization honors.
+            {t('Track honors, curriculum level completion tokens, speaking awards, and memorization honors.')}
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
@@ -508,14 +516,14 @@ export default function LanguageAchievementsPage() {
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer transition-colors"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
+            {t('Refresh')}
           </button>
           <button
             onClick={exportCSV}
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer transition-colors"
           >
             <Download className="w-3.5 h-3.5" />
-            Export CSV
+            {t('Export CSV')}
           </button>
           {canModify && (
             <button
@@ -523,7 +531,7 @@ export default function LanguageAchievementsPage() {
               className="flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md shadow-indigo-200 dark:shadow-indigo-950 cursor-pointer border-none transition-colors"
             >
               <Plus className="w-4 h-4" />
-              Award Achievement
+              {t('Award Achievement')}
             </button>
           )}
         </div>
@@ -532,10 +540,10 @@ export default function LanguageAchievementsPage() {
       {/* KPI Stats Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: 'Total Honors Awarded', value: stats.total, icon: <Award className="w-4 h-4 text-indigo-605" />, bg: 'bg-indigo-50/60 dark:bg-indigo-950/20 border-indigo-100 dark:border-indigo-900/20' },
-          { label: 'Unique Scholars', value: stats.uniqueScholars, icon: <Users className="w-4 h-4 text-sky-600" />, bg: 'bg-sky-50/60 dark:bg-sky-950/20 border-sky-100 dark:border-sky-900/20' },
-          { label: 'Earned This Month', value: stats.monthCount, icon: <Calendar className="w-4 h-4 text-emerald-600" />, bg: 'bg-emerald-50/60 dark:bg-emerald-950/20 border-emerald-100 dark:border-emerald-900/20' },
-          { label: 'Excellence Badges', value: stats.excellenceCount, icon: <Trophy className="w-4 h-4 text-amber-600" />, bg: 'bg-amber-50/60 dark:bg-amber-950/20 border-amber-100 dark:border-amber-900/20' }
+          { label: t('Total Honors Awarded'), value: stats.total, icon: <Award className="w-4 h-4 text-indigo-605" />, bg: 'bg-indigo-50/60 dark:bg-indigo-950/20 border-indigo-100 dark:border-indigo-900/20' },
+          { label: t('Unique Scholars'), value: stats.uniqueScholars, icon: <Users className="w-4 h-4 text-sky-600" />, bg: 'bg-sky-50/60 dark:bg-sky-950/20 border-sky-100 dark:border-sky-900/20' },
+          { label: t('Earned This Month'), value: stats.monthCount, icon: <Calendar className="w-4 h-4 text-emerald-600" />, bg: 'bg-emerald-50/60 dark:bg-emerald-950/20 border-emerald-100 dark:border-emerald-900/20' },
+          { label: t('Excellence Badges'), value: stats.excellenceCount, icon: <Trophy className="w-4 h-4 text-amber-600" />, bg: 'bg-amber-50/60 dark:bg-amber-950/20 border-amber-100 dark:border-amber-900/20' }
         ].map((s, i) => (
           <div key={i} className={`p-4 rounded-2xl border ${s.bg} flex items-center gap-3.5`}>
             <div className="p-2 bg-white dark:bg-slate-900 rounded-xl shadow-xs shrink-0">{s.icon}</div>
@@ -554,7 +562,7 @@ export default function LanguageAchievementsPage() {
           <input
             value={query}
             onChange={e => setQuery(e.target.value)}
-            placeholder="Search by student name, ID, achievement honor or keywords..."
+            placeholder={t('Search by student name, ID, achievement honor or keywords...')}
             className="w-full pl-9 pr-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500"
           />
         </div>
@@ -563,7 +571,7 @@ export default function LanguageAchievementsPage() {
           className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-bold cursor-pointer transition-colors ${showFilters ? 'bg-indigo-50 border-indigo-300 text-indigo-700 dark:bg-indigo-950/30 dark:border-indigo-700 dark:text-indigo-400' : 'bg-slate-50 border-slate-200 text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400'}`}
         >
           <Filter className="w-3.5 h-3.5" />
-          Filters
+          {t('Filters')}
           {filterDate && (
             <span className="ml-1 w-4 h-4 bg-indigo-600 text-white rounded-full text-[9px] font-black flex items-center justify-center">
               1
@@ -576,19 +584,21 @@ export default function LanguageAchievementsPage() {
       {showFilters && (
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-3 flex flex-wrap items-center gap-3">
           <select value={filterDate} onChange={e => setFilterDate(e.target.value)} className={selClass}>
-            <option value="">All Time</option>
-            <option value="month">This Month</option>
-            <option value="year">This Year</option>
+            <option value="">{t('All Time')}</option>
+            <option value="month">{t('This Month')}</option>
+            <option value="year">{t('This Year')}</option>
           </select>
           {filterDate && (
             <button
               onClick={() => setFilterDate('')}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-455 text-xs font-bold border border-rose-200 dark:border-rose-800 cursor-pointer"
             >
-              <X className="w-3 h-3" /> Clear Filter
+              <X className="w-3 h-3" /> {t('Clear Filter')}
             </button>
           )}
-          <span className="text-[11px] text-slate-400 ml-auto font-semibold">{filtered.length} achievement{filtered.length !== 1 ? 's' : ''} listed</span>
+          <span className="text-[11px] text-slate-400 ml-auto font-semibold">
+            {filtered.length} {filtered.length === 1 ? t('achievement listed') : t('achievements listed')}
+          </span>
         </div>
       )}
 
@@ -612,9 +622,9 @@ export default function LanguageAchievementsPage() {
               <div className="w-16 h-16 bg-slate-50 dark:bg-slate-800 rounded-2xl flex items-center justify-center mb-4">
                 <Award className="w-8 h-8 text-slate-350 dark:text-slate-655" />
               </div>
-              <h3 className="font-extrabold text-slate-700 dark:text-slate-300 text-base">No Achievements Recorded</h3>
+              <h3 className="font-extrabold text-slate-700 dark:text-slate-300 text-base">{t('No Achievements Recorded')}</h3>
               <p className="text-sm text-slate-400 dark:text-slate-600 mt-1 max-w-sm">
-                No achievement logs exist matching search criteria. Award an achievement badge above.
+                {t('No achievement logs exist matching search criteria. Award an achievement badge above.')}
               </p>
             </div>
           ) : (
@@ -622,11 +632,11 @@ export default function LanguageAchievementsPage() {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-slate-50 dark:bg-slate-800/40 border-b border-slate-100 dark:border-slate-800 text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-                    <th className="px-5 py-3">Scholar</th>
-                    <th className="px-5 py-3">Date Earned</th>
-                    <th className="px-5 py-3">Achievement Milestone</th>
-                    <th className="px-5 py-3">Citation / Description</th>
-                    <th className="px-5 py-3 text-right">Actions</th>
+                    <th className="px-5 py-3">{t('Scholar')}</th>
+                    <th className="px-5 py-3">{t('Date Earned')}</th>
+                    <th className="px-5 py-3">{t('Achievement Milestone')}</th>
+                    <th className="px-5 py-3">{t('Citation / Description')}</th>
+                    <th className="px-5 py-3 text-right">{t('Actions')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
@@ -657,14 +667,14 @@ export default function LanguageAchievementsPage() {
                           </span>
                         </td>
                         <td className="px-5 py-3.5 text-slate-500 max-w-[280px] truncate">
-                          {record.description || <span className="text-slate-400 italic">No citation details</span>}
+                          {record.description || <span className="text-slate-400 italic">{t('No citation details')}</span>}
                         </td>
                         <td className="px-5 py-3.5 text-right whitespace-nowrap">
                           <div className="flex justify-end gap-1.5">
                             <button
                               onClick={() => setInspectItem(record)}
                               className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer transition-colors bg-transparent"
-                              title="Inspect Details"
+                              title={t('Inspect Details')}
                             >
                               <Eye className="w-3.5 h-3.5" />
                             </button>
@@ -673,14 +683,14 @@ export default function LanguageAchievementsPage() {
                                 <button
                                   onClick={() => { setEditItem(record); setShowModal(true); }}
                                   className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-indigo-600 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer transition-colors bg-transparent"
-                                  title="Edit Record"
+                                  title={t('Edit Record')}
                                 >
                                   <Pencil className="w-3.5 h-3.5" />
                                 </button>
                                 <button
                                   onClick={() => handleDelete(record)}
                                   className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-rose-600 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer transition-colors bg-transparent"
-                                  title="Delete Record"
+                                  title={t('Delete Record')}
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
                                 </button>

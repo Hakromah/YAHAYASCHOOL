@@ -11,6 +11,8 @@ import { apiClient } from '@/services/api.service';
 import { usePermissions } from '@/hooks/usePermissions';
 import { toast } from 'sonner';
 import qs from 'qs';
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -95,6 +97,8 @@ function CompetitionModal({
   onSaved: () => void;
 }) {
   const isEdit = !!editItem;
+  const locale = useLocale();
+  const t = (key: string) => i18nT(key, locale);
   const [form, setForm] = useState({
     title: editItem?.title || '',
     category: editItem?.category || 'Debate',
@@ -148,7 +152,7 @@ function CompetitionModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.title) {
-      toast.error('Title is required');
+      toast.error(t('Title is required'));
       return;
     }
     setSaving(true);
@@ -165,15 +169,15 @@ function CompetitionModal({
 
       if (isEdit) {
         await apiClient.put(`/language-competitions/${editItem!.documentId || editItem!.id}`, { data: payload });
-        toast.success('Competition details updated successfully');
+        toast.success(t('Competition details updated successfully'));
       } else {
         await apiClient.post('/language-competitions', { data: payload });
-        toast.success('New competition recorded successfully');
+        toast.success(t('New competition recorded successfully'));
       }
       onSaved();
       onClose();
     } catch (err: any) {
-      toast.error(err?.response?.data?.error?.message || 'Failed to save competition');
+      toast.error(err?.response?.data?.error?.message || t('Failed to save competition'));
     } finally {
       setSaving(false);
     }
@@ -194,9 +198,9 @@ function CompetitionModal({
             </div>
             <div>
               <h2 className="font-extrabold text-slate-900 dark:text-white text-sm">
-                {isEdit ? 'Edit Language Competition' : 'Record New Competition'}
+                {isEdit ? t('Edit Language Competition') : t('Record New Competition')}
               </h2>
-              <p className="text-[11px] text-slate-400">Manage category, date, judges, awards, and participants</p>
+              <p className="text-[11px] text-slate-400">{t('Manage category, date, judges, awards, and participants')}</p>
             </div>
           </div>
           <button onClick={onClose} className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 cursor-pointer border-none bg-transparent">
@@ -207,11 +211,11 @@ function CompetitionModal({
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="overflow-y-auto px-6 py-5 space-y-4 flex-1">
           <div className="space-y-1.5">
-            <label className={labelClass}>Competition Title *</label>
+            <label className={labelClass}>{t('Competition Title *')}</label>
             <input
               required
               type="text"
-              placeholder="e.g. Arabic Poetry Recitation Championship 2026"
+              placeholder={t('e.g. Arabic Poetry Recitation Championship 2026')}
               value={form.title}
               onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
               className={inpClass}
@@ -220,17 +224,17 @@ function CompetitionModal({
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <label className={labelClass}>Category *</label>
+              <label className={labelClass}>{t('Category *')}</label>
               <select
                 value={form.category}
                 onChange={e => setForm(f => ({ ...f, category: e.target.value as any }))}
                 className={inpClass}
               >
-                {CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                {CATEGORIES.map(cat => <option key={cat} value={cat}>{t(cat)}</option>)}
               </select>
             </div>
             <div className="space-y-1.5">
-              <label className={labelClass}>Event Date</label>
+              <label className={labelClass}>{t('Event Date')}</label>
               <input
                 type="date"
                 value={form.date}
@@ -242,20 +246,20 @@ function CompetitionModal({
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <label className={labelClass}>Judges / Assessors</label>
+              <label className={labelClass}>{t('Judges / Assessors')}</label>
               <input
                 type="text"
-                placeholder="e.g. Sheikh Yahaya, Ustadh Ibrahim"
+                placeholder={t('e.g. Sheikh Yahaya, Ustadh Ibrahim')}
                 value={form.judges}
                 onChange={e => setForm(f => ({ ...f, judges: e.target.value }))}
                 className={inpClass}
               />
             </div>
             <div className="space-y-1.5">
-              <label className={labelClass}>Awards / Prizes</label>
+              <label className={labelClass}>{t('Awards / Prizes')}</label>
               <input
                 type="text"
-                placeholder="e.g. Gold Medal & Scholar Certificate"
+                placeholder={t('e.g. Gold Medal & Scholar Certificate')}
                 value={form.awards}
                 onChange={e => setForm(f => ({ ...f, awards: e.target.value }))}
                 className={inpClass}
@@ -265,10 +269,10 @@ function CompetitionModal({
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <label className={labelClass}>Ranking / Performance Tier</label>
+              <label className={labelClass}>{t('Ranking / Performance Tier')}</label>
               <input
                 type="number"
-                placeholder="e.g. 1 for First Place, or leave blank"
+                placeholder={t('e.g. 1 for First Place, or leave blank')}
                 value={form.ranking}
                 onChange={e => setForm(f => ({ ...f, ranking: e.target.value }))}
                 className={inpClass}
@@ -279,9 +283,9 @@ function CompetitionModal({
           {/* Student Selector Card */}
           <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800/50 space-y-3">
             <div className="flex justify-between items-center">
-              <h3 className="text-xs font-black text-slate-800 dark:text-slate-300">Assign Student Participants</h3>
+              <h3 className="text-xs font-black text-slate-800 dark:text-slate-300">{t('Assign Student Participants')}</h3>
               <span className="text-[10px] bg-indigo-600 text-white font-extrabold px-2 py-0.5 rounded-full">
-                {form.selectedStudents.length} Assigned
+                {form.selectedStudents.length} {t('Assigned')}
               </span>
             </div>
 
@@ -290,7 +294,7 @@ function CompetitionModal({
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
               <input
                 type="text"
-                placeholder="Search scholars by name or school ID..."
+                placeholder={t('Search scholars by name or school ID...')}
                 value={studentSearch}
                 onChange={e => setStudentSearch(e.target.value)}
                 className="w-full pl-8 pr-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none"
@@ -300,10 +304,10 @@ function CompetitionModal({
             {/* Selection list */}
             <div className="h-36 overflow-y-auto border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl divide-y divide-slate-100 dark:divide-slate-800/40">
               {loadingStudents && (
-                <p className="text-[11px] text-slate-400 p-3 italic text-center">Loading student records...</p>
+                <p className="text-[11px] text-slate-400 p-3 italic text-center">{t('Loading student records...')}</p>
               )}
               {!loadingStudents && filteredStudents.length === 0 && (
-                <p className="text-[11px] text-slate-400 p-3 italic text-center">No students found</p>
+                <p className="text-[11px] text-slate-400 p-3 italic text-center">{t('No students found')}</p>
               )}
               {filteredStudents.map(student => {
                 const docId = student.documentId || String(student.id);
@@ -340,7 +344,7 @@ function CompetitionModal({
               onClick={onClose}
               className="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-400 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-xl cursor-pointer border-none transition-colors"
             >
-              Cancel
+              {t('Cancel')}
             </button>
             <button
               type="submit"
@@ -348,7 +352,7 @@ function CompetitionModal({
               className="flex items-center gap-2 px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-md cursor-pointer border-none transition-colors disabled:opacity-60"
             >
               {saving ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
-              {saving ? 'Saving...' : (isEdit ? 'Update Details' : 'Record Competition')}
+              {saving ? t('Saving...') : (isEdit ? t('Update Details') : t('Record Competition'))}
             </button>
           </div>
         </form>
@@ -368,12 +372,14 @@ function InspectDrawer({
   record: CompetitionRecord;
   onClose: () => void;
 }) {
+  const locale = useLocale();
+  const t = (key: string) => i18nT(key, locale);
   return (
     <div className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col animate-in slide-in-from-right duration-200">
       
       {/* Header */}
       <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0">
-        <h3 className="font-extrabold text-slate-900 dark:text-white text-sm">Competition Insights</h3>
+        <h3 className="font-extrabold text-slate-900 dark:text-white text-sm">{t('Competition Insights')}</h3>
         <button onClick={onClose} className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 cursor-pointer border-none bg-transparent">
           <X className="w-4 h-4" />
         </button>
@@ -384,11 +390,11 @@ function InspectDrawer({
         {/* Title Block */}
         <div className="space-y-1.5">
           <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold border ${getCategoryColor(record.category)}`}>
-            {record.category}
+            {t(record.category || '')}
           </span>
           <h4 className="font-black text-slate-900 dark:text-white text-sm leading-snug">{record.title}</h4>
           <p className="text-[11px] text-slate-400 flex items-center gap-1">
-            <Calendar className="w-3.5 h-3.5" /> Date Scheduled: {formatDate(record.date)}
+            <Calendar className="w-3.5 h-3.5" /> {t('Date Scheduled')}: {formatDate(record.date)}
           </p>
         </div>
 
@@ -397,10 +403,10 @@ function InspectDrawer({
           <div className="p-4 rounded-2xl bg-amber-50/60 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/40 flex items-start gap-3">
             <Award className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
             <div>
-              <p className="text-[10px] text-slate-400 font-extrabold uppercase">Awards & Prizes</p>
+              <p className="text-[10px] text-slate-400 font-extrabold uppercase">{t('Awards & Prizes')}</p>
               <p className="text-xs font-extrabold text-amber-800 dark:text-amber-300 mt-1">{record.awards}</p>
               {record.ranking && (
-                <p className="text-[10px] font-bold text-amber-700 mt-0.5">Performance Rank: Tier #{record.ranking}</p>
+                <p className="text-[10px] font-bold text-amber-700 mt-0.5">{t('Performance Rank: Tier')} #{record.ranking}</p>
               )}
             </div>
           </div>
@@ -409,23 +415,25 @@ function InspectDrawer({
         {/* General metadata block */}
         <div className="border-t border-slate-100 dark:border-slate-800 pt-4 space-y-2.5 text-xs">
           <div className="flex justify-between">
-            <span className="text-slate-400 font-semibold">Judges / Evaluators</span>
+            <span className="text-slate-400 font-semibold">{t('Judges / Evaluators')}</span>
             <span className="text-slate-700 dark:text-slate-300 font-bold">{record.judges || '—'}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-slate-400 font-semibold">Total Scholars competing</span>
-            <span className="text-indigo-600 dark:text-indigo-400 font-black">{record.participantsCount} Scholars</span>
+            <span className="text-slate-400 font-semibold">{t('Total Scholars competing')}</span>
+            <span className="text-indigo-600 dark:text-indigo-400 font-black">
+              {record.participantsCount} {record.participantsCount === 1 ? t('Scholar') : t('Scholars')}
+            </span>
           </div>
         </div>
 
         {/* Participating Students Cards List */}
         <div className="border-t border-slate-100 dark:border-slate-800 pt-4 space-y-3">
           <h4 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-            <Users className="w-3.5 h-3.5" /> Participating Scholars
+            <Users className="w-3.5 h-3.5" /> {t('Participating Scholars')}
           </h4>
           
           {record.students && record.students.length === 0 ? (
-            <p className="text-xs text-slate-400 italic">No scholars are currently registered in this competition.</p>
+            <p className="text-xs text-slate-400 italic">{t('No scholars are currently registered in this competition.')}</p>
           ) : (
             <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
               {record.students?.map((student: any) => {
@@ -462,7 +470,7 @@ function InspectDrawer({
           onClick={onClose}
           className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl cursor-pointer border-none shadow-md transition-colors"
         >
-          Done
+          {t('Done')}
         </button>
       </div>
     </div>
@@ -474,6 +482,8 @@ function InspectDrawer({
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function LanguageCompetitionsPage() {
+  const locale = useLocale();
+  const t = (key: string) => i18nT(key, locale);
   const [competitions, setCompetitions] = useState<CompetitionRecord[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -502,7 +512,7 @@ export default function LanguageCompetitionsPage() {
       const res = await apiClient.get(`/language-competitions?${q}`);
       setCompetitions((res.data?.data || []).map(mapCompetitionRecord));
     } catch {
-      toast.error('Failed to load language competition records');
+      toast.error(t('Failed to load language competition records'));
     } finally {
       setLoading(false);
     }
@@ -513,13 +523,13 @@ export default function LanguageCompetitionsPage() {
   }, [loadCompetitions]);
 
   const handleDelete = async (record: CompetitionRecord) => {
-    if (!confirm(`Are you sure you want to delete "${record.title}"?`)) return;
+    if (!confirm(t('Are you sure you want to delete') + ` "${record.title}"?`)) return;
     try {
       await apiClient.delete(`/language-competitions/${record.documentId || record.id}`);
-      toast.success('Competition record deleted');
+      toast.success(t('Competition record deleted'));
       loadCompetitions();
     } catch {
-      toast.error('Failed to delete competition record');
+      toast.error(t('Failed to delete competition record'));
     }
   };
 
@@ -602,10 +612,10 @@ export default function LanguageCompetitionsPage() {
             <div className="p-2 bg-indigo-600 rounded-xl shadow-md shadow-indigo-200 dark:shadow-indigo-950">
               <Trophy className="w-5 h-5 text-white" />
             </div>
-            <h1 className="text-xl font-black text-slate-900 dark:text-white">Language Competitions</h1>
+            <h1 className="text-xl font-black text-slate-900 dark:text-white">{t('Language Competitions')}</h1>
           </div>
           <p className="text-sm text-slate-500 dark:text-slate-400 ml-11">
-            Track inter-class debate cups, speech tournaments, storytelling leagues, and poetry recitations.
+            {t('Track inter-class debate cups, speech tournaments, storytelling leagues, and poetry recitations.')}
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
@@ -615,14 +625,14 @@ export default function LanguageCompetitionsPage() {
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer transition-colors"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
+            {t('Refresh')}
           </button>
           <button
             onClick={exportCSV}
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer transition-colors"
           >
             <Download className="w-3.5 h-3.5" />
-            Export CSV
+            {t('Export CSV')}
           </button>
           {canModify && (
             <button
@@ -630,7 +640,7 @@ export default function LanguageCompetitionsPage() {
               className="flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md shadow-indigo-200 dark:shadow-indigo-950 cursor-pointer border-none transition-colors"
             >
               <Plus className="w-4 h-4" />
-              Add Competition
+              {t('Add Competition')}
             </button>
           )}
         </div>
@@ -639,10 +649,10 @@ export default function LanguageCompetitionsPage() {
       {/* KPI Stats Panel */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: 'Total Competitions', value: stats.total, icon: <Trophy className="w-4 h-4 text-indigo-600" />, bg: 'bg-indigo-50/60 dark:bg-indigo-950/20 border-indigo-100 dark:border-indigo-900/20' },
-          { label: 'Unique Participants', value: stats.uniqueParticipants, icon: <Users className="w-4 h-4 text-sky-600" />, bg: 'bg-sky-50/60 dark:bg-sky-950/20 border-sky-100 dark:border-sky-900/20' },
-          { label: 'Upcoming Events', value: stats.upcoming, icon: <Calendar className="w-4 h-4 text-amber-600" />, bg: 'bg-amber-50/60 dark:bg-amber-950/20 border-amber-100 dark:border-amber-900/20' },
-          { label: 'Completed Cups', value: stats.completed, icon: <Award className="w-4 h-4 text-emerald-600" />, bg: 'bg-emerald-50/60 dark:bg-emerald-950/20 border-emerald-100 dark:border-emerald-900/20' }
+          { label: t('Total Competitions'), value: stats.total, icon: <Trophy className="w-4 h-4 text-indigo-600" />, bg: 'bg-indigo-50/60 dark:bg-indigo-950/20 border-indigo-100 dark:border-indigo-900/20' },
+          { label: t('Unique Participants'), value: stats.uniqueParticipants, icon: <Users className="w-4 h-4 text-sky-600" />, bg: 'bg-sky-50/60 dark:bg-sky-950/20 border-sky-100 dark:border-sky-900/20' },
+          { label: t('Upcoming Events'), value: stats.upcoming, icon: <Calendar className="w-4 h-4 text-amber-600" />, bg: 'bg-amber-50/60 dark:bg-amber-950/20 border-amber-100 dark:border-amber-900/20' },
+          { label: t('Completed Cups'), value: stats.completed, icon: <Award className="w-4 h-4 text-emerald-600" />, bg: 'bg-emerald-50/60 dark:bg-emerald-950/20 border-emerald-100 dark:border-emerald-900/20' }
         ].map((s, i) => (
           <div key={i} className={`p-4 rounded-2xl border ${s.bg} flex items-center gap-3.5`}>
             <div className="p-2 bg-white dark:bg-slate-900 rounded-xl shadow-xs shrink-0">{s.icon}</div>
@@ -661,7 +671,7 @@ export default function LanguageCompetitionsPage() {
           <input
             value={query}
             onChange={e => setQuery(e.target.value)}
-            placeholder="Search by tournament name, category, judges, or prizes..."
+            placeholder={t('Search by tournament name, category, judges, or prizes...')}
             className="w-full pl-9 pr-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500"
           />
         </div>
@@ -670,7 +680,7 @@ export default function LanguageCompetitionsPage() {
           className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-bold cursor-pointer transition-colors ${showFilters ? 'bg-indigo-50 border-indigo-300 text-indigo-700 dark:bg-indigo-950/30 dark:border-indigo-700 dark:text-indigo-400' : 'bg-slate-50 border-slate-200 text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400'}`}
         >
           <Filter className="w-3.5 h-3.5" />
-          Filters
+          {t('Filters')}
           {[filterCategory, filterTiming].filter(Boolean).length > 0 && (
             <span className="ml-1 w-4 h-4 bg-indigo-600 text-white rounded-full text-[9px] font-black flex items-center justify-center">
               {[filterCategory, filterTiming].filter(Boolean).length}
@@ -683,23 +693,25 @@ export default function LanguageCompetitionsPage() {
       {showFilters && (
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-3 flex flex-wrap items-center gap-3">
           <select value={filterCategory} onChange={e => setFilterCategory(e.target.value)} className={selClass}>
-            <option value="">All Categories</option>
-            {CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+            <option value="">{t('All Categories')}</option>
+            {CATEGORIES.map(cat => <option key={cat} value={cat}>{t(cat)}</option>)}
           </select>
           <select value={filterTiming} onChange={e => setFilterTiming(e.target.value)} className={selClass}>
-            <option value="">All Statuses</option>
-            <option value="upcoming">Upcoming Events</option>
-            <option value="past">Completed Cups</option>
+            <option value="">{t('All Statuses')}</option>
+            <option value="upcoming">{t('Upcoming Events')}</option>
+            <option value="past">{t('Completed Cups')}</option>
           </select>
           {[filterCategory, filterTiming].some(Boolean) && (
             <button
               onClick={() => { setFilterCategory(''); setFilterTiming(''); }}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-455 text-xs font-bold border border-rose-200 dark:border-rose-800 cursor-pointer"
             >
-              <X className="w-3 h-3" /> Clear Filters
+              <X className="w-3 h-3" /> {t('Clear Filters')}
             </button>
           )}
-          <span className="text-[11px] text-slate-400 ml-auto font-semibold">{filtered.length} record{filtered.length !== 1 ? 's' : ''} listed</span>
+          <span className="text-[11px] text-slate-400 ml-auto font-semibold">
+            {filtered.length} {filtered.length === 1 ? t('record listed') : t('records listed')}
+          </span>
         </div>
       )}
 
@@ -723,9 +735,9 @@ export default function LanguageCompetitionsPage() {
               <div className="w-16 h-16 bg-slate-50 dark:bg-slate-800 rounded-2xl flex items-center justify-center mb-4">
                 <Trophy className="w-8 h-8 text-slate-350 dark:text-slate-655" />
               </div>
-              <h3 className="font-extrabold text-slate-700 dark:text-slate-300 text-base">No Competitions Tracked</h3>
+              <h3 className="font-extrabold text-slate-700 dark:text-slate-300 text-base">{t('No Competitions Tracked')}</h3>
               <p className="text-sm text-slate-400 dark:text-slate-600 mt-1 max-w-sm">
-                No language competitions exist matching the query. Add a new competition cup above.
+                {t('No language competitions exist matching the query. Add a new competition cup above.')}
               </p>
             </div>
           ) : (
@@ -733,13 +745,13 @@ export default function LanguageCompetitionsPage() {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-slate-50 dark:bg-slate-800/40 border-b border-slate-100 dark:border-slate-800 text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-                    <th className="px-5 py-3">Tournament / Competition</th>
-                    <th className="px-5 py-3">Category</th>
-                    <th className="px-5 py-3">Date</th>
-                    <th className="px-5 py-3">Judges</th>
-                    <th className="px-5 py-3 text-center">Participants</th>
-                    <th className="px-5 py-3">Awards / Outcomes</th>
-                    <th className="px-5 py-3 text-right">Actions</th>
+                    <th className="px-5 py-3">{t('Tournament / Competition')}</th>
+                    <th className="px-5 py-3">{t('Category')}</th>
+                    <th className="px-5 py-3">{t('Date')}</th>
+                    <th className="px-5 py-3">{t('Judges')}</th>
+                    <th className="px-5 py-3 text-center">{t('Participants')}</th>
+                    <th className="px-5 py-3">{t('Awards / Outcomes')}</th>
+                    <th className="px-5 py-3 text-right">{t('Actions')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
@@ -750,7 +762,7 @@ export default function LanguageCompetitionsPage() {
                       </td>
                       <td className="px-5 py-3.5">
                         <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold border ${getCategoryColor(record.category)}`}>
-                          {record.category}
+                          {t(record.category || '')}
                         </span>
                       </td>
                       <td className="px-5 py-3.5 text-slate-500 font-semibold whitespace-nowrap">
@@ -761,7 +773,7 @@ export default function LanguageCompetitionsPage() {
                       </td>
                       <td className="px-5 py-3.5 text-center">
                         <span className="px-2 py-1 bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 font-extrabold rounded-lg font-mono">
-                          {record.participantsCount} Scholars
+                          {record.participantsCount} {record.participantsCount === 1 ? t('Scholar') : t('Scholars')}
                         </span>
                       </td>
                       <td className="px-5 py-3.5">
@@ -771,7 +783,7 @@ export default function LanguageCompetitionsPage() {
                             <span className="truncate max-w-[160px]">{record.awards}</span>
                           </div>
                         ) : (
-                          <span className="text-slate-400 italic">No award outcome</span>
+                          <span className="text-slate-400 italic">{t('No award outcome')}</span>
                         )}
                       </td>
                       <td className="px-5 py-3.5 text-right whitespace-nowrap">
@@ -779,7 +791,7 @@ export default function LanguageCompetitionsPage() {
                           <button
                             onClick={() => setInspectItem(record)}
                             className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer transition-colors bg-transparent"
-                            title="Inspect Competition"
+                            title={t('Inspect Competition')}
                           >
                             <Eye className="w-3.5 h-3.5" />
                           </button>
@@ -788,14 +800,14 @@ export default function LanguageCompetitionsPage() {
                               <button
                                 onClick={() => { setEditItem(record); setShowModal(true); }}
                                 className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-indigo-600 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer transition-colors bg-transparent"
-                                title="Edit Details"
+                                title={t('Edit Details')}
                               >
                                 <Pencil className="w-3.5 h-3.5" />
                               </button>
                               <button
                                 onClick={() => handleDelete(record)}
                                 className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-rose-600 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer transition-colors bg-transparent"
-                                title="Delete Competition"
+                                title={t('Delete Competition')}
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>

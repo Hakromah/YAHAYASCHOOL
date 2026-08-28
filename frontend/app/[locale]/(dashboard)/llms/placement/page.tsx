@@ -12,6 +12,8 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import qs from 'qs';
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types & Constants
@@ -148,6 +150,8 @@ function PlacementModal({
   existingSlots: PlacementRecord[];
 }) {
   const isEdit = !!editItem;
+  const locale = useLocale();
+  const t = (key: string) => i18nT(key, locale);
   const [form, setForm] = useState({
     student: editItem?.student?.documentId || String(editItem?.student?.id || ''),
     teacher: editItem?.teacher?.documentId || String(editItem?.teacher?.id || ''),
@@ -211,7 +215,7 @@ function PlacementModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.student) {
-      toast.error('Please select a student');
+      toast.error(t('Please select a student'));
       return;
     }
     setSaving(true);
@@ -234,15 +238,15 @@ function PlacementModal({
 
       if (isEdit) {
         await apiClient.put(`/placement-tests/${editItem!.documentId || editItem!.id}`, { data: payload });
-        toast.success('Placement test updated successfully');
+        toast.success(t('Placement test updated successfully'));
       } else {
         await apiClient.post('/placement-tests', { data: payload });
-        toast.success('Placement test recorded successfully');
+        toast.success(t('Placement test recorded successfully'));
       }
       onSaved();
       onClose();
     } catch (err: any) {
-      toast.error(err?.response?.data?.error?.message || 'Failed to save placement test');
+      toast.error(err?.response?.data?.error?.message || t('Failed to save placement test'));
     } finally {
       setSaving(false);
     }
@@ -263,9 +267,9 @@ function PlacementModal({
             </div>
             <div>
               <h2 className="font-extrabold text-slate-900 dark:text-white text-sm">
-                {isEdit ? 'Edit Placement Test Record' : 'Record New Placement Test'}
+                {isEdit ? t('Edit Placement Test Record') : t('Record New Placement Test')}
               </h2>
-              <p className="text-[11px] text-slate-400">Save test sub-scores and recommended placement level</p>
+              <p className="text-[11px] text-slate-400">{t('Save test sub-scores and recommended placement level')}</p>
             </div>
           </div>
           <button onClick={onClose} className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 cursor-pointer border-none bg-transparent">
@@ -277,7 +281,7 @@ function PlacementModal({
         <form onSubmit={handleSubmit} className="overflow-y-auto px-6 py-5 space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <label className={labelClass}>Student *</label>
+              <label className={labelClass}>{t('Student *')}</label>
               <select
                 required
                 disabled={isEdit}
@@ -285,7 +289,7 @@ function PlacementModal({
                 onChange={e => setForm(f => ({ ...f, student: e.target.value }))}
                 className={inpClass}
               >
-                <option value="">{loadingStudents ? 'Loading scholars...' : '— Select Student —'}</option>
+                <option value="">{loadingStudents ? t('Loading scholars...') : t('— Select Student —')}</option>
                 {students.map(s => (
                   <option key={s.id} value={s.documentId || s.id}>
                     {s.name || [s.firstName, s.lastName].filter(Boolean).join(' ')} ({s.schoolId || s.id})
@@ -294,37 +298,37 @@ function PlacementModal({
               </select>
             </div>
             <div className="space-y-1.5">
-              <label className={labelClass}>Language Track *</label>
+              <label className={labelClass}>{t('Language Track *')}</label>
               <select
                 required
                 value={form.language}
                 onChange={e => setForm(f => ({ ...f, language: e.target.value as 'Arabic' | 'English' }))}
                 className={inpClass}
               >
-                <option value="English">English</option>
-                <option value="Arabic">Arabic</option>
+                <option value="English">{t('English')}</option>
+                <option value="Arabic">{t('Arabic')}</option>
               </select>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <label className={labelClass}>Teacher / Assessor</label>
+              <label className={labelClass}>{t('Teacher / Assessor')}</label>
               <select
                 value={form.teacher}
                 onChange={e => setForm(f => ({ ...f, teacher: e.target.value }))}
                 className={inpClass}
               >
-                <option value="">— Select Assessor —</option>
-                {teachers.map(t => (
-                  <option key={t.id} value={t.documentId || t.id}>
-                    {t.name || t.displayName || [t.firstName, t.lastName].filter(Boolean).join(' ')}
+                <option value="">{t('— Select Assessor —')}</option>
+                {teachers.map(tOption => (
+                  <option key={tOption.id} value={tOption.documentId || tOption.id}>
+                    {tOption.name || tOption.displayName || [tOption.firstName, tOption.lastName].filter(Boolean).join(' ')}
                   </option>
                 ))}
               </select>
             </div>
             <div className="space-y-1.5">
-              <label className={labelClass}>Date Taken *</label>
+              <label className={labelClass}>{t('Date Taken *')}</label>
               <input
                 required
                 type="date"
@@ -337,7 +341,7 @@ function PlacementModal({
 
           {/* Scores Matrix */}
           <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800/50 space-y-3">
-            <h3 className="text-xs font-black text-slate-800 dark:text-slate-300">Skill Sub-Scores (0 to 100)</h3>
+            <h3 className="text-xs font-black text-slate-800 dark:text-slate-300">{t('Skill Sub-Scores (0 to 100)')}</h3>
             <div className="grid grid-cols-3 gap-3">
               {[
                 { key: 'grammarScore', label: 'Grammar' },
@@ -348,7 +352,7 @@ function PlacementModal({
                 { key: 'speakingScore', label: 'Speaking' }
               ].map(s => (
                 <div key={s.key} className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-500">{s.label}</label>
+                  <label className="text-[10px] font-bold text-slate-500">{t(s.label)}</label>
                   <input
                     type="number"
                     min="0"
@@ -367,7 +371,7 @@ function PlacementModal({
 
             {/* Calculated Overall Score */}
             <div className="flex justify-between items-center pt-2.5 border-t border-slate-200 dark:border-slate-700">
-              <span className="text-xs font-bold text-slate-500">Auto-Calculated Overall Score:</span>
+              <span className="text-xs font-bold text-slate-500">{t('Auto-Calculated Overall Score:')}</span>
               <span className={`px-3 py-1 rounded-xl text-xs font-extrabold ${getScorePill(computedOverall)}`}>
                 {computedOverall} / 100
               </span>
@@ -375,12 +379,12 @@ function PlacementModal({
           </div>
 
           <div className="space-y-1.5">
-            <label className={labelClass}>Recommended Language Level</label>
+            <label className={labelClass}>{t('Recommended Language Level')}</label>
             <div className="relative">
               <input
                 type="text"
                 list="levels-presets"
-                placeholder="Choose standard level or type custom program track..."
+                placeholder={t('Choose standard level or type custom program track...')}
                 value={form.recommendedLevel}
                 onChange={e => setForm(f => ({ ...f, recommendedLevel: e.target.value }))}
                 className={inpClass}
@@ -392,9 +396,9 @@ function PlacementModal({
           </div>
 
           <div className="space-y-1.5">
-            <label className={labelClass}>Teacher Notes / Assessment Details</label>
+            <label className={labelClass}>{t('Teacher Notes / Assessment Details')}</label>
             <textarea
-              placeholder="Record observations, specific weaknesses, oral fluency notes, etc..."
+              placeholder={t('Record observations, specific weaknesses, oral fluency notes, etc...')}
               value={form.teacherNotes}
               onChange={e => setForm(f => ({ ...f, teacherNotes: e.target.value }))}
               rows={3}
@@ -409,7 +413,7 @@ function PlacementModal({
               onClick={onClose}
               className="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-400 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-xl cursor-pointer border-none transition-colors"
             >
-              Cancel
+              {t('Cancel')}
             </button>
             <button
               type="submit"
@@ -417,7 +421,7 @@ function PlacementModal({
               className="flex items-center gap-2 px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-md cursor-pointer border-none transition-colors disabled:opacity-60"
             >
               {saving ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
-              {saving ? 'Saving...' : (isEdit ? 'Update Placement' : 'Record Placement')}
+              {saving ? t('Saving...') : (isEdit ? t('Update Placement') : t('Record Placement'))}
             </button>
           </div>
         </form>
@@ -437,12 +441,14 @@ function InspectDrawer({
   record: PlacementRecord;
   onClose: () => void;
 }) {
+  const locale = useLocale();
+  const t = (key: string) => i18nT(key, locale);
   return (
     <div className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col animate-in slide-in-from-right duration-200">
       
       {/* Header */}
       <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0">
-        <h3 className="font-extrabold text-slate-900 dark:text-white text-sm">Placement Test Details</h3>
+        <h3 className="font-extrabold text-slate-900 dark:text-white text-sm">{t('Placement Test Details')}</h3>
         <button onClick={onClose} className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 cursor-pointer border-none bg-transparent">
           <X className="w-4 h-4" />
         </button>
@@ -461,9 +467,9 @@ function InspectDrawer({
           )}
           <div className="min-w-0">
             <h4 className="font-black text-slate-900 dark:text-white text-xs truncate">{record.studentName}</h4>
-            <p className="text-[10px] text-slate-400 font-mono mt-0.5">School ID: {record.studentSchoolId}</p>
+            <p className="text-[10px] text-slate-400 font-mono mt-0.5">{t('School ID')}: {record.studentSchoolId}</p>
             <span className="mt-1 inline-block text-[9px] px-2 py-0.5 rounded-full font-bold bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-400">
-              {record.language} Program
+              {t(record.language)} {t('Program')}
             </span>
           </div>
         </div>
@@ -471,13 +477,13 @@ function InspectDrawer({
         {/* Global Level Recommendation */}
         <div className="grid grid-cols-2 gap-3">
           <div className="p-3 bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/40 rounded-2xl text-center space-y-1">
-            <p className="text-[10px] text-slate-400 font-extrabold uppercase">Recommended Level</p>
+            <p className="text-[10px] text-slate-400 font-extrabold uppercase">{t('Recommended Level')}</p>
             <p className="text-xs font-black text-indigo-600 dark:text-indigo-400 truncate px-1">
-              {record.recommendedLevel || 'Not Set'}
+              {record.recommendedLevel || t('Not Set')}
             </p>
           </div>
           <div className="p-3 bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/40 rounded-2xl text-center space-y-1">
-            <p className="text-[10px] text-slate-400 font-extrabold uppercase">Overall Test Score</p>
+            <p className="text-[10px] text-slate-400 font-extrabold uppercase">{t('Overall Test Score')}</p>
             <p className="text-sm font-black text-emerald-600 dark:text-emerald-400">
               {record.overallScore || '—'} / 100
             </p>
@@ -486,7 +492,7 @@ function InspectDrawer({
 
         {/* Skill Breakdown Chart */}
         <div className="space-y-4">
-          <h4 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Language Dimension Scores</h4>
+          <h4 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">{t('Language Dimension Scores')}</h4>
           <div className="space-y-3.5">
             {SKILLS_CONFIG.map(skill => {
               const score = (record as any)[skill.key] || 0;
@@ -498,7 +504,7 @@ function InspectDrawer({
               return (
                 <div key={skill.key} className="space-y-1">
                   <div className="flex justify-between items-center text-[11px]">
-                    <span className="font-bold text-slate-600 dark:text-slate-400">{skill.label}</span>
+                    <span className="font-bold text-slate-600 dark:text-slate-400">{t(skill.label)}</span>
                     <span className="font-mono font-bold text-slate-900 dark:text-white">{score} / 100</span>
                   </div>
                   <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
@@ -513,11 +519,11 @@ function InspectDrawer({
         {/* Test details list */}
         <div className="border-t border-slate-100 dark:border-slate-800 pt-4 space-y-2.5 text-xs">
           <div className="flex justify-between">
-            <span className="text-slate-400 font-semibold">Assessor</span>
+            <span className="text-slate-400 font-semibold">{t('Assessor')}</span>
             <span className="text-slate-700 dark:text-slate-300 font-bold">{record.teacherName}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-slate-400 font-semibold">Date Completed</span>
+            <span className="text-slate-400 font-semibold">{t('Date Completed')}</span>
             <span className="text-slate-700 dark:text-slate-300 font-bold">{formatDate(record.dateTaken)}</span>
           </div>
         </div>
@@ -525,7 +531,7 @@ function InspectDrawer({
         {/* Teacher Notes */}
         {record.teacherNotes && (
           <div className="border-t border-slate-100 dark:border-slate-800 pt-4 space-y-1.5">
-            <h4 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Teacher Observation Notes</h4>
+            <h4 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">{t('Teacher Observation Notes')}</h4>
             <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed bg-slate-50 dark:bg-slate-800 p-3 rounded-2xl italic border border-slate-100 dark:border-slate-800">
               "{record.teacherNotes}"
             </p>
@@ -538,7 +544,7 @@ function InspectDrawer({
           onClick={onClose}
           className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl cursor-pointer border-none shadow-md transition-colors"
         >
-          Done
+          {t('Done')}
         </button>
       </div>
     </div>
@@ -550,6 +556,8 @@ function InspectDrawer({
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function PlacementTestingPage() {
+  const locale = useLocale();
+  const t = (key: string) => i18nT(key, locale);
   const [records, setRecords] = useState<PlacementRecord[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -581,7 +589,7 @@ export default function PlacementTestingPage() {
       const res = await apiClient.get(`/placement-tests?${q}`);
       setRecords((res.data?.data || []).map(mapPlacementRecord));
     } catch (err) {
-      toast.error('Failed to load placement test logs');
+      toast.error(t('Failed to load placement test logs'));
     } finally {
       setLoading(false);
     }
@@ -604,13 +612,13 @@ export default function PlacementTestingPage() {
 
   // Handle delete record
   const handleDelete = async (record: PlacementRecord) => {
-    if (!confirm(`Are you sure you want to delete the placement test for ${record.studentName}?`)) return;
+    if (!confirm(t('Are you sure you want to delete the placement test for') + ` ${record.studentName}?`)) return;
     try {
       await apiClient.delete(`/placement-tests/${record.documentId || record.id}`);
-      toast.success('Placement test log removed');
+      toast.success(t('Placement test log removed'));
       loadRecords();
     } catch {
-      toast.error('Failed to delete placement test');
+      toast.error(t('Failed to delete placement test'));
     }
   };
 
@@ -697,10 +705,10 @@ export default function PlacementTestingPage() {
             <div className="p-2 bg-indigo-600 rounded-xl shadow-md shadow-indigo-200 dark:shadow-indigo-950">
               <BookOpen className="w-5 h-5 text-white" />
             </div>
-            <h1 className="text-xl font-black text-slate-900 dark:text-white">Placement Testing</h1>
+            <h1 className="text-xl font-black text-slate-900 dark:text-white">{t('Placement Testing')}</h1>
           </div>
           <p className="text-sm text-slate-500 dark:text-slate-400 ml-11">
-            Evaluate new students, record sub-scores, and assign appropriate Arabic/English program tracks.
+            {t('Evaluate new students, record sub-scores, and assign appropriate Arabic/English program tracks.')}
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
@@ -710,14 +718,14 @@ export default function PlacementTestingPage() {
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer transition-colors"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
+            {t('Refresh')}
           </button>
           <button
             onClick={exportCSV}
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer transition-colors"
           >
             <Download className="w-3.5 h-3.5" />
-            Export CSV
+            {t('Export CSV')}
           </button>
           {canModify && (
             <button
@@ -725,7 +733,7 @@ export default function PlacementTestingPage() {
               className="flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md shadow-indigo-200 dark:shadow-indigo-950 cursor-pointer border-none transition-colors"
             >
               <Plus className="w-4 h-4" />
-              Record Test Result
+              {t('Record Test Result')}
             </button>
           )}
         </div>
@@ -734,11 +742,11 @@ export default function PlacementTestingPage() {
       {/* KPI Dashboard Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         {[
-          { label: 'Total Placements', value: stats.total, icon: <Users className="w-4 h-4 text-indigo-655" />, bg: 'bg-indigo-50/60 dark:bg-indigo-950/20 border-indigo-100 dark:border-indigo-900/20' },
-          { label: 'Avg Overall Score', value: `${stats.avgScore}%`, icon: <TrendingUp className="w-4 h-4 text-emerald-600" />, bg: 'bg-emerald-50/60 dark:bg-emerald-950/20 border-emerald-100 dark:border-emerald-900/20' },
-          { label: 'English Track', value: stats.english, icon: <BookOpen className="w-4 h-4 text-sky-600" />, bg: 'bg-sky-50/60 dark:bg-sky-950/20 border-sky-100 dark:border-sky-900/20' },
-          { label: 'Arabic Track', value: stats.arabic, icon: <BookOpen className="w-4 h-4 text-amber-600" />, bg: 'bg-amber-50/60 dark:bg-amber-950/20 border-amber-100 dark:border-amber-900/20' },
-          { label: 'Advanced Levels', value: stats.advanced, icon: <CheckCircle2 className="w-4 h-4 text-purple-600" />, bg: 'bg-purple-50/60 dark:bg-purple-950/20 border-purple-100 dark:border-purple-900/20' }
+          { label: t('Total Placements'), value: stats.total, icon: <Users className="w-4 h-4 text-indigo-655" />, bg: 'bg-indigo-50/60 dark:bg-indigo-950/20 border-indigo-100 dark:border-indigo-900/20' },
+          { label: t('Avg Overall Score'), value: `${stats.avgScore}%`, icon: <TrendingUp className="w-4 h-4 text-emerald-600" />, bg: 'bg-emerald-50/60 dark:bg-emerald-950/20 border-emerald-100 dark:border-emerald-900/20' },
+          { label: t('English Track'), value: stats.english, icon: <BookOpen className="w-4 h-4 text-sky-600" />, bg: 'bg-sky-50/60 dark:bg-sky-950/20 border-sky-100 dark:border-sky-900/20' },
+          { label: t('Arabic Track'), value: stats.arabic, icon: <BookOpen className="w-4 h-4 text-amber-600" />, bg: 'bg-amber-50/60 dark:bg-amber-950/20 border-amber-100 dark:border-amber-900/20' },
+          { label: t('Advanced Levels'), value: stats.advanced, icon: <CheckCircle2 className="w-4 h-4 text-purple-600" />, bg: 'bg-purple-50/60 dark:bg-purple-950/20 border-purple-100 dark:border-purple-900/20' }
         ].map((s, i) => (
           <div key={i} className={`p-4 rounded-2xl border ${s.bg} flex items-center gap-3.5`}>
             <div className="p-2 bg-white dark:bg-slate-900 rounded-xl shadow-xs shrink-0">{s.icon}</div>
@@ -757,7 +765,7 @@ export default function PlacementTestingPage() {
           <input
             value={query}
             onChange={e => setQuery(e.target.value)}
-            placeholder="Search by student name, ID, level, or teacher assessor..."
+            placeholder={t('Search by student name, ID, level, or teacher assessor...')}
             className="w-full pl-9 pr-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500"
           />
         </div>
@@ -766,7 +774,7 @@ export default function PlacementTestingPage() {
           className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-bold cursor-pointer transition-colors ${showFilters ? 'bg-indigo-50 border-indigo-300 text-indigo-700 dark:bg-indigo-950/30 dark:border-indigo-700 dark:text-indigo-400' : 'bg-slate-50 border-slate-200 text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400'}`}
         >
           <Filter className="w-3.5 h-3.5" />
-          Filters
+          {t('Filters')}
           {[filterLanguage, filterLevel].filter(Boolean).length > 0 && (
             <span className="ml-1 w-4 h-4 bg-indigo-600 text-white rounded-full text-[9px] font-black flex items-center justify-center">
               {[filterLanguage, filterLevel].filter(Boolean).length}
@@ -779,28 +787,30 @@ export default function PlacementTestingPage() {
       {showFilters && (
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-3 flex flex-wrap items-center gap-3">
           <select value={filterLanguage} onChange={e => setFilterLanguage(e.target.value)} className={selClass}>
-            <option value="">All Language Tracks</option>
-            <option value="English">English</option>
-            <option value="Arabic">Arabic</option>
+            <option value="">{t('All Language Tracks')}</option>
+            <option value="English">{t('English')}</option>
+            <option value="Arabic">{t('Arabic')}</option>
           </select>
           <select value={filterLevel} onChange={e => setFilterLevel(e.target.value)} className={selClass}>
-            <option value="">All Levels</option>
-            <option value="A1">A1 (Beginner)</option>
-            <option value="A2">A2 (Elementary)</option>
-            <option value="B1">B1 (Intermediate)</option>
-            <option value="B2">B2 (Upper Intermediate)</option>
-            <option value="C1">C1 (Advanced)</option>
-            <option value="C2">C2 (Mastery)</option>
+            <option value="">{t('All Levels')}</option>
+            <option value="A1">{t('A1 (Beginner)')}</option>
+            <option value="A2">{t('A2 (Elementary)')}</option>
+            <option value="B1">{t('B1 (Intermediate)')}</option>
+            <option value="B2">{t('B2 (Upper Intermediate)')}</option>
+            <option value="C1">{t('C1 (Advanced)')}</option>
+            <option value="C2">{t('C2 (Mastery)')}</option>
           </select>
           {[filterLanguage, filterLevel].some(Boolean) && (
             <button
               onClick={() => { setFilterLanguage(''); setFilterLevel(''); }}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-455 text-xs font-bold border border-rose-200 dark:border-rose-800 cursor-pointer"
             >
-              <X className="w-3 h-3" /> Clear Filters
+              <X className="w-3 h-3" /> {t('Clear Filters')}
             </button>
           )}
-          <span className="text-[11px] text-slate-400 ml-auto font-semibold">{filtered.length} record{filtered.length !== 1 ? 's' : ''} listed</span>
+          <span className="text-[11px] text-slate-400 ml-auto font-semibold">
+            {filtered.length} {filtered.length === 1 ? t('record listed') : t('records listed')}
+          </span>
         </div>
       )}
 
@@ -824,9 +834,9 @@ export default function PlacementTestingPage() {
               <div className="w-16 h-16 bg-slate-50 dark:bg-slate-800 rounded-2xl flex items-center justify-center mb-4">
                 <Users className="w-8 h-8 text-slate-300 dark:text-slate-500" />
               </div>
-              <h3 className="font-extrabold text-slate-700 dark:text-slate-300 text-base">No Placement Records</h3>
+              <h3 className="font-extrabold text-slate-700 dark:text-slate-300 text-base">{t('No Placement Records')}</h3>
               <p className="text-sm text-slate-400 dark:text-slate-600 mt-1 max-w-sm">
-                No testing records matching filter criteria. Record a new placement test above.
+                {t('No testing records matching filter criteria. Record a new placement test above.')}
               </p>
             </div>
           ) : (
@@ -834,14 +844,14 @@ export default function PlacementTestingPage() {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-slate-50 dark:bg-slate-800/40 border-b border-slate-100 dark:border-slate-800 text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-                    <th className="px-5 py-3">Scholar</th>
-                    <th className="px-5 py-3">Date Taken</th>
-                    <th className="px-5 py-3">Track</th>
-                    <th className="px-5 py-3">Skills Sub-Scores</th>
-                    <th className="px-5 py-3 text-center">Overall</th>
-                    <th className="px-5 py-3">Placement level</th>
-                    <th className="px-5 py-3">Assessor</th>
-                    <th className="px-5 py-3 text-right">Actions</th>
+                    <th className="px-5 py-3">{t('Scholar')}</th>
+                    <th className="px-5 py-3">{t('Date Taken')}</th>
+                    <th className="px-5 py-3">{t('Track')}</th>
+                    <th className="px-5 py-3">{t('Skills Sub-Scores')}</th>
+                    <th className="px-5 py-3 text-center">{t('Overall')}</th>
+                    <th className="px-5 py-3">{t('Placement level')}</th>
+                    <th className="px-5 py-3">{t('Assessor')}</th>
+                    <th className="px-5 py-3 text-right">{t('Actions')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
@@ -869,17 +879,17 @@ export default function PlacementTestingPage() {
                             ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-900'
                             : 'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/30 dark:text-sky-400 dark:border-sky-900'
                         }`}>
-                          {record.language}
+                          {t(record.language)}
                         </span>
                       </td>
                       <td className="px-5 py-3.5 text-[10px] text-slate-500 whitespace-nowrap">
                         <div className="grid grid-cols-3 gap-x-2 gap-y-0.5 max-w-[200px] font-mono">
-                          <span>Gr: <strong>{record.grammarScore ?? '—'}</strong></span>
-                          <span>Vc: <strong>{record.vocabularyScore ?? '—'}</strong></span>
-                          <span>Rd: <strong>{record.readingScore ?? '—'}</strong></span>
-                          <span>Wr: <strong>{record.writingScore ?? '—'}</strong></span>
-                          <span>Ls: <strong>{record.listeningScore ?? '—'}</strong></span>
-                          <span>Sp: <strong>{record.speakingScore ?? '—'}</strong></span>
+                          <span>{t('Gr:')} <strong>{record.grammarScore ?? '—'}</strong></span>
+                          <span>{t('Vc:')} <strong>{record.vocabularyScore ?? '—'}</strong></span>
+                          <span>{t('Rd:')} <strong>{record.readingScore ?? '—'}</strong></span>
+                          <span>{t('Wr:')} <strong>{record.writingScore ?? '—'}</strong></span>
+                          <span>{t('Ls:')} <strong>{record.listeningScore ?? '—'}</strong></span>
+                          <span>{t('Sp:')} <strong>{record.speakingScore ?? '—'}</strong></span>
                         </div>
                       </td>
                       <td className="px-5 py-3.5 text-center">
@@ -898,7 +908,7 @@ export default function PlacementTestingPage() {
                           <button
                             onClick={() => setInspectItem(record)}
                             className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer transition-colors bg-transparent"
-                            title="Inspect Test Scores"
+                            title={t('Inspect Test Scores')}
                           >
                             <Eye className="w-3.5 h-3.5" />
                           </button>
@@ -907,14 +917,14 @@ export default function PlacementTestingPage() {
                               <button
                                 onClick={() => { setEditItem(record); setShowModal(true); }}
                                 className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-indigo-600 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer transition-colors bg-transparent"
-                                title="Edit Result"
+                                title={t('Edit Result')}
                               >
                                 <Pencil className="w-3.5 h-3.5" />
                               </button>
                               <button
                                 onClick={() => handleDelete(record)}
                                 className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-rose-600 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer transition-colors bg-transparent"
-                                title="Delete Result"
+                                title={t('Delete Result')}
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>

@@ -38,16 +38,46 @@ export function NotificationCenter() {
     deleteNotification,
   } = useNotifications();
 
-  const notifications: NotificationItem[] = rawNotifications.map((n) => ({
-    id: n.id,
-    title: n.title,
-    message: n.body,
-    type: n.priority === 'high' ? 'warning' : n.priority === 'urgent' ? 'alert' : 'info',
-    channel: 'in-app',
-    isRead: n.status === 'read',
-    createdAt: n.createdAt,
-    link: (n as any).link || (n.metadata?.link as string) || undefined,
-  }));
+  const notifications: NotificationItem[] = rawNotifications.map((n) => {
+    let type: NotificationItem['type'] = 'info';
+    const titleLower = (n.title || '').toLowerCase();
+    const bodyLower = (n.body || '').toLowerCase();
+    
+    if (
+      titleLower.includes('exam') || 
+      titleLower.includes('homework') || 
+      titleLower.includes('result') || 
+      titleLower.includes('grade') || 
+      n.relatedEntity === 'CourseOffering' || 
+      n.relatedEntity === 'Homework'
+    ) {
+      type = 'academic';
+    } else if (
+      titleLower.includes('fee') || 
+      titleLower.includes('invoice') || 
+      titleLower.includes('payment') || 
+      titleLower.includes('billing') || 
+      n.relatedEntity === 'Invoice' || 
+      n.relatedEntity === 'Payment'
+    ) {
+      type = 'finance';
+    } else if (n.priority === 'urgent') {
+      type = 'alert';
+    } else if (n.priority === 'high') {
+      type = 'warning';
+    }
+
+    return {
+      id: n.id,
+      title: n.title,
+      message: n.body,
+      type,
+      channel: 'in-app',
+      isRead: n.status === 'read',
+      createdAt: n.createdAt,
+      link: (n as any).link || (n.metadata?.link as string) || undefined,
+    };
+  });
 
   const handleMarkAsRead = async (id: number | string) => {
     await markAsRead(id);
@@ -91,7 +121,7 @@ export function NotificationCenter() {
       >
         <Bell className="w-4 h-4" />
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center animate-pulse">
+          <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-500 text-white text-[10px] font-black flex items-center justify-center animate-pulse shadow-sm">
             {unreadCount}
           </span>
         )}

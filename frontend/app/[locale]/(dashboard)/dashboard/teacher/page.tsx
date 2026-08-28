@@ -15,6 +15,8 @@ import { PageContainer, PageHeader } from '@/components/shared/layout/PageContai
 import { StatCard } from '@/components/ui/StatCard';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
 
 // ─── TS Interfaces ────────────────────────────────────────────────────────────
 interface Student {
@@ -115,6 +117,9 @@ const sortBps = (bps: AssessmentBlueprint[]) =>
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function TeacherDashboardPage() {
+  const locale = useLocale();
+  const t = (key: string) => i18nT(key, locale);
+
   const { user, isLoading: authLoading } = useAuth();
   const teacher = user?.profile as any;
 
@@ -228,7 +233,7 @@ export default function TeacherDashboardPage() {
       setOfferings(enriched);
       setTimetable(ttRes.data?.data || []);
     } catch (err) {
-      toast.error('Failed to load Course Offerings.');
+      toast.error(t('Failed to load Course Offerings.'));
     } finally {
       setIsLoading(false);
     }
@@ -347,7 +352,7 @@ export default function TeacherDashboardPage() {
       setGradebookComments(cMap);
       setGradebookEntryIds(entryIdMap);
     } catch (err) {
-      toast.error('Failed to load workspace data.');
+      toast.error(t('Failed to load workspace data.'));
       console.error(err);
     } finally {
       setIsLoading(false);
@@ -430,7 +435,7 @@ export default function TeacherDashboardPage() {
   // ── Grade cell change ─────────────────────────────────────────────────────
   const handleGradeCellChange = (studentId: number, component: string, value: string) => {
     if (approvalStatus !== 'Draft') {
-      toast.warning('Gradebook is locked while under review.');
+      toast.warning(t('Gradebook is locked while under review.'));
       return;
     }
     const scoreVal = Math.max(0, Math.min(100, parseFloat(value) || 0));
@@ -474,10 +479,10 @@ export default function TeacherDashboardPage() {
         }
       }).catch(console.warn);
 
-      toast.success('Attendance posted successfully.');
+      toast.success(t('Attendance posted successfully.'));
       loadOfferingWorkspace(selectedOffering);
     } catch {
-      toast.error('Failed to post attendance.');
+      toast.error(t('Failed to post attendance.'));
     } finally {
       setIsSavingAttendance(false);
     }
@@ -545,11 +550,11 @@ export default function TeacherDashboardPage() {
         }
       }).catch(console.warn);
 
-      toast.success('Gradebook drafts saved successfully.');
+      toast.success(t('Gradebook drafts saved successfully.'));
       loadOfferingWorkspace(selectedOffering);
     } catch (err) {
       console.error(err);
-      toast.error('Failed to save gradebook.');
+      toast.error(t('Failed to save gradebook.'));
     } finally {
       setIsSavingGrades(false);
     }
@@ -581,13 +586,13 @@ export default function TeacherDashboardPage() {
         }
       }).catch(console.warn);
 
-      toast.success(`Assessment '${newAssessName}' registered.`);
+      toast.success(t(`Assessment '${newAssessName}' registered.`));
       setNewAssessName('');
       setNewAssessCategory('');
       setNewAssessWeight('10');
       loadOfferingWorkspace(selectedOffering);
     } catch {
-      toast.error('Failed to register assessment blueprint.');
+      toast.error(t('Failed to register assessment blueprint.'));
     } finally {
       setIsCreatingAssessment(false);
     }
@@ -634,12 +639,12 @@ export default function TeacherDashboardPage() {
         }
       }).catch(console.warn);
 
-      toast.success(`Gradebook submitted for Section Head review!`);
+      toast.success(t('Gradebook submitted for Section Head review!'));
       setApprovalComment('');
       loadOfferingWorkspace(selectedOffering);
     } catch (err: any) {
       console.error('Workflow error:', err?.response?.data || err);
-      toast.error('Failed to submit approval workflow.');
+      toast.error(t('Failed to submit approval workflow.'));
     } finally {
       setIsSubmittingApproval(false);
     }
@@ -664,14 +669,14 @@ export default function TeacherDashboardPage() {
           recordStatus: 'Draft'
         }
       });
-      toast.success('Lesson plan saved.');
+      toast.success(t('Lesson plan saved.'));
       setNewLpTitle('');
       setNewLpObjectives('');
       setNewLpMethod('');
       setShowLpForm(false);
       loadOfferingWorkspace(selectedOffering);
     } catch {
-      toast.error('Failed to save lesson plan.');
+      toast.error(t('Failed to save lesson plan.'));
     } finally {
       setIsCreatingLessonPlan(false);
     }
@@ -681,22 +686,22 @@ export default function TeacherDashboardPage() {
   const handleSubmitLessonPlan = async (lpId: string | number) => {
     try {
       await apiClient.put(`/lesson-plans/${lpId}`, { data: { recordStatus: 'Pending Approval' } });
-      toast.success('Lesson plan submitted for Section Head approval.');
+      toast.success(t('Lesson plan submitted for Section Head approval.'));
       if (selectedOffering) loadOfferingWorkspace(selectedOffering);
     } catch {
-      toast.error('Failed to submit lesson plan.');
+      toast.error(t('Failed to submit lesson plan.'));
     }
   };
 
   // ── Delete Lesson Plan ──────────────────────────────────────────────────────
   const handleDeleteLessonPlan = async (lpId: string | number) => {
-    if (!confirm('Delete this lesson plan?')) return;
+    if (!confirm(t('Delete this lesson plan?'))) return;
     try {
       await apiClient.delete(`/lesson-plans/${lpId}`);
-      toast.success('Lesson plan deleted.');
+      toast.success(t('Lesson plan deleted.'));
       if (selectedOffering) loadOfferingWorkspace(selectedOffering);
     } catch {
-      toast.error('Failed to delete lesson plan.');
+      toast.error(t('Failed to delete lesson plan.'));
     }
   };
 
@@ -713,9 +718,9 @@ export default function TeacherDashboardPage() {
       setCurriculumTopics((prev) =>
         prev.map((t) => t.id === topic.id ? { ...t, completionStatus: newStatus } : t)
       );
-      toast.success(`Topic marked as "${newStatus}".`);
+      toast.success(t(`Topic marked as "${newStatus}".`));
     } catch {
-      toast.error('Failed to update topic status.');
+      toast.error(t('Failed to update topic status.'));
     }
   };
 
@@ -724,11 +729,11 @@ export default function TeacherDashboardPage() {
     <PageContainer>
       <PageHeader
         title={selectedOffering
-          ? `Workspace: ${selectedOffering.subject?.name} (${selectedOffering.gradeLevel?.name})`
-          : `Teaching Portal${teacher?.displayName ? ` — ${teacher.displayName}` : ''}`}
+          ? `${t('Workspace')}: ${selectedOffering.subject?.name} (${selectedOffering.gradeLevel?.name})`
+          : `${t('Teaching Portal')}${teacher?.displayName ? ` — ${teacher.displayName}` : ''}`}
         description={selectedOffering
-          ? `${selectedOffering.academicSection?.name} · ${selectedOffering.academicYear?.name} · Term: ${selectedOffering.academicTerm?.name}`
-          : 'Manage your assigned Course Offerings, attendance, assessments and curriculum delivery.'}
+          ? `${selectedOffering.academicSection?.name} · ${selectedOffering.academicYear?.name} · ${t('Term')}: ${selectedOffering.academicTerm?.name}`
+          : t('Manage your assigned Course Offerings, attendance, assessments and curriculum delivery.')}
       >
         <div className="flex gap-2">
           {selectedOffering && (
@@ -737,7 +742,7 @@ export default function TeacherDashboardPage() {
               className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 text-xs font-bold hover:bg-emerald-100 cursor-pointer dark:hover:bg-emerald-900/40 transition"
             >
               <X className="w-3.5 h-3.5" />
-              <span>Exit Workspace</span>
+              <span>{t('Exit Workspace')}</span>
             </button>
           )}
           <button
@@ -746,7 +751,7 @@ export default function TeacherDashboardPage() {
             className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-700 dark:hover:bg-slate-800 transition disabled:opacity-60"
           >
             <RefreshCw className={cn('w-3.5 h-3.5', (isLoading || authLoading) && 'animate-spin')} />
-            <span>Sync</span>
+            <span>{t('Sync')}</span>
           </button>
         </div>
       </PageHeader>
@@ -755,7 +760,7 @@ export default function TeacherDashboardPage() {
       {(isLoading || authLoading) && (
         <div className="flex flex-col items-center justify-center min-h-[300px]">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mb-3" />
-          <p className="text-slate-400 text-xs font-semibold">Syncing academic data...</p>
+          <p className="text-slate-400 text-xs font-semibold">{t('Syncing academic data...')}</p>
         </div>
       )}
 
@@ -765,13 +770,12 @@ export default function TeacherDashboardPage() {
           <div className="w-16 h-16 rounded-2xl bg-amber-50 dark:bg-amber-950/30 flex items-center justify-center mb-4 border border-amber-200 dark:border-amber-800">
             <AlertCircle className="w-8 h-8 text-amber-500" />
           </div>
-          <h2 className="text-xl font-extrabold text-slate-900 dark:text-white mb-2">Teacher Profile Not Linked</h2>
+          <h2 className="text-xl font-extrabold text-slate-900 dark:text-white mb-2">{t('Teacher Profile Not Linked')}</h2>
           <p className="text-slate-500 dark:text-slate-400 text-sm max-w-md mb-6">
-            Your user account has not been linked to a Teacher profile in the system.
-            Please contact the Administrator or Registrar to complete your profile setup.
+            {t('Your user account has not been linked to a Teacher profile in the system. Please contact the Administrator or Registrar to complete your profile setup.')}
           </p>
           <div className="flex items-center gap-3 text-xs text-slate-400">
-            <span className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-lg font-mono">User ID: {user?.id}</span>
+            <span className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-lg font-mono">{t('User ID')}: {user?.id}</span>
             <span className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-lg font-mono">{user?.email}</span>
           </div>
         </div>
@@ -783,33 +787,33 @@ export default function TeacherDashboardPage() {
           {/* Stats Row */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard
-              title="Course Offerings"
+              title={t('Course Offerings')}
               value={offerings.length}
-              subtitle="Assigned scheduled segments"
+              subtitle={t('Assigned scheduled segments')}
               icon={BookOpen}
               color="text-indigo-500"
               bgColor="bg-indigo-500/10"
             />
             <StatCard
-              title="Timetable Slots"
+              title={t('Timetable Slots')}
               value={timetable.length}
-              subtitle="Assigned classroom slots"
+              subtitle={t('Assigned classroom slots')}
               icon={Calendar}
               color="text-blue-500"
               bgColor="bg-blue-500/10"
             />
             <StatCard
-              title="Total Enrolled Students"
+              title={t('Total Enrolled Students')}
               value={offerings.reduce((sum, o) => sum + (o.studentEnrollments?.length ?? 0), 0)}
-              subtitle="Active academic learners"
+              subtitle={t('Active academic learners')}
               icon={Users}
               color="text-emerald-500"
               bgColor="bg-emerald-500/10"
             />
             <StatCard
-              title="Avg Attendance Rate"
+              title={t('Avg Attendance Rate')}
               value={avgAttendancePct}
-              subtitle="Across all assigned offerings"
+              subtitle={t('Across all assigned offerings')}
               icon={CheckCircle2}
               color="text-amber-500"
               bgColor="bg-amber-500/10"
@@ -820,12 +824,12 @@ export default function TeacherDashboardPage() {
           <div className="space-y-3">
             <h2 className="text-sm font-extrabold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
               <ClipboardList className="w-4 h-4 text-indigo-500" />
-              <span>My Course Offerings</span>
+              <span>{t('My Course Offerings')}</span>
             </h2>
 
             {offerings.length === 0 ? (
               <div className="bg-white dark:bg-slate-900 border rounded-3xl p-8 text-center text-slate-400 text-sm">
-                No course offerings assigned to your profile in this term.
+                {t('No course offerings assigned to your profile in this term.')}
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -858,15 +862,15 @@ export default function TeacherDashboardPage() {
                       <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 grid grid-cols-2 gap-3 text-[11px] text-slate-500">
                         <div className="flex items-center gap-1.5">
                           <Users className="w-3.5 h-3.5 text-slate-400" />
-                          <span>{o.studentEnrollments?.length ?? 0} Students</span>
+                          <span>{o.studentEnrollments?.length ?? 0} {t('Students')}</span>
                         </div>
                         <div className="flex items-center gap-1.5">
                           <UserCheck className="w-3.5 h-3.5 text-slate-400" />
-                          <span>Attendance: {o.attendanceRate}</span>
+                          <span>{t('Attendance')}: {o.attendanceRate}</span>
                         </div>
                         <div className="flex items-center gap-1.5">
                           <Clock className="w-3.5 h-3.5 text-slate-400" />
-                          <span>Room {o.room?.roomNumber ?? 'N/A'}</span>
+                          <span>{t('Room')} {o.room?.roomNumber ?? t('N/A')}</span>
                         </div>
                         <div className="flex items-center gap-1.5">
                           <ShieldCheck className="w-3.5 h-3.5 text-slate-400" />
@@ -916,7 +920,7 @@ export default function TeacherDashboardPage() {
                   )}
                 >
                   <Icon className="w-3.5 h-3.5" />
-                  <span>{label}</span>
+                  <span>{t(label)}</span>
                 </button>
               );
             })}
@@ -929,21 +933,21 @@ export default function TeacherDashboardPage() {
               <div className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="p-5 border rounded-2xl bg-slate-50 dark:bg-slate-800/40">
-                    <p className="text-xs font-bold text-slate-400">Class Roster Size</p>
+                    <p className="text-xs font-bold text-slate-400">{t('Class Roster Size')}</p>
                     <p className="text-2xl font-black text-slate-900 dark:text-white mt-1">
-                      {selectedOffering.studentEnrollments?.length ?? 0} Students
+                      {selectedOffering.studentEnrollments?.length ?? 0} {t('Students')}
                     </p>
-                    <p className="text-[10px] text-slate-400 mt-1">From enrollment records</p>
+                    <p className="text-[10px] text-slate-400 mt-1">{t('From enrollment records')}</p>
                   </div>
                   <div className="p-5 border rounded-2xl bg-slate-50 dark:bg-slate-800/40">
-                    <p className="text-xs font-bold text-slate-400">Attendance Rate</p>
+                    <p className="text-xs font-bold text-slate-400">{t('Attendance Rate')}</p>
                     <p className="text-2xl font-black text-slate-900 dark:text-white mt-1">
                       {selectedOffering.attendanceRate ?? '—'}
                     </p>
-                    <p className="text-[10px] text-slate-400 mt-1">Calculated from attendance records</p>
+                    <p className="text-[10px] text-slate-400 mt-1">{t('Calculated from attendance records')}</p>
                   </div>
                   <div className="p-5 border rounded-2xl bg-slate-50 dark:bg-slate-800/40">
-                    <p className="text-xs font-bold text-slate-400">Curriculum Coverage</p>
+                    <p className="text-xs font-bold text-slate-400">{t('Curriculum Coverage')}</p>
                     <p className="text-2xl font-black text-slate-900 dark:text-white mt-1">
                       {syllabusComputed !== null ? `${syllabusComputed}%` : '—'}
                     </p>
@@ -953,7 +957,7 @@ export default function TeacherDashboardPage() {
                       </div>
                     )}
                     <p className="text-[10px] text-slate-400 mt-1">
-                      {totalTopics > 0 ? `${coveredTopics} / ${totalTopics} topics completed` : 'No curriculum topics linked'}
+                      {totalTopics > 0 ? `${coveredTopics} / ${totalTopics} ${t('topics completed')}` : t('No curriculum topics linked')}
                     </p>
                   </div>
                 </div>
@@ -961,9 +965,9 @@ export default function TeacherDashboardPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Timetable slots */}
                   <div className="space-y-3">
-                    <h3 className="text-sm font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">Course Timetable</h3>
+                    <h3 className="text-sm font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">{t('Course Timetable')}</h3>
                     {timetable.filter((s) => s.courseOffering?.id === selectedOffering.id).length === 0 ? (
-                      <p className="text-xs text-slate-400 italic">No scheduled slots for this offering.</p>
+                      <p className="text-xs text-slate-400 italic">{t('No scheduled slots for this offering.')}</p>
                     ) : (
                       <div className="space-y-2">
                         {timetable
@@ -974,9 +978,9 @@ export default function TeacherDashboardPage() {
                                 <p className="font-bold">{slot.dayOfWeek}</p>
                                 <p className="text-[10px] text-slate-400 mt-0.5">
                                   {selectedOffering.room?.buildingName
-                                    ? `Building: ${selectedOffering.room.buildingName} · `
+                                    ? `${t('Building')}: ${selectedOffering.room.buildingName} · `
                                     : ''}
-                                  Room {selectedOffering.room?.roomNumber ?? 'N/A'}
+                                  {t('Room')} {selectedOffering.room?.roomNumber ?? t('N/A')}
                                 </p>
                               </div>
                               <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400">
@@ -992,20 +996,20 @@ export default function TeacherDashboardPage() {
                   <div className="bg-gradient-to-br from-indigo-950/40 to-slate-900 border border-indigo-800/30 p-5 rounded-3xl text-xs text-slate-300 space-y-3">
                     <h4 className="font-extrabold text-indigo-300 flex items-center gap-1.5">
                       <Sparkles className="w-4 h-4 text-indigo-400" />
-                      <span>At-Risk Interventions</span>
+                      <span>{t('At-Risk Interventions')}</span>
                     </h4>
-                    <p className="text-[11px] text-slate-400">Students with calculated grade below 60%:</p>
+                    <p className="text-[11px] text-slate-400">{t('Students with calculated grade below 60%:')}</p>
                     {atRiskStudents.length === 0 ? (
                       <div className="p-3 bg-emerald-950/40 border border-emerald-500/20 rounded-xl">
-                        <p className="font-bold text-emerald-400">No at-risk students 🎉</p>
-                        <p className="text-[10px] text-slate-400 mt-0.5">All graded students are performing above threshold.</p>
+                        <p className="font-bold text-emerald-400">{t('No at-risk students')} 🎉</p>
+                        <p className="text-[10px] text-slate-400 mt-0.5">{t('All graded students are performing above threshold.')}</p>
                       </div>
                     ) : (
                       atRiskStudents.map((s) => (
                         <div key={s.student.id} className="p-3 bg-indigo-950/40 border border-indigo-500/20 rounded-xl">
                           <p className="font-bold text-rose-400">{s.student.firstName} {s.student.lastName}</p>
                           <p className="text-[10px] text-slate-400 mt-0.5">
-                            Calculated grade: {s.score.toFixed(1)}% ({s.grade}) — requires monitoring.
+                            {t('Calculated grade')}: {s.score.toFixed(1)}% ({s.grade}) — {t('requires monitoring.')}
                           </p>
                         </div>
                       ))
@@ -1019,8 +1023,8 @@ export default function TeacherDashboardPage() {
             {activeWorkspaceTab === 'roster' && (
               <div className="space-y-4">
                 <div>
-                  <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Active Student Roster</h3>
-                  <p className="text-xs text-slate-500">Synced from approved enrollment records.</p>
+                  <h3 className="text-base font-extrabold text-slate-900 dark:text-white">{t('Active Student Roster')}</h3>
+                  <p className="text-xs text-slate-500">{t('Synced from approved enrollment records.')}</p>
                 </div>
 
                 <div className="overflow-x-auto border rounded-2xl text-xs">
@@ -1028,12 +1032,12 @@ export default function TeacherDashboardPage() {
                     <thead className="bg-slate-50 dark:bg-slate-800 font-bold text-slate-700 dark:text-slate-300">
                       <tr>
                         <th className="p-3">#</th>
-                        <th className="p-3">Admission No.</th>
-                        <th className="p-3">Student Name</th>
-                        <th className="p-3">School ID</th>
-                        <th className="p-3">Gender</th>
-                        <th className="p-3 text-center">Calculated Grade</th>
-                        <th className="p-3 text-center">Status</th>
+                        <th className="p-3">{t('Admission No.')}</th>
+                        <th className="p-3">{t('Student Name')}</th>
+                        <th className="p-3">{t('School ID')}</th>
+                        <th className="p-3">{t('Gender')}</th>
+                        <th className="p-3 text-center">{t('Calculated Grade')}</th>
+                        <th className="p-3 text-center">{t('Status')}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y">
@@ -1045,7 +1049,7 @@ export default function TeacherDashboardPage() {
                           <tr key={enr.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30">
                             <td className="p-3 text-slate-400">{idx + 1}</td>
                             <td className="p-3 font-mono text-slate-800 dark:text-slate-200">
-                              {s.admissionNumber || <span className="text-slate-400 italic">N/A</span>}
+                              {s.admissionNumber || <span className="text-slate-400 italic">{t('N/A')}</span>}
                             </td>
                             <td className="p-3 font-bold text-slate-900 dark:text-white">
                               {s.firstName} {s.lastName}
@@ -1061,7 +1065,7 @@ export default function TeacherDashboardPage() {
                                   {calc.score.toFixed(1)}% ({calc.grade})
                                 </span>
                               ) : (
-                                <span className="text-slate-400 italic">No grades</span>
+                                <span className="text-slate-400 italic">{t('No grades')}</span>
                               )}
                             </td>
                             <td className="p-3 text-center capitalize">
@@ -1088,8 +1092,8 @@ export default function TeacherDashboardPage() {
               <div className="space-y-6">
                 <div className="flex justify-between items-center flex-wrap gap-4 border-b pb-4">
                   <div>
-                    <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Daily Attendance Register</h3>
-                    <p className="text-xs text-slate-500">Post daily attendance against this course offering.</p>
+                    <h3 className="text-base font-extrabold text-slate-900 dark:text-white">{t('Daily Attendance Register')}</h3>
+                    <p className="text-xs text-slate-500">{t('Post daily attendance against this course offering.')}</p>
                   </div>
                   <div className="flex items-center gap-3">
                     <input
@@ -1103,7 +1107,7 @@ export default function TeacherDashboardPage() {
                       disabled={isSavingAttendance}
                       className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-xs shadow-md disabled:opacity-50"
                     >
-                      {isSavingAttendance ? 'Saving...' : 'Post Attendance'}
+                      {isSavingAttendance ? t('Saving...') : t('Post Attendance')}
                     </button>
                   </div>
                 </div>
@@ -1114,11 +1118,11 @@ export default function TeacherDashboardPage() {
                     <table className="w-full text-left">
                       <thead className="bg-slate-50 dark:bg-slate-800 font-bold text-slate-700 dark:text-slate-300">
                         <tr>
-                          <th className="p-3">Student Name</th>
-                          <th className="p-3 text-center">Present</th>
-                          <th className="p-3 text-center">Absent</th>
-                          <th className="p-3 text-center">Late</th>
-                          <th className="p-3 text-center">Excused</th>
+                          <th className="p-3">{t('Student Name')}</th>
+                          <th className="p-3 text-center">{t('Present')}</th>
+                          <th className="p-3 text-center">{t('Absent')}</th>
+                          <th className="p-3 text-center">{t('Late')}</th>
+                          <th className="p-3 text-center">{t('Excused')}</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y">
@@ -1152,9 +1156,9 @@ export default function TeacherDashboardPage() {
 
                   {/* History */}
                   <div className="p-4 border rounded-2xl bg-slate-50 dark:bg-slate-800/40 text-xs">
-                    <h4 className="font-extrabold text-slate-900 dark:text-white mb-3">Attendance History</h4>
+                    <h4 className="font-extrabold text-slate-900 dark:text-white mb-3">{t('Attendance History')}</h4>
                     {attendanceHistory.length === 0 ? (
-                      <p className="text-slate-400 italic">No attendance records yet.</p>
+                      <p className="text-slate-400 italic">{t('No attendance records yet.')}</p>
                     ) : (
                       <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1">
                         {attendanceHistory.map((h: any) => (
@@ -1188,19 +1192,19 @@ export default function TeacherDashboardPage() {
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-2 space-y-4">
                   <div>
-                    <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Assessment Blueprints</h3>
-                    <p className="text-xs text-slate-500">Assessment components and weights for this subject.</p>
+                    <h3 className="text-base font-extrabold text-slate-900 dark:text-white">{t('Assessment Blueprints')}</h3>
+                    <p className="text-xs text-slate-500">{t('Assessment components and weights for this subject.')}</p>
                   </div>
 
                   {blueprints.length === 0 ? (
-                    <p className="text-xs text-slate-400 italic py-4">No blueprints configured. Use the builder to add components.</p>
+                    <p className="text-xs text-slate-400 italic py-4">{t('No blueprints configured. Use the builder to add components.')}</p>
                   ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                       {blueprints.map((bp) => (
                         <div key={bp.id} className="p-4 border rounded-2xl bg-slate-50 dark:bg-slate-800/40 flex justify-between items-center">
                           <div>
                             <p className="font-extrabold text-slate-900 dark:text-white">{bpKey(bp)}</p>
-                            <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Type: {bp.componentName}</p>
+                            <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">{t('Type')}: {bp.componentName}</p>
                           </div>
                           <span className="font-mono font-black text-indigo-600 dark:text-indigo-400 text-lg">{bp.weightPercentage}%</span>
                         </div>
@@ -1214,12 +1218,12 @@ export default function TeacherDashboardPage() {
                     return total !== 100 ? (
                       <div className="flex items-center gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 rounded-xl text-xs text-amber-700 dark:text-amber-400">
                         <AlertTriangle className="w-4 h-4 shrink-0" />
-                        <span>Total weight is <strong>{total}%</strong> — should sum to 100%.</span>
+                        <span>{t('Total weight is')} <strong>{total}%</strong> — {t('should sum to 100%.')}</span>
                       </div>
                     ) : (
                       <div className="flex items-center gap-2 p-3 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 rounded-xl text-xs text-emerald-700 dark:text-emerald-400">
                         <CheckCircle2 className="w-4 h-4 shrink-0" />
-                        <span>Assessment weights correctly sum to 100%.</span>
+                        <span>{t('Assessment weights correctly sum to 100%.')}</span>
                       </div>
                     );
                   })()}
@@ -1229,33 +1233,33 @@ export default function TeacherDashboardPage() {
                 <div className="p-5 border rounded-3xl bg-slate-50 dark:bg-slate-800/40 text-xs">
                   <h4 className="font-extrabold text-slate-900 dark:text-white mb-3 flex items-center gap-1.5">
                     <PenTool className="w-4 h-4 text-indigo-500" />
-                    <span>Add Component</span>
+                    <span>{t('Add Component')}</span>
                   </h4>
                   <form onSubmit={handleCreateAssessment} className="space-y-3">
                     <div>
-                      <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Display Label</label>
+                      <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">{t('Display Label')}</label>
                       <input
                         type="text" required value={newAssessName}
-                        placeholder="e.g. Homework 1, Midterm Exam"
+                        placeholder={t('e.g. Homework 1, Midterm Exam')}
                         onChange={(e) => setNewAssessName(e.target.value)}
                         className="w-full px-3 py-2 border rounded-xl bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
                       />
                     </div>
                     <div>
-                      <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Category Type</label>
+                      <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">{t('Category Type')}</label>
                       <select
                         required value={newAssessCategory}
                         onChange={(e) => setNewAssessCategory(e.target.value)}
                         className="w-full px-3 py-2 border rounded-xl bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-semibold focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
                       >
-                        <option value="">-- Choose Category --</option>
+                        <option value="">{t('-- Choose Category --')}</option>
                         {['Homework', 'Quiz', 'Project', 'Practical', 'Participation', 'Oral', 'Midterm', 'Exam', 'Other'].map((c) => (
-                          <option key={c} value={c}>{c}</option>
+                          <option key={c} value={c}>{t(c)}</option>
                         ))}
                       </select>
                     </div>
                     <div>
-                      <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Weight (%)</label>
+                      <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">{t('Weight (%)')}</label>
                       <input
                         type="number" required min="1" max="100" value={newAssessWeight}
                         onChange={(e) => setNewAssessWeight(e.target.value)}
@@ -1266,7 +1270,7 @@ export default function TeacherDashboardPage() {
                       type="submit" disabled={isCreatingAssessment}
                       className="w-full px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-md cursor-pointer disabled:opacity-50"
                     >
-                      {isCreatingAssessment ? 'Saving...' : 'Register Component'}
+                      {isCreatingAssessment ? t('Saving...') : t('Register Component')}
                     </button>
                   </form>
                 </div>
@@ -1278,14 +1282,14 @@ export default function TeacherDashboardPage() {
               <div className="space-y-6">
                 <div className="flex justify-between items-center flex-wrap gap-4 border-b pb-4">
                   <div>
-                    <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Gradebook Spreadsheet</h3>
-                    <p className="text-xs text-slate-500">Dynamic columns from configured blueprints.</p>
+                    <h3 className="text-base font-extrabold text-slate-900 dark:text-white">{t('Gradebook Spreadsheet')}</h3>
+                    <p className="text-xs text-slate-500">{t('Dynamic columns from configured blueprints.')}</p>
                   </div>
                   <div className="flex items-center gap-3">
                     {approvalStatus !== 'Draft' && (
                       <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/20 text-amber-600 rounded-xl text-xs font-bold border border-amber-200">
                         <Lock className="w-3.5 h-3.5" />
-                        Locked ({approvalStatus})
+                        {t('Locked')} ({approvalStatus})
                       </span>
                     )}
                     <button
@@ -1293,29 +1297,29 @@ export default function TeacherDashboardPage() {
                       disabled={isSavingGrades || approvalStatus !== 'Draft'}
                       className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-xs shadow-md disabled:opacity-50 cursor-pointer"
                     >
-                      {isSavingGrades ? 'Saving...' : 'Save Draft Marks'}
+                      {isSavingGrades ? t('Saving...') : t('Save Draft Marks')}
                     </button>
                   </div>
                 </div>
 
                 {blueprints.length === 0 ? (
                   <div className="p-8 text-center text-slate-400 text-xs">
-                    Configure at least one Assessment Blueprint to build the gradebook matrix.
+                    {t('Configure at least one Assessment Blueprint to build the gradebook matrix.')}
                   </div>
                 ) : (
                   <div className="overflow-x-auto border rounded-2xl text-xs">
                     <table className="w-full text-left">
                       <thead className="bg-slate-50 dark:bg-slate-800 font-bold text-slate-700 dark:text-slate-300">
                         <tr>
-                          <th className="p-3 text-left">Student Name</th>
+                          <th className="p-3 text-left">{t('Student Name')}</th>
                           {blueprints.map((bp) => (
                             <th key={bp.id} className="p-3 text-center border-l">
                               {bpKey(bp)} ({bp.weightPercentage}%)
                             </th>
                           ))}
-                          <th className="p-3 text-right">Score</th>
-                          <th className="p-3 text-center">Grade</th>
-                          <th className="p-3 text-center">GP</th>
+                          <th className="p-3 text-right">{t('Score')}</th>
+                          <th className="p-3 text-center">{t('Grade')}</th>
+                          <th className="p-3 text-center">{t('GP')}</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y">
@@ -1377,14 +1381,14 @@ export default function TeacherDashboardPage() {
             {activeWorkspaceTab === 'approval' && (
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Grade Approval Workflow</h3>
-                  <p className="text-xs text-slate-500">Submit completed gradebook for Section Head verification.</p>
+                  <h3 className="text-base font-extrabold text-slate-900 dark:text-white">{t('Grade Approval Workflow')}</h3>
+                  <p className="text-xs text-slate-500">{t('Submit completed gradebook for Section Head verification.')}</p>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                   <div className="lg:col-span-2 p-5 border rounded-2xl bg-slate-50 dark:bg-slate-800/40 text-xs space-y-4">
                     <div className="flex items-center gap-3">
-                      <span className="font-extrabold text-slate-800 dark:text-slate-200">Current Status:</span>
+                      <span className="font-extrabold text-slate-800 dark:text-slate-200">{t('Current Status')}:</span>
                       <span className={cn(
                         'px-3 py-1 rounded-full font-black capitalize',
                         approvalStatus === 'Draft'     ? 'bg-slate-100 text-slate-700' :
@@ -1398,11 +1402,11 @@ export default function TeacherDashboardPage() {
                     </div>
 
                     <div className="space-y-2">
-                      <label className="block font-bold text-slate-700 dark:text-slate-300">Submission Comments</label>
+                      <label className="block font-bold text-slate-700 dark:text-slate-300">{t('Submission Comments')}</label>
                       <textarea
                         rows={3}
                         value={approvalComment}
-                        placeholder="Add review notes, audit reason, or feedback..."
+                        placeholder={t('Add review notes, audit reason, or feedback...')}
                         onChange={(e) => setApprovalComment(e.target.value)}
                         className="w-full p-3 border rounded-xl bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
                       />
@@ -1411,14 +1415,14 @@ export default function TeacherDashboardPage() {
                     <div className="flex flex-col gap-3">
                       {approvalStatus === 'Draft' && (
                         <>
-                          <p className="text-xs text-slate-500">Submit your completed gradebook to the Section Head for review.</p>
+                          <p className="text-xs text-slate-500">{t('Submit your completed gradebook to the Section Head for review.')}</p>
                           <button
                             onClick={() => handleWorkflowTransition('Submitted')}
                             disabled={isSubmittingApproval}
                             className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white rounded-xl font-bold cursor-pointer transition-colors text-xs w-fit"
                           >
                             <Upload className="w-3.5 h-3.5" />
-                            Submit for Section Head Review
+                            {t('Submit for Section Head Review')}
                           </button>
                         </>
                       )}
@@ -1426,8 +1430,8 @@ export default function TeacherDashboardPage() {
                         <div className="p-4 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 rounded-xl flex items-start gap-3">
                           <Clock className="w-4 h-4 mt-0.5 shrink-0 text-amber-600" />
                           <div>
-                            <p className="font-bold text-amber-800 dark:text-amber-300">Pending Section Head Review</p>
-                            <p className="text-xs text-amber-700 mt-1">Awaiting verification. Grades are locked from editing.</p>
+                            <p className="font-bold text-amber-800 dark:text-amber-300">{t('Pending Section Head Review')}</p>
+                            <p className="text-xs text-amber-700 mt-1">{t('Awaiting verification. Grades are locked from editing.')}</p>
                           </div>
                         </div>
                       )}
@@ -1436,8 +1440,8 @@ export default function TeacherDashboardPage() {
                           <div className="p-4 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 rounded-xl flex items-start gap-3">
                             <AlertCircle className="w-4 h-4 mt-0.5 shrink-0 text-rose-600" />
                             <div>
-                              <p className="font-bold text-rose-800 dark:text-rose-300">Rejected — Please Revise</p>
-                              <p className="text-xs text-rose-700 mt-1">The Section Head has returned grades for corrections. Reset to Draft, make corrections in the Gradebook tab, then re-submit.</p>
+                              <p className="font-bold text-rose-800 dark:text-rose-300">{t('Rejected — Please Revise')}</p>
+                              <p className="text-xs text-rose-700 mt-1">{t('The Section Head has returned grades for corrections. Reset to Draft, make corrections in the Gradebook tab, then re-submit.')}</p>
                             </div>
                           </div>
                           <button
@@ -1446,7 +1450,7 @@ export default function TeacherDashboardPage() {
                             className="inline-flex items-center gap-2 px-5 py-2.5 bg-slate-700 hover:bg-slate-800 disabled:opacity-60 text-white rounded-xl font-bold cursor-pointer transition-colors text-xs w-fit"
                           >
                             <Unlock className="w-3.5 h-3.5" />
-                            Reset to Draft &amp; Revise
+                            {t('Reset to Draft & Revise')}
                           </button>
                         </div>
                       )}
@@ -1454,8 +1458,8 @@ export default function TeacherDashboardPage() {
                         <div className="p-4 bg-purple-50 dark:bg-purple-950/30 border border-purple-200 rounded-xl flex items-start gap-3">
                           <ShieldCheck className="w-4 h-4 mt-0.5 shrink-0 text-purple-600" />
                           <div>
-                            <p className="font-bold text-purple-800 dark:text-purple-300">Verified by Section Head</p>
-                            <p className="text-xs text-purple-700 mt-1">Pending final Registrar approval before student release.</p>
+                            <p className="font-bold text-purple-800 dark:text-purple-300">{t('Verified by Section Head')}</p>
+                            <p className="text-xs text-purple-700 mt-1">{t('Pending final Registrar approval before student release.')}</p>
                           </div>
                         </div>
                       )}
@@ -1463,8 +1467,8 @@ export default function TeacherDashboardPage() {
                         <div className="p-4 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 rounded-xl flex items-start gap-3">
                           <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0 text-emerald-600" />
                           <div>
-                            <p className="font-bold text-emerald-800 dark:text-emerald-300">Grades Approved &amp; Released</p>
-                            <p className="text-xs text-emerald-700 mt-1">Grades are finalized and visible to students.</p>
+                            <p className="font-bold text-emerald-800 dark:text-emerald-300">{t('Grades Approved & Released')}</p>
+                            <p className="text-xs text-emerald-700 mt-1">{t('Grades are finalized and visible to students.')}</p>
                           </div>
                         </div>
                       )}
@@ -1473,9 +1477,9 @@ export default function TeacherDashboardPage() {
 
                   {/* Approval History */}
                   <div className="p-4 border rounded-2xl bg-slate-50 dark:bg-slate-800/40 text-xs">
-                    <h4 className="font-extrabold text-slate-900 dark:text-white mb-3">Workflow History</h4>
+                    <h4 className="font-extrabold text-slate-900 dark:text-white mb-3">{t('Workflow History')}</h4>
                     {approvalHistory.length === 0 ? (
-                      <p className="text-slate-500 italic">No history yet.</p>
+                      <p className="text-slate-500 italic">{t('No history yet.')}</p>
                     ) : (
                       <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1">
                         {approvalHistory.map((log) => (
@@ -1490,7 +1494,7 @@ export default function TeacherDashboardPage() {
                               <p className="text-slate-600 dark:text-slate-300 italic">"{log.comments}"</p>
                             )}
                             {log.reviewerName && (
-                              <p className="text-[9px] text-slate-400 mt-1">By: {log.reviewerName}</p>
+                              <p className="text-[9px] text-slate-400 mt-1">{t('By')}: {log.reviewerName}</p>
                             )}
                             <p className="text-[9px] text-slate-400">
                               {new Date(log.actionDateTime).toLocaleString()}
@@ -1509,42 +1513,42 @@ export default function TeacherDashboardPage() {
               <div className="space-y-6">
                 <div className="flex justify-between items-start flex-wrap gap-4">
                   <div>
-                    <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Lesson Planner &amp; Curriculum</h3>
-                    <p className="text-xs text-slate-500">Track curriculum topics and create lesson plans linked to this subject.</p>
+                    <h3 className="text-base font-extrabold text-slate-900 dark:text-white">{t('Lesson Planner & Curriculum')}</h3>
+                    <p className="text-xs text-slate-500">{t('Track curriculum topics and create lesson plans linked to this subject.')}</p>
                   </div>
                   <button
                     onClick={() => setShowLpForm((prev) => !prev)}
                     className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-xs"
                   >
                     <Plus className="w-3.5 h-3.5" />
-                    New Lesson Plan
+                    {t('New Lesson Plan')}
                   </button>
                 </div>
 
                 {/* New LP Form */}
                 {showLpForm && (
                   <form onSubmit={handleCreateLessonPlan} className="p-5 border rounded-2xl bg-slate-50 dark:bg-slate-800/40 space-y-3 text-xs">
-                    <h4 className="font-extrabold text-slate-900 dark:text-white">Create Lesson Plan</h4>
+                    <h4 className="font-extrabold text-slate-900 dark:text-white">{t('Create Lesson Plan')}</h4>
                     <div>
-                      <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Title *</label>
+                      <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">{t('Title *')}</label>
                       <input
-                        required value={newLpTitle} placeholder="e.g. Chapter 3 – Tajweed Rules"
+                        required value={newLpTitle} placeholder={t('e.g. Chapter 3 – Tajweed Rules')}
                         onChange={(e) => setNewLpTitle(e.target.value)}
                         className="w-full px-3 py-2 border rounded-xl bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:border-indigo-500"
                       />
                     </div>
                     <div>
-                      <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Learning Objectives</label>
+                      <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">{t('Learning Objectives')}</label>
                       <textarea
-                        rows={2} value={newLpObjectives} placeholder="What students will learn..."
+                        rows={2} value={newLpObjectives} placeholder={t('What students will learn...')}
                         onChange={(e) => setNewLpObjectives(e.target.value)}
                         className="w-full px-3 py-2 border rounded-xl bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:border-indigo-500"
                       />
                     </div>
                     <div>
-                      <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Teaching Method</label>
+                      <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">{t('Teaching Method')}</label>
                       <input
-                        value={newLpMethod} placeholder="e.g. Lecture, Group Work, Recitation"
+                        value={newLpMethod} placeholder={t('e.g. Lecture, Group Work, Recitation')}
                         onChange={(e) => setNewLpMethod(e.target.value)}
                         className="w-full px-3 py-2 border rounded-xl bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:border-indigo-500"
                       />
@@ -1554,10 +1558,10 @@ export default function TeacherDashboardPage() {
                         type="submit" disabled={isCreatingLessonPlan}
                         className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold cursor-pointer disabled:opacity-50"
                       >
-                        {isCreatingLessonPlan ? 'Saving...' : 'Save Plan'}
+                        {isCreatingLessonPlan ? t('Saving...') : t('Save Plan')}
                       </button>
                       <button type="button" onClick={() => setShowLpForm(false)} className="px-4 py-2 border rounded-xl font-bold hover:bg-slate-100 dark:hover:bg-slate-800">
-                        Cancel
+                        {t('Cancel')}
                       </button>
                     </div>
                   </form>
@@ -1566,7 +1570,7 @@ export default function TeacherDashboardPage() {
                 {/* Curriculum Topics */}
                 {curriculumTopics.length > 0 && (
                   <div className="space-y-3">
-                    <h4 className="text-sm font-extrabold text-slate-800 dark:text-white">Curriculum Topics</h4>
+                    <h4 className="text-sm font-extrabold text-slate-800 dark:text-white">{t('Curriculum Topics')}</h4>
                     <div className="space-y-2 text-xs">
                       {curriculumTopics.map((topic) => {
                         const icon = topic.completionStatus === 'Completed' ? CheckSquare :
@@ -1592,7 +1596,7 @@ export default function TeacherDashboardPage() {
                             <span className={cn(
                               'text-[10px] font-bold px-2 py-0.5 rounded-full',
                               topic.completionStatus === 'Completed' ? 'bg-emerald-100 text-emerald-700' :
-                              topic.completionStatus === 'In Progress' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600'
+                              topic.completionStatus === 'In Progress' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-650'
                             )}>
                               {topic.completionStatus || 'Pending'}
                             </span>
@@ -1602,7 +1606,7 @@ export default function TeacherDashboardPage() {
                     </div>
                     {totalTopics > 0 && (
                       <p className="text-xs text-slate-500">
-                        {coveredTopics}/{totalTopics} topics completed ({syllabusComputed}% coverage)
+                        {coveredTopics}/{totalTopics} {t('topics completed')} ({syllabusComputed}% {t('coverage')})
                       </p>
                     )}
                   </div>
@@ -1610,15 +1614,15 @@ export default function TeacherDashboardPage() {
 
                 {curriculumTopics.length === 0 && (
                   <div className="p-4 bg-slate-50 dark:bg-slate-800/40 border rounded-2xl text-xs text-slate-400 italic">
-                    No curriculum topics linked to this subject. Ask administration to configure curriculum topics.
+                    {t('No curriculum topics linked to this subject. Ask administration to configure curriculum topics.')}
                   </div>
                 )}
 
                 {/* Lesson Plans Card Grid */}
                 {lessonPlans.length > 0 && (
                   <div className="space-y-4">
-                    <h4 className="text-sm font-extrabold text-slate-800 dark:text-white">Saved Lesson Plans</h4>
-                    
+                    <h4 className="text-sm font-extrabold text-slate-800 dark:text-white">{t('Saved Lesson Plans')}</h4>
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                       {lessonPlans.map((lp) => {
                         const status = lp.recordStatus || 'Draft';
@@ -1630,7 +1634,7 @@ export default function TeacherDashboardPage() {
                         };
 
                         return (
-                          <div 
+                          <div
                             key={lp.id}
                             onClick={() => {
                               setSelectedPlanForDrawer(lp);
@@ -1648,7 +1652,7 @@ export default function TeacherDashboardPage() {
                                   {status}
                                 </span>
                                 <span className="text-[11px] text-slate-400 font-mono font-medium">
-                                  {lp.lessonNumber ? `Lesson ${lp.lessonNumber}` : 'Unscheduled'}
+                                  {lp.lessonNumber ? `${t('Lesson')} ${lp.lessonNumber}` : t('Unscheduled')}
                                 </span>
                               </div>
 
@@ -1659,9 +1663,9 @@ export default function TeacherDashboardPage() {
                                 </h4>
                                 <p className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-1 font-medium">
                                   <BookOpen className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                                  <span>{selectedOffering?.subject?.name || 'Subject'}</span>
+                                  <span>{selectedOffering?.subject?.name || t('Subject')}</span>
                                   <span>&gt;</span>
-                                  <span>{selectedOffering?.academicSection?.code || 'Section'}</span>
+                                  <span>{selectedOffering?.academicSection?.code || t('Section')}</span>
                                 </p>
                               </div>
 
@@ -1670,7 +1674,7 @@ export default function TeacherDashboardPage() {
                                 <div className="p-2 bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900/30 rounded-xl text-[10px] text-rose-800 dark:text-rose-300 flex items-start gap-1.5">
                                   <ShieldAlert className="w-3.5 h-3.5 shrink-0 text-rose-600 mt-0.5" />
                                   <div>
-                                    <strong className="block font-bold">Revision Required:</strong>
+                                    <strong className="block font-bold">{t('Revision Required')}:</strong>
                                     <span className="italic">"{lp.rejectionReason}"</span>
                                   </div>
                                 </div>
@@ -1680,7 +1684,7 @@ export default function TeacherDashboardPage() {
                               <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-1.5">
                                 {lp.objectives && (
                                   <div>
-                                    <span className="font-bold text-slate-700 dark:text-slate-300 block text-[10px] uppercase tracking-wider">LEARNING OBJECTIVES:</span>
+                                    <span className="font-bold text-slate-700 dark:text-slate-300 block text-[10px] uppercase tracking-wider">{t('LEARNING OBJECTIVES')}:</span>
                                     <p className="text-slate-600 dark:text-slate-400 text-[11px] line-clamp-2 leading-relaxed">
                                       {lp.objectives}
                                     </p>
@@ -1688,7 +1692,7 @@ export default function TeacherDashboardPage() {
                                 )}
                                 {lp.homework && (
                                   <div>
-                                    <span className="font-bold text-slate-700 dark:text-slate-300 block text-[10px] uppercase tracking-wider">HOMEWORK ASSIGNMENT:</span>
+                                    <span className="font-bold text-slate-700 dark:text-slate-300 block text-[10px] uppercase tracking-wider">{t('HOMEWORK ASSIGNMENT')}:</span>
                                     <p className="text-slate-650 dark:text-slate-400 text-[11px] line-clamp-2 leading-relaxed">
                                       {lp.homework}
                                     </p>
@@ -1703,7 +1707,7 @@ export default function TeacherDashboardPage() {
                                 <div className="w-5 h-5 rounded-full bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 flex items-center justify-center text-[10px] font-black">
                                   {teacher?.displayName?.[0] || 'T'}
                                 </div>
-                                <span className="text-[10px] text-slate-600 dark:text-slate-400 font-bold">{teacher?.displayName || 'Faculty'}</span>
+                                <span className="text-[10px] text-slate-600 dark:text-slate-400 font-bold">{teacher?.displayName || t('Faculty')}</span>
                               </div>
 
                               <div className="flex items-center gap-1">
@@ -1712,23 +1716,23 @@ export default function TeacherDashboardPage() {
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        handleDeleteLessonPlan(lp.id || lp.documentId);
+                                        handleDeleteLessonPlan(lp.documentId || lp.id);
                                       }}
                                       className="p-1 hover:bg-rose-50 text-rose-600 rounded"
-                                      title="Delete Plan"
+                                      title={t('Delete Plan')}
                                     >
                                       <Trash2 className="w-3.5 h-3.5" />
                                     </button>
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        handleSubmitLessonPlan(lp.id || lp.documentId);
+                                        handleSubmitLessonPlan(lp.documentId || lp.id);
                                       }}
                                       className="px-2 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded text-[10px] font-bold flex items-center gap-1"
-                                      title="Submit for Approval"
+                                      title={t('Submit for Approval')}
                                     >
                                       <Send className="w-3 h-3" />
-                                      Submit
+                                      {t('Submit')}
                                     </button>
                                   </>
                                 )}
@@ -1740,7 +1744,7 @@ export default function TeacherDashboardPage() {
                                     setShowPlanDrawer(true);
                                   }}
                                   className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-indigo-600 rounded"
-                                  title="View Details"
+                                  title={t('View Details')}
                                 >
                                   <Eye className="w-4 h-4" />
                                 </button>
@@ -1759,17 +1763,17 @@ export default function TeacherDashboardPage() {
                     <div className="absolute inset-0" onClick={() => setShowPlanDrawer(false)} />
 
                     <div className="relative w-full max-w-xl bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 h-full p-6 shadow-2xl flex flex-col justify-between gap-6 overflow-y-auto animate-slide-in-right text-xs text-slate-800 dark:text-slate-200">
-                      
+
                       <div className="space-y-5">
                         {/* Drawer Header */}
                         <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
                           <div className="flex items-center gap-2">
                             <BookOpen className="w-5 h-5 text-indigo-600" />
                             <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
-                              Lesson Plan Details
+                              {t('Lesson Plan Details')}
                             </h3>
                           </div>
-                          <button 
+                          <button
                             onClick={() => setShowPlanDrawer(false)}
                             className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full cursor-pointer text-slate-400 hover:text-slate-600 border-none bg-transparent"
                           >
@@ -1780,35 +1784,35 @@ export default function TeacherDashboardPage() {
                         {/* Title & Lesson Number */}
                         <div>
                           <h4 className="text-lg font-black text-slate-900 dark:text-white">{selectedPlanForDrawer.title}</h4>
-                          <p className="text-slate-500 font-mono text-xs mt-1">Lesson #{selectedPlanForDrawer.lessonNumber || '1'}</p>
+                          <p className="text-slate-500 font-mono text-xs mt-1">{t('Lesson')} #{selectedPlanForDrawer.lessonNumber || '1'}</p>
                         </div>
 
                         {/* 2-Column Metadata Grid */}
                         <div className="grid grid-cols-2 gap-4 bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 text-xs">
                           <div>
-                            <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">SUBJECT</span>
-                            <strong className="text-slate-800 dark:text-slate-200 font-extrabold">{selectedOffering?.subject?.name || 'N/A'}</strong>
+                            <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">{t('SUBJECT')}</span>
+                            <strong className="text-slate-800 dark:text-slate-200 font-extrabold">{selectedOffering?.subject?.name || t('N/A')}</strong>
                           </div>
                           <div>
-                            <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">CLASS SECTION</span>
-                            <strong className="text-slate-800 dark:text-slate-200 font-extrabold">{selectedOffering?.academicSection?.code || 'N/A'}</strong>
+                            <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">{t('CLASS SECTION')}</span>
+                            <strong className="text-slate-800 dark:text-slate-200 font-extrabold">{selectedOffering?.academicSection?.code || t('N/A')}</strong>
                           </div>
                           <div>
-                            <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">SYLLABUS CURRICULUM</span>
-                            <strong className="text-slate-800 dark:text-slate-200 font-extrabold">N/A</strong>
+                            <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">{t('SYLLABUS CURRICULUM')}</span>
+                            <strong className="text-slate-800 dark:text-slate-200 font-extrabold">{t('N/A')}</strong>
                           </div>
                           <div>
-                            <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">ACADEMIC CYCLE</span>
+                            <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">{t('ACADEMIC CYCLE')}</span>
                             <strong className="text-slate-800 dark:text-slate-200 font-extrabold">
-                              {selectedOffering?.academicYear?.name || '2026-2027 Academic Year'}
+                              {selectedOffering?.academicYear?.name || t('2026-2027 Academic Year')}
                             </strong>
                           </div>
                           <div>
-                            <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">ASSIGNED FACULTY</span>
-                            <strong className="text-slate-800 dark:text-slate-200 font-extrabold">{teacher?.displayName || 'Faculty'}</strong>
+                            <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">{t('ASSIGNED FACULTY')}</span>
+                            <strong className="text-slate-800 dark:text-slate-200 font-extrabold">{teacher?.displayName || t('Faculty')}</strong>
                           </div>
                           <div>
-                            <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">VERIFICATION STATUS</span>
+                            <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">{t('VERIFICATION STATUS')}</span>
                             <strong className={cn(
                               "font-black uppercase text-xs",
                               selectedPlanForDrawer.recordStatus === 'Approved' ? 'text-emerald-600 dark:text-emerald-400' :
@@ -1820,37 +1824,37 @@ export default function TeacherDashboardPage() {
                         {/* Content Blocks */}
                         <div className="space-y-4">
                           <div>
-                            <span className="font-extrabold text-slate-900 dark:text-white block mb-1.5 text-xs">Learning Objectives:</span>
+                            <span className="font-extrabold text-slate-900 dark:text-white block mb-1.5 text-xs">{t('Learning Objectives')}:</span>
                             <p className="p-3.5 bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-xl leading-relaxed whitespace-pre-line text-slate-700 dark:text-slate-300">
-                              {selectedPlanForDrawer.objectives || 'No learning objectives specified.'}
+                              {selectedPlanForDrawer.objectives || t('No learning objectives specified.')}
                             </p>
                           </div>
 
                           <div>
-                            <span className="font-extrabold text-slate-900 dark:text-white block mb-1.5 text-xs">Teaching Methods / Syllabi:</span>
+                            <span className="font-extrabold text-slate-900 dark:text-white block mb-1.5 text-xs">{t('Teaching Methods / Syllabi')}:</span>
                             <p className="p-3.5 bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-xl leading-relaxed whitespace-pre-line text-slate-700 dark:text-slate-300">
-                              {selectedPlanForDrawer.teachingMethod || 'No teaching methodology documented.'}
+                              {selectedPlanForDrawer.teachingMethod || t('No teaching methodology documented.')}
                             </p>
                           </div>
 
                           <div>
-                            <span className="font-extrabold text-slate-900 dark:text-white block mb-1.5 text-xs">Homework & Classwork Assignments:</span>
+                            <span className="font-extrabold text-slate-900 dark:text-white block mb-1.5 text-xs">{t('Homework & Classwork Assignments')}:</span>
                             <p className="p-3.5 bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-xl leading-relaxed whitespace-pre-line text-slate-700 dark:text-slate-300">
-                              {selectedPlanForDrawer.homework || 'No homework assigned.'}
+                              {selectedPlanForDrawer.homework || t('No homework assigned.')}
                             </p>
                           </div>
 
                           <div>
-                            <span className="font-extrabold text-slate-900 dark:text-white block mb-1.5 text-xs">Assessment Criteria:</span>
+                            <span className="font-extrabold text-slate-900 dark:text-white block mb-1.5 text-xs">{t('Assessment Criteria')}:</span>
                             <p className="p-3.5 bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-xl leading-relaxed whitespace-pre-line text-slate-700 dark:text-slate-300">
-                              {selectedPlanForDrawer.assessmentMethod || 'No assessment method defined.'}
+                              {selectedPlanForDrawer.assessmentMethod || t('No assessment method defined.')}
                             </p>
                           </div>
 
                           {/* Rejection Alert Box inside drawer */}
                           {selectedPlanForDrawer.recordStatus === 'Rejected' && selectedPlanForDrawer.rejectionReason && (
                             <div className="p-4 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/40 rounded-xl text-rose-800 dark:text-rose-200 space-y-1">
-                              <span className="font-black block">Section Head Rejection Notes:</span>
+                              <span className="font-black block">{t('Section Head Rejection Notes')}:</span>
                               <p className="italic">"{selectedPlanForDrawer.rejectionReason}"</p>
                             </div>
                           )}
@@ -1862,20 +1866,20 @@ export default function TeacherDashboardPage() {
                         {(!selectedPlanForDrawer.recordStatus || selectedPlanForDrawer.recordStatus === 'Draft' || selectedPlanForDrawer.recordStatus === 'Rejected') && (
                           <button
                             onClick={() => {
-                              handleSubmitLessonPlan(selectedPlanForDrawer.id || selectedPlanForDrawer.documentId);
+                              handleSubmitLessonPlan(selectedPlanForDrawer.documentId || selectedPlanForDrawer.id);
                               setShowPlanDrawer(false);
                             }}
                             className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold rounded-xl text-xs flex items-center gap-1.5 cursor-pointer shadow-md"
                           >
                             <Send className="w-3.5 h-3.5" />
-                            <span>Submit for Section Head Approval</span>
+                            <span>{t('Submit for Section Head Approval')}</span>
                           </button>
                         )}
                         <button
                           onClick={() => setShowPlanDrawer(false)}
                           className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-200 font-bold rounded-xl text-xs cursor-pointer border-none"
                         >
-                          Close Details
+                          {t('Close Details')}
                         </button>
                       </div>
 
@@ -1885,7 +1889,7 @@ export default function TeacherDashboardPage() {
 
                 {lessonPlans.length === 0 && !showLpForm && (
                   <div className="p-6 border border-dashed rounded-2xl text-center text-slate-400 text-xs">
-                    No lesson plans created yet. Click "New Lesson Plan" to get started.
+                    {t('No lesson plans created yet. Click "New Lesson Plan" to get started.')}
                   </div>
                 )}
               </div>
@@ -1895,20 +1899,20 @@ export default function TeacherDashboardPage() {
             {activeWorkspaceTab === 'audit' && (
               <div className="space-y-4">
                 <div>
-                  <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Compliance Audit Trail</h3>
-                  <p className="text-xs text-slate-500">All recorded changes made inside this workspace.</p>
+                  <h3 className="text-base font-extrabold text-slate-900 dark:text-white">{t('Compliance Audit Trail')}</h3>
+                  <p className="text-xs text-slate-500">{t('All recorded changes made inside this workspace.')}</p>
                 </div>
 
                 {sectionAuditLogs.length === 0 ? (
                   <div className="p-8 text-center text-slate-400 text-xs italic">
-                    No modifications logged for this offering yet.
+                    {t('No modifications logged for this offering yet.')}
                   </div>
                 ) : (
                   <div className="space-y-2 text-xs">
                     {sectionAuditLogs.map((log: any) => (
                       <div key={log.id} className="p-4 border rounded-2xl bg-slate-50 dark:bg-slate-800/40">
                         <div className="flex justify-between items-center mb-1 flex-wrap gap-2">
-                          <span className="font-extrabold text-indigo-600 dark:text-indigo-400">{log.action}</span>
+                          <span className="font-extrabold text-indigo-600 dark:text-indigo-400">{t(log.action)}</span>
                           <span className="font-mono text-[10px] text-slate-400">
                             {log.timestamp ? new Date(log.timestamp).toLocaleString() : new Date(log.createdAt).toLocaleString()}
                           </span>
@@ -1916,7 +1920,7 @@ export default function TeacherDashboardPage() {
                         <p className="text-slate-600 dark:text-slate-300">{log.description || log.details}</p>
                         {log.performedBy && (
                           <p className="text-[10px] text-slate-400 mt-1 font-semibold">
-                            User: {typeof log.performedBy === 'object'
+                            {t('User')}: {typeof log.performedBy === 'object'
                               ? (log.performedBy?.username || log.performedBy?.email || log.performedBy?.id)
                               : log.performedBy}
                           </p>
