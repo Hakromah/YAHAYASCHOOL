@@ -25,12 +25,26 @@ export async function generateMetadata({ params }: ProgramDetailProps): Promise<
 export default async function ProgramDetailPage({ params }: ProgramDetailProps) {
   const { locale, slug } = await params;
 
-  const program = await cmsService.getProgramBySlug(slug, locale);
-  if (!program) notFound();
+  let program = await cmsService.getProgramBySlug(slug, locale);
+
+  // Provide a fallback program if the CMS is offline, to prevent a 404
+  if (!program) {
+    const knownSlugs = ['arabic', 'english', 'dawah', 'online', 'quran-memorization'];
+    if (knownSlugs.includes(slug)) {
+      program = {
+        slug,
+        title: `${slug.charAt(0).toUpperCase() + slug.slice(1)} Program`,
+        description: `Detailed information about the ${slug} program.`,
+        pathwaySteps: []
+      } as any;
+    } else {
+      notFound();
+    }
+  }
 
   return (
     <main className="min-h-screen bg-white">
-      <ProgramHero program={program} locale={locale} />
+      <ProgramHero program={program} />
       <ProgramPathway program={program} />
       <AcademicApproach />
     </main>

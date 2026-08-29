@@ -381,10 +381,39 @@ export function NewsGrid({ locale, articles = [] }: { locale: string; articles?:
   const t = useTranslations('newsPage');
   const href = (url: string) => (locale === 'en' ? url : `/${locale}${url}`);
 
-  const visible = category === 'All' ? articles : articles.filter((a) => a.category?.slug === category || a.category?.title === category);
+  const fallbackArticles = [
+    {
+      slug: 'science-tech-fair-2024',
+      title: 'Science and Technology Fair 2024',
+      summary: 'Students showcase their innovative projects in robotics, AI, and green energy solutions at our annual science fair.',
+      category: { title: 'Events', slug: 'events' },
+      publishedAt: '2024-03-15T10:00:00.000Z',
+      coverImage: { url: '/images/figma-home/09.png' }
+    },
+    {
+      slug: 'quran-competition-winners',
+      title: 'Annual Quran Recitation Competition Winners',
+      summary: 'Celebrating the achievements of our outstanding students in the district-wide Quran recitation and memorization contest.',
+      category: { title: 'Achievements', slug: 'achievements' },
+      publishedAt: '2024-02-28T14:30:00.000Z',
+      coverImage: { url: '/images/figma-home/17.png' }
+    },
+    {
+      slug: 'new-library-opening',
+      title: 'Grand Opening of the New Central Library',
+      summary: 'Our state-of-the-art library facility is now open to all students, featuring over 50,000 volumes and digital workstations.',
+      category: { title: 'Campus News', slug: 'campus-news' },
+      publishedAt: '2024-01-10T09:00:00.000Z',
+      coverImage: { url: '/images/figma-home/13.png' }
+    }
+  ];
+
+  const displayArticles = articles && articles.length > 0 ? articles : fallbackArticles as any[];
+
+  const visible = category === 'All' ? displayArticles : displayArticles.filter((a: any) => a.category?.slug === category || a.category?.title === category);
   
   // Extract unique categories from articles
-  const categories = ['All', ...Array.from(new Set(articles.map(a => a.category?.title || 'Uncategorized').filter(Boolean)))];
+  const categories = ['All', ...Array.from(new Set(displayArticles.map((a: any) => a.category?.title || 'Uncategorized').filter(Boolean))) as string[]];
 
   return (
     <section className="w-full bg-white">

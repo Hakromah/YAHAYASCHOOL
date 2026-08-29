@@ -154,7 +154,7 @@ export function HeroSection({ data, locale = 'en' }: HeroProps) {
         }
       `}</style>
 
-      <section className="w-full relative lg:h-[calc(100vh-100px)] z-20 overflow-hidden border-b max-h-275 border-white">
+      <section className="w-full relative lg:h-[calc(100vh-150px)] z-20 overflow-hidden border-b max-h-275 border-white">
         <div className='w-full h-full relative'>
           <Swiper
             modules={[Pagination, Autoplay, EffectFade]}

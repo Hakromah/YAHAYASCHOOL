@@ -4,7 +4,35 @@ import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from '@/i18n/routing';
-import { Menu, X, ChevronDown, ChevronRight, ArrowRight } from 'lucide-react';
+import { Menu, X, ChevronDown, ChevronRight, ArrowRight, User, HandHeart, GraduationCap } from 'lucide-react';
+
+const FacebookIcon = ({ className }: { className?: string }) => (
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
+  </svg>
+);
+
+const TwitterIcon = ({ className }: { className?: string }) => (
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z" />
+  </svg>
+);
+
+const InstagramIcon = ({ className }: { className?: string }) => (
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+  </svg>
+);
+
+const LinkedinIcon = ({ className }: { className?: string }) => (
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-4 0v7h-4v-7a6 6 0 0 1 6-6z"></path>
+    <rect x="2" y="9" width="4" height="12"></rect>
+    <circle cx="4" cy="4" r="2"></circle>
+  </svg>
+);
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { Container } from '../ui/Container';
 import { useTranslations } from 'next-intl';
@@ -100,6 +128,39 @@ export function Navbar({ locale = 'en' }: { locale?: string }) {
   return (
     <>
     <header className={`sticky top-0 z-50 bg-white border-b border-gray-100 transition-transform duration-500 ${isVisible ? 'translate-y-0' : '-translate-y-[calc(100%+40px)]'}`}>
+      
+      {/* Top Bar - Desktop Only */}
+      <div className="hidden h-[50px] lg:flex w-full bg-gradient-to-r from-primary via-white to-primary text-white py-2 px-[var(--spacing-side)] justify-between items-center text-sm font-medium z-20 relative border-b border-white/10">
+        <div className="flex items-center gap-6">
+          <Link href={getHref('/online-learning')} className="group lg:hover:text-white/80 transition-colors flex items-center gap-2 font-semibold text-[13px] tracking-wide">
+            <div className="relative flex items-center justify-center">
+              <div className="absolute inset-0 bg-white/40 rounded-full animate-ping opacity-75 duration-1000"></div>
+              <div className="relative bg-white/10 group-hover:bg-white/20 p-1.5 rounded-full transition-colors flex items-center justify-center">
+                <GraduationCap className="w-4 h-4 relative z-10" />
+              </div>
+            </div>
+            <div className='text-from-18 text-to-20'>
+                {'Online Learning'}
+            </div>
+          </Link>
+        </div>
+        <div className="flex items-center gap-5">
+          <div className="flex items-center gap-4">
+            <a href="#" aria-label="Facebook" className="lg:hover:text-white/80 transition-all lg:hover:-translate-y-[1px] block"><FacebookIcon className="w-4 h-4" /></a>
+            <a href="#" aria-label="Twitter" className="lg:hover:text-white/80 transition-all lg:hover:-translate-y-[1px] block"><TwitterIcon className="w-4 h-4" /></a>
+            <a href="#" aria-label="Instagram" className="lg:hover:text-white/80 transition-all lg:hover:-translate-y-[1px] block"><InstagramIcon className="w-4 h-4" /></a>
+            <a href="#" aria-label="LinkedIn" className="lg:hover:text-white/80 transition-all lg:hover:-translate-y-[1px] block"><LinkedinIcon className="w-4 h-4" /></a>
+          </div>
+          
+          <div className="w-[1px] h-4 bg-white/40"></div>
+          
+          <a href="/login" target="_blank" rel="noopener noreferrer" className="bg-transparent border border-white text-white hover:bg-white/10 px-5 py-1.5 rounded-full transition-all flex items-center gap-2 font-medium text-[13px]">
+            <User className="w-4 h-4" />
+            {t('loginPortal')}
+          </a>
+        </div>
+      </div>
+
       <Container className='max-w-[1920px] px-[var(--spacing-side)]'>
         <div className="w-[300px] h-[40px] max-lg:hidden flex justify-center items-end pointer-events-none absolute bottom-[-12px] left-1/2 -translate-x-1/2 z-[10]">
           <Image
@@ -118,7 +179,6 @@ export function Navbar({ locale = 'en' }: { locale?: string }) {
             <div className="hidden lg:flex items-center gap-2 xl:gap-(--spacing-gap)  lg:[&_*]:text-[18px] [&_*]:text-[16px]">
               <NavLink href="/">{t('home')}</NavLink>
               <NavLink href="/programs">{t('academicPrograms')}</NavLink>
-              <NavLink href="/online-learning">{t('onlineLearning')}</NavLink>
               <NavLink href="/news">{t('newsAndEvents')}</NavLink>
 
             </div>
@@ -235,6 +295,7 @@ export function Navbar({ locale = 'en' }: { locale?: string }) {
                   href={getHref('/donations')}
                   className="flex items-center gap-2 px-[32px] py-[13px] rounded-full text-sm font-bold text-white bg-[#048ED6] hover:bg-sky-500 shadow-md transition-all"
                 >
+                  <HandHeart className="w-5 h-5" />
                   <span>{t('donations')}</span>
                   <ArrowRight className="w-4 h-4 rtl:rotate-180" />
                 </Link>
@@ -298,15 +359,23 @@ export function Navbar({ locale = 'en' }: { locale?: string }) {
             <Link href={getHref('/news')} className="px-[var(--spacing-side)] py-3 rounded-lg text-[18px] font-semibold text-gray-800 ">{t('newsAndEvents')}</Link>
             <Link href={getHref('/gallery')} className="px-[var(--spacing-side)] py-3 rounded-lg text-[18px] font-semibold text-gray-800 ">{t('gallery')}</Link>
             <Link href={getHref('/contact')} className="px-[var(--spacing-side)] py-3 rounded-lg text-[18px] font-semibold text-gray-800 ">{t('contact')}</Link>
-            <div className="pt-4 mt-2 flex flex-col gap-4 px-[var(--spacing-side)]">
-            
+            <div className="pt-4 mt-2 flex flex-col min-[450px]:flex-row gap-3 px-[var(--spacing-side)]">
               <Link
                 href={getHref('/donations')}
-                className="w-full py-3 rounded-full text-center font-bold text-white bg-[#048ED6] flex items-center justify-center gap-2"
+                className="flex-1 py-3 px-2 rounded-full text-center font-bold text-white bg-[#048ED6] hover:bg-sky-500 transition-colors flex items-center justify-center gap-1.5 text-[13px] sm:text-sm"
               >
-                <span>{t('donations')}</span>
-                <ArrowRight className="w-4 h-4 rtl:rotate-180" />
+                <HandHeart className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
+                <span className="truncate">{t('donations')}</span>
               </Link>
+              <a
+                href="/login"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 py-3 px-2 rounded-full text-center font-bold text-[#048ED6] bg-blue-50 border border-[#048ED6]/20 hover:bg-blue-100 transition-colors flex items-center justify-center gap-1.5 text-[13px] sm:text-sm"
+              >
+                <User className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
+                <span className="truncate">{t('loginPortal')}</span>
+              </a>
             </div>
           </div>
         </div>

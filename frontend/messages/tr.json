@@ -221,7 +221,8 @@
     "donations": "Bağışlar",
     "ourCommunity": "Topluluğumuz",
     "ourTeam": "Ekibimiz",
-    "joinUs": "Bize Katılın"
+    "joinUs": "Bize Katılın",
+    "loginPortal": "Giriş / Öğrenci Portalı"
   },
   "hero": {
     "startApplication": "Başvuruyu Başlat",
@@ -1322,7 +1323,8 @@
         "badge": "New Release",
         "desc": "Practical jurisprudence for daily life, with evidence given for every ruling."
       }
-    }
+    },
+    "liveLesson": "Canlı Ders"
   },
   "enrollmentModal": {
     "payOnline": "Pay Online",
@@ -1370,5 +1372,10 @@
     "title": "Gizlilik Politikası",
     "lastUpdated": "Son Güncelleme: Ağustos 2026",
     "content": "\n<h3>1. Topladığımız Bilgiler</h3>\n<p>Web sitesine kayıt olduğunuzda, bizimle veya programlarımızla ilgili bilgi almak istediğinizi belirttiğinizde veya bizimle başka bir şekilde iletişime geçtiğinizde gönüllü olarak sağladığınız kişisel bilgileri topluyoruz. Bunlar şunları içerir:</p>\n<ul>\n  <li>İsimler ve iletişim bilgileri (telefon numaraları, e-posta adresleri)</li>\n  <li>Eğitim geçmişi ve transkriptler</li>\n  <li>Fatura ve ödeme bilgileri</li>\n</ul>\n<hr/>\n<h3>2. Bilgilerinizi Nasıl Kullanıyoruz</h3>\n<p>Web sitemiz aracılığıyla toplanan kişisel bilgileri çeşitli iş amaçları için kullanıyoruz, bunlara şunlar dahildir:</p>\n<ol>\n  <li>Kayıt sürecini kolaylaştırmak.</li>\n  <li>Size idari bilgiler göndermek.</li>\n  <li>Sorularınıza ve destek taleplerinize yanıt vermek.</li>\n</ol>\n<hr/>\n<h3>3. Bilgi Paylaşımı</h3>\n<p>Bilgileri yalnızca onayınızla, yasalara uymak, size hizmet sunmak, haklarınızı korumak veya ticari yükümlülükleri yerine getirmek için paylaşıyoruz. Kişisel verilerinizi üçüncü şahıslara satmıyoruz.</p>\n<hr/>\n<h3>4. Veri Güvenliği</h3>\n<p>İşlediğimiz tüm kişisel bilgilerin güvenliğini korumak için tasarlanmış uygun teknik ve kurumsal güvenlik önlemlerini uyguladık.</p>\n<hr/>\n<h3>5. Gizlilik Haklarınız</h3>\n<p>Hesabınızı istediğiniz zaman inceleyebilir, değiştirebilir veya sonlandırabilirsiniz. Gizlilik haklarınızla ilgili soru veya yorumlarınız varsa bize <strong>info@yahayaschool.com</strong> adresinden e-posta gönderebilirsiniz.</p>\n"
+  },
+  "certificateSection": {
+    "title": "Sertifikalarımız",
+    "view": "Görüntüle",
+    "download": "İndir"
   }
 }

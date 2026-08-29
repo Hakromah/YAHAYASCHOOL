@@ -6,14 +6,9 @@ export default function PrivacyPolicyPage() {
 
   return (
     <main className="bg-[#F7FBFE] min-h-screen pb-20">
-      <PageHeader 
-        title={t('title')}
-        subtitle={t('lastUpdated')}
-        breadcrumbs={[
-          { label: 'Home', href: '/' },
-          { label: t('title'), href: '#' }
-        ]}
-      />
+      <PageHeader title={t('title')}>
+        {t('lastUpdated')}
+      </PageHeader>
       
       <div className="max-w-[1152px] mx-auto px-(--spacing-side) mt-12">
         <div className="bg-white rounded-2xl shadow-sm p-[clamp(1.5rem,3vw,3rem)] border border-[#EAF5FD]">

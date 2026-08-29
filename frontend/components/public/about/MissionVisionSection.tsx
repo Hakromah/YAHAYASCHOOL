@@ -87,7 +87,7 @@ export function MissionVisionSection() {
           <div className="relative z-10 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.8fr)_minmax(0,1.2fr)] items-center md:gap-y-10 max-md:gap-5 md:gap-x-[clamp(1.5rem,3vw,3.5rem)] px-[clamp(1.5rem,3.4vw,4rem)] py-[clamp(1.5rem,4.6vw,5.5rem)]">
 
             {/* ── LEFT: static tab buttons — opacity only, no sliding ── */}
-            <div className="flex md:flex-col flex-wrap gap-[clamp(1.25rem,2.2vw,2.6rem)] lg:self-start lg:mt-[clamp(0.5rem,2.5vw,3rem)] lg:pl-[clamp(0.5rem,2vw,2.5rem)]">
+            <div className="flex md:flex-col max-sm:justify-center flex-wrap gap-[clamp(1.25rem,2.2vw,2.6rem)] lg:self-start lg:mt-[clamp(0.5rem,2.5vw,3rem)] lg:pl-[clamp(0.5rem,2vw,2.5rem)]">
               {TABS.map((tItem, i) => {
                 const Icon = tabIcons[i];
                 return (
@@ -96,7 +96,7 @@ export function MissionVisionSection() {
                     type="button"
                     onClick={() => setActive(i)}
                     aria-pressed={i === active}
-                    className={`flex items-center gap-[clamp(0.75rem,0.9vw,1.1rem)] px-[clamp(1rem,1.25vw,1.5rem)] py-[clamp(0.5rem,0.6vw,0.75rem)] rounded-full transition-opacity duration-300 text-left cursor-pointer ${i === active ? 'bg-white text-(--color-primary)' : 'text-white hover:opacity-80'
+                    className={`flex items-center gap-[clamp(0.75rem,0.9vw,1.1rem)] px-[clamp(1rem,1.25vw,1.5rem)] py-[clamp(0.5rem,0.6vw,0.75rem)] w-fit rounded-full transition-opacity duration-300 text-left cursor-pointer ${i === active ? 'bg-white text-(--color-primary)' : 'text-white hover:opacity-80'
                       }`}
                   >
                     <Icon className="w-[clamp(1.1rem,1.15vw,1.375rem)] h-[clamp(1.1rem,1.15vw,1.375rem)]" />
@@ -182,7 +182,7 @@ export function MissionVisionSection() {
 
           </div>
           {/* Notch carved out of the bottom-right corner */}
-          <div className="pointer-events-none absolute bottom-[-100px] right-[-60px] w-[clamp(4.5rem,9.9vw,11.8rem)] h-[clamp(9rem,19.7vw,23.7rem)]">
+          <div className="pointer-events-none absolute bottom-[-100px] xl:bottom-[-130px] right-[-60px] w-[clamp(4.5rem,9.9vw,11.8rem)] h-[clamp(9rem,19.7vw,23.7rem)]">
             <svg xmlns="http://www.w3.org/2000/svg" width="273" height="290" viewBox="0 0 273 290" fill="none" className="w-full h-full">
               <path
                 d="M56.1869 91.9122C100.744 49.1415 206.009 24.3345 206.009 24.3345L248.541 268.877L23.7181 262.853C23.7181 262.853 3.79733 142.202 56.1869 91.9122Z"

@@ -8,6 +8,7 @@ import { CoreValuesBar, FoundingDirectorSection } from '@/components/public/abou
 import { WhyChooseSection } from '@/components/public/about/AboutWhyChooseCta';
 import { PursuitCta } from '@/components/public/shared/PursuitCta';
 import { AboutTimelineSection } from '@/components/public/about/AboutTimelineSection';
+import { AboutCertificateSection } from '@/components/public/about/AboutCertificateSection';
 
 export const metadata: Metadata = {
   title: 'About Us | YAHAYASCHOOL',
@@ -36,6 +37,8 @@ export default function AboutUsPage() {
       <WhyChooseSection />
 
       <AboutTimelineSection />
+
+      <AboutCertificateSection />
 
       <PursuitCta />
 

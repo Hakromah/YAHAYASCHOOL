@@ -104,7 +104,7 @@ export function AboutTimelineSection() {
   return (
     <section className="w-full bg-[#F7F7F7]">
       <div className="max-w-[1920px] mx-auto px-(--spacing-side) py-[clamp(1.5rem,4.2vw,5rem)]">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 px-(--spacing-side)">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 sm:px-(--spacing-side)">
           <h2 className="font-serif text-[#121C2A] text-[clamp(1.75rem,2.6vw,3.125rem)]">
             {t('title')}
           </h2>

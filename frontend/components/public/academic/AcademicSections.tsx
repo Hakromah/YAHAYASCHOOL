@@ -99,14 +99,26 @@ export function AcademicHero() {
 
 export function AcademicPrograms({ locale, programs }: { locale: string; programs: ProgramEntity[] }) {
   const t = useTranslations('academicPage');
+  const tGrid = useTranslations('programsSection.programs');
   const href = (url: string) => (locale === 'en' ? url : `/${locale}${url}`);
+
+  const fallbackPrograms = [
+    { slug: 'arabic', title: tGrid('arabic.title'), description: tGrid('arabic.desc'), coverImage: { url: '/images/figma-home/19.png' } },
+    { slug: 'english', title: tGrid('english.title'), description: tGrid('english.desc'), coverImage: { url: '/images/figma-home/03-programs.jpeg' } },
+    { slug: 'dawah', title: tGrid('dawah.title'), description: tGrid('dawah.desc'), coverImage: { url: '/images/figma-home/17.png' } },
+    { slug: 'online', title: tGrid('online.title'), description: tGrid('online.desc'), coverImage: { url: '/images/figma-home/11.png' } },
+  ];
+
+  // Force the fallback programs to show since Strapi CMS is currently not connected
+  // and we want the same exact content as the home page.
+  const displayPrograms = fallbackPrograms as any[];
 
   return (
     <section className="w-full bg-white">
       <div className="mx-auto max-w-[1920px] px-(--spacing-side) py-[clamp(2.5rem,4vw,4.8rem)]">
         {/* 53 between columns and 77 between rows, at 1920 */}
         <div className="grid grid-cols-1 gap-x-[clamp(1rem,2.76vw,3.3125rem)] gap-y-[clamp(1.25rem,4vw,4.8125rem)] md:grid-cols-2">
-          {programs.map((p, idx) => {
+          {displayPrograms.map((p, idx) => {
             // Use coverImage or fallback to default
             const imageUrl = p.coverImage?.url || '/images/figma-home/09.png';
             return (
@@ -137,11 +149,11 @@ export function AcademicPrograms({ locale, programs }: { locale: string; program
                   href={href(`/programs/${p.slug}`)}
                   className="w-full relative"
                 >
-                  <h2 className="mt-[clamp(0.5rem,0.73vw,0.875rem)] font-serif text-[#121C2A] text-[clamp(1rem,1.15vw,1.375rem)]">
+                  <h2 className="mt-[clamp(0.5rem,0.73vw,0.875rem)] font-serif text-[#121C2A] text-[clamp(1rem,1.15vw,1.375rem)] line-clamp-2">
                     {p.title}
                   </h2>
                 </Link>
-                <p className="mt-[clamp(0.375rem,0.52vw,0.625rem)] leading-[1.6] text-[#5A636D] text-[1rem]">
+                <p className="mt-[clamp(0.375rem,0.52vw,0.625rem)] leading-[1.6] text-[#5A636D] text-[1rem] line-clamp-3 2xl:line-clamp-4">
                   {p.description || t(`programsList.${p.slug}.desc`)}
                 </p>
 

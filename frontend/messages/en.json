@@ -221,7 +221,8 @@
     "donations": "Donations",
     "ourCommunity": "Our Community",
     "ourTeam": "Our Team",
-    "joinUs": "Join Us"
+    "joinUs": "Join Us",
+    "loginPortal": "Login / Student Portal"
   },
   "hero": {
     "startApplication": "Start Application",
@@ -1322,7 +1323,8 @@
         "badge": "New Release",
         "desc": "Practical jurisprudence for daily life, with evidence given for every ruling."
       }
-    }
+    },
+    "liveLesson": "Live Lesson"
   },
   "enrollmentModal": {
     "payOnline": "Pay Online",
@@ -1370,5 +1372,10 @@
     "title": "Privacy Policy",
     "lastUpdated": "Last Updated: August 2026",
     "content": "\n<h3>1. Information We Collect</h3>\n<p>We collect personal information that you voluntarily provide to us when you register on the website, express an interest in obtaining information about us or our programs, or otherwise contact us. This includes:</p>\n<ul>\n  <li>Names and contact information (phone numbers, email addresses)</li>\n  <li>Educational history and transcripts</li>\n  <li>Billing and payment information</li>\n</ul>\n<hr/>\n<h3>2. How We Use Your Information</h3>\n<p>We use personal information collected via our website for a variety of business purposes, including:</p>\n<ol>\n  <li>Facilitating the enrollment process.</li>\n  <li>Sending administrative information to you.</li>\n  <li>Responding to your inquiries and support requests.</li>\n</ol>\n<hr/>\n<h3>3. Information Sharing</h3>\n<p>We only share information with your consent, to comply with laws, to provide you with services, to protect your rights, or to fulfill business obligations. We do not sell your personal data to third parties.</p>\n<hr/>\n<h3>4. Data Security</h3>\n<p>We have implemented appropriate technical and organizational security measures designed to protect the security of any personal information we process.</p>\n<hr/>\n<h3>5. Your Privacy Rights</h3>\n<p>You may review, change, or terminate your account at any time. If you have questions or comments about your privacy rights, you may email us at <strong>info@yahayaschool.com</strong>.</p>\n"
+  },
+  "certificateSection": {
+    "title": "Our Certificates",
+    "view": "View",
+    "download": "Download"
   }
 }

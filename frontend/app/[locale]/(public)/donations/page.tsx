@@ -20,7 +20,7 @@ export default async function DonationsPage({ params }: { params: Promise<{ loca
 
   return (
     <main className="min-h-screen bg-white">
-      <DonationHero locale={locale} />
+      <DonationHero />
       <GiveSection />
       <TargetedGiving campaigns={campaigns} />
       <WallOfGratitude />

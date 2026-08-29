@@ -96,10 +96,16 @@ export function OnlineLearning({ locale = 'en' }: { locale?: string }) {
               {t('lede')}
             </p>
 
-            <button type="button" onClick={() => { setSelectedCourse(''); setEnrollOpen(true); }} className={`${joinBtn} mt-[clamp(1.5rem,2.4vw,2.9rem)] cursor-pointer`}>
-              {t('joinEnrollment')}
-              <ArrowRight className="h-3 w-3 rtl:-scale-x-100" />
-            </button>
+            <div className="relative inline-flex mt-[clamp(1.5rem,2.4vw,2.9rem)] group">
+              <a href="#" target="_blank" rel="noopener noreferrer" className={`${joinBtn} !mt-0 relative z-10 shadow-lg hover:shadow-[#048ED6]/40 hover:-translate-y-0.5 transition-all duration-300`}>
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+                </span>
+                <span>{t('liveLesson')}</span>
+                <ArrowRight className="h-3 w-3 rtl:-scale-x-100 group-hover:translate-x-1 transition-transform" />
+              </a>
+            </div>
           </div>
 
           <div className="w-full max-lg:hidden  mt-[-10px] h-[calc(100%+10px)]">
@@ -111,30 +117,8 @@ export function OnlineLearning({ locale = 'en' }: { locale?: string }) {
         </div>
       </section>
 
-      {/* Three ways to learn */}
-      <section className="w-full bg-white">
-        <div className="mx-auto max-w-[1920px] px-(--spacing-side) py-[clamp(2rem,3.1vw,3.75rem)]">
-          <div className="grid grid-cols-1 gap-[clamp(1rem,1.35vw,1.625rem)] md:grid-cols-3">
-            {FEATURES.map(({ icon: Icon }, idx) => (
-              <article key={idx} className="rounded-lg border border-[#EDEFF2] bg-white p-[clamp(1.25rem,1.66vw,2rem)] shadow-sm transition-shadow hover:shadow-md">
-                <span className="grid h-[clamp(2.25rem,2.4vw,2.875rem)] w-[clamp(2.25rem,2.4vw,2.875rem)] place-items-center rounded-lg bg-[#E1EFF6] text-[#048ED6]">
-                  <Icon className="h-[45%] w-[45%]" aria-hidden />
-                </span>
-                <h2 className="mt-[clamp(1rem,1.35vw,1.625rem)] font-serif text-[#121C2A] text-[clamp(1.125rem,1.25vw,1.5rem)]">
-                  {t(`features.${idx}.title`)}
-                </h2>
-                <p className="mt-2 leading-[1.6] text-[#5A636D] text-[1rem]">{t(`features.${idx}.desc`)}</p>
-                <Link href={href('/login')} className="mt-[clamp(1rem,1.35vw,1.625rem)] inline-flex items-center gap-1.5 font-medium text-[#048ED6] transition-opacity hover:opacity-80 text-[clamp(0.6875rem,0.68vw,0.8125rem)]">
-                  {t(`features.${idx}.cta`)} <ArrowRight className="h-3.5 w-3.5 rtl:-scale-x-100" />
-                </Link>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* Course catalogue */}
-      <section className="w-full bg-white">
+      <section className="w-full bg-white  pt-[clamp(2rem,3.1vw,3.75rem)]">
         <div className="mx-auto max-w-[1920px] px-(--spacing-side) pb-[clamp(2.5rem,4vw,4.8rem)]">
           <div className="grid grid-cols-1 gap-[clamp(1rem,2.1vw,2.5rem)] lg:grid-cols-2">
             {COURSES.map((c, idx) => (

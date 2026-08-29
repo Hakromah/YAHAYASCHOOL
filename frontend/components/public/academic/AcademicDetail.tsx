@@ -21,8 +21,18 @@ import { useTranslations, useLocale } from 'next-intl';
 export function ProgramHero({ program }: { program: ProgramEntity }) {
   const locale = useLocale();
   const t = useTranslations('academicDetail.hero');
-  const tp = useTranslations(`academicPage.programsList.${program.slug}`);
+  const tp = useTranslations('academicPage');
   const href = (url: string) => (locale === 'en' ? url : `/${locale}${url}`);
+
+  const getFallback = (key: string, defaultText: string) => {
+    try {
+      // Use fallback if translation is missing (returns raw key)
+      const res = tp(`programsList.${program.slug}.${key}`);
+      return res.includes('programsList.') ? defaultText : res;
+    } catch {
+      return defaultText;
+    }
+  };
 
   return (
     <section className="w-full bg-[#FAFAFA]">
@@ -39,16 +49,16 @@ export function ProgramHero({ program }: { program: ProgramEntity }) {
           {/* 30 tall in the design */}
           <span className="mt-[clamp(1.75rem,3.4vw,4.1rem)] inline-flex h-[clamp(1.5rem,1.56vw,1.875rem)] items-center gap-2 rounded-full bg-[#E1EFF6] px-3 font-semibold uppercase tracking-[0.14em] text-[#048ED6] text-[clamp(0.5625rem,0.57vw,0.6875rem)]">
             <BookOpen className="h-3 w-3" aria-hidden />
-            {tp('eyebrow')}
+            {getFallback('eyebrow', 'Academic Excellence')}
           </span>
 
           <h1 className="mt-[clamp(0.75rem,1.15vw,1.375rem)] font-serif leading-[1.09] max-sm:leading-tight text-[clamp(1.5rem,2.29vw,2.75rem)]">
-            <span className="block text-[#121C2A]">{t('headline_1')}</span>
+            <span className="block text-[#121C2A]">{program.title || getFallback('title', program.slug)}</span>
             <span className="block text-[#048ED6]">{t('headline_2')}</span>
           </h1>
 
           <p className="mt-[clamp(1rem,1.5vw,1.75rem)] max-w-[32rem] leading-[1.6] text-[#5A636D] text-[1rem]">
-            {tp('lede')}
+            {program.description || getFallback('lede', 'Explore our comprehensive program designed to nurture academic excellence and moral character in a supportive environment.')}
           </p>
 
           <div className="mt-[clamp(1.5rem,2.5vw,3rem)] flex flex-wrap items-center gap-[clamp(0.75rem,1vw,1.25rem)]">
@@ -87,7 +97,16 @@ export function ProgramHero({ program }: { program: ProgramEntity }) {
 }
 
 export function ProgramPathway({ program }: { program: ProgramEntity }) {
-  const tp = useTranslations(`academicPage.programsList.${program.slug}`);
+  const tp = useTranslations('academicPage');
+
+  const getFallback = (key: string, defaultText: string) => {
+    try {
+      const res = tp(`programsList.${program.slug}.${key}`);
+      return res.includes('programsList.') ? defaultText : res;
+    } catch {
+      return defaultText;
+    }
+  };
 
   return (
     <section className="w-full bg-white">
@@ -98,11 +117,11 @@ export function ProgramPathway({ program }: { program: ProgramEntity }) {
             <span className="block h-1 w-[clamp(2rem,2.6vw,3.125rem)] rounded bg-[#048ED6]" />
 
             <h2 className="mt-[clamp(0.75rem,1.15vw,1.375rem)] font-serif text-[#121C2A] text-[clamp(1.375rem,1.77vw,2.125rem)]">
-              {tp('pathwayTitle')}
+              {getFallback('pathwayTitle', 'The Learning Pathway')}
             </h2>
 
             <p className="mt-[clamp(0.75rem,1.15vw,1.375rem)] leading-[1.7] text-[#5A636D] text-[1rem]">
-              {tp('pathwayLede')}
+              {getFallback('pathwayLede', 'Our curriculum is structured to guide students step-by-step towards mastery, ensuring deep understanding and practical application.')}
             </p>
 
             <ul className="mt-[clamp(1.25rem,2.08vw,2.5rem)] space-y-[clamp(1rem,1.35vw,1.625rem)]">
@@ -111,10 +130,10 @@ export function ProgramPathway({ program }: { program: ProgramEntity }) {
                   <CheckCircle2 className="mt-[0.2em] h-4 w-4 shrink-0 text-[#048ED6]" aria-hidden />
                   <span className="min-w-0">
                     <span className="block text-[#121C2A] text-[clamp(0.9375rem,1.04vw,1.25rem)]">
-                      {tp(`steps.${idx}.title`)}
+                      {getFallback(`steps.${idx}.title`, `Stage ${idx + 1} Progression`)}
                     </span>
                     <span className="mt-1 block leading-[1.6] text-[#5A636D] text-[clamp(0.6875rem,0.73vw,0.875rem)]">
-                      {tp(`steps.${idx}.desc`)}
+                      {getFallback(`steps.${idx}.desc`, 'Building foundational skills and advancing through structured, interactive learning modules tailored for success.')}
                     </span>
                   </span>
                 </li>
