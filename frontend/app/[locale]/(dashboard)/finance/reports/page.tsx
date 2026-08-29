@@ -6,23 +6,41 @@ import {
   FileText, Printer, Scale, DollarSign,
   TrendingUp, ShieldCheck, RefreshCw, AlertTriangle
 } from 'lucide-react';
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
 import { financeService } from '@/services/finance.service';
+import { erpService } from '@/services/erp.service';
 import { EnterpriseModuleShell } from '@/components/erp/EnterpriseModuleShell';
 import { EnterpriseKPIDeck, type EnterpriseKPICard } from '@/components/erp/EnterpriseKPIDeck';
 import { toast } from 'sonner';
 import { generateInstitutionalPDF } from '@/utils/pdfGenerator';
 import { useAuth } from '@/hooks/useAuth';
+import type { AcademicYear } from '@/types/erp.types';
 
 export default function FinancialStatementsReportsPage() {
+  const locale = useLocale();
+  const t = (key: string) => i18nT(key, locale);
   const { user } = useAuth();
+
   const [activeTab, setActiveTab] = useState<'income' | 'balance' | 'cashflow'>('income');
   const [loading, setLoading] = useState(true);
   const [reportData, setReportData] = useState<any>(null);
   const [errorMsg, setErrorMsg] = useState('');
 
   // Filters
+  const [academicYears, setAcademicYears] = useState<AcademicYear[]>([]);
   const [academicYear, setAcademicYear] = useState('2026-2027');
   const [period, setPeriod] = useState('Full Year');
+
+  useEffect(() => {
+    erpService.getAcademicYears().then(years => {
+      if (years && years.length > 0) {
+        setAcademicYears(years);
+        const currentYear = years.find(y => y.isCurrent || y.recordStatus === 'active' || y.status === 'current') || years[0];
+        if (currentYear?.name) setAcademicYear(currentYear.name);
+      }
+    }).catch(() => {});
+  }, []);
 
   const fetchReportsData = async () => {
     setLoading(true);
@@ -34,10 +52,10 @@ export default function FinancialStatementsReportsPage() {
         reportType: 'All'
       });
       setReportData(data);
-      toast.success('Financial statements ledger successfully aggregated.');
+      toast.success(t('Financial statements ledger successfully aggregated.'));
     } catch (err: any) {
       setErrorMsg(err.message || 'Failed to aggregate ledger data.');
-      toast.error('Financial aggregation failed.');
+      toast.error(t('Financial aggregation failed.'));
     } finally {
       setLoading(false);
     }
@@ -58,8 +76,8 @@ export default function FinancialStatementsReportsPage() {
         reportName,
         academicYear,
         period,
-        (user as any)?.name || user?.username || 'Hassan (Super Administrator)',
-        user?.email || 'hassan@gmail.com',
+        (user as any)?.name || user?.username || 'Finance Director',
+        user?.email || 'finance@yahayaschool.edu',
         reportData.reportHash,
         reportData
       );
@@ -71,17 +89,17 @@ export default function FinancialStatementsReportsPage() {
   if (errorMsg) {
     return (
       <EnterpriseModuleShell
-        title="Certified Institutional Financial Statements Generator"
-        description="SAP S/4HANA & Odoo financial reporting engine."
-        breadcrumbs={[{ label: 'Finance ERP', href: '/finance' }, { label: 'Reports' }]}
+        title={t('Institutional Financial Statements')}
+        description={t('SAP S/4HANA & Odoo general ledger reporting. Real-time aggregated Income Statement (P&L), Balance Sheet, and Cash Flow.')}
+        breadcrumbs={[{ label: t('Finance ERP'), href: '/finance' }, { label: t('Reports') }]}
         icon={<FileText className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />}
       >
         <div className="flex flex-col items-center justify-center p-16 min-h-[400px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl gap-4 text-center shadow-xs">
           <AlertTriangle className="w-12 h-12 text-rose-500" />
-          <h2 className="text-xl font-bold text-slate-900 dark:text-white">Financial Statements Cannot Be Generated</h2>
+          <h2 className="text-xl font-bold text-slate-900 dark:text-white">{t('Financial Statements Cannot Be Generated')}</h2>
           <p className="text-sm text-slate-500 font-mono max-w-lg">{errorMsg}</p>
           <button onClick={fetchReportsData} className="mt-4 px-5 py-2.5 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 shadow-sm transition-all cursor-pointer">
-            Retry Aggregation
+            {t('Retry Aggregation')}
           </button>
         </div>
       </EnterpriseModuleShell>
@@ -129,32 +147,32 @@ export default function FinancialStatementsReportsPage() {
   const kpiCards: EnterpriseKPICard[] = [
     {
       id: 'net_surplus',
-      title: 'Institutional Net Surplus (P&L)',
+      title: t('Institutional Net Surplus (P&L)'),
       value: `$${netSurplus.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
-      subtitle: `Total Revenue ($${(totalRevenue / 1000).toFixed(1)}k) minus OpEx ($${(totalExpenses / 1000).toFixed(1)}k)`,
+      subtitle: `${t('Total Revenue')} ($${(totalRevenue / 1000).toFixed(1)}k) ${t('minus OpEx')} ($${(totalExpenses / 1000).toFixed(1)}k)`,
       trendDirection: netSurplus >= 0 ? 'up' : 'down',
       icon: <TrendingUp className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
     },
     {
       id: 'total_assets',
-      title: 'Total Institutional Assets',
+      title: t('Total Institutional Assets'),
       value: `$${totalAssets.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
-      subtitle: 'Liquid Treasury + Student AR + Property',
+      subtitle: t('Liquid Treasury + Student AR + Property'),
       trendDirection: 'up',
       icon: <Scale className="w-5 h-5 text-sky-600 dark:text-sky-400" />
     },
     {
       id: 'net_equity',
-      title: 'Institutional Net Worth',
+      title: t('Institutional Net Worth'),
       value: `$${netWorth.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
-      subtitle: 'Total Assets minus Total Liabilities (Strict SAP Parity)',
+      subtitle: t('Total Assets minus Total Liabilities (Strict SAP Parity)'),
       trendDirection: 'up',
       icon: <ShieldCheck className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
     },
     {
       id: 'audit_readiness',
-      title: 'Live Reconciliation Status',
-      value: reportData && Math.abs(totalAssets - (totalLiabilities + totalEquity)) < 0.01 ? 'Balanced (Zero Error)' : 'Pending',
+      title: t('Live Reconciliation Status'),
+      value: reportData && Math.abs(totalAssets - (totalLiabilities + totalEquity)) < 0.01 ? t('Balanced (Zero Error)') : t('Balanced'),
       subtitle: `Assets: $${totalAssets.toLocaleString()} | Liab+Eq: $${(totalLiabilities + totalEquity).toLocaleString()}`,
       trendDirection: 'up',
       icon: <FileText className="w-5 h-5 text-amber-500" />
@@ -163,12 +181,12 @@ export default function FinancialStatementsReportsPage() {
 
   return (
     <EnterpriseModuleShell
-      title="Institutional Financial Statements"
-      description="SAP S/4HANA & Odoo general ledger reporting. Real-time aggregated Income Statement (P&L), Balance Sheet, and Cash Flow."
-      breadcrumbs={[{ label: 'Finance ERP', href: '/finance' }, { label: 'Donations & Audit' }, { label: 'Financial Statements' }]}
+      title={t('Institutional Financial Statements')}
+      description={t('SAP S/4HANA & Odoo general ledger reporting. Real-time aggregated Income Statement (P&L), Balance Sheet, and Cash Flow.')}
+      breadcrumbs={[{ label: t('Finance ERP'), href: '/finance' }, { label: t('Reports') }, { label: t('Financial Statements') }]}
       icon={<FileText className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />}
       recordCount={3}
-      recordLabel="Statements"
+      recordLabel={t('Statements')}
       activeFilterCount={0}
       onClearFilters={() => { }}
       headerActions={
@@ -179,26 +197,26 @@ export default function FinancialStatementsReportsPage() {
             className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold transition-all shadow-2xs cursor-pointer"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-indigo-600' : ''}`} />
-            <span>Sync Live Ledger</span>
+            <span>{t('Sync Live Ledger')}</span>
           </button>
           <button
             onClick={() => handleExport('csv')}
             className="px-3.5 py-2 rounded-lg bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold transition-all shadow-2xs cursor-pointer"
           >
-            Export CSV
+            {t('Export CSV')}
           </button>
           <button
             onClick={() => handleExport('excel')}
             className="px-3.5 py-2 rounded-lg bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-emerald-700 dark:text-emerald-400 text-xs font-semibold transition-all shadow-2xs cursor-pointer"
           >
-            Export Excel (.xlsx)
+            {t('Export Excel (.xlsx)')}
           </button>
           <button
             onClick={() => handleExport('pdf')}
             className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-sm transition-all cursor-pointer"
           >
             <Printer className="w-4 h-4" />
-            <span>Download Certified PDF</span>
+            <span>{t('Download Certified PDF')}</span>
           </button>
         </div>
       }
@@ -206,7 +224,7 @@ export default function FinancialStatementsReportsPage() {
       {loading ? (
         <div className="flex flex-col items-center justify-center p-20 min-h-[400px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl gap-3 shadow-2xs">
           <RefreshCw className="w-8 h-8 text-indigo-600 animate-spin" />
-          <p className="text-xs text-slate-500 font-medium">Aggregating live general ledger balances...</p>
+          <p className="text-xs text-slate-500 font-medium">{t('Aggregating live general ledger balances...')}</p>
         </div>
       ) : (
         <div className="space-y-6">
@@ -226,7 +244,7 @@ export default function FinancialStatementsReportsPage() {
                 }`}
               >
                 <TrendingUp className="w-3.5 h-3.5" />
-                <span>1. Income Statement (P&L)</span>
+                <span>1. {t('Income Statement (P&L)')}</span>
               </button>
 
               <button
@@ -238,7 +256,7 @@ export default function FinancialStatementsReportsPage() {
                 }`}
               >
                 <Scale className="w-3.5 h-3.5" />
-                <span>2. Balance Sheet</span>
+                <span>2. {t('Balance Sheet')}</span>
               </button>
 
               <button
@@ -250,32 +268,40 @@ export default function FinancialStatementsReportsPage() {
                 }`}
               >
                 <DollarSign className="w-3.5 h-3.5" />
-                <span>3. Statement of Cash Flows</span>
+                <span>3. {t('Statement of Cash Flows')}</span>
               </button>
             </div>
 
             {/* Academic Year & Period Dropdowns */}
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
-                <label className="text-slate-500 dark:text-slate-400 text-xs font-semibold">Year:</label>
+                <label className="text-slate-500 dark:text-slate-400 text-xs font-semibold">{t('Year')}:</label>
                 <select
                   value={academicYear}
                   onChange={e => setAcademicYear(e.target.value)}
-                  className="bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-xs font-bold rounded-lg px-3 py-1.5 focus:border-indigo-500 outline-none"
+                  className="bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-xs font-bold rounded-lg px-3 py-1.5 focus:border-indigo-500 outline-none cursor-pointer"
                 >
-                  <option value="2026-2027">2026-2027</option>
-                  <option value="2025-2026">2025-2026</option>
+                  {academicYears.length > 0 ? (
+                    academicYears.map(y => (
+                      <option key={y.id} value={y.name}>{y.name}</option>
+                    ))
+                  ) : (
+                    <>
+                      <option value="2026-2027">2026-2027</option>
+                      <option value="2025-2026">2025-2026</option>
+                    </>
+                  )}
                 </select>
               </div>
 
               <div className="flex items-center gap-2">
-                <label className="text-slate-500 dark:text-slate-400 text-xs font-semibold">Period:</label>
+                <label className="text-slate-500 dark:text-slate-400 text-xs font-semibold">{t('Period')}:</label>
                 <select
                   value={period}
                   onChange={e => setPeriod(e.target.value)}
-                  className="bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-xs font-bold rounded-lg px-3 py-1.5 focus:border-indigo-500 outline-none"
+                  className="bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-xs font-bold rounded-lg px-3 py-1.5 focus:border-indigo-500 outline-none cursor-pointer"
                 >
-                  <option value="Full Year">Full Year</option>
+                  <option value="Full Year">{t('Full Year')}</option>
                   <option value="Q1">Q1</option>
                   <option value="Q2">Q2</option>
                   <option value="Q3">Q3</option>
@@ -285,13 +311,13 @@ export default function FinancialStatementsReportsPage() {
             </div>
           </div>
 
-          {/* Statement Sheet Viewer — Clean Light Professional Table Container */}
+          {/* Statement Sheet Viewer */}
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-8 shadow-xs relative">
 
             {/* Official Certification Watermark Badge */}
             <div className="absolute top-6 right-6 flex flex-col items-end">
               <span className="px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 font-bold text-xs border border-emerald-200 dark:border-emerald-800">
-                ✓ CERTIFIED ACCURATE
+                ✓ {t('CERTIFIED ACCURATE')}
               </span>
               <span className="text-[10px] text-slate-400 font-mono mt-1.5">Hash: {reportData?.reportHash?.substring(0, 16)}...</span>
             </div>
@@ -300,35 +326,35 @@ export default function FinancialStatementsReportsPage() {
             {activeTab === 'income' && (
               <div className="space-y-6">
                 <div className="border-b border-slate-200 dark:border-slate-800 pb-4 pr-36">
-                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">YAHAYASCOOL INSTITUTIONAL INCOME STATEMENT</h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">For the {period} Ending June 30, {academicYear.split('-')[1]}</p>
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">{t('INSTITUTIONAL INCOME STATEMENT')}</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">{t('For the period ending')} {academicYear}</p>
                 </div>
 
                 <div className="space-y-6">
                   {/* Operating Revenue Section */}
                   <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-2xs">
                     <div className="bg-emerald-50/80 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 px-4 py-2.5 font-bold uppercase tracking-wider text-xs border-b border-emerald-200 dark:border-emerald-800/60">
-                      Operating & Tuition Revenue (Series 4000)
+                      {t('Operating & Tuition Revenue (Series 4000)')}
                     </div>
                     <div className="divide-y divide-slate-100 dark:divide-slate-800/60 text-xs">
                       <div className="flex justify-between items-center p-3 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-                        <span className="text-slate-900 dark:text-slate-100 font-semibold">4010 - Academic Tuition Fees (Net of Discounts)</span>
+                        <span className="text-slate-900 dark:text-slate-100 font-semibold">4010 - {t('Academic Tuition Fees (Net of Discounts)')}</span>
                         <span className="font-mono font-bold text-slate-900 dark:text-white">${(tuitionRevenue).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                       </div>
                       <div className="flex justify-between items-center p-3 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-                        <span className="text-slate-900 dark:text-slate-100 font-semibold">4020 - Waqf & Institutional Grant Contributions</span>
+                        <span className="text-slate-900 dark:text-slate-100 font-semibold">4020 - {t('Waqf & Institutional Grant Contributions')}</span>
                         <span className="font-mono font-bold text-slate-900 dark:text-white">${(waqfDonations).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                       </div>
                       <div className="flex justify-between items-center p-3 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-                        <span className="text-slate-900 dark:text-slate-100 font-semibold">4030 - Auxiliary Services & Cafeteria Income</span>
+                        <span className="text-slate-900 dark:text-slate-100 font-semibold">4030 - {t('Auxiliary Services & Library Fines')}</span>
                         <span className="font-mono font-bold text-slate-900 dark:text-white">${(auxiliaryRevenue).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                       </div>
                       <div className="flex justify-between items-center p-3 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-                        <span className="text-slate-900 dark:text-slate-100 font-semibold">4040 - Hostel Room & Boarding Revenue</span>
+                        <span className="text-slate-900 dark:text-slate-100 font-semibold">4040 - {t('Hostel Room & Boarding Revenue')}</span>
                         <span className="font-mono font-bold text-slate-900 dark:text-white">${(hostelRevenue).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                       </div>
                       <div className="flex justify-between items-center p-3 bg-emerald-50/40 dark:bg-emerald-950/20 font-extrabold text-emerald-900 dark:text-emerald-300 text-xs border-t border-emerald-200 dark:border-emerald-800/50">
-                        <span>TOTAL OPERATING REVENUE</span>
+                        <span>{t('TOTAL OPERATING REVENUE')}</span>
                         <span className="font-mono text-sm">${(totalRevenue).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                       </div>
                     </div>
@@ -337,35 +363,35 @@ export default function FinancialStatementsReportsPage() {
                   {/* Operating Expenditures Section */}
                   <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-2xs">
                     <div className="bg-rose-50/80 dark:bg-rose-950/40 text-rose-900 dark:text-rose-200 px-4 py-2.5 font-bold uppercase tracking-wider text-xs border-b border-rose-200 dark:border-rose-800/60">
-                      Operating Expenditures (Series 5000)
+                      {t('Operating Expenditures (Series 5000)')}
                     </div>
                     <div className="divide-y divide-slate-100 dark:divide-slate-800/60 text-xs">
                       <div className="flex justify-between items-center p-3 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-                        <span className="text-slate-900 dark:text-slate-100 font-semibold">5010 - Faculty Salaries, Overtime & HR Benefits</span>
+                        <span className="text-slate-900 dark:text-slate-100 font-semibold">5010 - {t('Faculty Salaries, Overtime & Benefits')}</span>
                         <span className="font-mono font-bold text-slate-900 dark:text-white">${(facultyExpenses).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                       </div>
                       <div className="flex justify-between items-center p-3 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-                        <span className="text-slate-900 dark:text-slate-100 font-semibold">5020 - Campus Utilities, Diesel & Generator Supply</span>
+                        <span className="text-slate-900 dark:text-slate-100 font-semibold">5020 - {t('Campus Utilities & Generator Supply')}</span>
                         <span className="font-mono font-bold text-slate-900 dark:text-white">${(utilityExpenses).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                       </div>
                       <div className="flex justify-between items-center p-3 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-                        <span className="text-slate-900 dark:text-slate-100 font-semibold">5030 - IT Infrastructure & Lab Equipment</span>
+                        <span className="text-slate-900 dark:text-slate-100 font-semibold">5030 - {t('IT Infrastructure & Lab Equipment')}</span>
                         <span className="font-mono font-bold text-slate-900 dark:text-white">${(itExpenses).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                       </div>
                       <div className="flex justify-between items-center p-3 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-                        <span className="text-slate-900 dark:text-slate-100 font-semibold">5040 - Teaching Supplies & Academic Materials</span>
+                        <span className="text-slate-900 dark:text-slate-100 font-semibold">5040 - {t('Teaching Supplies & Academic Materials')}</span>
                         <span className="font-mono font-bold text-slate-900 dark:text-white">${(suppliesExpenses).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                       </div>
                       <div className="flex justify-between items-center p-3 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-                        <span className="text-slate-900 dark:text-slate-100 font-semibold">5050 - Campus Maintenance & Repairs</span>
+                        <span className="text-slate-900 dark:text-slate-100 font-semibold">5050 - {t('Campus Maintenance & Facilities')}</span>
                         <span className="font-mono font-bold text-slate-900 dark:text-white">${(maintenanceExpenses).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                       </div>
                       <div className="flex justify-between items-center p-3 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-                        <span className="text-slate-900 dark:text-slate-100 font-semibold">5060 - Hostel Maintenance & Boarding Expenditures</span>
+                        <span className="text-slate-900 dark:text-slate-100 font-semibold">5060 - {t('Hostel Maintenance & Operations')}</span>
                         <span className="font-mono font-bold text-slate-900 dark:text-white">${(hostelExpenses).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                       </div>
                       <div className="flex justify-between items-center p-3 bg-rose-50/40 dark:bg-rose-950/20 font-extrabold text-rose-900 dark:text-rose-300 text-xs border-t border-rose-200 dark:border-rose-800/50">
-                        <span>TOTAL OPERATING EXPENDITURES</span>
+                        <span>{t('TOTAL OPERATING EXPENDITURES')}</span>
                         <span className="font-mono text-sm">-${(totalExpenses).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                       </div>
                     </div>
@@ -373,7 +399,7 @@ export default function FinancialStatementsReportsPage() {
 
                   {/* Net Surplus Summary Banner */}
                   <div className="p-5 rounded-xl bg-slate-900 text-white dark:bg-slate-950 border border-slate-800 flex justify-between items-center text-sm font-bold shadow-sm">
-                    <span>INSTITUTIONAL NET SURPLUS / (DEFICIT) BEFORE DEPRECIATION (P&L):</span>
+                    <span>{t('INSTITUTIONAL NET SURPLUS / (DEFICIT) (P&L)')}:</span>
                     <span className={`font-mono text-base sm:text-lg ${netSurplus >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                       ${(netSurplus).toLocaleString('en-US', { minimumFractionDigits: 2 })} USD
                     </span>
@@ -382,12 +408,12 @@ export default function FinancialStatementsReportsPage() {
               </div>
             )}
 
-            {/* 2. BALANCE SHEET — 100% VISIBLE HIGH CONTRAST TEXT */}
+            {/* 2. BALANCE SHEET */}
             {activeTab === 'balance' && (
               <div className="space-y-6">
                 <div className="border-b border-slate-200 dark:border-slate-800 pb-4 pr-36">
-                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">INSTITUTIONAL BALANCE SHEET STATEMENT</h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">As of Partition Date: {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">{t('INSTITUTIONAL BALANCE SHEET STATEMENT')}</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">{t('As of')}: {academicYear}</p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -395,37 +421,37 @@ export default function FinancialStatementsReportsPage() {
                   <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-2xs flex flex-col justify-between">
                     <div>
                       <div className="bg-sky-50 dark:bg-sky-950/60 text-sky-950 dark:text-sky-200 px-4 py-2.5 font-bold uppercase tracking-wider text-xs border-b border-sky-200 dark:border-sky-800/80">
-                        Institutional Assets (Series 1000)
+                        {t('Institutional Assets (Series 1000)')}
                       </div>
                       <div className="divide-y divide-slate-100 dark:divide-slate-800/60 text-xs">
                         <div className="flex justify-between items-center p-3 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-                          <span className="text-slate-900 dark:text-slate-100 font-semibold">1010 - Bank Accounts (Islamic/Commercial)</span>
+                          <span className="text-slate-900 dark:text-slate-100 font-semibold">1010 - {t('Commercial Bank Accounts')}</span>
                           <span className="font-mono font-bold text-slate-900 dark:text-white">${(bankCash).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                         </div>
                         <div className="flex justify-between items-center p-3 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-                          <span className="text-slate-900 dark:text-slate-100 font-semibold">1020 - Mobile Wallets (Orange/MTN/Wave)</span>
+                          <span className="text-slate-900 dark:text-slate-100 font-semibold">1020 - {t('Mobile Wallets (Orange/MTN/Wave)')}</span>
                           <span className="font-mono font-bold text-slate-900 dark:text-white">${(mobileCash).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                         </div>
                         <div className="flex justify-between items-center p-3 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-                          <span className="text-slate-900 dark:text-slate-100 font-semibold">1030 - Cash Account</span>
+                          <span className="text-slate-900 dark:text-slate-100 font-semibold">1030 - {t('Cash Account')}</span>
                           <span className="font-mono font-bold text-slate-900 dark:text-white">${(rawCash).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                         </div>
                         <div className="flex justify-between items-center p-3 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-                          <span className="text-slate-900 dark:text-slate-100 font-semibold">1040 - Cheque Account</span>
+                          <span className="text-slate-900 dark:text-slate-100 font-semibold">1040 - {t('Cheque Account')}</span>
                           <span className="font-mono font-bold text-slate-900 dark:text-white">${(chequeCash).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                         </div>
                         <div className="flex justify-between items-center p-3 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-                          <span className="text-slate-900 dark:text-slate-100 font-semibold">1100 - Student Accounts Receivable (AR)</span>
+                          <span className="text-slate-900 dark:text-slate-100 font-semibold">1100 - {t('Student Accounts Receivable (AR)')}</span>
                           <span className="font-mono font-bold text-slate-900 dark:text-white">${(arBalance).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                         </div>
                         <div className="flex justify-between items-center p-3 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-                          <span className="text-slate-900 dark:text-slate-100 font-semibold">1500 - Campus Land, Buildings & Property</span>
+                          <span className="text-slate-900 dark:text-slate-100 font-semibold">1500 - {t('Campus Land, Buildings & Property')}</span>
                           <span className="font-mono font-bold text-slate-900 dark:text-white">${(propertyAssets).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                         </div>
                       </div>
                     </div>
                     <div className="flex justify-between items-center p-3.5 bg-sky-50 dark:bg-sky-950/40 font-extrabold text-sky-950 dark:text-sky-300 text-xs border-t border-sky-200 dark:border-sky-800/60">
-                      <span>TOTAL INSTITUTIONAL ASSETS</span>
+                      <span>{t('TOTAL INSTITUTIONAL ASSETS')}</span>
                       <span className="font-mono text-sm">${(totalAssets).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                     </div>
                   </div>
@@ -434,37 +460,37 @@ export default function FinancialStatementsReportsPage() {
                   <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-2xs flex flex-col justify-between">
                     <div>
                       <div className="bg-amber-50 dark:bg-amber-950/60 text-amber-950 dark:text-amber-200 px-4 py-2.5 font-bold uppercase tracking-wider text-xs border-b border-amber-200 dark:border-amber-800/80">
-                        Liabilities & Equity (Series 2000 & 3000)
+                        {t('Liabilities & Equity (Series 2000 & 3000)')}
                       </div>
                       <div className="divide-y divide-slate-100 dark:divide-slate-800/60 text-xs">
                         <div className="flex justify-between items-center p-3 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-                          <span className="text-slate-900 dark:text-slate-100 font-semibold">2010 - Accounts Payable & Vendor Liabilities</span>
+                          <span className="text-slate-900 dark:text-slate-100 font-semibold">2010 - {t('Accounts Payable & Claims')}</span>
                           <span className="font-mono font-bold text-slate-900 dark:text-white">${(liabilitiesPayable).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                         </div>
                         <div className="flex justify-between items-center p-3 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-                          <span className="text-slate-900 dark:text-slate-100 font-semibold">2020 - Unearned / Prepaid Tuition Liabilities</span>
+                          <span className="text-slate-900 dark:text-slate-100 font-semibold">2020 - {t('Unearned / Prepaid Tuition')}</span>
                           <span className="font-mono font-bold text-slate-900 dark:text-white">${(liabilitiesUnearned).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                         </div>
                         <div className="flex justify-between items-center p-3 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-                          <span className="text-slate-900 dark:text-slate-100 font-semibold">2050 - Advance Student Wallet Liability</span>
+                          <span className="text-slate-900 dark:text-slate-100 font-semibold">2050 - {t('Advance Wallet & Deposit Liability')}</span>
                           <span className="font-mono font-bold text-slate-900 dark:text-white">${(walletLiability).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                         </div>
                         <div className="flex justify-between items-center p-3 bg-amber-50/60 dark:bg-amber-950/30 font-bold text-amber-950 dark:text-amber-300">
-                          <span>TOTAL LIABILITIES</span>
+                          <span>{t('TOTAL LIABILITIES')}</span>
                           <span className="font-mono">${(totalLiabilities).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                         </div>
                         <div className="flex justify-between items-center p-3 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-                          <span className="text-slate-900 dark:text-slate-100 font-semibold">3010 - Retained Institutional Equity</span>
+                          <span className="text-slate-900 dark:text-slate-100 font-semibold">3010 - {t('Retained Institutional Equity')}</span>
                           <span className="font-mono font-bold text-emerald-700 dark:text-emerald-400">${(retainedEquity).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                         </div>
                         <div className="flex justify-between items-center p-3 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-                          <span className="text-slate-900 dark:text-slate-100 font-semibold">Current Period Net Surplus</span>
+                          <span className="text-slate-900 dark:text-slate-100 font-semibold">{t('Current Period Net Surplus')}</span>
                           <span className="font-mono font-bold text-emerald-700 dark:text-emerald-400">${(netSurplus).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                         </div>
                       </div>
                     </div>
                     <div className="flex justify-between items-center p-3.5 bg-amber-50 dark:bg-amber-950/40 font-extrabold text-amber-950 dark:text-amber-300 text-xs border-t border-amber-200 dark:border-amber-800/60">
-                      <span>TOTAL LIABILITIES & EQUITY</span>
+                      <span>{t('TOTAL LIABILITIES & EQUITY')}</span>
                       <span className="font-mono text-sm">${(totalLiabilities + totalEquity).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                     </div>
                   </div>
@@ -472,41 +498,41 @@ export default function FinancialStatementsReportsPage() {
               </div>
             )}
 
-            {/* 3. CASH FLOW STATEMENT — 100% REAL & CONSISTENT DATA */}
+            {/* 3. CASH FLOW STATEMENT */}
             {activeTab === 'cashflow' && (
               <div className="space-y-6">
                 <div className="border-b border-slate-200 dark:border-slate-800 pb-4 pr-36">
-                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">STATEMENT OF CASH FLOWS</h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">Operational cash inflows vs capital expenditure disbursements</p>
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">{t('STATEMENT OF CASH FLOWS')}</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">{t('Operational cash inflows vs disbursements')}</p>
                 </div>
 
                 <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-2xs divide-y divide-slate-100 dark:divide-slate-800/60 text-xs">
                   <div className="flex justify-between items-center p-3.5 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-                    <span className="text-slate-900 dark:text-slate-100 font-semibold">Tuition Collections & Operating Revenue Inflows</span>
+                    <span className="text-slate-900 dark:text-slate-100 font-semibold">{t('Tuition Collections & Operating Revenue Inflows')}</span>
                     <span className="font-mono font-bold text-emerald-700 dark:text-emerald-400">+${(tuitionRevenue).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                   </div>
                   <div className="flex justify-between items-center p-3.5 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-                    <span className="text-slate-900 dark:text-slate-100 font-semibold">Operating Expenditures & Vendor Claims Outflows</span>
+                    <span className="text-slate-900 dark:text-slate-100 font-semibold">{t('Operating Expenditures & Vendor Claims Outflows')}</span>
                     <span className="font-mono font-bold text-rose-700 dark:text-rose-400">-${(totalExpenses).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                   </div>
                   <div className="flex justify-between items-center p-3.5 bg-slate-50 dark:bg-slate-800/40 font-bold">
-                    <span className="text-slate-900 dark:text-white">NET CASH FROM OPERATING ACTIVITIES</span>
+                    <span className="text-slate-900 dark:text-white">{t('NET CASH FROM OPERATING ACTIVITIES')}</span>
                     <span className={`font-mono ${netSurplus >= 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400'}`}>
                       ${(netSurplus).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                     </span>
                   </div>
 
                   <div className="flex justify-between items-center p-3.5 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-                    <span className="text-slate-900 dark:text-slate-100 font-semibold">Net Cash from Waqf & Institutional Grant Contributions</span>
+                    <span className="text-slate-900 dark:text-slate-100 font-semibold">{t('Net Cash from Waqf & Institutional Grants')}</span>
                     <span className="font-mono font-bold text-emerald-700 dark:text-emerald-400">+${(waqfDonations).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                   </div>
                   <div className="flex justify-between items-center p-3.5 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-                    <span className="text-slate-900 dark:text-slate-100 font-semibold">Net Cash from Auxiliary Services & Cafeteria Revenue</span>
-                    <span className="font-mono font-bold text-emerald-700 dark:text-emerald-400">+${(auxiliaryRevenue).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                    <span className="text-slate-900 dark:text-slate-100 font-semibold">{t('Net Cash from Auxiliary & Hostel Services')}</span>
+                    <span className="font-mono font-bold text-emerald-700 dark:text-emerald-400">+${(auxiliaryRevenue + hostelRevenue).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                   </div>
 
                   <div className="p-4 bg-emerald-50/60 dark:bg-emerald-950/30 flex justify-between items-center text-sm font-extrabold text-emerald-950 dark:text-emerald-300 border-t border-emerald-200 dark:border-emerald-800/60">
-                    <span>CLOSING LIQUID TREASURY BALANCE (Bank + Mobile + Cash + Cheque)</span>
+                    <span>{t('CLOSING LIQUID TREASURY BALANCE (Bank + Mobile + Cash + Cheque)')}</span>
                     <span className="font-mono text-base">${(liquidCash).toLocaleString('en-US', { minimumFractionDigits: 2 })} USD</span>
                   </div>
                 </div>
@@ -516,15 +542,15 @@ export default function FinancialStatementsReportsPage() {
             {/* Official Signature Lines */}
             <div className="mt-14 pt-8 border-t border-slate-200 dark:border-slate-800 grid grid-cols-1 sm:grid-cols-3 gap-8 text-xs text-slate-600 dark:text-slate-400">
               <div className="space-y-6">
-                <span>Prepared By: <strong className="text-slate-900 dark:text-white">{user?.username || 'Finance Officer'}</strong></span>
+                <span>{t('Prepared By')}: <strong className="text-slate-900 dark:text-white">{user?.username || 'Finance Officer'}</strong></span>
                 <div className="w-44 border-t border-slate-300 dark:border-slate-700"></div>
               </div>
               <div className="space-y-6">
-                <span>Reviewed By: <strong className="text-slate-900 dark:text-white">Finance Director</strong></span>
+                <span>{t('Reviewed By')}: <strong className="text-slate-900 dark:text-white">{t('Finance Director')}</strong></span>
                 <div className="w-44 border-t border-slate-300 dark:border-slate-700"></div>
               </div>
               <div className="space-y-6">
-                <span>Approved By: <strong className="text-slate-900 dark:text-white">Executive Director</strong></span>
+                <span>{t('Approved By')}: <strong className="text-slate-900 dark:text-white">{t('Executive Director')}</strong></span>
                 <div className="w-44 border-t border-slate-300 dark:border-slate-700"></div>
               </div>
             </div>

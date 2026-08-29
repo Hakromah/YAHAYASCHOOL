@@ -85,6 +85,7 @@ export interface AcademicYear {
   startDate: string;
   endDate: string;
   recordStatus: 'planned' | 'active' | 'completed';
+  status?: string;
   isCurrent: boolean;
   terms?: AcademicTerm[];
   sections?: Section[];
@@ -101,6 +102,7 @@ export interface Section {
   gradeLevel?: string;
   roomNumber?: string;
   homeroomTeacher?: any;
+  academicHead?: any;
   description?: string;
   active: boolean;
   department?: any;
@@ -224,6 +226,7 @@ export interface Student {
   staffNotes?: StaffNote[];
   documents?: StrapiMedia[];
   advanceBalance?: number;
+  gradeLevel?: string;
   user?: any;
   enrollments?: any[];
 }

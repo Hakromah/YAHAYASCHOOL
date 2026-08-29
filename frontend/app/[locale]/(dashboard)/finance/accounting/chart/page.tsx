@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -7,6 +8,8 @@ import {
   Clock, DollarSign, FileText, Receipt, Landmark, Layers,
   FolderOpen, Folder, ArrowRight, Sparkles, Building2, ChevronRight
 } from 'lucide-react';
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
 import { financeService } from '@/services/finance.service';
 import type { ChartOfAccount, AccountType } from '@/types/finance.types';
 import { EnterpriseModuleShell } from '@/components/erp/EnterpriseModuleShell';
@@ -18,6 +21,9 @@ import { StatusBadge } from '@/components/erp/StatusBadge';
 import { toast } from 'sonner';
 
 export default function ChartOfAccountsPage() {
+  const locale = useLocale();
+  const t = (key: string) => i18nT(key, locale);
+
   const [accounts, setAccounts] = useState<ChartOfAccount[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
@@ -27,10 +33,9 @@ export default function ChartOfAccountsPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
 
   // New Account form state
-  const [code, setCode] = useState('1040');
-  const [name, setName] = useState('Petty Cash - Quran Department');
+  const [code, setCode] = useState('');
+  const [name, setName] = useState('');
   const [type, setType] = useState<AccountType>('Asset');
-  const [normalBalance, setNormalBalance] = useState<'debit' | 'credit'>('debit');
 
   const loadData = async () => {
     setLoading(true);
@@ -38,7 +43,7 @@ export default function ChartOfAccountsPage() {
       const data = await financeService.getChartOfAccounts();
       setAccounts(data);
     } catch {
-      toast.error('Failed to load Chart of Accounts.');
+      toast.error(t('Failed to load Chart of Accounts.'));
     } finally {
       setLoading(false);
     }
@@ -62,6 +67,10 @@ export default function ChartOfAccountsPage() {
 
   const handleCreateAccount = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!code.trim() || !name.trim()) {
+      toast.error(t('Account code and name are required.'));
+      return;
+    }
     const created: ChartOfAccount = {
       id: `COA-${Date.now()}`,
       accountCode: code,
@@ -73,7 +82,9 @@ export default function ChartOfAccountsPage() {
       isActive: true
     };
     setAccounts([created, ...accounts]);
-    toast.success(`Created General Ledger account: ${code} - ${name}`);
+    toast.success(`${t('Created General Ledger account')}: ${code} - ${name}`);
+    setCode('');
+    setName('');
     setShowCreateModal(false);
   };
 
@@ -85,9 +96,9 @@ export default function ChartOfAccountsPage() {
   const kpiCards: EnterpriseKPICard[] = [
     {
       id: 'assets',
-      title: 'Total Assets (Series 1000)',
+      title: t('Total Assets (Series 1000)'),
       value: `$${totalAssets.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
-      subtitle: 'Bank accounts, mobile wallets, cash & AR balances',
+      subtitle: t('Bank accounts, mobile wallets, cash & AR balances'),
       trendDirection: 'up',
       icon: <Landmark className="w-5 h-5 text-emerald-400" />,
       isActive: typeFilter === 'Asset',
@@ -95,9 +106,9 @@ export default function ChartOfAccountsPage() {
     },
     {
       id: 'liabilities',
-      title: 'Total Liabilities (Series 2000)',
+      title: t('Total Liabilities (Series 2000)'),
       value: `$${totalLiabilities.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
-      subtitle: 'Vendor payables, accrued salaries & prepaid tuition',
+      subtitle: t('Vendor payables, claims & prepaid tuition'),
       trendDirection: 'neutral',
       icon: <FileText className="w-5 h-5 text-amber-400" />,
       isActive: typeFilter === 'Liability',
@@ -105,9 +116,9 @@ export default function ChartOfAccountsPage() {
     },
     {
       id: 'equity',
-      title: 'Institutional Equity (Series 3000)',
+      title: t('Institutional Equity (Series 3000)'),
       value: `$${totalEquity.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
-      subtitle: 'School capital reserves & Al-Barakah Waqf trust fund',
+      subtitle: t('School capital reserves & Waqf endowment fund'),
       trendDirection: 'up',
       icon: <Scale className="w-5 h-5 text-sky-400" />,
       isActive: typeFilter === 'Equity',
@@ -115,9 +126,9 @@ export default function ChartOfAccountsPage() {
     },
     {
       id: 'revenue',
-      title: 'YTD Revenue (Series 4000)',
+      title: t('YTD Revenue (Series 4000)'),
       value: `$${totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
-      subtitle: 'Tuition collections, waqf donations & fee revenue',
+      subtitle: t('Tuition collections, waqf donations & fee revenue'),
       trendDirection: 'up',
       icon: <DollarSign className="w-5 h-5 text-emerald-400" />,
       isActive: typeFilter === 'Revenue',
@@ -125,166 +136,133 @@ export default function ChartOfAccountsPage() {
     }
   ];
 
-  const columns = useMemo<ColumnDef<ChartOfAccount, any>[]>(() => {
-    return [
-      {
-        accessorKey: 'accountCode',
-        header: 'GL Account Code & Hierarchy',
-        cell: ({ row }) => {
-          const a = row.original;
-          return (
-            <div className="flex items-center gap-2 font-mono">
-              <span className={`px-2 py-1 rounded-md text-xs font-black ${
-                a.accountType === 'Asset' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' :
-                a.accountType === 'Liability' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' :
-                a.accountType === 'Equity' ? 'bg-sky-500/20 text-sky-300 border border-sky-500/30' :
-                a.accountType === 'Revenue' ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-500/30' :
-                'bg-rose-500/20 text-rose-300 border border-rose-500/30'
-              }`}>
-                {a.accountCode}
-              </span>
-              <span className="font-bold text-white text-xs sm:text-sm">{a.accountName}</span>
-            </div>
-          );
-        }
-      },
-      {
-        accessorKey: 'accountType',
-        header: 'Account Category & Normal Balance',
-        cell: ({ row }) => (
-          <div className="space-y-0.5 text-xs">
-            <span className="font-bold text-slate-200 block">{row.original.accountType}</span>
-            <span className="text-[11px] font-mono uppercase text-slate-400 block">Currency: {row.original.currency}</span>
-          </div>
-        )
-      },
-      {
-        accessorKey: 'currentBalance',
-        header: 'Current GL Ledger Balance ($)',
-        cell: ({ row }) => {
-          const a = row.original;
-          return (
-            <span className={`font-mono text-xs sm:text-sm font-black ${
-              a.currentBalance >= 0 ? 'text-white' : 'text-rose-400'
-            }`}>
-              ${a.currentBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-            </span>
-          );
-        }
-      },
-      {
-        accessorKey: 'isActive',
-        header: 'Status',
-        cell: ({ row }) => (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 font-bold text-xs border border-emerald-500/30">
-            ● Active GL Account
+  const columns = useMemo<ColumnDef<ChartOfAccount, any>[]>(() => [
+    {
+      accessorKey: 'accountCode',
+      header: t('Account Code & Name'),
+      cell: ({ row }) => (
+        <div className="flex items-center gap-2 font-mono">
+          <span className="px-2 py-1 rounded bg-slate-800 text-emerald-400 font-black text-xs">
+            {row.original.accountCode}
           </span>
-        )
-      },
-      {
-        id: 'actions',
-        header: 'Drill-Down GL',
-        cell: ({ row }) => (
-          <Link
-            href={`/finance/accounting/ledger?code=${row.original.accountCode}`}
-            onClick={(e) => e.stopPropagation()}
-            className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-emerald-600 text-slate-300 hover:text-white font-bold text-xs transition-all border border-slate-700 hover:border-emerald-500 shadow-sm"
-          >
-            <span>Drill-Down</span>
-            <ChevronRight className="w-3.5 h-3.5" />
-          </Link>
-        )
+          <span className="font-bold text-white text-xs sm:text-sm">{row.original.accountName}</span>
+        </div>
+      )
+    },
+    {
+      accessorKey: 'accountType',
+      header: t('Classification'),
+      cell: ({ row }) => {
+        const type = row.original.accountType;
+        const color = type === 'Asset' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' :
+          type === 'Liability' ? 'bg-rose-500/20 text-rose-300 border-rose-500/30' :
+          type === 'Equity' ? 'bg-sky-500/20 text-sky-300 border-sky-500/30' :
+          type === 'Revenue' ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30' :
+          'bg-amber-500/20 text-amber-300 border-amber-500/30';
+        return (
+          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold border ${color}`}>
+            {t(type)}
+          </span>
+        );
       }
-    ];
-  }, []);
+    },
+    {
+      accessorKey: 'currentBalance',
+      header: t('Live GL Balance ($ USD)'),
+      cell: ({ row }) => (
+        <span className="font-mono text-xs sm:text-sm font-black text-emerald-400 block">
+          ${row.original.currentBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+        </span>
+      )
+    },
+    {
+      accessorKey: 'isActive',
+      header: t('Status'),
+      cell: ({ row }) => <StatusBadge status={row.original.isActive ? 'active' : 'inactive'} size="sm" />
+    },
+    {
+      id: 'actions',
+      header: t('Actions'),
+      cell: ({ row }) => (
+        <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+          <button
+            onClick={() => setSelectedAccount(row.original)}
+            className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs border border-slate-700 transition-all cursor-pointer"
+          >
+            {t('Inspect')}
+          </button>
+        </div>
+      )
+    }
+  ], [locale]);
 
   return (
     <EnterpriseModuleShell
-      title="Chart of Accounts (COA) & General Ledger Hierarchy"
-      description="SAP S/4HANA double-entry account classification. Organizes institutional assets (1000), liabilities (2000), equity (3000), revenue (4000), and expenditures (5000) for real-time trial balancing."
-      breadcrumbs={[{ label: 'Finance ERP', href: '/finance' }, { label: 'Accounting Engine' }, { label: 'Chart of Accounts' }]}
-      icon={<Scale className="w-8 h-8" />}
+      title={t('SAP S/4HANA-Grade Chart of Accounts (COA) Console')}
+      description={t('Standard institutional chart of accounts for double-entry bookkeeping across all school partitions.')}
+      breadcrumbs={[{ label: t('Finance ERP'), href: '/finance' }, { label: t('Accounting Engine') }, { label: t('Chart of Accounts') }]}
+      icon={<Scale className="w-8 h-8 text-emerald-400" />}
       recordCount={filteredAccounts.length}
-      recordLabel="GL Accounts"
+      recordLabel={t('GL Accounts')}
       activeFilterCount={activeFiltersCount}
       onClearFilters={() => { setTypeFilter('all'); setQuery(''); }}
       headerActions={
         <div className="flex items-center gap-2">
           <button
-            onClick={() => financeService.exportToCSV(accounts, 'chart_of_accounts_2026.csv')}
+            onClick={() => financeService.exportToCSV(accounts, 'chart_of_accounts.csv')}
             className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white text-xs font-bold transition-all shadow-sm cursor-pointer"
           >
             <Download className="w-4 h-4 text-emerald-400" />
-            <span>Export COA</span>
+            <span>{t('Export CSV')}</span>
           </button>
           <button
             onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 text-white text-xs font-black transition-all shadow-lg shadow-emerald-600/30 hover:scale-[1.02] cursor-pointer"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white text-xs font-black transition-all shadow-lg shadow-emerald-600/30 cursor-pointer"
           >
             <Plus className="w-4 h-4 stroke-[3]" />
-            <span>+ Create GL Account</span>
+            <span>{t('Create GL Account')}</span>
           </button>
         </div>
       }
     >
-      {/* Interactive KPI Deck */}
       <EnterpriseKPIDeck cards={kpiCards} />
 
       {/* Domain Sub-Navigation */}
       <div className="flex flex-wrap items-center gap-2 pb-2 border-b border-slate-800">
         <Link href="/finance/accounting/chart" className="px-3.5 py-1.5 rounded-xl bg-emerald-600 text-white font-black text-xs shadow-md flex items-center gap-1.5">
           <Scale className="w-3.5 h-3.5" />
-          <span>Chart of Accounts</span>
+          <span>{t('Chart of Accounts')}</span>
         </Link>
         <Link href="/finance/accounting/journals" className="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white font-bold text-xs transition-all flex items-center gap-1.5">
           <FileText className="w-3.5 h-3.5 text-amber-400" />
-          <span>Double-Entry Journals</span>
+          <span>{t('Double-Entry Journals')}</span>
         </Link>
         <Link href="/finance/accounting/ledger" className="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white font-bold text-xs transition-all flex items-center gap-1.5">
           <FolderOpen className="w-3.5 h-3.5 text-sky-400" />
-          <span>General Ledger Drill-Down</span>
+          <span>{t('General Ledger Drill-Down')}</span>
         </Link>
-        <Link href="/finance/accounting/periods" className="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white font-bold text-xs transition-all flex items-center gap-1.5">
-          <Clock className="w-3.5 h-3.5 text-emerald-400" />
-          <span>Accounting Periods Lock</span>
+        <Link href="/finance/accounting/accounts" className="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white font-bold text-xs transition-all flex items-center gap-1.5">
+          <Landmark className="w-3.5 h-3.5 text-emerald-400" />
+          <span>{t('Bank Reconciliations')}</span>
         </Link>
       </div>
 
-      {/* Unified Toolbar */}
       <EnterpriseToolbar
         searchQuery={query}
         onSearchChange={setQuery}
-        searchPlaceholder="Search accounts by 4-digit GL code (e.g. 1010, 4010) or account name..."
+        searchPlaceholder={t('Search GL accounts by code or name...')}
         density={density}
         onDensityChange={setDensity}
         onRefresh={() => {
           loadData();
-          toast.success('Chart of Accounts balances synced from general ledger postings.');
+          toast.success(t('Chart of Accounts refreshed'));
         }}
         activeFilterCount={activeFiltersCount}
         onResetFilters={() => { setTypeFilter('all'); setQuery(''); }}
-        createButtonLabel="+ New GL Account"
+        createButtonLabel={t('New GL Account')}
         onCreate={() => setShowCreateModal(true)}
-        customFilterNodes={
-          <div className="flex items-center gap-2">
-            <select
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value)}
-              aria-label="Filter accounts by type"
-              className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white font-bold focus:outline-none focus:border-emerald-500 shadow-2xs cursor-pointer"
-            >
-              <option value="all">All GL Categories</option>
-              <option value="Asset">1000 Series (Assets)</option>
-              <option value="Liability">2000 Series (Liabilities)</option>
-              <option value="Equity">3000 Series (Equity)</option>
-              <option value="Revenue">4000 Series (Revenue)</option>
-              <option value="Expense">5000 Series (Expenses)</option>
-            </select>
-          </div>
-        }
       />
 
-      {/* High-Density Enterprise Data Grid */}
       <EnterpriseDataGrid
         data={filteredAccounts}
         columns={columns}
@@ -293,86 +271,70 @@ export default function ChartOfAccountsPage() {
         onRowInspect={(row) => setSelectedAccount(row)}
         onRowClick={(row) => setSelectedAccount(row)}
         emptyStateProps={{
-          title: 'No Accounts Found',
-          description: 'No Chart of Accounts entries match your search or classification filter.',
+          title: t('No GL Accounts Found'),
+          description: t('No General Ledger accounts match your query.'),
           isFilterActive: activeFiltersCount > 0 || query.length > 0,
           onResetFilters: () => { setTypeFilter('all'); setQuery(''); },
-          createLabel: 'Create GL Account',
+          createLabel: t('Create First Account'),
           onCreate: () => setShowCreateModal(true)
         }}
       />
 
-      {/* Create Modal */}
+      {/* Create Account Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-5">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <div className="flex items-center gap-2.5">
                 <Scale className="w-6 h-6 text-emerald-400" />
-                <h3 className="text-base font-black text-white">Create General Ledger Account</h3>
+                <h3 className="text-base font-black text-white">{t('Create General Ledger Account')}</h3>
               </div>
               <button onClick={() => setShowCreateModal(false)} className="text-slate-400 hover:text-white font-bold text-sm">✕</button>
             </div>
 
             <form onSubmit={handleCreateAccount} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-300">Account Code</label>
-                  <input
-                    type="text"
-                    required
-                    value={code}
-                    onChange={(e) => setCode(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white font-mono text-xs font-bold focus:outline-none focus:border-emerald-500"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-300">GL Classification</label>
-                  <select
-                    value={type}
-                    onChange={(e) => {
-                      const t = e.target.value as AccountType;
-                      setType(t);
-                      if (t === 'Asset' || t === 'Expense') setNormalBalance('debit');
-                      else setNormalBalance('credit');
-                    }}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs font-bold focus:outline-none focus:border-emerald-500"
-                  >
-                    <option value="Asset">Asset (1000)</option>
-                    <option value="Liability">Liability (2000)</option>
-                    <option value="Equity">Equity (3000)</option>
-                    <option value="Revenue">Revenue (4000)</option>
-                    <option value="Expense">Expense (5000)</option>
-                  </select>
-                </div>
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-300">{t('Account Code (e.g. 1050, 2040, 5070)')}</label>
+                <input
+                  type="text"
+                  required
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                  placeholder="1050"
+                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white font-mono text-xs focus:outline-none focus:border-emerald-500"
+                />
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-300">Account Title</label>
+                <label className="text-xs font-bold text-slate-300">{t('Account Title / Name')}</label>
                 <input
                   type="text"
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs font-medium focus:outline-none focus:border-emerald-500"
+                  placeholder="Petty Cash"
+                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs focus:outline-none focus:border-emerald-500"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-300">Normal Balance Direction</label>
+                <label className="text-xs font-bold text-slate-300">{t('Account Type')}</label>
                 <select
-                  value={normalBalance}
-                  onChange={(e) => setNormalBalance(e.target.value as any)}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs font-bold focus:outline-none focus:border-emerald-500"
+                  value={type}
+                  onChange={(e) => setType(e.target.value as AccountType)}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs focus:outline-none focus:border-emerald-500"
                 >
-                  <option value="debit">Debit Normal (Assets & Expenses)</option>
-                  <option value="credit">Credit Normal (Liabilities, Equity & Revenue)</option>
+                  <option value="Asset">{t('Asset (1000 Series)')}</option>
+                  <option value="Liability">{t('Liability (2000 Series)')}</option>
+                  <option value="Equity">{t('Equity (3000 Series)')}</option>
+                  <option value="Revenue">{t('Revenue (4000 Series)')}</option>
+                  <option value="Expense">{t('Expense (5000 Series)')}</option>
                 </select>
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
-                <button type="button" onClick={() => setShowCreateModal(false)} className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 font-bold text-xs">Cancel</button>
-                <button type="submit" className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs shadow-md">Create Account</button>
+                <button type="button" onClick={() => setShowCreateModal(false)} className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 font-bold text-xs">{t('Cancel')}</button>
+                <button type="submit" className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs shadow-md">{t('Save GL Account')}</button>
               </div>
             </form>
           </div>
@@ -386,13 +348,13 @@ export default function ChartOfAccountsPage() {
         record={selectedAccount ? {
           name: selectedAccount.accountName,
           id: selectedAccount.accountCode,
-          role: 'COA RECORD',
+          role: `GL ${selectedAccount.accountType.toUpperCase()} ACCOUNT`,
           status: selectedAccount.isActive ? 'active' : 'inactive',
-          email: `Type: ${selectedAccount.accountType}`,
+          email: `Classification: ${selectedAccount.accountType}`,
           phone: `Currency: ${selectedAccount.currency}`,
-          department: `GL Code: ${selectedAccount.accountCode}`,
+          department: `Normal Balance: ${selectedAccount.accountType === 'Asset' || selectedAccount.accountType === 'Expense' ? 'Debit' : 'Credit'}`,
           joinDate: selectedAccount.accountCode.slice(0, 1) + '000 Series',
-          balance: `CURRENT BALANCE: $${selectedAccount.currentBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })}`
+          balance: `LIVE GL BALANCE: $${selectedAccount.currentBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })}`
         } : null}
         category="finance"
       />

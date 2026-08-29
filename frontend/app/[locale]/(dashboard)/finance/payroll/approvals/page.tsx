@@ -7,6 +7,8 @@ import {
   ShieldCheck, CheckCircle2, Clock, DollarSign, FileText,
   Users, AlertCircle, ArrowRight, Check, X, Eye, Filter, Receipt, Building2
 } from 'lucide-react';
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
 import { financeService } from '@/services/finance.service';
 import type { PayrollRun } from '@/types/finance.types';
 import { EnterpriseModuleShell } from '@/components/erp/EnterpriseModuleShell';
@@ -16,6 +18,9 @@ import { StatusBadge } from '@/components/erp/StatusBadge';
 import { toast } from 'sonner';
 
 export default function PayrollApprovalsPage() {
+  const locale = useLocale();
+  const t = (key: string) => i18nT(key, locale);
+
   const [payrolls, setPayrolls] = useState<PayrollRun[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -25,7 +30,7 @@ export default function PayrollApprovalsPage() {
       const data = await financeService.getPayrollRuns();
       setPayrolls(data || []);
     } catch {
-      toast.error('Failed to load payroll approval queue.');
+      toast.error(t('Failed to load payroll approval queue.'));
     } finally {
       setLoading(false);
     }
@@ -38,7 +43,7 @@ export default function PayrollApprovalsPage() {
   const handleApproveBatch = async () => {
     const pending = payrolls.filter(p => p.status === 'submitted' || p.status === 'reviewed' || p.status === 'draft');
     if (pending.length === 0) {
-      toast.info('No pending payroll vouchers to approve.');
+      toast.info(t('No pending payroll vouchers to approve.'));
       return;
     }
 
@@ -49,10 +54,10 @@ export default function PayrollApprovalsPage() {
           return financeService.updatePayrollStatus(targetId, 'approved');
         })
       );
-      toast.success(`Batch approved ${pending.length} payroll vouchers! Payout authorization unlocked.`);
+      toast.success(`${t('Batch approved')} ${pending.length} ${t('payroll vouchers!')}`);
       fetchPayrolls();
-    } catch (err: any) {
-      toast.error(err.message || 'Failed to approve batch payroll runs.');
+    } catch {
+      toast.error(t('Failed to approve batch payroll runs.'));
     }
   };
 
@@ -63,121 +68,113 @@ export default function PayrollApprovalsPage() {
     try {
       if (nextStatus === 'paid') {
         await financeService.processPayrollDisbursement(targetId);
-        toast.success(`Payroll ${refNum} disbursed & posted to General Ledger! Credited Bank Treasury ($${(p.netPayable || 0).toFixed(2)}).`);
+        toast.success(`${t('Payroll')} ${refNum} ${t('disbursed & posted to General Ledger!')}`);
       } else {
         await financeService.updatePayrollStatus(targetId, nextStatus);
-        toast.success(`Payroll voucher ${refNum} moved to [${nextStatus.toUpperCase()}].`);
+        toast.success(`${t('Payroll voucher')} ${refNum} ${t('moved to')} [${nextStatus.toUpperCase()}].`);
       }
       fetchPayrolls();
-    } catch (err: any) {
-      toast.error(err.message || 'Action failed');
+    } catch {
+      toast.error(t('Action failed'));
     }
   };
 
   const pendingApprovalsCount = payrolls.filter(p => p.status === 'submitted' || p.status === 'reviewed' || p.status === 'draft').length;
-  const pendingAmount = payrolls.filter(p => p.status === 'submitted' || p.status === 'reviewed' || p.status === 'draft').reduce((s, p) => s + (p.netPayable || 0), 0);
+  const pendingAmount = payrolls.filter(p => p.status === 'submitted' || p.status === 'reviewed' || p.status === 'draft').reduce((s, p) => s + (Number(p.netPayable) || 0), 0);
 
   const kpiCards: EnterpriseKPICard[] = [
     {
       id: 'pending_approvals',
-      title: 'Pending Payroll Authorization',
-      value: `${pendingApprovalsCount} Vouchers`,
-      subtitle: `Total Payout Queue: $${pendingAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
+      title: t('Pending Payroll Authorization'),
+      value: `${pendingApprovalsCount} ${t('Vouchers')}`,
+      subtitle: `${t('Total Payout Queue')}: $${pendingAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
       trendDirection: 'neutral',
       icon: <Clock className="w-5 h-5 text-amber-400" />
     },
     {
       id: 'approved_runs',
-      title: 'Certified Approved Vouchers',
-      value: `${payrolls.filter(p => p.status === 'approved').length} Ready`,
-      subtitle: 'Cleared by Director & Head of Account',
+      title: t('Certified Approved Vouchers'),
+      value: `${payrolls.filter(p => p.status === 'approved').length} ${t('Ready')}`,
+      subtitle: t('Cleared by Director & Head of Account'),
       trendDirection: 'up',
       icon: <CheckCircle2 className="w-5 h-5 text-emerald-400" />
     },
     {
       id: 'payout_complete',
-      title: 'Disbursed / Paid Status',
-      value: `${payrolls.filter(p => p.status === 'paid' || p.status === 'closed').length} Payouts`,
-      subtitle: 'Automated bank & wallet transfers executed',
+      title: t('Disbursed / Paid Status'),
+      value: `${payrolls.filter(p => p.status === 'paid' || p.status === 'closed').length} ${t('Payouts')}`,
+      subtitle: t('Bank wire and mobile money executed'),
       trendDirection: 'up',
-      icon: <ShieldCheck className="w-5 h-5 text-sky-400" />
+      icon: <DollarSign className="w-5 h-5 text-sky-400" />
     }
   ];
 
   const columns: ColumnDef<PayrollRun, any>[] = [
     {
       accessorKey: 'payrollNumber',
-      header: 'Payroll Ref & Staff Member',
-      cell: ({ row }) => {
-        const p = row.original;
-        const refNum = p.payrollNumber || `PAY-2026-${String(p.id).padStart(4, '0')}`;
-        return (
-          <div className="space-y-0.5">
-            <span className="font-mono text-xs font-black text-emerald-700 dark:text-emerald-400 block">{refNum}</span>
-            <span className="font-bold text-slate-900 dark:text-white text-xs block">
-              {p.staffName} {p.staffId ? <span className="font-mono text-slate-600 dark:text-slate-400">({p.staffId})</span> : null}
-            </span>
-          </div>
-        );
-      }
+      header: t('Payroll Ref & Employee'),
+      cell: ({ row }) => (
+        <div className="space-y-0.5">
+          <span className="font-mono text-xs font-black text-indigo-400 block">{row.original.payrollNumber || `PAY-${row.original.id}`}</span>
+          <span className="font-bold text-white text-xs block">{row.original.employeeName}</span>
+          <span className="text-[11px] text-slate-400 font-mono block">{row.original.roleTitle}</span>
+        </div>
+      )
     },
     {
-      accessorKey: 'payPeriod',
-      header: 'Pay Period & Dept',
+      accessorKey: 'payPeriodMonth',
+      header: t('Pay Period'),
       cell: ({ row }) => (
-        <div className="space-y-0.5 font-mono text-xs">
-          <span className="text-slate-900 dark:text-slate-200 font-bold block">{row.original.payPeriod || 'Monthly Run'}</span>
-          <span className="text-slate-600 dark:text-slate-400 text-[11px] block">{row.original.department}</span>
+        <div className="text-xs font-mono">
+          <span className="text-slate-300 block">{row.original.payPeriodMonth} {row.original.payPeriodYear}</span>
+          <span className="text-slate-500 text-[11px]">{t('Gross')}: ${(Number(row.original.grossSalary) || 0).toFixed(2)}</span>
         </div>
       )
     },
     {
       accessorKey: 'netPayable',
-      header: 'Net Compensation ($)',
+      header: `${t('Net Disbursable')} ($)`,
       cell: ({ row }) => (
-        <span className="font-mono text-xs sm:text-sm font-black text-emerald-700 dark:text-emerald-400">
-          ${(row.original.netPayable || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+        <span className="font-mono text-xs sm:text-sm font-black text-emerald-400 block">
+          ${(Number(row.original.netPayable) || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
         </span>
       )
     },
     {
       accessorKey: 'status',
-      header: 'Current Stage',
-      cell: ({ row }) => <StatusBadge status={row.original.status} size="sm" />
+      header: t('Authorization Stage'),
+      cell: ({ row }) => <StatusBadge status={row.original.status || 'draft'} size="sm" />
     },
     {
       id: 'actions',
-      header: 'Executive Decision',
+      header: t('Workflow Actions'),
       cell: ({ row }) => {
-        const status = row.original.status;
+        const p = row.original;
         return (
-          <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
-            {(status === 'draft' || status === 'submitted') && (
+          <div className="flex items-center gap-1.5" onClick={evt => evt.stopPropagation()}>
+            {(p.status === 'draft' || p.status === 'submitted') && (
               <button
-                onClick={() => handleSingleAction(row.original, 'reviewed')}
-                className="px-3 py-1.5 rounded-xl bg-amber-600/20 hover:bg-amber-600 text-amber-800 dark:text-amber-300 hover:text-white font-bold text-xs border border-amber-500/40 transition-all cursor-pointer"
+                onClick={() => handleSingleAction(p, 'reviewed')}
+                className="px-2.5 py-1 rounded bg-sky-50 dark:bg-sky-950 text-sky-700 dark:text-sky-300 hover:bg-sky-100 text-xs font-bold border border-sky-200 dark:border-sky-800 transition-colors cursor-pointer"
               >
-                Verify Review →
+                {t('Review')}
               </button>
             )}
-            {status === 'reviewed' && (
+            {(p.status === 'draft' || p.status === 'submitted' || p.status === 'reviewed') && (
               <button
-                onClick={() => handleSingleAction(row.original, 'approved')}
-                className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs shadow-md transition-all cursor-pointer"
+                onClick={() => handleSingleAction(p, 'approved')}
+                className="px-2.5 py-1 rounded bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-2xs transition-colors cursor-pointer"
               >
-                Approve Payout ✓
+                {t('Approve Voucher')}
               </button>
             )}
-            {status === 'approved' && (
+            {p.status === 'approved' && (
               <button
-                onClick={() => handleSingleAction(row.original, 'paid')}
-                className="px-3 py-1.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-black text-xs shadow-md transition-all cursor-pointer"
+                onClick={() => handleSingleAction(p, 'paid')}
+                className="px-2.5 py-1 rounded bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-2xs transition-colors cursor-pointer"
               >
-                Execute Bank Pay ($)
+                {t('Disburse Net Pay')}
               </button>
-            )}
-            {(status === 'paid' || status === 'closed') && (
-              <span className="text-xs font-black text-emerald-700 dark:text-emerald-400 font-mono">✓ Disbursed to Bank</span>
             )}
           </div>
         );
@@ -187,54 +184,31 @@ export default function PayrollApprovalsPage() {
 
   return (
     <EnterpriseModuleShell
-      title="Multi-Stage Payroll Approval Pipeline"
-      description="Executive oversight queue (Draft -> Submitted -> Reviewed -> Approved -> Paid -> Closed) requiring Director and Account Lead co-authorization before staff bank payout."
-      breadcrumbs={[{ label: 'Finance ERP', href: '/finance' }, { label: 'Payroll & Budget' }, { label: 'Payroll Approvals' }]}
-      icon={<ShieldCheck className="w-8 h-8 text-emerald-400" />}
+      title={t('Executive Payroll Approval & Disbursement Authorization Queue')}
+      description={t('Two-tier governance workflow for academic faculty and staff monthly wage vouchers prior to treasury bank disbursement.')}
+      breadcrumbs={[{ label: t('Finance ERP'), href: '/finance' }, { label: t('Staff Payroll'), href: '/finance/payroll' }, { label: t('Approvals') }]}
+      icon={<ShieldCheck className="w-8 h-8 text-indigo-400" />}
       recordCount={payrolls.length}
-      recordLabel="Approval Queue"
-      activeFilterCount={0}
-      onClearFilters={() => {}}
+      recordLabel={t('Vouchers')}
       headerActions={
         <div className="flex items-center gap-2">
           <Link
             href="/finance/payroll"
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white text-xs font-bold transition-all shadow-sm cursor-pointer"
+            className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs font-bold transition-all shadow-sm"
           >
-            <span>← Back to Payroll Console</span>
+            ← {t('Back to Payroll Runs')}
           </Link>
-          {pendingApprovalsCount > 0 && (
-            <button
-              onClick={handleApproveBatch}
-              className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 text-white font-black text-xs shadow-lg shadow-emerald-600/30 hover:scale-[1.02] cursor-pointer"
-            >
-              Approve All Pending ({pendingApprovalsCount}) ✓
-            </button>
-          )}
+          <button
+            onClick={handleApproveBatch}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-500 text-white font-black text-xs shadow-lg shadow-indigo-600/30 hover:scale-[1.02] transition-all cursor-pointer"
+          >
+            <Check className="w-4 h-4 stroke-[3]" />
+            <span>{t('Batch Approve All Pending')}</span>
+          </button>
         </div>
       }
     >
       <EnterpriseKPIDeck cards={kpiCards} />
-
-      {/* Domain Sub-Navigation */}
-      <div className="flex flex-wrap items-center gap-2 pb-2 border-b border-slate-800">
-        <Link href="/finance/payroll" className="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white font-bold text-xs transition-all flex items-center gap-1.5">
-          <Users className="w-3.5 h-3.5" />
-          <span>Staff Payroll Runs</span>
-        </Link>
-        <Link href="/finance/payroll/approvals" className="px-3.5 py-1.5 rounded-xl bg-emerald-600 text-white font-black text-xs shadow-md flex items-center gap-1.5">
-          <ShieldCheck className="w-3.5 h-3.5 text-white" />
-          <span>Payroll Approval Pipeline</span>
-        </Link>
-        <Link href="/finance/expenses" className="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white font-bold text-xs transition-all flex items-center gap-1.5">
-          <Receipt className="w-3.5 h-3.5 text-amber-400" />
-          <span>Operating Expenses</span>
-        </Link>
-        <Link href="/finance/budget" className="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white font-bold text-xs transition-all flex items-center gap-1.5">
-          <Building2 className="w-3.5 h-3.5 text-sky-400" />
-          <span>Departmental Budget vs Actual</span>
-        </Link>
-      </div>
 
       <EnterpriseDataGrid
         data={payrolls}
@@ -242,8 +216,8 @@ export default function PayrollApprovalsPage() {
         isLoading={loading}
         density="cozy"
         emptyStateProps={{
-          title: 'No Payroll Runs in Queue',
-          description: 'All compensation vouchers are processed or none have been submitted.',
+          title: t('No Payroll Runs Awaiting Approval'),
+          description: t('All staff payroll vouchers are approved or disbursed.'),
           isFilterActive: false,
           onResetFilters: () => {}
         }}

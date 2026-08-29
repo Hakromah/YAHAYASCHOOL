@@ -2514,29 +2514,45 @@ export interface ApiFinanceBudgetFinanceBudget
   extends Struct.CollectionTypeSchema {
   collectionName: 'finance_budgets';
   info: {
-    description: '';
+    description: 'Institutional and Academic Section departmental budget cost centers';
     displayName: 'Finance Budget';
     pluralName: 'finance-budgets';
     singularName: 'finance-budget';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
+    academicYearCode: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'2026-2027'>;
+    allocatedAmount: Schema.Attribute.Decimal & Schema.Attribute.DefaultTo<0>;
+    budgetTitle: Schema.Attribute.String;
+    categories: Schema.Attribute.JSON;
+    code: Schema.Attribute.String;
+    committedAmount: Schema.Attribute.Decimal & Schema.Attribute.DefaultTo<0>;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
-    dummyField: Schema.Attribute.String;
+    currency: Schema.Attribute.String & Schema.Attribute.DefaultTo<'USD'>;
+    departmentName: Schema.Attribute.String & Schema.Attribute.Required;
+    headOfDepartment: Schema.Attribute.String;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
       'api::finance-budget.finance-budget'
     > &
       Schema.Attribute.Private;
+    notes: Schema.Attribute.Text;
     publishedAt: Schema.Attribute.DateTime;
+    remainingAmount: Schema.Attribute.Decimal & Schema.Attribute.DefaultTo<0>;
+    spentAmount: Schema.Attribute.Decimal & Schema.Attribute.DefaultTo<0>;
+    status: Schema.Attribute.String & Schema.Attribute.DefaultTo<'on_track'>;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    utilizationPercentage: Schema.Attribute.Decimal &
+      Schema.Attribute.DefaultTo<0>;
+    varianceAmount: Schema.Attribute.Decimal & Schema.Attribute.DefaultTo<0>;
   };
 }
 

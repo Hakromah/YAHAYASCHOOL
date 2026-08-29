@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
@@ -7,6 +8,8 @@ import {
   Clock, Scale, ScrollText, AlertTriangle, ChevronDown,
   Trash2, RefreshCw, BookOpen, Hash, Calendar
 } from 'lucide-react';
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
 import { financeService } from '@/services/finance.service';
 import type { JournalEntry, ChartOfAccount, AccountingPeriod } from '@/types/finance.types';
 import { EnterpriseModuleShell } from '@/components/erp/EnterpriseModuleShell';
@@ -22,7 +25,7 @@ interface JournalLine {
   id: string;
   accountCode: string;
   accountName: string;
-  debit: string;   // string for controlled input, parsed on submit
+  debit: string;
   credit: string;
   memo: string;
 }
@@ -35,8 +38,6 @@ const emptyLine = (): JournalLine => ({
   credit: '',
   memo: '',
 });
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function fmt(n: number) {
   return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -124,12 +125,13 @@ function JournalDetailPanel({
   journal: any;
   onClose: () => void;
 }) {
+  const locale = useLocale();
+  const t = (key: string) => i18nT(key, locale);
   const isBalanced = Math.abs(journal.totalDebit - journal.totalCredit) < 0.01;
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150">
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl">
-        {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-slate-200 dark:border-slate-800 shrink-0">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/40">
@@ -145,13 +147,12 @@ function JournalDetailPanel({
           </button>
         </div>
 
-        {/* Meta strip */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-px bg-slate-100 dark:bg-slate-800 shrink-0">
           {[
-            { label: 'Posting Date', value: journal.postingDate || '—' },
-            { label: 'Reference', value: journal.referenceNumber || 'SYSTEM-AUTO' },
-            { label: 'Period', value: journal.academicYearCode || '—' },
-            { label: 'Status', value: journal.status?.toUpperCase() },
+            { label: t('Posting Date'), value: journal.postingDate || '—' },
+            { label: t('Reference'), value: journal.referenceNumber || 'SYSTEM-AUTO' },
+            { label: t('Period'), value: journal.academicYearCode || '—' },
+            { label: t('Status'), value: (journal.status || 'posted').toUpperCase() },
           ].map(({ label, value }) => (
             <div key={label} className="bg-white dark:bg-slate-900 p-3">
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{label}</p>
@@ -160,22 +161,20 @@ function JournalDetailPanel({
           ))}
         </div>
 
-        {/* GL Lines */}
         <div className="overflow-y-auto flex-1 p-5 space-y-2">
           <div className="flex items-center justify-between mb-3">
-            <h4 className="text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider">Double-Entry GL Lines</h4>
+            <h4 className="text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider">{t('Double-Entry GL Lines')}</h4>
             <span className={`px-2 py-0.5 rounded-full text-[10px] font-black border ${isBalanced ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-700' : 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-700'}`}>
-              {isBalanced ? '✓ BALANCED' : '⚠ VARIANCE'}
+              {isBalanced ? `✓ ${t('BALANCED')}` : `⚠ ${t('VARIANCE')}`}
             </span>
           </div>
 
-          {/* Lines table */}
           <div className="rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
             <table className="w-full text-xs">
               <thead className="bg-slate-50 dark:bg-slate-800/60">
                 <tr>
-                  <th className="text-left px-3 py-2 font-bold text-slate-500 dark:text-slate-400">Account</th>
-                  <th className="text-left px-3 py-2 font-bold text-slate-500 dark:text-slate-400">Memo</th>
+                  <th className="text-left px-3 py-2 font-bold text-slate-500 dark:text-slate-400">{t('Account')}</th>
+                  <th className="text-left px-3 py-2 font-bold text-slate-500 dark:text-slate-400">{t('Memo')}</th>
                   <th className="text-right px-3 py-2 font-bold text-sky-600 dark:text-sky-400">DR ($)</th>
                   <th className="text-right px-3 py-2 font-bold text-emerald-600 dark:text-emerald-400">CR ($)</th>
                 </tr>
@@ -199,7 +198,7 @@ function JournalDetailPanel({
               </tbody>
               <tfoot className="bg-slate-50 dark:bg-slate-800/60 border-t-2 border-slate-200 dark:border-slate-700">
                 <tr>
-                  <td colSpan={2} className="px-3 py-2 font-black text-slate-700 dark:text-slate-200">TOTALS</td>
+                  <td colSpan={2} className="px-3 py-2 font-black text-slate-700 dark:text-slate-200">{t('TOTALS')}</td>
                   <td className="px-3 py-2 text-right font-mono font-black text-sky-600 dark:text-sky-400">{fmt(journal.totalDebit)}</td>
                   <td className="px-3 py-2 text-right font-mono font-black text-emerald-600 dark:text-emerald-400">{fmt(journal.totalCredit)}</td>
                 </tr>
@@ -225,6 +224,8 @@ function CreateJournalModal({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const locale = useLocale();
+  const t = (key: string) => i18nT(key, locale);
   const [description, setDescription] = useState('');
   const [reference, setReference] = useState('');
   const [postingDate, setPostingDate] = useState(todayISO());
@@ -232,7 +233,6 @@ function CreateJournalModal({
   const [lines, setLines] = useState<JournalLine[]>([emptyLine(), emptyLine()]);
   const [submitting, setSubmitting] = useState(false);
 
-  // The selected period label for display
   const selectedPeriod = periods.find(p => String(p.id) === String(periodId));
 
   const totalDebit  = lines.reduce((s, l) => s + (parseFloat(l.debit)  || 0), 0);
@@ -250,17 +250,17 @@ function CreateJournalModal({
 
   const addLine = () => setLines(prev => [...prev, emptyLine()]);
   const removeLine = (id: string) => {
-    if (lines.length <= 2) { toast.error('A journal entry requires at least 2 lines.'); return; }
+    if (lines.length <= 2) { toast.error(t('A journal entry requires at least 2 lines.')); return; }
     setLines(prev => prev.filter(l => l.id !== id));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!description.trim()) { toast.error('Description is required.'); return; }
-    if (!hasLines) { toast.error('Add at least one debit and one credit line.'); return; }
+    if (!description.trim()) { toast.error(t('Description is required.')); return; }
+    if (!hasLines) { toast.error(t('Add at least one debit and one credit line.')); return; }
     if (!isBalanced) {
-      toast.error(`Debits (\$${fmt(totalDebit)}) must equal Credits (\$${fmt(totalCredit)}).`);
+      toast.error(`${t('Debits')} ($${fmt(totalDebit)}) ${t('must equal Credits')} ($${fmt(totalCredit)}).`);
       return;
     }
 
@@ -290,12 +290,11 @@ function CreateJournalModal({
           memo: l.memo || description,
         })),
       });
-      toast.success('Manual journal entry posted successfully.');
+      toast.success(t('Manual journal entry posted successfully.'));
       onSaved();
       onClose();
-    } catch (err) {
-      console.error(err);
-      toast.error('Failed to post manual journal entry.');
+    } catch {
+      toast.error(t('Failed to post manual journal entry.'));
     } finally {
       setSubmitting(false);
     }
@@ -304,16 +303,14 @@ function CreateJournalModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-in fade-in duration-150">
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-3xl max-h-[92vh] flex flex-col shadow-2xl">
-
-        {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-slate-200 dark:border-slate-800 shrink-0">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/40">
               <ScrollText className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
             </div>
             <div>
-              <h3 className="font-black text-slate-900 dark:text-white text-base">Post Manual Journal Entry</h3>
-              <p className="text-[11px] text-slate-400 font-mono">Debits must equal Credits (double-entry rule)</p>
+              <h3 className="font-black text-slate-900 dark:text-white text-base">{t('Post Manual Journal Entry')}</h3>
+              <p className="text-[11px] text-slate-400 font-mono">{t('Debits must equal Credits (double-entry rule)')}</p>
             </div>
           </div>
           <button onClick={onClose} className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer">
@@ -321,25 +318,22 @@ function CreateJournalModal({
           </button>
         </div>
 
-        {/* Form */}
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto">
           <div className="p-5 space-y-5">
-
-            {/* Row 1: Description + Reference */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1">
-                <label className="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wide">Description / Memo <span className="text-rose-500">*</span></label>
+                <label className="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wide">{t('Description / Memo')} <span className="text-rose-500">*</span></label>
                 <input
                   type="text"
                   required
                   value={description}
                   onChange={e => setDescription(e.target.value)}
                   className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-emerald-500 transition-colors"
-                  placeholder="e.g. Tuition fee revenue recognition Q1"
+                  placeholder="e.g. Tuition fee revenue recognition"
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wide">Source Reference</label>
+                <label className="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wide">{t('Source Reference')}</label>
                 <input
                   type="text"
                   value={reference}
@@ -350,11 +344,10 @@ function CreateJournalModal({
               </div>
             </div>
 
-            {/* Row 2: Date + Period */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1">
                 <label className="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wide flex items-center gap-1">
-                  <Calendar className="w-3 h-3" /> Posting Date
+                  <Calendar className="w-3 h-3" /> {t('Posting Date')}
                 </label>
                 <input
                   type="date"
@@ -365,7 +358,7 @@ function CreateJournalModal({
               </div>
               <div className="space-y-1">
                 <label className="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wide flex items-center gap-1">
-                  <Clock className="w-3 h-3" /> Accounting Period
+                  <Clock className="w-3 h-3" /> {t('Accounting Period')}
                 </label>
                 {periods.length > 0 ? (
                   <select
@@ -390,124 +383,67 @@ function CreateJournalModal({
               </div>
             </div>
 
-            {/* GL Lines */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <label className="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wide flex items-center gap-1">
-                  <Hash className="w-3 h-3" /> Journal Lines (DR / CR)
+                  <Hash className="w-3 h-3" /> {t('Journal Lines (DR / CR)')}
                 </label>
                 <button
                   type="button"
                   onClick={addLine}
-                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-slate-600 dark:text-slate-300 hover:text-emerald-700 dark:hover:text-emerald-300 text-[11px] font-bold transition-colors border border-slate-200 dark:border-slate-700"
+                  className="flex items-center gap-1 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline"
                 >
-                  <Plus className="w-3 h-3" /> Add Line
+                  <Plus className="w-3.5 h-3.5" /> {t('Add Line')}
                 </button>
               </div>
 
-              <div className="rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden">
-                {/* Column headers */}
-                <div className="grid grid-cols-[1fr_1fr_80px_80px_24px] gap-2 px-3 py-2 bg-slate-50 dark:bg-slate-800/60 text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider border-b border-slate-200 dark:border-slate-700">
-                  <span>Account</span>
-                  <span>Memo</span>
-                  <span className="text-sky-600 dark:text-sky-400 text-right">Debit ($)</span>
-                  <span className="text-emerald-600 dark:text-emerald-400 text-right">Credit ($)</span>
-                  <span />
+              {lines.map((l, idx) => (
+                <div key={l.id} className="grid grid-cols-12 gap-2 items-center p-2 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
+                  <div className="col-span-5">
+                    <AccountPicker
+                      value={l.accountCode}
+                      onChange={(code, name) => updateLineAccount(l.id, code, name)}
+                      accounts={accounts}
+                      placeholder={t('Select Account...')}
+                    />
+                  </div>
+                  <div className="col-span-3">
+                    <input
+                      type="number"
+                      step="0.01"
+                      placeholder="DR ($)"
+                      value={l.debit}
+                      onChange={e => updateLine(l.id, 'debit', e.target.value)}
+                      className="w-full px-2.5 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-sky-600 dark:text-sky-400 font-mono text-xs font-bold focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                  <div className="col-span-3">
+                    <input
+                      type="number"
+                      step="0.01"
+                      placeholder="CR ($)"
+                      value={l.credit}
+                      onChange={e => updateLine(l.id, 'credit', e.target.value)}
+                      className="w-full px-2.5 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-mono text-xs font-bold focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                  <div className="col-span-1 flex justify-center">
+                    <button type="button" onClick={() => removeLine(l.id)} className="text-slate-400 hover:text-rose-500">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
-
-                <div className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {lines.map((line, idx) => (
-                    <div key={line.id} className="grid grid-cols-[1fr_1fr_80px_80px_24px] gap-2 px-3 py-2 items-center">
-                      {/* Account picker */}
-                      <AccountPicker
-                        value={line.accountCode}
-                        onChange={(code, name) => updateLineAccount(line.id, code, name)}
-                        accounts={accounts}
-                        placeholder={`Line ${idx + 1} account…`}
-                      />
-                      {/* Memo */}
-                      <input
-                        type="text"
-                        value={line.memo}
-                        onChange={e => updateLine(line.id, 'memo', e.target.value)}
-                        placeholder="memo…"
-                        className="w-full px-2 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs focus:outline-none focus:border-emerald-500 transition-colors"
-                      />
-                      {/* Debit */}
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={line.debit}
-                        onChange={e => {
-                          updateLine(line.id, 'debit', e.target.value);
-                          if (e.target.value) updateLine(line.id, 'credit', '');
-                        }}
-                        placeholder="0.00"
-                        className="w-full px-2 py-1.5 rounded-lg bg-sky-50 dark:bg-sky-950/20 border border-sky-200 dark:border-sky-800 text-sky-700 dark:text-sky-300 font-mono font-black text-xs text-right focus:outline-none focus:border-sky-500 transition-colors"
-                      />
-                      {/* Credit */}
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={line.credit}
-                        onChange={e => {
-                          updateLine(line.id, 'credit', e.target.value);
-                          if (e.target.value) updateLine(line.id, 'debit', '');
-                        }}
-                        placeholder="0.00"
-                        className="w-full px-2 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 font-mono font-black text-xs text-right focus:outline-none focus:border-emerald-500 transition-colors"
-                      />
-                      {/* Remove */}
-                      <button
-                        type="button"
-                        onClick={() => removeLine(line.id)}
-                        className="p-1 rounded text-slate-300 dark:text-slate-600 hover:text-rose-500 dark:hover:text-rose-400 transition-colors"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Totals row */}
-                <div className="grid grid-cols-[1fr_1fr_80px_80px_24px] gap-2 px-3 py-2.5 bg-slate-50 dark:bg-slate-800/60 border-t-2 border-slate-200 dark:border-slate-700">
-                  <span className="text-xs font-black text-slate-700 dark:text-slate-200 col-span-2">TOTALS</span>
-                  <span className={`text-right font-mono font-black text-sm ${isBalanced ? 'text-sky-600 dark:text-sky-400' : 'text-rose-500'}`}>
-                    {fmt(totalDebit)}
-                  </span>
-                  <span className={`text-right font-mono font-black text-sm ${isBalanced ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500'}`}>
-                    {fmt(totalCredit)}
-                  </span>
-                  <span />
-                </div>
-              </div>
-
-              {/* Balance validation banner */}
-              {totalDebit > 0 && totalCredit > 0 && !isBalanced && (
-                <div className="flex items-center gap-2 p-3 rounded-xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs font-bold">
-                  <AlertTriangle className="w-4 h-4 shrink-0 animate-pulse" />
-                  Variance: Debits (${fmt(totalDebit)}) ≠ Credits (${fmt(totalCredit)}) — difference: ${fmt(Math.abs(totalDebit - totalCredit))}
-                </div>
-              )}
-              {isBalanced && totalDebit > 0 && (
-                <div className="flex items-center gap-2 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 text-xs font-bold">
-                  <CheckCircle2 className="w-4 h-4 shrink-0" />
-                  Trial balance check passed — Debits == Credits == ${fmt(totalDebit)}
-                </div>
-              )}
+              ))}
             </div>
           </div>
 
-          {/* Footer */}
           <div className="flex items-center justify-end gap-2 px-5 py-4 border-t border-slate-200 dark:border-slate-800 shrink-0">
             <button
               type="button"
               onClick={onClose}
               className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs cursor-pointer transition-colors"
             >
-              Cancel
+              {t('Cancel')}
             </button>
             <button
               type="submit"
@@ -515,7 +451,7 @@ function CreateJournalModal({
               className="flex items-center gap-1.5 px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-black text-xs shadow-md transition-all cursor-pointer"
             >
               {submitting ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
-              Post Journal Entry
+              {t('Post Journal Entry')}
             </button>
           </div>
         </form>
@@ -527,6 +463,9 @@ function CreateJournalModal({
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function DoubleEntryJournalsPage() {
+  const locale = useLocale();
+  const t = (key: string) => i18nT(key, locale);
+
   const [journals, setJournals]       = useState<JournalEntry[]>([]);
   const [accounts, setAccounts]       = useState<ChartOfAccount[]>([]);
   const [periods, setPeriods]         = useState<AccountingPeriod[]>([]);
@@ -551,9 +490,8 @@ export default function DoubleEntryJournalsPage() {
       setJournals(jData || []);
       setAccounts(coaData || []);
       setPeriods(periodData || []);
-    } catch (err) {
-      console.error(err);
-      toast.error('Failed to load journal entries.');
+    } catch {
+      toast.error(t('Failed to load journal entries.'));
     } finally {
       setLoading(false);
     }
@@ -561,7 +499,6 @@ export default function DoubleEntryJournalsPage() {
 
   useEffect(() => { loadData(); }, [loadData]);
 
-  // Normalise field aliases across different Strapi schema versions
   const normalizedJournals = useMemo(() => {
     return journals.map((j: any) => {
       const journalNumber   = j.journalNumber || j.entryNumber || `JRN-${j.id || 'AUTO'}`;
@@ -607,7 +544,6 @@ export default function DoubleEntryJournalsPage() {
     !!dateTo,
   ].filter(Boolean).length;
 
-  // KPI aggregates
   const totalDebitsPosted  = useMemo(() => normalizedJournals.reduce((s, j) => s + j.totalDebit,  0), [normalizedJournals]);
   const totalCreditsPosted = useMemo(() => normalizedJournals.reduce((s, j) => s + j.totalCredit, 0), [normalizedJournals]);
   const postedCount        = normalizedJournals.filter(j => j.status === 'posted').length;
@@ -617,32 +553,32 @@ export default function DoubleEntryJournalsPage() {
   const kpiCards: EnterpriseKPICard[] = [
     {
       id: 'total_journals',
-      title: 'Total Journal Vouchers',
+      title: t('Total Journal Vouchers'),
       value: `${normalizedJournals.length}`,
-      subtitle: `${postedCount} posted · ${draftCount} draft`,
+      subtitle: `${postedCount} ${t('posted')} · ${draftCount} ${t('draft')}`,
       trendDirection: 'up',
       icon: <ScrollText className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />,
     },
     {
       id: 'debits',
-      title: 'Cumulative Debits',
+      title: t('Cumulative Debits'),
       value: `$${fmt(totalDebitsPosted)}`,
-      subtitle: 'Assets & expense accounts debited',
+      subtitle: t('Assets & expense accounts debited'),
       trendDirection: 'neutral',
       icon: <Scale className="w-5 h-5 text-sky-600 dark:text-sky-400" />,
     },
     {
       id: 'credits',
-      title: 'Cumulative Credits',
+      title: t('Cumulative Credits'),
       value: `$${fmt(totalCreditsPosted)}`,
-      subtitle: 'Liabilities, equity & revenue credited',
+      subtitle: t('Liabilities, equity & revenue credited'),
       trendDirection: 'neutral',
       icon: <Scale className="w-5 h-5 text-amber-600 dark:text-amber-400" />,
     },
     {
       id: 'compliance',
-      title: 'Trial Balance Status',
-      value: isTrialBalanced ? 'BALANCED' : 'VARIANCE',
+      title: t('Trial Balance Status'),
+      value: isTrialBalanced ? t('BALANCED') : t('VARIANCE'),
       subtitle: isTrialBalanced
         ? `Variance: $0.00 — Audit OK`
         : `Variance: $${fmt(Math.abs(totalDebitsPosted - totalCreditsPosted))}`,
@@ -656,7 +592,7 @@ export default function DoubleEntryJournalsPage() {
   const columns = useMemo<ColumnDef<any, any>[]>(() => [
     {
       accessorKey: 'journalNumber',
-      header: 'Journal / Description',
+      header: t('Journal / Description'),
       cell: ({ row }) => (
         <div className="space-y-0.5">
           <span className="font-mono text-[11px] font-black text-emerald-600 dark:text-emerald-400 block">{row.original.journalNumber}</span>
@@ -667,25 +603,16 @@ export default function DoubleEntryJournalsPage() {
     },
     {
       accessorKey: 'sourceModule',
-      header: 'Source',
-      cell: ({ row }) => {
-        const m: Record<string, { label: string; color: string }> = {
-          student_billing: { label: 'Billing',   color: 'bg-blue-100   text-blue-700   dark:bg-blue-950/40   dark:text-blue-300'   },
-          payroll:         { label: 'Payroll',   color: 'bg-violet-100 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300' },
-          expenses:        { label: 'Expenses',  color: 'bg-amber-100  text-amber-700  dark:bg-amber-950/40  dark:text-amber-300'  },
-          donations:       { label: 'Donations', color: 'bg-pink-100   text-pink-700   dark:bg-pink-950/40   dark:text-pink-300'   },
-          manual_journal:  { label: 'Manual',    color: 'bg-slate-100  text-slate-700  dark:bg-slate-800     dark:text-slate-300'  },
-          closing_entry:   { label: 'Closing',   color: 'bg-rose-100   text-rose-700   dark:bg-rose-950/40   dark:text-rose-300'   },
-        };
-        const cfg = m[row.original.sourceModule] || { label: row.original.sourceModule, color: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300' };
-        return (
-          <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold ${cfg.color}`}>{cfg.label}</span>
-        );
-      },
+      header: t('Source'),
+      cell: ({ row }) => (
+        <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 font-mono">
+          {t(row.original.sourceModule || 'manual')}
+        </span>
+      ),
     },
     {
       accessorKey: 'lines',
-      header: 'GL Lines (DR / CR)',
+      header: t('GL Lines (DR / CR)'),
       cell: ({ row }) => (
         <div className="space-y-0.5 font-mono text-[10px] max-w-xs">
           {(row.original.lines || []).slice(0, 4).map((l: any, i: number) => (
@@ -698,15 +625,12 @@ export default function DoubleEntryJournalsPage() {
               </span>
             </div>
           ))}
-          {(row.original.lines || []).length > 4 && (
-            <span className="text-slate-400 italic">+{row.original.lines.length - 4} more lines…</span>
-          )}
         </div>
       ),
     },
     {
       accessorKey: 'postingDate',
-      header: 'Date',
+      header: t('Date'),
       cell: ({ row }) => (
         <span className="font-mono text-xs font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap">
           {row.original.postingDate}
@@ -715,7 +639,7 @@ export default function DoubleEntryJournalsPage() {
     },
     {
       accessorKey: 'totalDebit',
-      header: 'Amount ($)',
+      header: `${t('Amount')} ($)`,
       cell: ({ row }) => (
         <span className="font-mono text-xs font-black text-slate-900 dark:text-white whitespace-nowrap">
           ${fmt(Number(row.original.totalDebit || 0))}
@@ -724,33 +648,33 @@ export default function DoubleEntryJournalsPage() {
     },
     {
       accessorKey: 'status',
-      header: 'Status',
+      header: t('Status'),
       cell: ({ row }) => <StatusBadge status={row.original.status} size="sm" />,
     },
     {
       id: 'actions',
-      header: '',
+      header: t('Actions'),
       cell: ({ row }) => (
         <button
           onClick={() => setSelectedJournal(row.original)}
           className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-emerald-600 hover:text-white text-slate-700 dark:text-slate-200 font-bold text-[11px] transition-all border border-slate-200 dark:border-slate-700 cursor-pointer whitespace-nowrap"
         >
-          <Eye className="w-3 h-3" /> Inspect
+          <Eye className="w-3 h-3" /> {t('Inspect')}
         </button>
       ),
     },
-  ], []);
+  ], [locale]);
 
   const clearFilters = () => { setStatusFilter('all'); setModuleFilter('all'); setDateFrom(''); setDateTo(''); setQuery(''); };
 
   return (
     <EnterpriseModuleShell
-      title="Double-Entry Journal Entries"
-      description="Automated and manual journal postings enforcing strict Debits = Credits compliance. Every source document links to a sequential JRN voucher."
-      breadcrumbs={[{ label: 'Finance ERP', href: '/finance' }, { label: 'Accounting Engine' }, { label: 'Journal Entries' }]}
+      title={t('Double-Entry Journal Entries')}
+      description={t('Automated and manual journal postings enforcing strict Debits = Credits compliance. Every source document links to a sequential JRN voucher.')}
+      breadcrumbs={[{ label: t('Finance ERP'), href: '/finance' }, { label: t('Accounting Engine') }, { label: t('Journal Entries') }]}
       icon={<ScrollText className="w-8 h-8" />}
       recordCount={filteredJournals.length}
-      recordLabel="Journal Vouchers"
+      recordLabel={t('Journal Vouchers')}
       activeFilterCount={activeFiltersCount}
       onClearFilters={clearFilters}
       headerActions={
@@ -760,145 +684,53 @@ export default function DoubleEntryJournalsPage() {
             className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white text-xs font-bold transition-all shadow-sm cursor-pointer"
           >
             <Download className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-            <span>Export CSV</span>
+            <span>{t('Export CSV')}</span>
           </button>
           <button
             onClick={() => setShowCreateModal(true)}
             className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 text-white text-xs font-black shadow-lg shadow-emerald-600/30 hover:scale-[1.02] transition-all cursor-pointer"
           >
             <Plus className="w-4 h-4 stroke-[3]" />
-            Post Manual Entry
+            {t('Post Manual Entry')}
           </button>
         </div>
       }
     >
-      {/* KPI Deck */}
       <EnterpriseKPIDeck cards={kpiCards} />
 
-      {/* Trial Balance Banner */}
-      <div className={`rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border ${
-        isTrialBalanced
-          ? 'bg-gradient-to-r from-slate-50 via-slate-50 to-emerald-50 dark:from-slate-900 dark:via-slate-900 dark:to-emerald-950/30 border-slate-200 dark:border-slate-800'
-          : 'bg-rose-50 dark:bg-rose-950/20 border-rose-200 dark:border-rose-800'
-      }`}>
-        <div className="flex items-center gap-3">
-          <div className={`p-2.5 rounded-xl ${isTrialBalanced ? 'bg-emerald-100 dark:bg-emerald-950/50' : 'bg-rose-100 dark:bg-rose-950/50'}`}>
-            <Scale className={`w-5 h-5 ${isTrialBalanced ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500'}`} />
-          </div>
-          <div>
-            <div className="flex flex-wrap items-center gap-2">
-              <h4 className="font-bold text-slate-900 dark:text-white text-sm">System Trial Balance</h4>
-              <span className={`px-2 py-0.5 rounded text-[10px] font-black border ${
-                isTrialBalanced
-                  ? 'bg-emerald-100 text-emerald-700 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-700'
-                  : 'bg-rose-100 text-rose-700 border-rose-300 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-700'
-              }`}>
-                {isTrialBalanced ? '● ZERO VARIANCE' : '⚠ VARIANCE DETECTED'}
-              </span>
-            </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-mono">
-              Debits: <strong className="text-sky-600 dark:text-sky-400">${fmt(totalDebitsPosted)}</strong>
-              {' '}— Credits: <strong className="text-emerald-600 dark:text-emerald-400">${fmt(totalCreditsPosted)}</strong>
-              {!isTrialBalanced && <strong className="text-rose-500 ml-2">| Δ ${fmt(Math.abs(totalDebitsPosted - totalCreditsPosted))}</strong>}
-            </p>
-          </div>
-        </div>
-        <Link
-          href="/finance/accounting/ledger"
-          className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white font-bold text-xs transition-all flex items-center gap-1.5 shrink-0"
-        >
-          Open General Ledger →
+      {/* Domain Sub-Navigation */}
+      <div className="flex flex-wrap items-center gap-2 pb-2 border-b border-slate-200 dark:border-slate-800">
+        <Link href="/finance/accounting/chart" className="px-3.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs transition-all flex items-center gap-1.5">
+          <BookOpen className="w-3.5 h-3.5 text-emerald-500" />
+          <span>{t('Chart of Accounts')}</span>
+        </Link>
+        <Link href="/finance/accounting/journals" className="px-3.5 py-1.5 rounded-xl bg-emerald-600 text-white font-black text-xs shadow-md flex items-center gap-1.5">
+          <FileText className="w-3.5 h-3.5" />
+          <span>{t('Journal Entries')}</span>
+        </Link>
+        <Link href="/finance/accounting/ledger" className="px-3.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs transition-all flex items-center gap-1.5">
+          <ScrollText className="w-3.5 h-3.5 text-sky-500" />
+          <span>{t('General Ledger')}</span>
+        </Link>
+        <Link href="/finance/accounting/trial-balance" className="px-3.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs transition-all flex items-center gap-1.5">
+          <Scale className="w-3.5 h-3.5 text-amber-500" />
+          <span>{t('Trial Balance')}</span>
         </Link>
       </div>
 
-      {/* Accounting sub-navigation */}
-      <div className="flex flex-wrap items-center gap-2 pb-2 border-b border-slate-200 dark:border-slate-800">
-        {[
-          { href: '/finance/accounting/chart',   label: 'Chart of Accounts',       icon: <BookOpen className="w-3.5 h-3.5" />,    active: false },
-          { href: '/finance/accounting/journals', label: 'Journal Entries',          icon: <FileText className="w-3.5 h-3.5" />,    active: true  },
-          { href: '/finance/accounting/ledger',   label: 'General Ledger',           icon: <ScrollText className="w-3.5 h-3.5" />,  active: false },
-          { href: '/finance/accounting/periods',  label: 'Accounting Periods',       icon: <Clock className="w-3.5 h-3.5" />,       active: false },
-          { href: '/finance/accounting/trial-balance', label: 'Trial Balance',       icon: <Scale className="w-3.5 h-3.5" />,       active: false },
-        ].map(({ href, label, icon, active }) => (
-          <Link
-            key={href}
-            href={href}
-            className={`px-3.5 py-1.5 rounded-xl font-bold text-xs transition-all flex items-center gap-1.5 ${
-              active
-                ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30'
-                : 'bg-slate-50 hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
-            }`}
-          >
-            {icon}{label}
-          </Link>
-        ))}
-      </div>
-
-      {/* Advanced filters row */}
-      <div className="flex flex-wrap items-center gap-3 p-3 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-200 dark:border-slate-800">
-        <div className="flex items-center gap-1.5">
-          <label className="text-[10px] font-bold text-slate-400 uppercase">Status</label>
-          <select
-            value={statusFilter}
-            onChange={e => setStatusFilter(e.target.value)}
-            className="px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:border-emerald-500"
-          >
-            <option value="all">All Statuses</option>
-            <option value="posted">Posted</option>
-            <option value="draft">Draft</option>
-            <option value="cancelled">Cancelled</option>
-          </select>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <label className="text-[10px] font-bold text-slate-400 uppercase">Source</label>
-          <select
-            value={moduleFilter}
-            onChange={e => setModuleFilter(e.target.value)}
-            className="px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:border-emerald-500"
-          >
-            <option value="all">All Sources</option>
-            <option value="student_billing">Student Billing</option>
-            <option value="payroll">Payroll</option>
-            <option value="expenses">Expenses</option>
-            <option value="donations">Donations</option>
-            <option value="manual_journal">Manual Entry</option>
-            <option value="closing_entry">Closing Entry</option>
-          </select>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <label className="text-[10px] font-bold text-slate-400 uppercase">From</label>
-          <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
-            className="px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:border-emerald-500"
-          />
-        </div>
-        <div className="flex items-center gap-1.5">
-          <label className="text-[10px] font-bold text-slate-400 uppercase">To</label>
-          <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
-            className="px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:border-emerald-500"
-          />
-        </div>
-        {activeFiltersCount > 0 && (
-          <button onClick={clearFilters} className="px-2.5 py-1 rounded-lg bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800 text-rose-600 dark:text-rose-400 text-[11px] font-bold hover:bg-rose-100 transition-colors">
-            Clear filters ({activeFiltersCount})
-          </button>
-        )}
-      </div>
-
-      {/* Toolbar */}
       <EnterpriseToolbar
         searchQuery={query}
         onSearchChange={setQuery}
-        searchPlaceholder="Search by JRN-XXXX reference, description, or source document…"
+        searchPlaceholder={t('Search by JRN-XXXX reference, description, or source document...')}
         density={density}
         onDensityChange={setDensity}
-        onRefresh={() => { loadData(); toast.success('Journal entries refreshed.'); }}
+        onRefresh={() => { loadData(); toast.success(t('Journal entries refreshed.')); }}
         activeFilterCount={activeFiltersCount}
         onResetFilters={clearFilters}
-        createButtonLabel="+ Post Manual Entry"
+        createButtonLabel={t('+ Post Manual Entry')}
         onCreate={() => setShowCreateModal(true)}
       />
 
-      {/* Data Grid */}
       <EnterpriseDataGrid
         data={filteredJournals}
         columns={columns}
@@ -907,16 +739,15 @@ export default function DoubleEntryJournalsPage() {
         onRowInspect={setSelectedJournal}
         onRowClick={setSelectedJournal}
         emptyStateProps={{
-          title: 'No Journal Entries Found',
-          description: 'No double-entry journal vouchers match your current filters.',
+          title: t('No Journal Entries Found'),
+          description: t('No double-entry journal vouchers match your current filters.'),
           isFilterActive: activeFiltersCount > 0 || query.length > 0,
           onResetFilters: clearFilters,
-          createLabel: 'Post Manual Journal Entry',
+          createLabel: t('Post Manual Journal Entry'),
           onCreate: () => setShowCreateModal(true),
         }}
       />
 
-      {/* Journal Detail Panel */}
       {selectedJournal && (
         <JournalDetailPanel
           journal={selectedJournal}
@@ -924,7 +755,6 @@ export default function DoubleEntryJournalsPage() {
         />
       )}
 
-      {/* Create Journal Modal */}
       {showCreateModal && (
         <CreateJournalModal
           accounts={accounts}
