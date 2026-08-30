@@ -5,32 +5,48 @@
     "singularName": "finance-exchange-rate",
     "pluralName": "finance-exchange-rates",
     "displayName": "Finance Exchange Rate",
-    "description": ""
+    "description": "Multi-currency exchange rate parities and base ledger currency mappings"
   },
   "options": {
     "draftAndPublish": false
   },
   "pluginOptions": {},
   "attributes": {
-    "fromCurrency": {
-      "type": "relation",
-      "relation": "manyToOne",
-      "target": "api::finance-currency.finance-currency"
+    "currencyCode": {
+      "type": "string",
+      "required": true
     },
-    "toCurrency": {
-      "type": "relation",
-      "relation": "manyToOne",
-      "target": "api::finance-currency.finance-currency"
+    "currencyName": {
+      "type": "string",
+      "required": true
+    },
+    "symbol": {
+      "type": "string"
+    },
+    "exchangeRateToUSD": {
+      "type": "decimal",
+      "default": 1
     },
     "rate": {
       "type": "decimal",
-      "required": true
+      "default": 1
+    },
+    "isBase": {
+      "type": "boolean",
+      "default": false
+    },
+    "isBaseCurrency": {
+      "type": "boolean",
+      "default": false
+    },
+    "isActive": {
+      "type": "boolean",
+      "default": true
+    },
+    "lastUpdated": {
+      "type": "string"
     },
     "effectiveDate": {
-      "type": "date",
-      "required": true
-    },
-    "expirationDate": {
       "type": "date"
     },
     "status": {
@@ -40,9 +56,6 @@
         "archived"
       ],
       "default": "active"
-    },
-    "createdByRole": {
-      "type": "string"
     }
   }
 }

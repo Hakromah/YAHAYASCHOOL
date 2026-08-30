@@ -637,9 +637,12 @@ export interface MultiCurrencyRate {
   currencyName: string;
   symbol: string;
   exchangeRateToUSD: number;
+  isBase?: boolean;
   isBaseCurrency?: boolean;
+  isActive?: boolean;
   isAutoSynced?: boolean;
   lastUpdated: string;
+  [key: string]: any;
 }
 
 export interface FinanceSettings {

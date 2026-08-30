@@ -88,10 +88,11 @@ function getSuperAdminNav(): NavSection[] {
     {
       title: 'Administration',
       items: [
+        { label: 'Messages', href: '/messages', icon: MessageSquare },
+        { label: 'Notifications', href: '/notifications', icon: Bell },
         { label: 'Users', href: '/users', icon: Users },
         { label: 'Roles & Permissions', href: '/settings/roles', icon: ShieldCheck },
         { label: 'Audit Logs', href: '/audit-logs', icon: FileSearch },
-        { label: 'Notifications', href: '/notifications', icon: Bell },
         { label: 'Activity Logs', href: '/activity-logs', icon: AlignLeft },
         { label: 'Login Sessions', href: '/settings/sessions', icon: Key },
         { label: 'Localization', href: '/settings/languages', icon: Globe },
@@ -323,6 +324,7 @@ function getDirectorNav(): NavSection[] {
     {
       title: 'System',
       items: [
+        { label: 'Messages', href: '/messages', icon: MessageSquare },
         { label: 'Notifications', href: '/notifications', icon: Bell },
         { label: 'Events', href: '/cms/events', icon: Calendar },
         { label: 'Announcements', href: '/announcements', icon: Megaphone },
@@ -517,6 +519,7 @@ function getAccountantNav(): NavSection[] {
     {
       title: 'System',
       items: [
+        { label: 'Messages', href: '/messages', icon: MessageSquare },
         { label: 'Notifications', href: '/notifications', icon: Bell },
         { label: 'Profile', href: '/profile', icon: UserCog },
       ],
@@ -567,6 +570,7 @@ function getAccountLeadNav(): NavSection[] {
     {
       title: 'System',
       items: [
+        { label: 'Messages', href: '/messages', icon: MessageSquare },
         { label: 'Notifications', href: '/notifications', icon: Bell },
         { label: 'Profile', href: '/profile', icon: UserCog },
         { label: 'Settings', href: '/settings/finance', icon: Settings },
@@ -666,6 +670,7 @@ function getSectionHeadNav(sectionId?: string): NavSection[] {
     {
       title: 'Communication',
       items: [
+        { label: 'Messages',       href: '/messages',       icon: MessageSquare },
         { label: 'Notifications',  href: '/notifications',  icon: Bell },
         { label: 'Announcements',  href: '/announcements',  icon: Megaphone },
         { label: 'Profile',        href: '/profile',        icon: UserCog },
@@ -704,6 +709,7 @@ function getRegistrarNav(): NavSection[] {
     {
       title: 'System',
       items: [
+        { label: 'Messages', href: '/messages', icon: MessageSquare },
         { label: 'Notifications', href: '/notifications', icon: Bell },
         { label: 'Profile', href: '/profile', icon: UserCog },
       ],

@@ -1,18 +1,18 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link } from '@/i18n/routing';
 import {
   DollarSign, HeartHandshake, Receipt, Wallet, ArrowRight,
   Plus, Eye, AlertTriangle, Clock, Shield, FileText, CreditCard,
-  Landmark, Scale, ScrollText, BarChart3, RefreshCw
+  Landmark, Scale, ScrollText, BarChart3, RefreshCw, Globe
 } from 'lucide-react';
 import { useLocale } from 'next-intl';
 import { t as i18nT } from '@/lib/i18n-dict';
 import { financeService } from '@/services/finance.service';
 import { erpService } from '@/services/erp.service';
-import type { ExecutiveFinanceStats } from '@/types/finance.types';
+import type { ExecutiveFinanceStats, MultiCurrencyRate } from '@/types/finance.types';
 import type { AcademicYear } from '@/types/erp.types';
 import { EnterpriseModuleShell } from '@/components/erp/EnterpriseModuleShell';
 import { EnterpriseKPIDeck, type EnterpriseKPICard } from '@/components/erp/EnterpriseKPIDeck';
@@ -35,6 +35,11 @@ export default function FinanceOverviewPage() {
   const [density, setDensity] = useState<TableDensity>('cozy');
   const [selectedRow, setSelectedRow] = useState<any | null>(null);
 
+  // Multi-Currency Engine State
+  const [currencies, setCurrencies] = useState<MultiCurrencyRate[]>([]);
+  const [selectedCurrency, setSelectedCurrency] = useState<string>('USD');
+  const [baseCurrency, setBaseCurrency] = useState<string>('USD');
+
   // Reconciliation state
   const [reconciliationError, setReconciliationError] = useState<string | null>(null);
   const [reconciliationDetails, setReconciliationDetails] = useState<any>(null);
@@ -54,7 +59,72 @@ export default function FinanceOverviewPage() {
     });
   }, []);
 
-  // 2. Fetch Executive Stats
+  // 2. Fetch Currency Settings & Exchange Rates
+  useEffect(() => {
+    const initCurrency = async () => {
+      try {
+        const [settingsData, ratesData] = await Promise.all([
+          financeService.getSettings(),
+          financeService.getExchangeRates()
+        ]);
+        if (ratesData && ratesData.length > 0) {
+          setCurrencies(ratesData);
+        }
+        let initialCurr = 'USD';
+        if (typeof window !== 'undefined') {
+          const saved = localStorage.getItem('yahaya_selected_currency') || localStorage.getItem('selected_currency') || localStorage.getItem('yahaya_default_currency');
+          if (saved) initialCurr = saved;
+          else if (settingsData?.defaultCurrency) initialCurr = settingsData.defaultCurrency;
+        } else if (settingsData?.defaultCurrency) {
+          initialCurr = settingsData.defaultCurrency;
+        }
+        setSelectedCurrency(initialCurr);
+        setBaseCurrency(settingsData?.defaultCurrency || 'USD');
+      } catch {}
+    };
+    initCurrency();
+
+    const onCurrencyChange = (e: any) => {
+      const newCurr = e.detail;
+      if (newCurr) {
+        setSelectedCurrency(newCurr);
+      }
+    };
+    const onSettingsUpdate = (e: any) => {
+      if (e.detail?.defaultCurrency) {
+        setSelectedCurrency(e.detail.defaultCurrency);
+        setBaseCurrency(e.detail.defaultCurrency);
+      }
+    };
+    window.addEventListener('yahaya_currency_changed', onCurrencyChange);
+    window.addEventListener('finance_settings_updated', onSettingsUpdate);
+    return () => {
+      window.removeEventListener('yahaya_currency_changed', onCurrencyChange);
+      window.removeEventListener('finance_settings_updated', onSettingsUpdate);
+    };
+  }, []);
+
+  // ── Currency Converter Helper ──────────────────────────────────────────────
+  const activeCurrencyRate = useMemo(() => {
+    if (selectedCurrency === 'USD') return 1;
+    const found = currencies.find(c => c.currencyCode === selectedCurrency || (c as any).isoCode === selectedCurrency);
+    return Number(found?.exchangeRateToUSD || (found as any)?.rate || 1);
+  }, [currencies, selectedCurrency]);
+
+  const activeCurrencySymbol = useMemo(() => {
+    const found = currencies.find(c => c.currencyCode === selectedCurrency || (c as any).isoCode === selectedCurrency);
+    return found?.symbol || (selectedCurrency === 'USD' ? '$' : selectedCurrency === 'EUR' ? '€' : selectedCurrency === 'TRY' ? '₺' : selectedCurrency === 'XOF' ? 'CFA' : selectedCurrency === 'GBP' ? '£' : selectedCurrency);
+  }, [currencies, selectedCurrency]);
+
+  const formatMoney = useCallback((amountUSD: number) => {
+    const converted = Number(amountUSD || 0) * activeCurrencyRate;
+    return `${activeCurrencySymbol}${converted.toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+  }, [activeCurrencyRate, activeCurrencySymbol]);
+
+  // 3. Fetch Executive Stats
   const loadStats = async () => {
     setLoading(true);
     try {
@@ -71,7 +141,7 @@ export default function FinanceOverviewPage() {
     loadStats();
   }, [academicYear]);
 
-  // 3. Ledger Reconciliation Sanity Check
+  // 4. Ledger Reconciliation Sanity Check
   useEffect(() => {
     Promise.all([
       financeService.getInvoices(),
@@ -129,7 +199,7 @@ export default function FinanceOverviewPage() {
       {
         id: 'revenue',
         title: t('Tuition & Fee Revenue (YTD)'),
-        value: `$${stats.kpi.totalRevenueYTD.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
+        value: formatMoney(stats.kpi.totalRevenueYTD),
         subtitle: `${t('Collection rate')}: ${stats.kpi.feeCollectionRate}% (${stats.kpi.activeStudentsCount} ${t('active scholars')})`,
         trendDirection: 'up',
         icon: <DollarSign className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />,
@@ -137,12 +207,12 @@ export default function FinanceOverviewPage() {
         onClick: () => {
           setCategoryFilter(categoryFilter === 'Tuition Receipt' ? 'all' : 'Tuition Receipt');
         },
-        badgeText: academicYear
+        badgeText: `${academicYear} • ${selectedCurrency}`
       },
       {
         id: 'outstanding',
         title: t('Outstanding Student Fees'),
-        value: `$${stats.kpi.outstandingFees.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
+        value: formatMoney(stats.kpi.outstandingFees),
         subtitle: `${stats.kpi.pendingInvoicesCount} ${t('invoices pending settlement')}`,
         trendDirection: stats.kpi.outstandingFees > 0 ? 'down' : 'neutral',
         icon: <AlertTriangle className="w-5 h-5 text-amber-500" />,
@@ -151,7 +221,7 @@ export default function FinanceOverviewPage() {
       {
         id: 'expenses',
         title: t('Operating Expenses (YTD)'),
-        value: `$${stats.kpi.monthlyExpenses.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
+        value: formatMoney(stats.kpi.monthlyExpenses),
         subtitle: `${stats.kpi.pendingApprovalsCount} ${t('requisitions awaiting review')}`,
         trendDirection: 'neutral',
         icon: <Receipt className="w-5 h-5 text-rose-500" />,
@@ -163,7 +233,7 @@ export default function FinanceOverviewPage() {
       {
         id: 'payroll',
         title: t('Monthly Staff Payroll'),
-        value: `$${stats.kpi.payrollThisMonth.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
+        value: formatMoney(stats.kpi.payrollThisMonth),
         subtitle: `${t('Faculty & administrative compensation')}`,
         trendDirection: 'neutral',
         icon: <Wallet className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />,
@@ -173,7 +243,7 @@ export default function FinanceOverviewPage() {
         }
       }
     ];
-  }, [stats, categoryFilter, academicYear, locale]);
+  }, [stats, categoryFilter, academicYear, selectedCurrency, locale, formatMoney]);
 
   const columns = useMemo<ColumnDef<any, any>[]>(() => [
     {
@@ -213,7 +283,7 @@ export default function FinanceOverviewPage() {
     },
     {
       accessorKey: 'amount',
-      header: t('Amount ($)'),
+      header: `${t('Amount')} (${selectedCurrency})`,
       cell: ({ row }) => {
         const tx = row.original;
         const isIncome = tx.amount > 0;
@@ -221,7 +291,7 @@ export default function FinanceOverviewPage() {
           <span className={`font-mono text-xs sm:text-sm font-extrabold ${
             isIncome ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400'
           }`}>
-            {isIncome ? '+' : ''}${Math.abs(tx.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+            {isIncome ? '+' : ''}{formatMoney(Math.abs(tx.amount))}
           </span>
         );
       }
@@ -247,7 +317,7 @@ export default function FinanceOverviewPage() {
         </button>
       )
     }
-  ], [locale]);
+  ], [selectedCurrency, locale, formatMoney]);
 
   return (
     <EnterpriseModuleShell
@@ -260,7 +330,46 @@ export default function FinanceOverviewPage() {
       activeFilterCount={activeFiltersCount}
       onClearFilters={handleClearFilters}
       headerActions={
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Live Currency Selector */}
+          <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3 py-1.5 rounded-lg shadow-2xs">
+            <Globe className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{t('Currency')}:</span>
+            <select
+              value={selectedCurrency}
+              onChange={(e) => {
+                const newCurr = e.target.value;
+                setSelectedCurrency(newCurr);
+                if (typeof window !== 'undefined') {
+                  localStorage.setItem('yahaya_selected_currency', newCurr);
+                  localStorage.setItem('selected_currency', newCurr);
+                  window.dispatchEvent(new CustomEvent('yahaya_currency_changed', { detail: newCurr }));
+                }
+                toast.info(`${t('Display currency switched to')} ${newCurr}`);
+              }}
+              aria-label="Select Operating Currency"
+              className="bg-transparent text-xs font-bold text-slate-900 dark:text-white focus:outline-none cursor-pointer font-mono"
+            >
+              {currencies.length > 0 ? (
+                currencies.map(c => (
+                  <option key={c.currencyCode} value={c.currencyCode} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
+                    {c.currencyCode} ({c.symbol}) — {c.currencyName}
+                  </option>
+                ))
+              ) : (
+                <>
+                  <option value="USD" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">USD ($) — US Dollar</option>
+                  <option value="EUR" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">EUR (€) — Euro</option>
+                  <option value="TRY" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">TRY (₺) — Turkish Lira</option>
+                  <option value="XOF" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">XOF (CFA) — CFA Franc</option>
+                  <option value="GNF" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">GNF (FG) — Guinean Franc</option>
+                  <option value="GBP" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">GBP (£) — British Pound</option>
+                  <option value="SAR" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">SAR (﷼) — Saudi Riyal</option>
+                </>
+              )}
+            </select>
+          </div>
+
           {/* Academic Year Selector */}
           <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3 py-1.5 rounded-lg shadow-2xs">
             <Clock className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
@@ -319,15 +428,15 @@ export default function FinanceOverviewPage() {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono text-slate-600 dark:text-slate-400">
             <div>
               <span>{t('Invoiced Revenue')}:</span>
-              <strong className="block text-slate-900 dark:text-slate-100">${reconciliationDetails.sumInvoiced.toFixed(2)}</strong>
+              <strong className="block text-slate-900 dark:text-slate-100">{formatMoney(reconciliationDetails.sumInvoiced)}</strong>
             </div>
             <div>
               <span>{t('Paid + Outstanding')}:</span>
-              <strong className="block text-slate-900 dark:text-slate-100">${(reconciliationDetails.sumPaid + reconciliationDetails.sumRemaining).toFixed(2)}</strong>
+              <strong className="block text-slate-900 dark:text-slate-100">{formatMoney(reconciliationDetails.sumPaid + reconciliationDetails.sumRemaining)}</strong>
             </div>
             <div>
               <span>{t('Total Receipts')}:</span>
-              <strong className="block text-slate-900 dark:text-slate-100">${reconciliationDetails.sumReceipts.toFixed(2)}</strong>
+              <strong className="block text-slate-900 dark:text-slate-100">{formatMoney(reconciliationDetails.sumReceipts)}</strong>
             </div>
             <div>
               <span>{t('Status')}:</span>
@@ -364,17 +473,17 @@ export default function FinanceOverviewPage() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="bg-slate-50/70 dark:bg-slate-950 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
                 <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block mb-1">{t('Commercial Bank Accounts (1010)')}</span>
-                <span className="text-xl font-extrabold font-mono text-slate-900 dark:text-emerald-400 block">${stats.treasuryInsights.totalBankBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                <span className="text-xl font-extrabold font-mono text-slate-900 dark:text-emerald-400 block">{formatMoney(stats.treasuryInsights.totalBankBalance)}</span>
                 <span className="text-xs text-slate-500 mt-1 block">{t('Institutional Bank Accounts')}</span>
               </div>
               <div className="bg-slate-50/70 dark:bg-slate-950 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
                 <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block mb-1">{t('Mobile Money Wallets (1020)')}</span>
-                <span className="text-xl font-extrabold font-mono text-slate-900 dark:text-sky-400 block">${stats.treasuryInsights.totalMobileMoney.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                <span className="text-xl font-extrabold font-mono text-slate-900 dark:text-sky-400 block">{formatMoney(stats.treasuryInsights.totalMobileMoney)}</span>
                 <span className="text-xs text-slate-500 mt-1 block">{t('Orange Money & MTN Merchant Wallets')}</span>
               </div>
               <div className="bg-slate-50/70 dark:bg-slate-950 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
                 <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block mb-1">{t('Campus Cash Drawer (1030)')}</span>
-                <span className="text-xl font-extrabold font-mono text-slate-900 dark:text-amber-400 block">${stats.treasuryInsights.totalCashInDrawer.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                <span className="text-xl font-extrabold font-mono text-slate-900 dark:text-amber-400 block">{formatMoney(stats.treasuryInsights.totalCashInDrawer)}</span>
                 <span className="text-xs text-slate-500 mt-1 block">{t('Cashier Petty Cash Drawer')}</span>
               </div>
             </div>
@@ -388,7 +497,7 @@ export default function FinanceOverviewPage() {
               </span>
               <h4 className="text-base font-bold text-slate-900 dark:text-white">{t('Estimated Runway')}</h4>
               <p className="text-3xl font-extrabold font-mono text-emerald-700 dark:text-emerald-400 mt-1">{stats.treasuryInsights.estimatedRunwayMonths} {t('Months')}</p>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">{t('Based on current monthly payroll and operating expense burn rate of')} ${stats.kpi.monthlyExpenses.toLocaleString('en-US', { minimumFractionDigits: 2 })}/mo.</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">{t('Based on current monthly payroll and operating expense burn rate of')} {formatMoney(stats.kpi.monthlyExpenses)}/mo.</p>
             </div>
             <Link
               href="/finance/budget"
@@ -486,8 +595,8 @@ export default function FinanceOverviewPage() {
                     />
                   </div>
                   <div className="flex items-center justify-between font-mono text-xs text-slate-500 dark:text-slate-400 pt-1 border-t border-slate-200 dark:border-slate-800">
-                    <span>{t('Spent')}: <strong className="text-slate-900 dark:text-white">${b.spent.toLocaleString('en-US', { minimumFractionDigits: 2 })}</strong></span>
-                    <span>{t('Allocated')}: <strong className="text-indigo-600 dark:text-indigo-400">${b.allocated.toLocaleString('en-US', { minimumFractionDigits: 2 })}</strong></span>
+                    <span>{t('Spent')}: <strong className="text-slate-900 dark:text-white">{formatMoney(b.spent)}</strong></span>
+                    <span>{t('Allocated')}: <strong className="text-indigo-600 dark:text-indigo-400">{formatMoney(b.allocated)}</strong></span>
                   </div>
                 </div>
               );
@@ -558,7 +667,7 @@ export default function FinanceOverviewPage() {
           role: `${selectedRow.type.toUpperCase()}`,
           status: selectedRow.status,
           email: selectedRow.date,
-          balance: `$${Math.abs(selectedRow.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })} (${selectedRow.status.toUpperCase()})`
+          balance: `${formatMoney(Math.abs(selectedRow.amount))} (${selectedRow.status.toUpperCase()})`
         } : null}
         category="finance"
       />

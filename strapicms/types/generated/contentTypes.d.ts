@@ -2599,7 +2599,7 @@ export interface ApiFinanceExchangeRateFinanceExchangeRate
   extends Struct.CollectionTypeSchema {
   collectionName: 'finance_exchange_rates';
   info: {
-    description: '';
+    description: 'Multi-currency exchange rate parities and base ledger currency mappings';
     displayName: 'Finance Exchange Rate';
     pluralName: 'finance-exchange-rates';
     singularName: 'finance-exchange-rate';
@@ -2611,13 +2611,15 @@ export interface ApiFinanceExchangeRateFinanceExchangeRate
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
-    createdByRole: Schema.Attribute.String;
-    effectiveDate: Schema.Attribute.Date & Schema.Attribute.Required;
-    expirationDate: Schema.Attribute.Date;
-    fromCurrency: Schema.Attribute.Relation<
-      'manyToOne',
-      'api::finance-currency.finance-currency'
-    >;
+    currencyCode: Schema.Attribute.String & Schema.Attribute.Required;
+    currencyName: Schema.Attribute.String & Schema.Attribute.Required;
+    effectiveDate: Schema.Attribute.Date;
+    exchangeRateToUSD: Schema.Attribute.Decimal & Schema.Attribute.DefaultTo<1>;
+    isActive: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
+    isBase: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
+    isBaseCurrency: Schema.Attribute.Boolean &
+      Schema.Attribute.DefaultTo<false>;
+    lastUpdated: Schema.Attribute.String;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
@@ -2625,13 +2627,10 @@ export interface ApiFinanceExchangeRateFinanceExchangeRate
     > &
       Schema.Attribute.Private;
     publishedAt: Schema.Attribute.DateTime;
-    rate: Schema.Attribute.Decimal & Schema.Attribute.Required;
+    rate: Schema.Attribute.Decimal & Schema.Attribute.DefaultTo<1>;
     status: Schema.Attribute.Enumeration<['active', 'archived']> &
       Schema.Attribute.DefaultTo<'active'>;
-    toCurrency: Schema.Attribute.Relation<
-      'manyToOne',
-      'api::finance-currency.finance-currency'
-    >;
+    symbol: Schema.Attribute.String;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -2674,6 +2673,52 @@ export interface ApiFinanceExpenseFinanceExpense
       Schema.Attribute.Private;
     vendorName: Schema.Attribute.String;
     voucherNumber: Schema.Attribute.String;
+  };
+}
+
+export interface ApiFinanceFeeStructureFinanceFeeStructure
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'finance_fee_structures';
+  info: {
+    description: 'Institutional fee schedules, tuition templates, and grade-level billing matrices';
+    displayName: 'Finance Fee Structure';
+    pluralName: 'finance-fee-structures';
+    singularName: 'finance-fee-structure';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    academicYearCode: Schema.Attribute.String;
+    amount: Schema.Attribute.Decimal;
+    code: Schema.Attribute.String;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    currency: Schema.Attribute.String & Schema.Attribute.DefaultTo<'USD'>;
+    description: Schema.Attribute.Text;
+    gradeCode: Schema.Attribute.String;
+    installmentAllowed: Schema.Attribute.Boolean &
+      Schema.Attribute.DefaultTo<true>;
+    isActive: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
+    items: Schema.Attribute.JSON;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::finance-fee-structure.finance-fee-structure'
+    > &
+      Schema.Attribute.Private;
+    metadata: Schema.Attribute.JSON;
+    name: Schema.Attribute.String;
+    publishedAt: Schema.Attribute.DateTime;
+    scholarshipEligible: Schema.Attribute.Boolean &
+      Schema.Attribute.DefaultTo<true>;
+    title: Schema.Attribute.String & Schema.Attribute.Required;
+    totalAmount: Schema.Attribute.Decimal;
+    totalAnnualFee: Schema.Attribute.Decimal;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
   };
 }
 
@@ -8931,6 +8976,7 @@ declare module '@strapi/strapi' {
       'api::finance-currency.finance-currency': ApiFinanceCurrencyFinanceCurrency;
       'api::finance-exchange-rate.finance-exchange-rate': ApiFinanceExchangeRateFinanceExchangeRate;
       'api::finance-expense.finance-expense': ApiFinanceExpenseFinanceExpense;
+      'api::finance-fee-structure.finance-fee-structure': ApiFinanceFeeStructureFinanceFeeStructure;
       'api::finance-financial-statement.finance-financial-statement': ApiFinanceFinancialStatementFinanceFinancialStatement;
       'api::finance-hold.finance-hold': ApiFinanceHoldFinanceHold;
       'api::finance-invoice.finance-invoice': ApiFinanceInvoiceFinanceInvoice;

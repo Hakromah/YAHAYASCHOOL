@@ -62,7 +62,11 @@ export function useNotifications() {
         recipientId: user.id,
         pageSize: 50 
       });
-      const apiList = res?.data || [];
+      const apiList = (res?.data || []).map(n => ({
+        ...n,
+        status: (n.status || n.recordStatus || 'pending') as NotificationStatusEnum,
+        recordStatus: (n.recordStatus || n.status || 'pending') as NotificationStatusEnum,
+      }));
       
       setNotifications(apiList);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(apiList));
@@ -82,35 +86,69 @@ export function useNotifications() {
   useEffect(() => {
     loadNotifications();
 
-    const handleUpdate = () => {
-      const localStr = localStorage.getItem(STORAGE_KEY);
-      if (localStr) {
-        setNotifications(JSON.parse(localStr));
+    const handleUpdate = (e?: any) => {
+      const detail = e?.detail;
+      if (detail?.action === 'read' && (detail.id || detail.documentId)) {
+        setNotifications(prev => {
+          const next = prev.map(n => 
+            (n.id === detail.id || n.documentId === detail.documentId || n.id === detail.documentId)
+              ? { ...n, status: NotificationStatusEnum.Read, recordStatus: NotificationStatusEnum.Read, readAt: new Date().toISOString() }
+              : n
+          );
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+          return next;
+        });
+      } else if (detail?.action === 'read-all') {
+        setNotifications(prev => {
+          const next = prev.map(n => ({ ...n, status: NotificationStatusEnum.Read, recordStatus: NotificationStatusEnum.Read, readAt: new Date().toISOString() }));
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+          return next;
+        });
+      } else if (detail?.action === 'delete' && (detail.id || detail.documentId)) {
+        setNotifications(prev => {
+          const next = prev.filter(n => n.id !== detail.id && n.documentId !== detail.documentId);
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+          return next;
+        });
+      } else {
+        const localStr = localStorage.getItem(STORAGE_KEY);
+        if (localStr) {
+          try { setNotifications(JSON.parse(localStr)); } catch { /* ignore */ }
+        }
       }
     };
 
     window.addEventListener('notifications-update', handleUpdate);
-    return () => window.removeEventListener('notifications-update', handleUpdate);
+    window.addEventListener('focus', () => loadNotifications());
+
+    // Periodic background sync every 30s
+    const timer = setInterval(() => {
+      loadNotifications();
+    }, 30000);
+
+    return () => {
+      window.removeEventListener('notifications-update', handleUpdate);
+      window.removeEventListener('focus', () => loadNotifications());
+      clearInterval(timer);
+    };
   }, [loadNotifications]);
 
-  const notifyChange = () => {
-    window.dispatchEvent(new Event('notifications-update'));
+  const notifyChange = (detail?: any) => {
+    window.dispatchEvent(new CustomEvent('notifications-update', { detail }));
   };
 
   const markAsRead = async (id: number | string) => {
     const updated = notifications.map(n => 
-      n.id === id ? { ...n, status: NotificationStatusEnum.Read, recordStatus: NotificationStatusEnum.Read, readAt: new Date().toISOString() } : n
+      (n.id === id || n.documentId === id) ? { ...n, status: NotificationStatusEnum.Read, recordStatus: NotificationStatusEnum.Read, readAt: new Date().toISOString() } : n
     );
     setNotifications(updated);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-    notifyChange();
+    notifyChange({ id, action: 'read' });
 
     try {
-      if (typeof id === 'number') {
-        await notificationService.markAsRead(id);
-      } else {
-        await apiClient.put(`/notifications/${id}`, { data: { recordStatus: 'read', readAt: new Date().toISOString() } });
-      }
+      const match = notifications.find(n => n.id === id || n.documentId === id);
+      const target = match?.documentId || id;
+      await notificationService.markAsRead(target);
     } catch {
       // Silent catch for offline capability
     }
@@ -125,7 +163,7 @@ export function useNotifications() {
     }));
     setNotifications(updated);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-    notifyChange();
+    notifyChange({ action: 'read-all' });
 
     try {
       if (user?.id) {
@@ -137,19 +175,26 @@ export function useNotifications() {
   };
 
   const deleteNotification = async (id: number | string) => {
-    const updated = notifications.filter(n => n.id !== id);
+    const updated = notifications.filter(n => n.id !== id && n.documentId !== id);
     setNotifications(updated);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-    notifyChange();
+    notifyChange({ id, action: 'delete' });
 
     try {
-      await apiClient.delete(`/notifications/${id}`);
+      const match = notifications.find(n => n.id === id || n.documentId === id);
+      const target = match?.documentId || id;
+      await apiClient.delete(`/notifications/${target}`);
     } catch {
       // Silent catch
     }
   };
 
-  const unreadCount = notifications.filter(n => n.status !== NotificationStatusEnum.Read).length;
+  const unreadCount = notifications.filter(n => 
+    n.status !== NotificationStatusEnum.Read && 
+    n.recordStatus !== NotificationStatusEnum.Read &&
+    (n as any).status !== 'read' &&
+    (n as any).recordStatus !== 'read'
+  ).length;
 
   return {
     notifications,

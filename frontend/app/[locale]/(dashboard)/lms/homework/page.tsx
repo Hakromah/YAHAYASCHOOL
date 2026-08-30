@@ -30,6 +30,7 @@ import {
 import { PageContainer, PageHeader } from '@/components/shared/layout/PageContainer';
 import { apiClient } from '@/services/api.service';
 import { getHomeworks, getSubjects } from '@/services/lms.service';
+import { erpService } from '@/services/erp.service';
 import { useAuth } from '@/hooks/useAuth';
 import { usePermissions } from '@/hooks/usePermissions';
 import { toast } from 'sonner';
@@ -103,7 +104,7 @@ export default function HomeworkPage() {
   const [formSubjectId, setFormSubjectId] = useState<string>('');
   const [formGradeLevelId, setFormGradeLevelId] = useState<string>('');
   const [formSectionId, setFormSectionId] = useState<string>('');
-  const [formClassroomName, setFormClassroomName] = useState<string>('');
+  const [formClassroomId, setFormClassroomId] = useState<string>('');
   const [formTitle, setFormTitle] = useState<string>('');
   const [formCategory, setFormCategory] = useState<string>('Writing');
   const [formMaxScore, setFormMaxScore] = useState<number>(100);
@@ -131,46 +132,73 @@ export default function HomeworkPage() {
   const loadHomeworkData = async () => {
     setIsLoading(true);
     try {
-      const [hwRes, subsRes, deptsRes, subjsRes, sectsRes, gradesRes, roomsRes] = await Promise.all([
+      const [hwRes, subsRes, deptsData, subjsRes, sectionsData, gradesData, roomsRes] = await Promise.all([
         apiClient.get('/homeworks?populate[subject]=true&populate[teacher]=true&populate[section]=true&sort[0]=dueDate:desc').catch(() => ({ data: { data: [] } })),
         apiClient.get('/homework-submissions?populate=*').catch(() => ({ data: { data: [] } })),
-        apiClient.get('/departments').catch(() => ({ data: { data: [] } })),
+        erpService.getDepartments().catch(() => []),
         apiClient.get('/subjects').catch(() => ({ data: { data: [] } })),
-        apiClient.get('/sections').catch(() => ({ data: { data: [] } })),
-        apiClient.get('/grade-levels').catch(() => ({ data: { data: [] } })),
+        erpService.getSections().catch(() => []),
+        erpService.getGradeLevels().catch(() => []),
         apiClient.get('/classrooms').catch(() => ({ data: { data: [] } }))
       ]);
 
       const rawHw = hwRes.data?.data || [];
       const rawSubs = subsRes.data?.data || [];
-      
-      setDepartments(deptsRes.data?.data || [
-        { id: 1, name: 'Senior Secondary Division' },
-        { id: 2, name: 'Junior Secondary Division' },
-        { id: 3, name: 'Tahfidz & Quranic Faculty' }
-      ]);
-      setSubjects(subjsRes.data?.data || [
+
+      // Departments (Academic Divisions/Faculties)
+      const deptList = deptsData.length > 0 ? deptsData : [
+        { id: 1, name: 'Senior Secondary Division', code: 'SSD' },
+        { id: 2, name: 'Junior Secondary Division', code: 'JSD' },
+        { id: 3, name: 'Tahfidz & Quranic Faculty', code: 'TQF' },
+        { id: 4, name: 'Primary Division', code: 'PRI' }
+      ];
+      setDepartments(deptList);
+
+      // Subjects
+      const rawSubjs = subjsRes.data?.data || [];
+      setSubjects(rawSubjs.length > 0 ? rawSubjs : [
         { id: 1, name: 'Mathematics' },
         { id: 2, name: 'Biology' },
         { id: 3, name: 'Physics' },
         { id: 4, name: 'Chemistry' },
         { id: 5, name: 'Arabic Language' },
-        { id: 6, name: 'Quran Hifz' }
+        { id: 6, name: 'Quran Hifz' },
+        { id: 7, name: 'English Language' },
+        { id: 8, name: 'Islamic Studies' }
       ]);
-      setSections(sectsRes.data?.data || [
-        { id: 1, name: 'SS3 - Section A' },
-        { id: 2, name: 'SS2 - Section B' },
-        { id: 3, name: 'JSS3 - Section A' }
+
+      // Academic Sections (class groupings e.g. SS3A, JSS2B, etc.)
+      const sectionList = sectionsData.length > 0 ? sectionsData : [
+        { id: 1, name: 'SS3 - Section A', code: 'SS3A' },
+        { id: 2, name: 'SS2 - Section B', code: 'SS2B' },
+        { id: 3, name: 'JSS3 - Section A', code: 'JSS3A' },
+        { id: 4, name: 'JSS2 - Section B', code: 'JSS2B' },
+        { id: 5, name: 'Primary 6 - Section A', code: 'P6A' },
+        { id: 6, name: 'Tahfidz Class - Advanced', code: 'TAH-ADV' }
+      ];
+      setSections(sectionList);
+
+      // Grade Levels
+      setGradeLevels(gradesData.length > 0 ? gradesData : [
+        { id: 1, name: 'Grade 12 / SS3', code: 'GRADE-12' },
+        { id: 2, name: 'Grade 11 / SS2', code: 'GRADE-11' },
+        { id: 3, name: 'Grade 9 / JSS3', code: 'GRADE-9' },
+        { id: 4, name: 'Grade 8 / JSS2', code: 'GRADE-8' },
+        { id: 5, name: 'Grade 6 (Primary)', code: 'GRADE-6' }
       ]);
-      setGradeLevels(gradesRes.data?.data || [
-        { id: 1, name: 'Grade 12 / SS3' },
-        { id: 2, name: 'Grade 11 / SS2' },
-        { id: 3, name: 'Grade 9 / JSS3' }
-      ]);
-      setClassrooms(roomsRes.data?.data || [
+
+      // Classrooms (physical rooms)
+      const rawRooms = roomsRes.data?.data || [];
+      setClassrooms(rawRooms.length > 0 ? rawRooms.map((r: any) => ({
+        id: r.id,
+        name: r.name || r.roomName || r.roomNumber || `Room ${r.id}`
+      })) : [
         { id: 1, name: 'Room 101 - Science Lab A' },
         { id: 2, name: 'Room 204 - Arabic Center' },
-        { id: 3, name: 'Hall B - Tahfidz Sanctuary' }
+        { id: 3, name: 'Hall B - Tahfidz Sanctuary' },
+        { id: 4, name: 'Room 301 - Mathematics Lab' },
+        { id: 5, name: 'Room 102 - Biology Lab' },
+        { id: 6, name: 'ICT Lab - Computer Room 1' }
       ]);
 
       // Parse Submissions
@@ -208,10 +236,10 @@ export default function HomeworkPage() {
             subjectId: item.subject?.id,
             sectionName: item.section?.name || item.sectionName || 'SS3 - Section A',
             sectionId: item.section?.id,
-            departmentName: 'Senior Secondary Division',
-            gradeLevelName: 'Grade 12 / SS3',
-            classroomName: 'Room 101',
-            teacherName: item.teacher?.name || 'Faculty Instructor',
+            departmentName: item.department?.name || item.departmentName || 'Senior Secondary Division',
+            gradeLevelName: item.gradeLevel?.name || item.gradeLevelName || 'Grade 12 / SS3',
+            classroomName: item.classroom?.name || item.classroomName || 'Room 101',
+            teacherName: item.teacher?.name || [item.teacher?.firstName, item.teacher?.lastName].filter(Boolean).join(' ') || 'Faculty Instructor',
             attachmentUrl: item.attachmentUrl || '',
             submissionsCount: subs.length
           };
@@ -256,7 +284,7 @@ export default function HomeworkPage() {
             sectionId: 2,
             departmentName: 'Senior Secondary Division',
             gradeLevelName: 'Grade 11 / SS2',
-            classroomName: 'Biology Lab 2',
+            classroomName: 'Room 102 - Biology Lab',
             teacherName: 'Prof. Maryam Bello',
             attachmentUrl: 'https://yahayascool.edu.ng/assignments/bio_lab.pdf',
             submissionsCount: 1
@@ -337,6 +365,7 @@ export default function HomeworkPage() {
       setFormSubjectId(item.subjectId ? String(item.subjectId) : (subjects[0]?.id ? String(subjects[0].id) : ''));
       setFormSectionId(item.sectionId ? String(item.sectionId) : (sections[0]?.id ? String(sections[0].id) : ''));
       setFormGradeLevelId(gradeLevels[0]?.id ? String(gradeLevels[0].id) : '');
+      setFormClassroomId(classrooms[0]?.id ? String(classrooms[0].id) : '');
     } else {
       setEditingItem(null);
       setFormTitle('');
@@ -350,6 +379,7 @@ export default function HomeworkPage() {
       setFormSubjectId(subjects[0]?.id ? String(subjects[0].id) : '');
       setFormSectionId(sections[0]?.id ? String(sections[0].id) : '');
       setFormGradeLevelId(gradeLevels[0]?.id ? String(gradeLevels[0].id) : '');
+      setFormClassroomId(classrooms[0]?.id ? String(classrooms[0].id) : '');
     }
     setIsCreateModalOpen(true);
   };
@@ -364,6 +394,7 @@ export default function HomeworkPage() {
     const selSubj = subjects.find(s => String(s.id) === String(formSubjectId))?.name || 'Mathematics';
     const selSect = sections.find(s => String(s.id) === String(formSectionId))?.name || 'SS3 - Section A';
     const selGrade = gradeLevels.find(g => String(g.id) === String(formGradeLevelId))?.name || 'Grade 12 / SS3';
+    const selRoom = classrooms.find(r => String(r.id) === String(formClassroomId))?.name || 'Room 101';
 
     // Format ISO datetime string for Strapi datetime schema attributes
     let isoAssigned = new Date().toISOString();
@@ -383,10 +414,14 @@ export default function HomeworkPage() {
       maxScore: Number(formMaxScore || 100),
       category: formCategory || 'Writing',
       visibility: formVisibility || 'Published',
+      classroomName: selRoom,
+      departmentName: selDept,
+      gradeLevelName: selGrade,
     };
 
     if (formSubjectId) payloadData.subject = Number(formSubjectId);
     if (formSectionId) payloadData.section = Number(formSectionId);
+    if (formClassroomId) payloadData.classroom = Number(formClassroomId);
 
     const updatedItem: HomeworkItem = {
       id: editingItem ? editingItem.id : Date.now(),
@@ -404,7 +439,7 @@ export default function HomeworkPage() {
       sectionId: formSectionId ? Number(formSectionId) : undefined,
       departmentName: selDept,
       gradeLevelName: selGrade,
-      classroomName: 'Room 101',
+      classroomName: selRoom,
       teacherName: (user as any)?.firstName ? `${(user as any).firstName} ${(user as any).lastName || ''}`.trim() : 'Faculty Instructor',
       attachmentUrl: formAttachmentUrl,
       submissionsCount: editingItem ? editingItem.submissionsCount : 0
@@ -793,23 +828,26 @@ export default function HomeworkPage() {
             </div>
 
             <div className="p-6 overflow-y-auto space-y-4 text-xs">
-              {/* Select Academic Section (Department) */}
+              {/* Row 1: Faculty / Department + Course / Subject */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">Academic Section / Division</label>
-                  <select 
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1 flex items-center gap-1">
+                    <Building className="w-3 h-3 text-sky-400 inline" />
+                    {' '}Faculty / Academic Division
+                  </label>
+                  <select
                     value={formDepartmentId}
                     onChange={(e) => setFormDepartmentId(e.target.value)}
                     className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-transparent font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-emerald-500"
                   >
-                    <option value="">-- Select Division --</option>
+                    <option value="">-- Select Faculty/Division --</option>
                     {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
                   </select>
                 </div>
 
                 <div>
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">Course / Subject</label>
-                  <select 
+                  <select
                     value={formSubjectId}
                     onChange={(e) => setFormSubjectId(e.target.value)}
                     className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-transparent font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-emerald-500"
@@ -820,11 +858,30 @@ export default function HomeworkPage() {
                 </div>
               </div>
 
-              {/* Grade Level & Class Room */}
+              {/* Row 2: Academic Class Section (from DB /sections) + Grade Level */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1 flex items-center gap-1">
+                    <Layers className="w-3 h-3 text-emerald-400 inline" />
+                    {' '}Academic Class Section
+                  </label>
+                  <select
+                    value={formSectionId}
+                    onChange={(e) => setFormSectionId(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-transparent font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-emerald-500"
+                  >
+                    <option value="">-- Select Class Section --</option>
+                    {sections.map(sec => (
+                      <option key={sec.id} value={sec.id}>
+                        {sec.name}{sec.code ? ` (${sec.code})` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">Grade Level</label>
-                  <select 
+                  <select
                     value={formGradeLevelId}
                     onChange={(e) => setFormGradeLevelId(e.target.value)}
                     className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-transparent font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-emerald-500"
@@ -833,18 +890,22 @@ export default function HomeworkPage() {
                     {gradeLevels.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
                   </select>
                 </div>
+              </div>
 
-                <div>
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">Assigned Class Section / Room</label>
-                  <select 
-                    value={formSectionId}
-                    onChange={(e) => setFormSectionId(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-transparent font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-emerald-500"
-                  >
-                    <option value="">-- Select Section --</option>
-                    {sections.map(sec => <option key={sec.id} value={sec.id}>{sec.name}</option>)}
-                  </select>
-                </div>
+              {/* Row 3: Classroom (physical room, from /classrooms) */}
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1 flex items-center gap-1">
+                  <School className="w-3 h-3 text-amber-400 inline" />
+                  {' '}Assigned Classroom / Room
+                </label>
+                <select
+                  value={formClassroomId}
+                  onChange={(e) => setFormClassroomId(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-transparent font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-emerald-500"
+                >
+                  <option value="">-- Select Classroom / Room --</option>
+                  {classrooms.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+                </select>
               </div>
 
               {/* Assignment Title */}

@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { useLocale } from 'next-intl';
 import { t as i18nT } from '@/lib/i18n-dict';
+import { usePermissions } from '@/hooks/usePermissions';
 import { apiClient } from '@/services/api.service';
 import { erpService } from '@/services/erp.service';
 import type { AcademicYear, GradeLevel } from '@/types/erp.types';
@@ -33,6 +34,8 @@ interface FeeItemInput {
 export default function FeeStructuresPage() {
   const locale = useLocale();
   const t = (key: string) => i18nT(key, locale);
+  const { can } = usePermissions();
+  const isAdmin = Boolean(can.isAdmin);
 
   const [structures, setStructures] = useState<FeeStructure[]>([]);
   const [gradeLevels, setGradeLevels] = useState<GradeLevel[]>([]);
@@ -64,19 +67,44 @@ export default function FeeStructuresPage() {
   const [formInstallmentAllowed, setFormInstallmentAllowed] = useState(true);
   const [formScholarshipEligible, setFormScholarshipEligible] = useState(true);
 
+  const [currencies, setCurrencies] = useState<any[]>([]);
+  const STORAGE_KEY = 'yahaya_fee_structures_cache';
+
   const loadData = async () => {
     setLoading(true);
     try {
-      const [res, years, grades] = await Promise.all([
+      const [res, years, grades, currs] = await Promise.all([
         apiClient.get('/finance-fee-structures?populate=*').catch(() => ({ data: { data: [] } })),
         erpService.getAcademicYears(locale).catch(() => []),
-        erpService.getGradeLevels(locale).catch(() => [])
+        erpService.getGradeLevels(locale).catch(() => []),
+        apiClient.get('/finance-currencies').catch(() => ({ data: { data: [] } }))
       ]);
 
       const rawData = res.data?.data || [];
-      setStructures(rawData);
+      if (Array.isArray(rawData) && rawData.length > 0) {
+        setStructures(rawData);
+        if (typeof window !== 'undefined') {
+          try { localStorage.setItem(STORAGE_KEY, JSON.stringify(rawData)); } catch {}
+        }
+      } else {
+        // Fallback to local storage cache if available
+        if (typeof window !== 'undefined') {
+          try {
+            const cached = localStorage.getItem(STORAGE_KEY);
+            if (cached) {
+              setStructures(JSON.parse(cached));
+            } else {
+              setStructures([]);
+            }
+          } catch {
+            setStructures([]);
+          }
+        }
+      }
+
       setAcademicYears(years || []);
       setGradeLevels(grades || []);
+      setCurrencies(currs?.data?.data || []);
 
       if (years && years.length > 0) {
         const curr = years.find(y => y.isCurrent || y.recordStatus === 'active' || y.status === 'current') || years[0];
@@ -156,7 +184,8 @@ export default function FeeStructuresPage() {
   };
 
   const handleOpenEditModal = (struct: FeeStructure) => {
-    setEditingStructureId(struct.id);
+    const targetId = struct.documentId || struct.id;
+    setEditingStructureId(targetId);
     setFormName(struct.title || struct.name || '');
     setFormAcademicYearCode(struct.academicYearCode || '2026-2027');
     setFormGradeCode(struct.gradeCode || (gradeLevels[0]?.code ?? ''));
@@ -181,6 +210,10 @@ export default function FeeStructuresPage() {
 
   const handleSaveStructure = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isAdmin) {
+      toast.error(t('Permission denied: Fee structures can only be managed by Administrators.'));
+      return;
+    }
     if (!formName.trim()) {
       toast.error(t('Fee structure title is required.'));
       return;
@@ -193,6 +226,7 @@ export default function FeeStructuresPage() {
     const payload = {
       title: formName,
       name: formName,
+      code: `FEE-${formGradeCode || 'ALL'}-${Date.now().toString().slice(-4)}`,
       academicYearCode: formAcademicYearCode,
       gradeCode: formGradeCode,
       currency: formCurrency,
@@ -211,28 +245,59 @@ export default function FeeStructuresPage() {
 
     try {
       if (editingStructureId) {
-        await apiClient.put(`/finance-fee-structures/${editingStructureId}`, { data: payload }).catch(() => null);
-        setStructures(structures.map(s => s.id === editingStructureId ? { ...s, ...payload, id: editingStructureId } : s));
+        let updatedRecord: any = { ...payload, id: editingStructureId, documentId: editingStructureId };
+        try {
+          const res = await apiClient.put(`/finance-fee-structures/${editingStructureId}`, { data: payload });
+          if (res?.data?.data) updatedRecord = res.data.data;
+        } catch { /* fallback to local persistence */ }
+
+        const next = structures.map(s => (s.id === editingStructureId || s.documentId === editingStructureId) ? { ...s, ...updatedRecord } : s);
+        setStructures(next);
+        if (typeof window !== 'undefined') {
+          try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch {}
+        }
         toast.success(`${t('Fee structure template updated')}: ${formName}`);
       } else {
-        const res = await apiClient.post('/finance-fee-structures', { data: payload }).catch(() => null);
-        const created = res?.data?.data || { ...payload, id: `FEE-${Date.now().toString().slice(-5)}` };
-        setStructures([created, ...structures]);
+        let createdRecord: any = { ...payload, id: `FEE-${Date.now().toString().slice(-5)}` };
+        try {
+          const res = await apiClient.post('/finance-fee-structures', { data: payload });
+          if (res?.data?.data) createdRecord = res.data.data;
+        } catch { /* fallback to local persistence */ }
+
+        const next = [createdRecord, ...structures];
+        setStructures(next);
+        if (typeof window !== 'undefined') {
+          try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch {}
+        }
         toast.success(`${t('Created fee structure template')}: ${formName}`);
       }
       setShowModal(false);
-    } catch {
+    } catch (err) {
+      console.error(err);
       toast.error(t('Failed to save fee structure'));
     }
   };
 
-  const handleDeleteStructure = async (id: string, name: string) => {
+  const handleDeleteStructure = async (idOrDocId: string | number, name: string) => {
+    if (!isAdmin) {
+      toast.error(t('Permission denied: Fee structures can only be deleted by Administrators.'));
+      return;
+    }
     if (!confirm(`${t('Are you sure you want to remove fee structure template')} "${name}"?`)) return;
     try {
-      await apiClient.delete(`/finance-fee-structures/${id}`).catch(() => null);
-      setStructures(structures.filter(s => s.id !== id));
+      try {
+        await apiClient.delete(`/finance-fee-structures/${idOrDocId}`);
+      } catch { /* fallback */ }
+
+      const next = structures.filter(s => s.id !== idOrDocId && s.documentId !== idOrDocId);
+      setStructures(next);
+      if (typeof window !== 'undefined') {
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch {}
+      }
       toast.success(`${t('Removed fee structure')}: ${name}`);
-      if (selectedStructure?.id === id) setSelectedStructure(null);
+      if (selectedStructure?.id === idOrDocId || selectedStructure?.documentId === idOrDocId) {
+        setSelectedStructure(null);
+      }
     } catch {
       toast.error(t('Failed to delete fee structure'));
     }
@@ -262,10 +327,10 @@ export default function FeeStructuresPage() {
   const kpiCards: EnterpriseKPICard[] = [
     {
       id: 'total_templates',
-      title: t('Active Fee Templates'),
-      value: `${activeTemplates} ${t('Templates')}`,
-      subtitle: `${totalTemplates} ${t('total configured grade fee schedules')}`,
-      trendDirection: 'up',
+      title: t('Total Fee Templates'),
+      value: String(totalTemplates),
+      subtitle: `${activeTemplates} ${t('Active Templates')}`,
+      trendDirection: 'neutral',
       icon: <Layers className="w-5 h-5 text-emerald-400" />
     },
     {
@@ -361,25 +426,38 @@ export default function FeeStructuresPage() {
               <Eye className="w-3.5 h-3.5" />
               <span>{t('Inspect')}</span>
             </button>
-            <button
-              onClick={() => handleOpenEditModal(s)}
-              className="p-1.5 rounded-xl bg-slate-800 hover:bg-sky-600 text-slate-300 hover:text-white transition-all border border-slate-700 cursor-pointer"
-              title={t('Edit template')}
-            >
-              <Edit2 className="w-3.5 h-3.5" />
-            </button>
-            <button
-              onClick={() => handleDeleteStructure(s.id, s.title || s.name)}
-              className="p-1.5 rounded-xl bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white transition-all border border-slate-700 cursor-pointer"
-              title={t('Delete template')}
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </button>
+            {isAdmin ? (
+              <>
+                <button
+                  onClick={() => handleOpenEditModal(s)}
+                  className="p-1.5 rounded-xl bg-slate-800 hover:bg-sky-600 text-slate-300 hover:text-white transition-all border border-slate-700 cursor-pointer"
+                  title={t('Edit template')}
+                >
+                  <Edit2 className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={() => handleDeleteStructure(s.documentId || s.id, s.title || s.name)}
+                  className="p-1.5 rounded-xl bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white transition-all border border-slate-700 cursor-pointer"
+                  title={t('Delete template')}
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </>
+            ) : (
+              <Link
+                href={`/finance/billing/invoices?structureId=${s.documentId || s.id}`}
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-emerald-600/20 hover:bg-emerald-600 text-emerald-400 hover:text-white font-bold text-xs transition-all border border-emerald-500/30 shadow-sm"
+                title={t('Bill students using this structure')}
+              >
+                <FileText className="w-3 h-3" />
+                <span>{t('Bill')}</span>
+              </Link>
+            )}
           </div>
         );
       }
     }
-  ], [gradeLevels, locale]);
+  ], [gradeLevels, locale, isAdmin]);
 
   return (
     <EnterpriseModuleShell
@@ -397,6 +475,12 @@ export default function FeeStructuresPage() {
       }}
       headerActions={
         <div className="flex items-center gap-2">
+          {!isAdmin && (
+            <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800/90 border border-emerald-500/30 text-emerald-400 text-xs font-bold shadow-sm">
+              <ShieldCheck className="w-4 h-4" />
+              <span>{t('Admin Governed Policies')}</span>
+            </span>
+          )}
           <Link
             href="/finance/billing/invoices"
             className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white text-xs font-bold transition-all shadow-sm cursor-pointer"
@@ -404,17 +488,48 @@ export default function FeeStructuresPage() {
             <FileText className="w-4 h-4 text-emerald-400" />
             <span>{t('Student Invoices')}</span>
           </Link>
-          <button
-            onClick={handleOpenCreateModal}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 text-white text-xs font-black transition-all shadow-lg shadow-emerald-600/30 hover:scale-[1.02] cursor-pointer"
+          <Link
+            href="/finance/billing/payments"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white text-xs font-bold transition-all shadow-sm cursor-pointer"
           >
-            <Plus className="w-4 h-4 stroke-[3]" />
-            <span>{t('+ Create Fee Structure')}</span>
-          </button>
+            <DollarSign className="w-4 h-4 text-emerald-400" />
+            <span>{t('Collect Payments')}</span>
+          </Link>
+          {isAdmin && (
+            <button
+              onClick={handleOpenCreateModal}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 text-white text-xs font-black transition-all shadow-lg shadow-emerald-600/30 hover:scale-[1.02] cursor-pointer"
+            >
+              <Plus className="w-4 h-4 stroke-[3]" />
+              <span>{t('+ Create Fee Structure')}</span>
+            </button>
+          )}
         </div>
       }
     >
       <EnterpriseKPIDeck cards={kpiCards} />
+
+      {/* Non-Admin Notice Banner */}
+      {!isAdmin && (
+        <div className="p-3.5 rounded-2xl bg-slate-900/90 border border-emerald-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-300 mb-2 shadow-sm">
+          <div className="flex items-center gap-2.5">
+            <ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0" />
+            <div>
+              <p className="font-bold text-white leading-tight">{t('Institutional Policy Notice')}</p>
+              <p className="text-[11px] text-slate-400">
+                {t('Fee schedules and rate structures are established by School Administrators. Accountants and Finance Staff use these approved matrices to issue student invoices and record collections.')}
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/finance/billing/invoices"
+            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shrink-0 transition-all shadow-sm"
+          >
+            <FileText className="w-3.5 h-3.5" />
+            <span>{t('Issue Student Invoice')} →</span>
+          </Link>
+        </div>
+      )}
 
       {/* Domain Sub-Navigation */}
       <div className="flex flex-wrap items-center gap-2 pb-2 border-b border-slate-800">
@@ -452,8 +567,8 @@ export default function FeeStructuresPage() {
           setSelectedGradeFilter('all');
           setSelectedYearFilter('all');
         }}
-        createButtonLabel={t('+ New Fee Template')}
-        onCreate={handleOpenCreateModal}
+        createButtonLabel={isAdmin ? t('+ New Fee Template') : undefined}
+        onCreate={isAdmin ? handleOpenCreateModal : undefined}
         customFilterNodes={
           <div className="flex items-center gap-2 flex-wrap">
             {/* Grade Level DB Selector */}
@@ -537,12 +652,12 @@ export default function FeeStructuresPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {/* Dynamic Grade Level from DB */}
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
                     <GraduationCap className="w-4 h-4 text-sky-400" />
-                    <span>{t('Grade Level (from Database)')}</span>
+                    <span>{t('Grade Level')}</span>
                   </label>
                   <select
                     value={formGradeCode}
@@ -553,11 +668,11 @@ export default function FeeStructuresPage() {
                     {gradeLevels.length > 0 ? (
                       gradeLevels.map(g => (
                         <option key={g.id} value={g.code || g.name}>
-                          {g.name} ({g.code}) — {g.capacity} {t('Capacity')}
+                          {g.name} ({g.code})
                         </option>
                       ))
                     ) : (
-                      <option value="GRADE-10">Grade 10 (Secondary High)</option>
+                      <option value="GRADE-10">Grade 10</option>
                     )}
                   </select>
                 </div>
@@ -577,6 +692,36 @@ export default function FeeStructuresPage() {
                       academicYears.map(y => <option key={y.id} value={y.name}>{y.name}</option>)
                     ) : (
                       <option value="2026-2027">2026-2027</option>
+                    )}
+                  </select>
+                </div>
+
+                {/* Multi-Currency Selection */}
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                    <Coins className="w-4 h-4 text-emerald-400" />
+                    <span>{t('Currency')}</span>
+                  </label>
+                  <select
+                    value={formCurrency}
+                    onChange={(e) => setFormCurrency(e.target.value)}
+                    className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs font-bold focus:outline-none focus:border-emerald-500 cursor-pointer"
+                  >
+                    {currencies.length > 0 ? (
+                      currencies.map(c => (
+                        <option key={c.id || c.isoCode} value={c.isoCode || c.currencyCode || c.name}>
+                          {c.isoCode || c.currencyCode} ({c.symbol || '$'}) — {c.name}
+                        </option>
+                      ))
+                    ) : (
+                      <>
+                        <option value="USD">USD ($) — US Dollar</option>
+                        <option value="LRD">LRD ($) — Liberian Dollar</option>
+                        <option value="NGN">NGN (₦) — Nigerian Naira</option>
+                        <option value="EUR">EUR (€) — Euro</option>
+                        <option value="GBP">GBP (£) — British Pound</option>
+                        <option value="TRY">TRY (₺) — Turkish Lira</option>
+                      </>
                     )}
                   </select>
                 </div>

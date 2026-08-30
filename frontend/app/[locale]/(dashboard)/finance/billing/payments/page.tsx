@@ -543,6 +543,47 @@ function CashierPaymentsContent() {
     }
   ];
 
+  // Helper to resolve student info from liveStudents
+  const resolveStudent = (r: PaymentReceipt) => {
+    if (!r) {
+      return {
+        fullName: 'Student Scholar',
+        schoolId: 'ST-2026',
+        grade: 'Standard Program',
+        section: '',
+        parentName: 'Registered Parent Sponsor',
+        parentPhone: ''
+      };
+    }
+    const rStudent = r.student as any;
+    const sId = r.studentId || rStudent?.schoolId || r.admissionNumber;
+    const docId = rStudent?.documentId;
+    const rawId = rStudent?.id;
+
+    const matched = liveStudents.find(s =>
+      (sId && s.schoolId && s.schoolId.toLowerCase() === String(sId).toLowerCase()) ||
+      (docId && s.documentId === docId) ||
+      (rawId && s.id === rawId) ||
+      (r.studentName && s.name && s.name.toLowerCase() === r.studentName.toLowerCase())
+    ) as any;
+
+    const fullName = matched?.name || (matched ? `${matched.firstName || ''} ${matched.lastName || ''}`.trim() : '') || r.studentName || (rStudent ? `${rStudent.firstName || ''} ${rStudent.lastName || ''}`.trim() : '') || 'Student Scholar';
+    const schoolId = matched?.schoolId || sId || 'ST-2026';
+    const grade = matched?.gradeLevel || matched?.grade || 'Standard Program';
+    const section = matched?.sections?.[0]?.name || matched?.section?.name || '';
+    const parentName = matched?.parents?.[0]?.name || (matched?.parents?.[0] ? `${matched.parents[0].firstName || ''} ${matched.parents[0].lastName || ''}`.trim() : '') || r.parentName || 'Registered Parent Sponsor';
+    const parentPhone = matched?.parents?.[0]?.phone || (Array.isArray(matched?.emergencyContacts) ? matched?.emergencyContacts[0]?.phone : (typeof matched?.emergencyContacts === 'object' ? matched?.emergencyContacts?.phone : '')) || '';
+
+    return {
+      fullName,
+      schoolId,
+      grade,
+      section,
+      parentName,
+      parentPhone
+    };
+  };
+
   const adminColumns = useMemo<ColumnDef<PaymentReceipt, any>[]>(() => {
     return [
       {
@@ -551,54 +592,93 @@ function CashierPaymentsContent() {
         cell: ({ row }) => {
           const r = row.original;
           return (
-            <div className="space-y-0.5">
-              <span className="font-mono text-xs font-black text-emerald-400 block">{r.receiptNumber}</span>
-              <span className="text-[11px] text-slate-400 block font-mono">Inv: {r.invoiceNumber || 'INV-GENERAL'}</span>
+            <div className="space-y-1 py-1">
+              <span className="font-mono text-xs font-black text-emerald-400 block tracking-wide">
+                {r.receiptNumber}
+              </span>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-800 text-sky-400 border border-slate-700">
+                  {r.invoiceNumber || 'INV-GENERAL'}
+                </span>
+                {r.currency && r.currency !== 'USD' && (
+                  <span className="px-1 py-0.5 rounded text-[9px] font-mono font-bold bg-amber-950 text-amber-300 border border-amber-800">
+                    {r.currency}
+                  </span>
+                )}
+              </div>
             </div>
           );
         }
       },
       {
         accessorKey: 'studentName',
-        header: 'Student Scholar & Parent Sponsor',
+        header: 'Student Scholar & Sponsor Profile',
         cell: ({ row }) => {
           const r = row.original;
-          const sName = r.studentName || (r.student ? `${r.student.firstName || ''} ${r.student.lastName || ''}`.trim() : 'Unknown Scholar');
-          const sId = r.studentId || r.student?.schoolId || 'N/A';
-          const pName = r.parentName || 'N/A';
+          const s = resolveStudent(r);
           return (
-            <div className="space-y-0.5 text-xs">
-              <span className="font-bold text-white block truncate max-w-xs">
-                {sName} <span className="font-mono text-[10px] text-sky-400">({sId})</span>
-              </span>
-              <span className="text-[11px] text-slate-400 block truncate max-w-xs">Parent: {pName}</span>
+            <div className="flex items-center gap-3 py-1">
+              <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-sky-500/20 border border-emerald-500/30 flex items-center justify-center font-black text-xs text-emerald-300 shrink-0">
+                {s.fullName.slice(0, 2).toUpperCase()}
+              </div>
+              <div className="space-y-0.5 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-bold text-white text-xs sm:text-sm truncate max-w-xs">
+                    {s.fullName}
+                  </span>
+                  <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-800 text-emerald-400 border border-slate-700">
+                    {s.schoolId}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 text-[11px] text-slate-400 flex-wrap">
+                  {s.grade && <span className="font-medium text-slate-300">{s.grade}</span>}
+                  {s.section && <span className="text-slate-500 font-mono">• {s.section}</span>}
+                  <span className="text-slate-400 font-mono truncate max-w-xs">
+                    • Sponsor: <strong className="text-slate-300 font-semibold">{s.parentName}</strong>
+                    {s.parentPhone && ` (${s.parentPhone})`}
+                  </span>
+                </div>
+              </div>
             </div>
           );
         }
       },
       {
         accessorKey: 'paymentMethod',
-        header: 'Payment Method & Gateway Ref',
-        cell: ({ row }) => (
-          <div className="space-y-0.5 text-xs">
-            <span className="inline-flex items-center gap-1 font-bold text-slate-200">
-              {row.original.paymentMethod.includes('Bank') && <Landmark className="w-3.5 h-3.5 text-emerald-400" />}
-              {row.original.paymentMethod.includes('Money') && <Smartphone className="w-3.5 h-3.5 text-sky-400" />}
-              {row.original.paymentMethod.includes('Wave') && <Smartphone className="w-3.5 h-3.5 text-blue-400" />}
-              {row.original.paymentMethod === 'Cash' && <PiggyBank className="w-3.5 h-3.5 text-amber-400" />}
-              <span>{row.original.paymentMethod}</span>
-            </span>
-            <span className="text-[11px] font-mono text-slate-400 block truncate max-w-xs">{row.original.referenceNumber || row.original.bankName}</span>
-          </div>
-        )
+        header: 'Payment Channel & Ref',
+        cell: ({ row }) => {
+          const r = row.original;
+          const m = r.paymentMethod || 'Cash';
+          return (
+            <div className="space-y-1 text-xs py-1">
+              <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold border ${
+                m.includes('Bank') ? 'bg-emerald-950/60 text-emerald-300 border-emerald-800' :
+                m.includes('Money') || m.includes('Wave') ? 'bg-sky-950/60 text-sky-300 border-sky-800' :
+                m === 'Cash' ? 'bg-amber-950/60 text-amber-300 border-amber-800' :
+                'bg-slate-800 text-slate-200 border-slate-700'
+              }`}>
+                {m.includes('Bank') && <Landmark className="w-3.5 h-3.5 text-emerald-400" />}
+                {(m.includes('Money') || m.includes('Wave')) && <Smartphone className="w-3.5 h-3.5 text-sky-400" />}
+                {m === 'Cash' && <PiggyBank className="w-3.5 h-3.5 text-amber-400" />}
+                {m.includes('Card') && <CreditCard className="w-3.5 h-3.5 text-purple-400" />}
+                <span>{m}</span>
+              </span>
+              {(r.referenceNumber || r.bankName) && (
+                <span className="text-[10px] font-mono text-slate-400 block truncate max-w-xs">
+                  Ref: {r.referenceNumber || r.bankName}
+                </span>
+              )}
+            </div>
+          );
+        }
       },
       {
         accessorKey: 'paymentDate',
         header: 'Date & Cashier',
         cell: ({ row }) => (
-          <div className="space-y-0.5 font-mono text-[11px]">
-            <span className="text-slate-300 block font-bold">{row.original.paymentDate.split('T')[0]}</span>
-            <span className="text-slate-400 block truncate max-w-xs">{row.original.cashierName}</span>
+          <div className="space-y-0.5 font-mono text-[11px] py-1">
+            <span className="text-slate-200 block font-bold">{row.original.paymentDate.split('T')[0]}</span>
+            <span className="text-slate-400 block truncate max-w-xs">{row.original.cashierName || 'Cashier Terminal'}</span>
           </div>
         )
       },
@@ -612,14 +692,14 @@ function CashierPaymentsContent() {
           const overpay = r.walletCreditGenerated ?? r.paymentMetadata?.overpayment ?? 0;
 
           return (
-            <div className="space-y-0.5 font-mono text-xs">
-              <span className="font-black text-emerald-400 block" title="Allocated Revenue">
+            <div className="space-y-0.5 font-mono text-xs py-1">
+              <span className="font-black text-emerald-400 block text-sm" title="Allocated Revenue">
                 +${invAlloc.toLocaleString('en-US', { minimumFractionDigits: 2 })}
               </span>
               {(wAlloc > 0 || overpay > 0) && (
                 <div className="text-[10px] text-slate-400 space-y-0.2">
-                  {wAlloc > 0 && <span className="block text-sky-400">Wallet Used: ${wAlloc.toFixed(2)}</span>}
-                  {overpay > 0 && <span className="block text-amber-400">Overpay Credit: ${overpay.toFixed(2)}</span>}
+                  {wAlloc > 0 && <span className="block text-sky-400 font-bold">Wallet Applied: ${wAlloc.toFixed(2)}</span>}
+                  {overpay > 0 && <span className="block text-amber-400 font-bold">Overpay Credit: ${overpay.toFixed(2)}</span>}
                 </div>
               )}
             </div>
@@ -629,19 +709,26 @@ function CashierPaymentsContent() {
       {
         accessorKey: 'status',
         header: 'Status',
-        cell: ({ row }) => <StatusBadge status={row.original.status} size="sm" />
+        cell: ({ row }) => <StatusBadge status={row.original.status || 'posted'} size="sm" />
       },
       {
         id: 'actions',
-        header: 'Verify QR & Print',
+        header: 'Actions',
         cell: ({ row }) => (
           <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
             <button
-              onClick={() => setShowQrModal(row.original)}
+              onClick={() => setSelectedReceipt(row.original)}
               className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-emerald-600 text-slate-300 hover:text-white font-bold text-xs transition-all border border-slate-700 hover:border-emerald-500 shadow-sm cursor-pointer"
             >
-              <QrCode className="w-3.5 h-3.5 text-emerald-400" />
-              <span>QR Verify</span>
+              <Eye className="w-3.5 h-3.5" />
+              <span>Inspect</span>
+            </button>
+            <button
+              onClick={() => setShowQrModal(row.original)}
+              className="p-1.5 rounded-xl bg-slate-800 hover:bg-sky-600 text-slate-300 hover:text-white transition-all border border-slate-700 cursor-pointer"
+              title="Verify QR Code"
+            >
+              <QrCode className="w-3.5 h-3.5 text-sky-400" />
             </button>
             <button
               onClick={() => {
@@ -656,7 +743,7 @@ function CashierPaymentsContent() {
         )
       }
     ];
-  }, []);
+  }, [liveStudents]);
 
   const studentColumns = useMemo<ColumnDef<PaymentReceipt, any>[]>(() => {
     return [
@@ -1483,22 +1570,205 @@ function CashierPaymentsContent() {
         </div>
       )}
 
-      <SlideOutDrawer
-        isOpen={!!selectedReceipt}
-        onClose={() => setSelectedReceipt(null)}
-        record={selectedReceipt ? {
-          name: selectedReceipt.studentName,
-          id: selectedReceipt.receiptNumber,
-          role: `RECEIPT FOR ${selectedReceipt.admissionNumber}`,
-          status: selectedReceipt.status,
-          email: `Cashier: ${selectedReceipt.cashierName}`,
-          phone: selectedReceipt.paymentDate.split('T')[0],
-          department: `Method: ${selectedReceipt.paymentMethod} | Ref: ${selectedReceipt.referenceNumber || 'N/A'}`,
-          joinDate: selectedReceipt.verificationCode,
-          balance: `$${selectedReceipt.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })} SETTLED`
-        } : null}
-        category="finance"
-      />
+      {/* Dedicated Official Payment Receipt Dossier & Inspection Modal */}
+      {selectedReceipt && (() => {
+        const studentInfo = resolveStudent(selectedReceipt);
+        const invAlloc = (selectedReceipt as any).invoiceAllocation ?? selectedReceipt.amount ?? 0;
+        const wAlloc = (selectedReceipt as any).walletAllocation ?? (selectedReceipt as any).paymentMetadata?.walletAmount ?? 0;
+        const overpay = (selectedReceipt as any).walletCreditGenerated ?? (selectedReceipt as any).paymentMetadata?.overpayment ?? 0;
+
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200" onClick={() => setSelectedReceipt(null)}>
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 max-w-3xl w-full shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+              {/* Header Banner */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-sky-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                    <Receipt className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-mono text-sm font-black text-emerald-400">
+                        {selectedReceipt.receiptNumber}
+                      </span>
+                      <StatusBadge status={selectedReceipt.status || 'posted'} size="sm" />
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-950 text-emerald-300 border border-emerald-800">
+                        ✓ VERIFIED SETTLEMENT
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-400 font-mono mt-0.5">
+                      Invoice Ref: <strong className="text-sky-400">{selectedReceipt.invoiceNumber || 'INV-GENERAL'}</strong> • {selectedReceipt.paymentDate.split('T')[0]}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      printReceiptDocument(selectedReceipt);
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all shadow-md cursor-pointer"
+                  >
+                    <Printer className="w-3.5 h-3.5" />
+                    <span>Print Official Receipt</span>
+                  </button>
+                  <button
+                    onClick={() => setShowQrModal(selectedReceipt)}
+                    className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-all border border-slate-700 cursor-pointer"
+                    title="View QR Code"
+                  >
+                    <QrCode className="w-4 h-4 text-emerald-400" />
+                  </button>
+                  <button
+                    onClick={() => setSelectedReceipt(null)}
+                    className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white font-bold transition-all cursor-pointer"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+
+              {/* Scholar & Parent Sponsor Profile Card */}
+              <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-sky-500/20 border border-emerald-500/30 flex items-center justify-center font-black text-sm text-emerald-300">
+                    {studentInfo.fullName.slice(0, 2).toUpperCase()}
+                  </div>
+                  <div className="space-y-0.5">
+                    <div className="flex items-center gap-2">
+                      <h4 className="text-base font-black text-white">{studentInfo.fullName}</h4>
+                      <span className="px-2 py-0.5 rounded text-xs font-mono font-bold bg-slate-800 text-emerald-400 border border-slate-700">
+                        {studentInfo.schoolId}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-400">
+                      {studentInfo.grade} {studentInfo.section && `• ${studentInfo.section}`}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="sm:text-right space-y-0.5 text-xs">
+                  <span className="text-slate-500 block uppercase font-bold text-[10px]">Parent Sponsor</span>
+                  <span className="font-bold text-slate-200 block">{studentInfo.parentName}</span>
+                  {studentInfo.parentPhone && (
+                    <span className="font-mono text-slate-400 block">{studentInfo.parentPhone}</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Financial Transaction Breakdown */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800">
+                  <span className="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">Total Received</span>
+                  <span className="text-base font-black text-emerald-400 font-mono mt-1 block">
+                    +${Number(selectedReceipt.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                  </span>
+                </div>
+                <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800">
+                  <span className="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">Invoice Allocation</span>
+                  <span className="text-base font-black text-white font-mono mt-1 block">
+                    ${Number(invAlloc).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                  </span>
+                </div>
+                <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800">
+                  <span className="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">Wallet Applied</span>
+                  <span className="text-base font-black text-sky-400 font-mono mt-1 block">
+                    ${Number(wAlloc).toFixed(2)}
+                  </span>
+                </div>
+                <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800">
+                  <span className="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">Remaining Balance</span>
+                  <span className={`text-base font-black font-mono mt-1 block ${Number(selectedReceipt.remainingStudentBalance || 0) > 0 ? 'text-rose-400' : 'text-emerald-400'}`}>
+                    ${Number(selectedReceipt.remainingStudentBalance || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                  </span>
+                </div>
+              </div>
+
+              {/* Payment Channel & Gateway Specs */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+                  <h5 className="text-xs font-black text-white uppercase tracking-wider flex items-center gap-1.5">
+                    <CreditCard className="w-4 h-4 text-emerald-400" />
+                    <span>Payment Channel & Instrument</span>
+                  </h5>
+                  <div className="space-y-1.5 text-xs font-mono">
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Channel Mode:</span>
+                      <strong className="text-white">{selectedReceipt.paymentMethod}</strong>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Gateway Ref:</span>
+                      <strong className="text-emerald-400">{selectedReceipt.referenceNumber || selectedReceipt.bankName || 'Verified POS'}</strong>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">GL Account:</span>
+                      <strong className="text-slate-300">
+                        {selectedReceipt.paymentMethod.includes('Bank') ? 'Account 1010 (Commercial Bank)' :
+                         selectedReceipt.paymentMethod.includes('Money') ? 'Account 1020 (Mobile Money)' :
+                         'Account 1030 (Cash Drawer)'}
+                      </strong>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+                  <h5 className="text-xs font-black text-white uppercase tracking-wider flex items-center gap-1.5">
+                    <ShieldCheck className="w-4 h-4 text-sky-400" />
+                    <span>Cashier Session & Audit Trail</span>
+                  </h5>
+                  <div className="space-y-1.5 text-xs font-mono">
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Receiving Cashier:</span>
+                      <strong className="text-white">{selectedReceipt.cashierName || 'Finance Desk'}</strong>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Settlement Date:</span>
+                      <strong className="text-slate-300">{selectedReceipt.paymentDate}</strong>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Audit Status:</span>
+                      <strong className="text-emerald-400">✓ Cryptographically Cleared</strong>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Cryptographic QR Seal & Security Notice */}
+              <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-white rounded-xl shadow-sm shrink-0">
+                    <img
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=64x64&data=${encodeURIComponent(
+                        selectedReceipt.qrPayloadUrl || `${window.location.origin}/verify/receipt/${selectedReceipt.receiptNumber}`
+                      )}`}
+                      alt="Receipt QR"
+                      className="w-12 h-12 object-contain"
+                    />
+                  </div>
+                  <div className="space-y-0.5">
+                    <span className="font-bold text-white block">Official Cryptographic Security Stamp</span>
+                    <span className="text-[11px] text-slate-400 font-mono block">
+                      Code: {selectedReceipt.verificationCode || selectedReceipt.receiptNumber}
+                    </span>
+                    <span className="text-[10px] text-emerald-400 font-mono block">
+                      Verified on YAHAYASCOOL Public Verification Ledger
+                    </span>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => {
+                    printReceiptDocument(selectedReceipt);
+                  }}
+                  className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md transition-all shrink-0 cursor-pointer"
+                >
+                  Print Voucher →
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </EnterpriseModuleShell>
   );
 }

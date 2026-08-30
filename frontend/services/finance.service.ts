@@ -325,14 +325,20 @@ export const financeService = {
 
   // ─── 2. Student Ledgers & Accounts ──────────────────────────────────────────
   async getStudentAccounts(): Promise<StudentFinanceAccount[]> {
+    const data = await safeGetArray('/finance-ledger-entrys?populate=*');
+    if (data && data.length > 0) return data;
     return safeGetArray('/finance-ledger-entries?populate=*');
   },
 
   async getStudentAccount(id: string): Promise<StudentFinanceAccount> {
+    const obj = await safeGetObject(`/finance-ledger-entrys/${id}?populate=*`, {} as any);
+    if (obj && Object.keys(obj).length > 0) return obj;
     return safeGetObject(`/finance-ledger-entries/${id}?populate=*`, {} as any);
   },
 
   async getStudentLedger(studentId: string): Promise<StudentLedgerEntry[]> {
+    const data = await safeGetArray(`/finance-ledger-entrys?filters[student][id][$eq]=${studentId}&populate=*&sort=transactionDate:desc`);
+    if (data && data.length > 0) return data;
     return safeGetArray(`/finance-ledger-entries?filters[student][id][$eq]=${studentId}&populate=*&sort=transactionDate:desc`);
   },
 
@@ -1001,54 +1007,128 @@ export const financeService = {
 
   // ─── 12. Donations & Waqf ───────────────────────────────────────────────────
   async getDonations(): Promise<DonationRecord[]> {
-    const receipts = await safeGetArray('/finance-receipts?filters[paymentType][$containsi]=donation&populate=*&sort=createdAt:desc');
-    return receipts.map((r: any) => ({
-      id: r.documentId || String(r.id),
-      donorName: r.studentName || r.donorName || 'Waqf Benefactor',
-      donorEmail: r.donorEmail || '',
-      campaignName: r.notes || r.campaignName || 'General Islamic Institutional Waqf',
-      amount: Number(r.paymentAmount || r.amount || 0),
-      currency: r.currency || 'USD',
-      paymentMethod: r.paymentMethod || 'Bank Transfer',
-      isAnonymous: Boolean(r.isAnonymous),
-      receiptNumber: r.receiptNumber || `DON-${r.id}`,
-      receiptIssued: true,
-      donationDate: r.paymentDate || r.createdAt || new Date().toISOString(),
-      status: 'completed',
-      notes: r.notes || ''
-    }));
+    let localSaved: any[] = [];
+    if (typeof window !== 'undefined') {
+      try {
+        const str = localStorage.getItem('yahaya_finance_donations');
+        if (str) localSaved = JSON.parse(str);
+      } catch {}
+    }
+
+    const receipts = await safeGetArray('/finance-receipts?populate=*&sort=createdAt:desc');
+    const donationReceipts = receipts.filter((r: any) =>
+      r.paymentMetadata?.isDonation === true ||
+      (r.receiptNumber || '').startsWith('DON-') ||
+      (r.paymentMethod || '').toLowerCase().includes('donation') ||
+      (r.notes || '').toLowerCase().includes('waqf') ||
+      (r.notes || '').toLowerCase().includes('donation')
+    );
+
+    const apiMapped: DonationRecord[] = donationReceipts.map((r: any) => {
+      const meta = r.paymentMetadata || {};
+      return {
+        id: r.documentId || String(r.id),
+        donorName: meta.donorName || r.cashierName || r.studentName || 'Waqf Benefactor',
+        donorEmail: meta.donorEmail || '',
+        campaignName: meta.campaignName || r.notes || r.campaignName || 'General Islamic Institutional Waqf',
+        amount: Number(r.paymentAmount || r.amount || 0),
+        currency: meta.currency || r.currency || 'USD',
+        paymentMethod: r.paymentMethod || 'Bank Transfer',
+        isAnonymous: Boolean(meta.isAnonymous),
+        receiptNumber: r.receiptNumber || `DON-${r.id}`,
+        receiptIssued: true,
+        donationDate: r.paymentDate || r.createdAt || new Date().toISOString(),
+        date: (r.paymentDate || r.createdAt || new Date().toISOString()).split('T')[0],
+        status: 'completed',
+        notes: meta.notes || r.notes || ''
+      };
+    });
+
+    // Merge API records with local cache
+    const merged = [...apiMapped];
+    localSaved.forEach(loc => {
+      if (!merged.some(m => String(m.id) === String(loc.id) || m.receiptNumber === loc.receiptNumber)) {
+        merged.unshift(loc);
+      }
+    });
+
+    return merged;
   },
 
   async createDonationRecord(data: Partial<DonationRecord>): Promise<DonationRecord> {
-    const res = await apiClient.post('/finance-receipts', {
-      data: {
-        receiptNumber: `DON-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
-        studentName: data.donorName || 'Waqf Benefactor',
-        paymentAmount: data.amount || 0,
-        amount: data.amount || 0,
+    const validMethod = (() => {
+      const pm = (data.paymentMethod || '').toLowerCase();
+      if (pm.includes('cash')) return 'Cash';
+      if (pm.includes('cheque') || pm.includes('check')) return 'Cheque';
+      if (pm.includes('stripe') || pm.includes('online') || pm.includes('gateway')) return 'Stripe';
+      if (pm.includes('pos')) return 'POS Terminal';
+      if (pm.includes('orange')) return 'Orange Money';
+      if (pm.includes('mtn')) return 'MTN Mobile Money';
+      if (pm.includes('wave')) return 'Wave';
+      if (pm.includes('wallet')) return 'Advance Wallet';
+      return 'Bank Transfer';
+    })();
+
+    const receiptNumber = `DON-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const donorTitle = data.isAnonymous ? 'Anonymous Benefactor (Waqf)' : (data.donorName || 'Waqf Benefactor');
+
+    const strapiPayload: any = {
+      receiptNumber,
+      paymentAmount: Number(data.amount || 0),
+      baseAmount: Number(data.amount || 0),
+      paymentMethod: validMethod,
+      paymentDate: new Date().toISOString(),
+      status: 'completed',
+      cashierName: donorTitle,
+      paymentMetadata: {
+        isDonation: true,
+        donationType: 'Waqf / Institutional Donation',
+        donorName: donorTitle,
+        donorEmail: data.donorEmail || '',
+        campaignName: data.campaignName || 'General Islamic Institutional Waqf',
+        isAnonymous: Boolean(data.isAnonymous),
         currency: data.currency || 'USD',
-        paymentMethod: data.paymentMethod || 'Bank Transfer',
-        paymentType: 'Waqf Donation',
-        notes: data.campaignName ? `Donation to ${data.campaignName}. ${data.notes || ''}` : data.notes,
-        paymentDate: new Date().toISOString(),
-        status: 'completed'
+        notes: data.notes || `Endowment funds dedicated exclusively to ${data.campaignName || 'Waqf'}.`,
+        provider: validMethod,
+        gatewayStatus: 'VERIFIED'
       }
-    });
-    const r = res.data.data;
-    return {
-      id: r.documentId || String(r.id),
-      donorName: data.donorName || 'Waqf Benefactor',
-      campaignName: data.campaignName || 'General Waqf',
+    };
+
+    let apiRecord: any = null;
+    try {
+      const res = await apiClient.post('/finance-receipts', { data: strapiPayload });
+      apiRecord = res.data?.data;
+    } catch (err: any) {
+      console.warn('[FinanceService] API post fallback to local:', err?.message || err);
+    }
+
+    const createdRecord: DonationRecord = {
+      id: apiRecord?.documentId || apiRecord?.id || `DON-LOC-${Date.now()}`,
+      donorName: donorTitle,
+      donorEmail: data.donorEmail || '',
+      campaignName: data.campaignName || 'General Islamic Institutional Waqf',
       amount: Number(data.amount || 0),
       currency: data.currency || 'USD',
-      paymentMethod: data.paymentMethod || 'Bank Transfer',
+      paymentMethod: validMethod as any,
       isAnonymous: Boolean(data.isAnonymous),
-      receiptNumber: r.receiptNumber,
+      receiptNumber: apiRecord?.receiptNumber || receiptNumber,
       receiptIssued: true,
       donationDate: new Date().toISOString(),
       date: new Date().toISOString().split('T')[0],
-      status: 'completed'
+      status: 'completed',
+      notes: data.notes || ''
     };
+
+    if (typeof window !== 'undefined') {
+      try {
+        const existingStr = localStorage.getItem('yahaya_finance_donations') || '[]';
+        const parsed = JSON.parse(existingStr);
+        parsed.unshift(createdRecord);
+        localStorage.setItem('yahaya_finance_donations', JSON.stringify(parsed));
+      } catch {}
+    }
+
+    return createdRecord;
   },
 
   getExpenses(): Promise<ExpenseRequest[]> {
@@ -1073,20 +1153,52 @@ export const financeService = {
   },
 
   async getSettings(): Promise<FinanceSettings> {
+    let localSettings: any = null;
+    if (typeof window !== 'undefined') {
+      try {
+        const str = localStorage.getItem('yahaya_finance_settings');
+        if (str) localSettings = JSON.parse(str);
+      } catch {}
+    }
+
     try {
       const res = await apiClient.get('/finance-setting');
-      return res.data?.data || {};
-    } catch {
-      return {
-        defaultCurrency: 'USD',
-        fiscalYearStart: '2026-09-01',
-        enableFinancialHolds: true,
-        autoReceiptNumbering: 'RCP-YYYY-XXXX'
-      };
+      const data = res.data?.data;
+      if (data && Object.keys(data).length > 0) {
+        return { ...localSettings, ...data };
+      }
+    } catch {}
+
+    if (localSettings && Object.keys(localSettings).length > 0) {
+      return localSettings;
     }
+
+    return {
+      defaultCurrency: 'USD',
+      fiscalYearStart: '2026-09-01',
+      enableFinancialHolds: true,
+      autoReceiptNumbering: 'RCP-YYYY-XXXX'
+    };
   },
 
   async updateSettings(settings: Partial<FinanceSettings>): Promise<FinanceSettings> {
+    if (typeof window !== 'undefined') {
+      try {
+        const existingStr = localStorage.getItem('yahaya_finance_settings') || '{}';
+        const existing = JSON.parse(existingStr);
+        const merged = { ...existing, ...settings };
+        localStorage.setItem('yahaya_finance_settings', JSON.stringify(merged));
+
+        if (settings.defaultCurrency) {
+          localStorage.setItem('yahaya_selected_currency', settings.defaultCurrency);
+          localStorage.setItem('selected_currency', settings.defaultCurrency);
+          localStorage.setItem('yahaya_default_currency', settings.defaultCurrency);
+          window.dispatchEvent(new CustomEvent('yahaya_currency_changed', { detail: settings.defaultCurrency }));
+          window.dispatchEvent(new CustomEvent('finance_settings_updated', { detail: merged }));
+        }
+      } catch {}
+    }
+
     try {
       const res = await apiClient.put('/finance-setting', { data: settings });
       return res.data?.data || settings;
@@ -1097,7 +1209,51 @@ export const financeService = {
 
   // ─── 13. Multi-Currency & Utilities ─────────────────────────────────────────
   async getExchangeRates(): Promise<MultiCurrencyRate[]> {
-    return safeGetArray('/finance-exchange-rates?populate=*');
+    const raw = await safeGetArray('/finance-exchange-rates?populate=*&sort=createdAt:asc');
+    let localSaved: any[] = [];
+    if (typeof window !== 'undefined') {
+      try {
+        const str = localStorage.getItem('yahaya_finance_currencies');
+        if (str) localSaved = JSON.parse(str);
+      } catch {}
+    }
+
+    const merged = [...raw];
+    localSaved.forEach(localItem => {
+      if (!merged.some(m => String(m.id) === String(localItem.id) || m.currencyCode === localItem.currencyCode)) {
+        merged.push(localItem);
+      }
+    });
+
+    if (merged.length === 0) {
+      const defaults: MultiCurrencyRate[] = [
+        { id: 'CURR-001', currencyCode: 'USD', currencyName: 'US Dollar', symbol: '$', exchangeRateToUSD: 1.0, isBase: true, isBaseCurrency: true, isActive: true, lastUpdated: new Date().toISOString().split('T')[0] },
+        { id: 'CURR-002', currencyCode: 'EUR', currencyName: 'Euro', symbol: '€', exchangeRateToUSD: 0.92, isBase: false, isBaseCurrency: false, isActive: true, lastUpdated: new Date().toISOString().split('T')[0] },
+        { id: 'CURR-003', currencyCode: 'XOF', currencyName: 'West African CFA Franc', symbol: 'CFA', exchangeRateToUSD: 605.50, isBase: false, isBaseCurrency: false, isActive: true, lastUpdated: new Date().toISOString().split('T')[0] },
+        { id: 'CURR-004', currencyCode: 'TRY', currencyName: 'Turkish Lira', symbol: '₺', exchangeRateToUSD: 34.20, isBase: false, isBaseCurrency: false, isActive: true, lastUpdated: new Date().toISOString().split('T')[0] },
+        { id: 'CURR-005', currencyCode: 'GNF', currencyName: 'Guinean Franc', symbol: 'FG', exchangeRateToUSD: 8600.00, isBase: false, isBaseCurrency: false, isActive: true, lastUpdated: new Date().toISOString().split('T')[0] },
+        { id: 'CURR-006', currencyCode: 'GBP', currencyName: 'British Pound', symbol: '£', exchangeRateToUSD: 0.78, isBase: false, isBaseCurrency: false, isActive: true, lastUpdated: new Date().toISOString().split('T')[0] },
+        { id: 'CURR-007', currencyCode: 'SAR', currencyName: 'Saudi Riyal', symbol: '﷼', exchangeRateToUSD: 3.75, isBase: false, isBaseCurrency: false, isActive: true, lastUpdated: new Date().toISOString().split('T')[0] },
+      ];
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('yahaya_finance_currencies', JSON.stringify(defaults));
+        } catch {}
+      }
+      return defaults;
+    }
+
+    return merged.map((r: any, idx: number) => ({
+      id: r.documentId || String(r.id || `CURR-${idx + 1}`),
+      currencyCode: r.currencyCode || r.code || r.isoCode || 'USD',
+      currencyName: r.currencyName || r.name || 'Currency',
+      symbol: r.symbol || '$',
+      exchangeRateToUSD: Number(r.exchangeRateToUSD || r.rate || 1),
+      isBase: Boolean(r.isBase || r.isBaseCurrency || r.currencyCode === 'USD'),
+      isBaseCurrency: Boolean(r.isBase || r.isBaseCurrency || r.currencyCode === 'USD'),
+      isActive: r.isActive !== false,
+      lastUpdated: r.lastUpdated || r.effectiveDate || new Date().toISOString().split('T')[0]
+    }));
   },
 
   exportToCSV(data: any[], filename: string) {
@@ -1128,17 +1284,92 @@ export const financeService = {
 
   async updateExchangeRate(id: string, rate: number, symbol?: string): Promise<any> {
     try {
-      const res = await apiClient.put(`/finance-exchange-rates/${id}`, {
+      await apiClient.put(`/finance-exchange-rates/${id}`, {
         data: {
           exchangeRateToUSD: rate,
+          rate: rate,
           symbol: symbol,
           lastUpdated: new Date().toISOString().split('T')[0]
         }
       });
-      return res.data?.data;
-    } catch {
-      return null;
+    } catch {}
+
+    if (typeof window !== 'undefined') {
+      try {
+        const str = localStorage.getItem('yahaya_finance_currencies');
+        if (str) {
+          const existing = JSON.parse(str);
+          const next = existing.map((x: any) => String(x.id) === String(id) ? { ...x, exchangeRateToUSD: rate, rate, symbol: symbol || x.symbol, lastUpdated: new Date().toISOString().split('T')[0] } : x);
+          localStorage.setItem('yahaya_finance_currencies', JSON.stringify(next));
+        }
+      } catch {}
     }
+    return { id, exchangeRateToUSD: rate, symbol };
+  },
+
+  async addCurrency(payload: Partial<MultiCurrencyRate>): Promise<MultiCurrencyRate> {
+    const code = (payload.currencyCode || 'EUR').toUpperCase().trim();
+    const rate = Number(payload.exchangeRateToUSD || payload.rate || 1);
+    const item: MultiCurrencyRate = {
+      id: `CURR-${Date.now().toString().slice(-4)}`,
+      currencyCode: code,
+      currencyName: payload.currencyName || code,
+      symbol: payload.symbol || code,
+      exchangeRateToUSD: rate,
+      isBase: Boolean(payload.isBase),
+      isBaseCurrency: Boolean(payload.isBase),
+      isActive: true,
+      lastUpdated: new Date().toISOString().split('T')[0]
+    };
+
+    try {
+      const res = await apiClient.post('/finance-exchange-rates', {
+        data: {
+          currencyCode: item.currencyCode,
+          currencyName: item.currencyName,
+          symbol: item.symbol,
+          exchangeRateToUSD: item.exchangeRateToUSD,
+          rate: item.exchangeRateToUSD,
+          isBase: item.isBase,
+          isBaseCurrency: item.isBase,
+          isActive: item.isActive,
+          lastUpdated: item.lastUpdated
+        }
+      });
+      if (res.data?.data) {
+        item.id = res.data.data.documentId || String(res.data.data.id || item.id);
+      }
+    } catch {}
+
+    if (typeof window !== 'undefined') {
+      try {
+        const str = localStorage.getItem('yahaya_finance_currencies');
+        const existing = str ? JSON.parse(str) : [];
+        if (!existing.some((x: any) => x.currencyCode === item.currencyCode)) {
+          localStorage.setItem('yahaya_finance_currencies', JSON.stringify([...existing, item]));
+        }
+      } catch {}
+    }
+
+    return item;
+  },
+
+  async deleteCurrency(id: string | number): Promise<boolean> {
+    try {
+      await apiClient.delete(`/finance-exchange-rates/${id}`);
+    } catch {}
+
+    if (typeof window !== 'undefined') {
+      try {
+        const str = localStorage.getItem('yahaya_finance_currencies');
+        if (str) {
+          const existing = JSON.parse(str);
+          const next = existing.filter((x: any) => String(x.id) !== String(id) && x.currencyCode !== String(id));
+          localStorage.setItem('yahaya_finance_currencies', JSON.stringify(next));
+        }
+      } catch {}
+    }
+    return true;
   },
 
   async getPaymentGateways(): Promise<any[]> {

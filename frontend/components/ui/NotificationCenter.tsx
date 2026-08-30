@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
 import { useNotifications } from '@/hooks/useNotifications';
+import { Link } from '@/i18n/routing';
 
 interface NotificationItem {
   id: number | string;
@@ -36,7 +37,14 @@ export function NotificationCenter() {
     markAsRead,
     markAllAsRead,
     deleteNotification,
+    refresh,
   } = useNotifications();
+
+  useEffect(() => {
+    if (isOpen) {
+      refresh();
+    }
+  }, [isOpen, refresh]);
 
   const notifications: NotificationItem[] = rawNotifications.map((n) => {
     let type: NotificationItem['type'] = 'info';
@@ -67,13 +75,15 @@ export function NotificationCenter() {
       type = 'warning';
     }
 
+    const isRead = n.status === 'read' || n.recordStatus === 'read' || (n as any).status === 'read' || (n as any).recordStatus === 'read';
+
     return {
       id: n.id,
       title: n.title,
       message: n.body,
       type,
       channel: 'in-app',
-      isRead: n.status === 'read',
+      isRead,
       createdAt: n.createdAt,
       link: (n as any).link || (n.metadata?.link as string) || undefined,
     };
@@ -204,22 +214,32 @@ export function NotificationCenter() {
                           </span>
                         </div>
                         <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{n.message}</p>
-                        {n.link && (
-                          <a
-                            href={n.link}
-                            className="inline-flex items-center gap-1 text-[11px] font-semibold text-primary hover:underline mt-1.5"
+                        <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                          <Link
+                            href={`/messages?id=${n.id}`}
+                            onClick={() => setIsOpen(false)}
+                            className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-lg border border-emerald-200 dark:border-emerald-800"
                           >
-                            <span>View Action</span>
-                            <ExternalLink className="w-3 h-3" />
-                          </a>
-                        )}
+                            <MessageSquare className="w-2.5 h-2.5" />
+                            <span>Reply / Open Message</span>
+                          </Link>
+                          {n.link && (
+                            <a
+                              href={n.link}
+                              className="inline-flex items-center gap-1 text-[10px] font-semibold text-primary hover:underline"
+                            >
+                              <span>View Action</span>
+                              <ExternalLink className="w-2.5 h-2.5" />
+                            </a>
+                          )}
+                        </div>
                       </div>
                       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         {!n.isRead && (
                           <button
                             onClick={() => handleMarkAsRead(n.id)}
                             title="Mark as read"
-                            className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
+                            className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer"
                           >
                             <Check className="w-3.5 h-3.5" />
                           </button>
@@ -227,7 +247,7 @@ export function NotificationCenter() {
                         <button
                           onClick={() => handleDelete(n.id)}
                           title="Delete"
-                          className="p-1 rounded hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-colors"
+                          className="p-1 rounded hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-colors cursor-pointer"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -244,11 +264,22 @@ export function NotificationCenter() {
               </div>
 
               {/* Footer */}
-              <div className="px-4 py-2 border-t border-border bg-muted/20 flex items-center justify-between text-[11px] text-muted-foreground">
-                <span>Unified Engine • In-App</span>
-                <a href="/notifications" className="text-primary font-medium hover:underline">
-                  View full history →
-                </a>
+              <div className="px-4 py-2.5 border-t border-border bg-muted/20 flex items-center justify-between text-[11px] text-muted-foreground">
+                <Link
+                  href="/messages"
+                  onClick={() => setIsOpen(false)}
+                  className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-bold hover:underline"
+                >
+                  <MessageSquare className="w-3 h-3" />
+                  <span>Messages Hub →</span>
+                </Link>
+                <Link
+                  href="/notifications"
+                  onClick={() => setIsOpen(false)}
+                  className="text-primary font-medium hover:underline"
+                >
+                  Full History →
+                </Link>
               </div>
             </motion.div>
           </>

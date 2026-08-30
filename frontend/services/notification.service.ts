@@ -77,9 +77,9 @@ export const notificationService = {
   /**
    * Mark a notification as read.
    */
-  async markAsRead(id: number): Promise<void> {
+  async markAsRead(idOrDocId: number | string): Promise<void> {
     try {
-      await apiClient.put(`/notifications/${id}`, {
+      await apiClient.put(`/notifications/${idOrDocId}`, {
         data: { recordStatus: 'read', readAt: new Date().toISOString() },
       });
     } catch (error) {
@@ -102,14 +102,14 @@ export const notificationService = {
         params: {
           filters: queryFilters,
           pagination: { page: 1, pageSize: 100 },
-          fields: ['id'],
+          fields: ['id', 'documentId'],
         },
       });
 
-      const ids = (data.data as Array<{ id: number }>).map((n) => n.id);
+      const items = (data.data as Array<{ id: number; documentId?: string }>);
 
       await Promise.all(
-        ids.map((id) => notificationService.markAsRead(id))
+        items.map((n) => notificationService.markAsRead(n.documentId || n.id))
       );
     } catch (error) {
       throw normalizeError(error);
@@ -117,23 +117,31 @@ export const notificationService = {
   },
 
   /**
-   * Create and send a new notification (admin use).
+   * Create and send a new notification / message.
    */
   async sendNotification(payload: CreateNotificationPayload): Promise<void> {
     try {
-      await apiClient.post('/notifications', {
-        data: {
-          title: payload.title,
-          body: payload.body,
-          channel: payload.channel ?? 'dashboard',
-          priority: payload.priority ?? 'normal',
-          recipient: payload.recipientId,
-          metadata: payload.metadata,
-          scheduledAt: payload.scheduledAt,
-          relatedEntity: payload.relatedEntity,
-          relatedEntityId: payload.relatedEntityId,
-        },
-      });
+      const data: Record<string, any> = {
+        title: payload.title,
+        body: payload.body,
+        channel: payload.channel ?? 'dashboard',
+        priority: payload.priority ?? 'normal',
+        metadata: payload.metadata ?? null,
+        scheduledAt: payload.scheduledAt ?? null,
+        sentAt: new Date().toISOString(),
+        relatedEntity: payload.relatedEntity ?? null,
+        relatedEntityId: payload.relatedEntityId ?? null,
+        recordStatus: 'sent',
+      };
+
+      if (payload.recipientId && payload.recipientId > 0) {
+        data.recipient = payload.recipientId;
+      }
+      if (payload.senderId && payload.senderId > 0) {
+        data.sender = payload.senderId;
+      }
+
+      await apiClient.post('/notifications', { data });
     } catch (error) {
       throw normalizeError(error);
     }

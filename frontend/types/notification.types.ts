@@ -33,7 +33,8 @@ export interface CreateNotificationPayload {
   body: string;
   channel?: NotificationChannelEnum;
   priority?: NotificationPriorityEnum;
-  recipientId: number;
+  recipientId?: number;
+  senderId?: number;
   metadata?: Record<string, unknown>;
   scheduledAt?: string;
   relatedEntity?: string;

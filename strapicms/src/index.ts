@@ -720,11 +720,20 @@ async function seedFinancePermissions(strapi: Core.Strapi): Promise<void> {
       'api::language-competition.language-competition',
       'api::language-achievement.language-achievement',
       'api::language-certificate.language-certificate',
+      'api::dashboard.dashboard',
+      'api::grade-level.grade-level',
+      'api::section.section',
+      'api::curriculum.curriculum',
+      'api::donation-campaign.donation-campaign',
+      'api::finance-ledger-entry.finance-ledger-entry',
+      'api::finance-statement.finance-statement',
     ];
 
     const actions = [
       'find', 'findOne', 'create', 'update', 'delete',
-      'processPayment', 'applyScholarship', 'generateStatement', 'reconcile'
+      'processPayment', 'applyScholarship', 'generateStatement', 'reconcile',
+      'getFinanceStats', 'getAdminDashboard', 'getTeacherDashboard', 'getAccountantDashboard',
+      'getStudentDashboard', 'getParentDashboard', 'getWorkerDashboard', 'getDriverDashboard'
     ];
 
     for (const role of targetRoles) {
