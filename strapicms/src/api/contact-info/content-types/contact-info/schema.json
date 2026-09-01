@@ -4,11 +4,11 @@
   "info": {
     "singularName": "contact-info",
     "pluralName": "contact-infos",
-    "displayName": "Contact Information",
+    "displayName": "[F] Contact Information",
     "description": "School contact details, office hours, and maps"
   },
   "options": {
-    "draftAndPublish": false
+    "draftAndPublish": true
   },
   "pluginOptions": {
     "i18n": {
@@ -16,32 +16,20 @@
     }
   },
   "attributes": {
-    "address": {
-      "pluginOptions": { "i18n": { "localized": true } },
-      "type": "text",
-      "required": true
+    "campusInfo": {
+      "type": "component",
+      "repeatable": false,
+      "component": "contact.campus-info"
     },
-    "phone": {
-      "type": "string",
-      "required": true
-    },
-    "email": {
-      "type": "email",
-      "required": true
-    },
-    "officeHours": {
-      "pluginOptions": { "i18n": { "localized": true } },
-      "type": "string",
-      "default": "Mon - Fri: 8:00 AM - 4:00 PM"
-    },
-    "googleMapUrl": {
-      "type": "string"
-    },
-    "emergencyContacts": {
-      "type": "json"
+    "contactForm": {
+      "type": "component",
+      "repeatable": false,
+      "component": "contact.contact-form"
     },
     "socialMedia": {
-      "type": "json"
+      "type": "component",
+      "repeatable": true,
+      "component": "contact.social-media"
     }
   }
 }

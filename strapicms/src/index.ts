@@ -476,6 +476,34 @@ async function seedSampleContent(strapi: Core.Strapi) {}
 async function seedLmsData(strapi: Core.Strapi) {}
 async function reconcileInvoiceBalances(strapi: Core.Strapi) {}
 
+async function seedWallOfGratitude(strapi: Core.Strapi) {
+  try {
+    const ds = await strapi.db.query('api::donation-setting.donation-setting').findOne({ populate: ['wallOfGratitude'] });
+    if (ds && !ds.wallOfGratitude) {
+      strapi.log.info('[YAHAYASCOOL] Seeding Wall of Gratitude...');
+      const entityService = strapi.plugin('content-manager').service('entity-manager') || strapi.entityService;
+      await strapi.entityService.update('api::donation-setting.donation-setting', ds.id, {
+        data: {
+          wallOfGratitude: {
+            title: "Wall of Gratitude",
+            subtitle: "May Allah reward all those who support the pursuit of beneficial knowledge.",
+            patrons: [
+              { name: 'The Al-Fayed Family', quote: 'A legacy of learning for our children and generations to come.' },
+              { name: 'Umar & Sarah Mansoor', quote: 'Proud to support the next generation of global leaders.' },
+              { name: 'Islamic Relief', quote: 'Committed to global excellence in faith-based education.' },
+              { name: 'Community Fund', quote: 'Building a sustainable and enlightened future together.' },
+              { name: 'Anonymous Patron', quote: 'Give quietly, and let the work speak for itself.' },
+              { name: 'The Kromah Trust', quote: 'Education is the surest investment a community can make.' }
+            ]
+          }
+        }
+      });
+    }
+  } catch (err) {
+    strapi.log.error('Failed to seed Wall of Gratitude', err);
+  }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Strapi Application Entry Point
 // ─────────────────────────────────────────────────────────────────────────────
@@ -496,5 +524,6 @@ export default {
     await seedFinancePermissions(strapi);
     await seedDefaultUsers(strapi);
     await reconcileInvoiceBalances(strapi);
+    await seedWallOfGratitude(strapi);
   },
 };

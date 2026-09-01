@@ -4,7 +4,7 @@
   "info": {
     "singularName": "article",
     "pluralName": "articles",
-    "displayName": "News & Article",
+    "displayName": "[F] News & Article",
     "description": "School news, blog posts, and official publications"
   },
   "options": {
@@ -17,23 +17,39 @@
   },
   "attributes": {
     "title": {
-      "pluginOptions": { "i18n": { "localized": true } },
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      },
       "type": "string",
       "required": true
     },
     "slug": {
-      "pluginOptions": { "i18n": { "localized": true } },
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      },
       "type": "uid",
       "targetField": "title",
       "required": true
     },
     "summary": {
-      "pluginOptions": { "i18n": { "localized": true } },
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      },
       "type": "text",
       "required": true
     },
     "body": {
-      "pluginOptions": { "i18n": { "localized": true } },
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      },
       "type": "richtext",
       "required": true
     },
@@ -41,21 +57,33 @@
       "type": "media",
       "multiple": false,
       "required": false,
-      "allowedTypes": ["images"]
+      "allowedTypes": [
+        "images"
+      ]
     },
     "gallery": {
       "type": "media",
       "multiple": true,
       "required": false,
-      "allowedTypes": ["images"]
+      "allowedTypes": [
+        "images"
+      ]
     },
     "author": {
-      "pluginOptions": { "i18n": { "localized": true } },
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      },
       "type": "string",
       "default": "School Communications"
     },
     "tags": {
-      "pluginOptions": { "i18n": { "localized": true } },
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      },
       "type": "json"
     },
     "publishDate": {

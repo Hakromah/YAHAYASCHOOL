@@ -9,13 +9,11 @@
   "attributes": {
     "metaTitle": {
       "type": "string",
-      "required": true,
-      "maxLength": 60
+      "required": true
     },
     "metaDescription": {
       "type": "text",
-      "required": true,
-      "maxLength": 160
+      "required": true
     },
     "keywords": {
       "type": "string"
@@ -24,12 +22,10 @@
       "type": "string"
     },
     "ogTitle": {
-      "type": "string",
-      "maxLength": 60
+      "type": "string"
     },
     "ogDescription": {
-      "type": "text",
-      "maxLength": 160
+      "type": "text"
     },
     "ogImage": {
       "type": "media",
@@ -41,17 +37,6 @@
       "type": "enumeration",
       "enum": ["summary", "summary_large_image"],
       "default": "summary_large_image"
-    },
-    "schemaOrgJson": {
-      "type": "json"
-    },
-    "noIndex": {
-      "type": "boolean",
-      "default": false
-    },
-    "noFollow": {
-      "type": "boolean",
-      "default": false
     }
   }
 }

@@ -13,20 +13,21 @@ interface PublicLayoutProps {
 export default async function PublicLayout({ children, params }: PublicLayoutProps) {
   const { locale } = await params;
 
-  // Fetch dynamic header menu and footer configuration from Strapi CMS
-  const [headerMenu, footerConfig, contactInfo] = await Promise.all([
+  // Fetch dynamic header menu, topbar menu, and footer configuration from Strapi CMS
+  const [headerMenu, topbarMenu, footerConfig, contactInfo] = await Promise.all([
     cmsService.getNavigationMenu('header', locale),
+    cmsService.getNavigationMenu('topbar', locale),
     cmsService.getFooterConfig(locale),
     cmsService.getContactInfo(locale),
   ]);
 
   return (
     <div className="flex flex-col min-h-screen bg-white">
-      <Navbar locale={locale} />
+      <Navbar locale={locale} menu={headerMenu} topbarMenu={topbarMenu} contactInfo={contactInfo} />
       <div className="flex-1">
         {children}
       </div>
-      <Footer config={footerConfig} locale={locale} />
+      <Footer config={footerConfig} locale={locale} contactInfo={contactInfo} />
       <PolicyModal />
     </div>
   );

@@ -74,7 +74,9 @@
     },
     "socialLinks": {
       "pluginOptions": { "i18n": { "localized": false } },
-      "type": "json"
+      "type": "component",
+      "repeatable": true,
+      "component": "contact.social-media"
     },
     "registrationNumber": {
       "pluginOptions": { "i18n": { "localized": false } },

@@ -19,6 +19,10 @@ import type {
   DonationCampaignEntity,
   ContactSubmissionPayload,
   AdmissionApplicationPayload,
+  DonationSettingsEntity,
+  CareerPositionEntity,
+  CareerSettingEntity,
+  StaffMemberEntity
 } from '../types/cms.types';
 
 export const cmsService = {
@@ -54,13 +58,61 @@ export const cmsService = {
       locale,
       filters: { slug: { $eq: slug } },
       populate: {
-        sections: { populate: '*' }
+        seo: { populate: '*' },
+        sections: { populate: '*' },
+        bulletPoints: { populate: '*' },
+        coverImage: { populate: '*' }
       }
     };
     const data = await this.fetchStrapi<CustomPageEntity[]>('/pages', query);
     return data && data.length > 0 ? data[0] : null;
   },
+
+  async getDonationSettings(locale = 'en'): Promise<DonationSettingsEntity | null> {
+    const query = {
+      locale,
+      populate: {
+        bankTransfer: {
+          populate: {
+            image: true,
+            bankAccounts: true,
+          }
+        },
+        formLabels: true,
+        targetedGiving: true,
+        wallOfGratitude: {
+          populate: {
+            patrons: true
+          }
+        },
+        amounts: true,
+        currencies: true,
+        designations: true
+      }
+    };
+    const data = await this.fetchStrapi<DonationSettingsEntity>('/donation-setting', query);
+    return data;
+  },
   
+  async getCareerPositions(locale = 'en'): Promise<CareerPositionEntity[]> {
+    const query = {
+      locale,
+      filters: { isActive: { $eq: true } },
+      sort: ['order:asc', 'createdAt:desc'],
+      populate: ['requirements', 'responsibilities']
+    };
+    const data = await this.fetchStrapi<CareerPositionEntity[]>('/career-positions', query);
+    return data || [];
+  },
+
+  async getCareerSetting(locale = 'en'): Promise<CareerSettingEntity | null> {
+    const data = await this.fetchStrapi<CareerSettingEntity>('/career-setting', { 
+      locale,
+      populate: ['formBackgroundImage']
+    });
+    return data || null;
+  },
+
   async getPrograms(locale = 'en', featuredOnly = false, limit = 20): Promise<ProgramEntity[]> {
     const query: any = {
       locale,
@@ -219,12 +271,22 @@ export const cmsService = {
       filters: { location: { $eq: location } },
       populate: {
         items: {
-          populate: '*'
+          populate: ['subItems.media']
         }
       }
     };
-    const data = await this.fetchStrapi<NavigationMenu[]>('/navigation-menus', query);
-    if (data && data.length > 0) return data[0];
+    
+    try {
+      const url = `${process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337/api'}/navigation-menus?${qs.stringify(query, { encodeValuesOnly: true })}`;
+      const res = await fetch(url, { cache: 'no-store' });
+      if (res.ok) {
+        const json = await res.json();
+        const data = json.data;
+        if (data && data.length > 0) return data[0];
+      }
+    } catch (e) {
+      console.error('Error fetching navigation menu:', e);
+    }
     
     // Fallback for header if Strapi returns nothing
     if (location === 'header') {
@@ -256,7 +318,7 @@ export const cmsService = {
   async getDonationCampaigns(locale = 'en'): Promise<DonationCampaignEntity[]> {
     const query = {
       locale,
-      populate: ['coverImage']
+      populate: ['banner']
     };
     const data = await this.fetchStrapi<DonationCampaignEntity[]>('/donation-campaigns', query);
     return data || [];
@@ -278,7 +340,16 @@ export const cmsService = {
     } catch (e) {
       return { success: false, message: 'Failed to submit application' };
     }
-  }
+  },
+
+  async getStaffMembers(locale = 'en'): Promise<StaffMemberEntity[]> {
+    const data = await this.fetchStrapi<StaffMemberEntity[]>('/staff-members', {
+      locale,
+      sort: ['order:asc'],
+      populate: ['image'],
+    });
+    return data || [];
+  },
 };
 
 export function getStrapiMediaUrl(media: any): string | null {
@@ -287,5 +358,11 @@ export function getStrapiMediaUrl(media: any): string | null {
     ? media 
     : (media.url || media.photoUrl || media.avatarUrl || media.data?.attributes?.url || media.data?.url);
   if (!rawUrl || typeof rawUrl !== 'string') return null;
+  
+  if (rawUrl.startsWith('/')) {
+    const strapiUrl = process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1337';
+    return `${strapiUrl}${rawUrl}`;
+  }
+  
   return rawUrl;
 }

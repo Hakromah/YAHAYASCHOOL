@@ -36,6 +36,8 @@ export interface NavigationMenu {
   name: string;
   slug: string;
   location: 'header' | 'footer' | 'topbar';
+  ctaButtonTitle?: string;
+  ctaButtonUrl?: string;
   items: NavigationMenuItem[];
 }
 
@@ -43,8 +45,26 @@ export interface FooterConfig {
   id: number;
   documentId?: string;
   quickLinks?: NavigationMenuItem[];
-  departmentsColumn?: NavigationMenuItem[];
-  programsColumn?: NavigationMenuItem[];
+  academicsLinks?: NavigationMenuItem[];
+  supportLinks?: NavigationMenuItem[];
+  logo?: StrapiMediaFile;
+  email?: string;
+  phone?: string;
+  socialLinks?: NavigationMenuItem[];
+  brandName?: string;
+  brandTagline1?: string;
+  brandTagline2?: string;
+  brandDescription?: string;
+  pills?: NavigationMenuItem[];
+  termsLabel?: string;
+  privacyUrl?: string;
+  privacyLabel?: string;
+  socialsLabel?: string;
+  emailLabel?: string;
+  phoneLabel?: string;
+  quickLinksTitle?: string;
+  academicsTitle?: string;
+  supportTitle?: string;
   contactText?: string;
   copyrightText?: string;
   newsletterHeading?: string;
@@ -54,13 +74,44 @@ export interface FooterConfig {
 export interface ContactInfo {
   id: number;
   documentId?: string;
-  address: string;
-  phone: string;
-  email: string;
-  officeHours?: string;
-  googleMapUrl?: string;
-  emergencyContacts?: Array<{ label: string; phone: string; name?: string }>;
-  socialMedia?: Array<{ platform: string; url: string; icon: string }>;
+  campusInfo?: {
+    campusTitle?: string;
+    addressLabel?: string;
+    address: string;
+    phoneLabel?: string;
+    phone: string;
+    whatsappLabel?: string;
+    whatsapp?: string;
+    emailLabel?: string;
+    email: string;
+    officeHoursLabel?: string;
+    officeHours?: string;
+    mapUrl?: string;
+    latitude?: number;
+    longitude?: number;
+  };
+  socialMedia?: {
+    facebookUrl?: string;
+    twitterUrl?: string;
+    instagramUrl?: string;
+    linkedinUrl?: string;
+  };
+  contactForm?: {
+    formTitle?: string;
+    formFirstNameLabel?: string;
+    formFirstNamePlaceholder?: string;
+    formLastNameLabel?: string;
+    formLastNamePlaceholder?: string;
+    formEmailLabel?: string;
+    formEmailPlaceholder?: string;
+    formPhoneLabel?: string;
+    formSubjectLabel?: string;
+    formMessageLabel?: string;
+    formMessagePlaceholder?: string;
+    formTermsLinkText?: string;
+    formTermsSuffix?: string;
+    formSubmitButtonText?: string;
+  };
 }
 
 export interface StatItem {
@@ -200,6 +251,11 @@ export interface HomepageEntity {
   sections?: DynamicZoneSection[];
 }
 
+export interface BulletPointComponent {
+  id: number;
+  text: string;
+}
+
 export interface CustomPageEntity {
   id: number;
   documentId?: string;
@@ -207,6 +263,10 @@ export interface CustomPageEntity {
   slug: string;
   seo?: SeoMetaComponent;
   sections?: DynamicZoneSection[];
+  bulletPoints?: BulletPointComponent[];
+  coverImage?: StrapiMediaFile;
+  breadcrumbTitle?: string;
+  actionButtonText?: string;
 }
 
 export type Page = CustomPageEntity;
@@ -219,6 +279,27 @@ export type Announcement = AnnouncementEntity;
 export type Testimonial = TestimonialEntity;
 export type GalleryItem = GalleryItemEntity;
 export type DownloadItem = DownloadItemEntity;
+export type StaffMember = StaffMemberEntity;
+
+export interface CareerSettingEntity {
+  id: number;
+  documentId?: string;
+  boardTitle: string;
+  boardDescription: string;
+  formTitle?: string;
+  formFullNameLabel?: string;
+  formFullNamePlaceholder?: string;
+  formEmailLabel?: string;
+  formEmailPlaceholder?: string;
+  formPhoneLabel?: string;
+  formPhonePlaceholder?: string;
+  formUploadInstruction?: string;
+  formUploadRequirements?: string;
+  formTermsPrefix?: string;
+  formTermsLinkText?: string;
+  formSubmitButtonText?: string;
+  formBackgroundImage?: StrapiMediaFile;
+}
 
 export interface ProgramEntity {
   id: number;
@@ -361,6 +442,71 @@ export interface PartnerEntity {
   order?: number;
 }
 
+export interface BankAccountRowComponent {
+  id: number;
+  label: string;
+  value: string;
+  canCopy?: boolean;
+}
+
+export interface BankAccountComponent {
+  id: number;
+  title: string;
+  icon: 'Globe' | 'Building';
+  rows: BankAccountRowComponent[];
+}
+
+export interface StringItemComponent {
+  id: number;
+  value: string;
+}
+
+export interface DonationSettingsEntity {
+  id: number;
+  bankTransfer?: {
+    id: number;
+    title?: string;
+    image?: { url: string; alternativeText?: string };
+    bankAccounts?: BankAccountEntity[];
+  };
+  formLabels?: {
+    id: number;
+    formTitle?: string;
+    amountLabel?: string;
+    otherAmountLabel?: string;
+    frequencyLabel?: string;
+    oneTimeLabel?: string;
+    monthlyLabel?: string;
+    currencyLabel?: string;
+    designationLabel?: string;
+    donorInfoLabel?: string;
+    fullNameLabel?: string;
+    fullNamePlaceholder?: string;
+    emailLabel?: string;
+    emailPlaceholder?: string;
+    phoneLabel?: string;
+    submitButtonLabel?: string;
+    secureInfoText?: string;
+  };
+  targetedGiving?: {
+    id: number;
+    title1?: string;
+    title2?: string;
+    subtitle?: string;
+    raisedLabel?: string;
+    goalLabel?: string;
+  };
+  wallOfGratitude?: {
+    id: number;
+    title: string;
+    subtitle: string;
+    patrons: Array<{ id: number; name: string; quote: string }>;
+  };
+  amounts?: StringItemEntity[];
+  currencies?: StringItemEntity[];
+  designations?: StringItemComponent[];
+}
+
 export interface DonationCampaignEntity {
   id: number;
   documentId?: string;
@@ -370,8 +516,10 @@ export interface DonationCampaignEntity {
   targetAmount: number;
   raisedAmount: number;
   currency?: string;
-  bankInfo?: Array<{ bankName: string; accountName: string; accountNumber: string; swiftCode?: string }>;
-  donationMethods?: Array<{ title: string; details: string; icon?: string }>;
+  categoryTag?: string;
+  buttonText?: string;
+  raisedLabel?: string;
+  goalLabel?: string;
   banner?: StrapiMediaFile;
   isFeatured?: boolean;
 }
@@ -407,4 +555,31 @@ export interface AdmissionApplicationPayload {
   passportPhotoId?: number;
   birthCertificateId?: number;
   supportingDocumentIds?: number[];
+}
+
+export interface CareerPositionEntity {
+  id: number;
+  documentId?: string;
+  title: string;
+  type: string;
+  location: string;
+  locationUrl?: string;
+  isActive: boolean;
+  order: number;
+  requirements: Array<{ id: number; value: string }>;
+  responsibilities: Array<{ id: number; value: string }>;
+}
+
+export interface StaffMemberEntity {
+  id: number;
+  documentId?: string;
+  name: string;
+  role: string;
+  email?: string;
+  image: StrapiMediaFile;
+  order: number;
+  facebookUrl?: string;
+  linkedinUrl?: string;
+  instagramUrl?: string;
+  xUrl?: string;
 }

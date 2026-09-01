@@ -4,6 +4,8 @@ import React, { useState } from 'react';
 import { ChevronDown, Mail } from 'lucide-react';
 import { SOCIALS } from '@/components/public/shared/socials';
 import { useTranslations } from 'next-intl';
+import { StaffMemberEntity } from '@/types/cms.types';
+import { getStrapiMediaUrl } from '@/services/cms.service';
 
 /**
  * Staffs — the faculty card grid.
@@ -21,12 +23,17 @@ import { useTranslations } from 'next-intl';
 const STAFF_COUNT = 12;
 const PAGE_SIZE = 8;
 
-function StaffCard({ index }: { index: number }) {
-  const t = useTranslations('staffsPage.members');
-  const name = t(`${index}.name`);
-  const image = t(`${index}.image`);
-  const role = t(`${index}.role`);
-  const email = t(`${index}.email`);
+function StaffCard({ member }: { member: StaffMemberEntity }) {
+  const name = member.name;
+  const image = getStrapiMediaUrl(member.image) || '';
+  const role = member.role;
+  const email = member.email;
+
+  const socialLinks = [];
+  if (member.linkedinUrl) socialLinks.push({ name: 'LinkedIn', href: member.linkedinUrl, path: SOCIALS.find(s => s.name === 'LinkedIn')?.path });
+  if (member.instagramUrl) socialLinks.push({ name: 'Instagram', href: member.instagramUrl, path: SOCIALS.find(s => s.name === 'Instagram')?.path });
+  if (member.facebookUrl) socialLinks.push({ name: 'Facebook', href: member.facebookUrl, path: SOCIALS.find(s => s.name === 'Facebook')?.path });
+  if (member.xUrl) socialLinks.push({ name: 'X', href: member.xUrl, path: SOCIALS.find(s => s.name === 'X')?.path });
 
   return (
     <article className="group rounded-xl overflow-hidden bg-white border border-black/[0.06] shadow-[0_2px_14px_rgba(16,24,40,0.06)]">
@@ -39,7 +46,7 @@ function StaffCard({ index }: { index: number }) {
                      opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0
                      group-focus-within:opacity-100 group-focus-within:translate-y-0"
         >
-          {SOCIALS.filter((s) => s.name !== 'YouTube').map((s) => (
+          {socialLinks.map((s) => (
             <a
               key={s.name}
               href={s.href}
@@ -47,7 +54,7 @@ function StaffCard({ index }: { index: number }) {
               className="w-[30px] h-[30px] grid place-items-center rounded-full bg-[#048ED6] text-white transition-colors hover:bg-[#037ab8]"
             >
               <svg viewBox="0 0 24 24" fill="currentColor" className="w-[14px] h-[14px]" aria-hidden>
-                <path d={s.path} />
+                {s.path && <path d={s.path} />}
               </svg>
             </a>
           ))}
@@ -64,34 +71,36 @@ function StaffCard({ index }: { index: number }) {
 
         <hr className="my-[clamp(0.75rem,0.94vw,1.125rem)] border-0 border-t border-[#EBEFF3]" />
 
-        <a
-          href={`mailto:${email}`}
-          className="flex items-center gap-3 group/mail"
-        >
-          <span className="w-[30px] h-[30px] shrink-0 grid place-items-center rounded-md bg-[#E6F0FB] text-[#048ED6]">
-            <Mail className="w-[15px] h-[15px]" />
-          </span>
-          <span className="min-w-0 truncate text-[#3F4941] transition-colors group-hover/mail:text-[#048ED6] text-[clamp(0.6875rem,0.68vw,0.8125rem)]">
-            {email}
-          </span>
-        </a>
+        {email && (
+          <a
+            href={`mailto:${email}`}
+            className="flex items-center gap-3 group/mail"
+          >
+            <span className="w-[30px] h-[30px] shrink-0 grid place-items-center rounded-md bg-[#E6F0FB] text-[#048ED6]">
+              <Mail className="w-[15px] h-[15px]" />
+            </span>
+            <span className="min-w-0 truncate text-[#3F4941] transition-colors group-hover/mail:text-[#048ED6] text-[clamp(0.6875rem,0.68vw,0.8125rem)]">
+              {email}
+            </span>
+          </a>
+        )}
       </div>
     </article>
   );
 }
 
-export function StaffGrid() {
+export function StaffGrid({ initialStaff = [] }: { initialStaff?: StaffMemberEntity[] }) {
   const [shown, setShown] = useState(PAGE_SIZE);
-  const visible = Array.from({ length: Math.min(shown, STAFF_COUNT) }, (_, i) => i);
-  const more = shown < STAFF_COUNT;
+  const visible = initialStaff.slice(0, shown);
+  const more = shown < initialStaff.length;
   const t = useTranslations('staffsPage');
 
   return (
     <section className="w-full bg-white">
       <div className="max-w-[1920px] mx-auto px-(--spacing-side) py-[clamp(2.5rem,4.2vw,5rem)]">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[18px]">
-          {visible.map((i) => (
-            <StaffCard key={i} index={i} />
+          {visible.map((member) => (
+            <StaffCard key={member.documentId || member.id} member={member} />
           ))}
         </div>
 

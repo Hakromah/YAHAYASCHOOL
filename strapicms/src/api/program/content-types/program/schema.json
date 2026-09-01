@@ -4,7 +4,7 @@
   "info": {
     "singularName": "program",
     "pluralName": "programs",
-    "displayName": "Program",
+    "displayName": "[F] Program",
     "description": "Academic and specialized programs (e.g. Qur'an Memorization, Sciences, Languages)"
   },
   "options": {
@@ -17,12 +17,20 @@
   },
   "attributes": {
     "title": {
-      "pluginOptions": { "i18n": { "localized": true } },
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      },
       "type": "string",
       "required": true
     },
     "slug": {
-      "pluginOptions": { "i18n": { "localized": true } },
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      },
       "type": "uid",
       "targetField": "title",
       "required": true
@@ -35,34 +43,54 @@
       "default": true
     },
     "description": {
-      "pluginOptions": { "i18n": { "localized": true } },
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      },
       "type": "text",
       "required": true
     },
     "objectives": {
-      "pluginOptions": { "i18n": { "localized": true } },
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      },
       "type": "richtext"
     },
     "duration": {
-      "pluginOptions": { "i18n": { "localized": true } },
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      },
       "type": "string",
       "default": "Full Academic Year"
     },
     "requirements": {
-      "pluginOptions": { "i18n": { "localized": true } },
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      },
       "type": "richtext"
     },
     "images": {
       "type": "media",
       "multiple": true,
       "required": false,
-      "allowedTypes": ["images"]
+      "allowedTypes": [
+        "images"
+      ]
     },
     "downloads": {
       "type": "media",
       "multiple": true,
       "required": false,
-      "allowedTypes": ["files"]
+      "allowedTypes": [
+        "files"
+      ]
     },
     "isFeatured": {
       "type": "boolean",

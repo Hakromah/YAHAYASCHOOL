@@ -851,6 +851,7 @@
       "applyNow": "Apply Now",
       "requirements": "Requirements",
       "responsibilities": "Responsibilities",
+      "noPositions": "There are currently no job positions available. Please check back later.",
       "positions": [
         {
           "title": "Arabic Language Instructor",

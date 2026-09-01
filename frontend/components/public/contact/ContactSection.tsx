@@ -27,30 +27,14 @@ const SUBJECT_KEYS = [
   'general',
 ];
 
-const CAMPUS = [
-  {
-    Icon: MapPin,
-    key: 'mainCampus',
-    lines: ['address1', 'address2', 'address3'],
-    url: 'https://www.google.com/maps/search/Monrovia+Liberia',
-  },
-  { Icon: Phone, key: 'administration', lines: ['+971 4 123 4567'], isRaw: true, url: 'tel:+97141234567' },
-  { Icon: null, key: 'whatsapp', lines: ['+971 4 123 4567'], isRaw: true, whatsapp: true, url: 'https://wa.me/97141234567' },
-  { Icon: Mail, key: 'admissionsDesk', lines: ['admissions@yahaya.edu'], isRaw: true, url: 'mailto:admissions@yahaya.edu' },
-  {
-    Icon: Clock,
-    key: 'officeHours',
-    lines: ['hours1', 'hours2'],
-    url: '#',
-  },
-] as const;
+import type { ContactInfo } from '@/types/cms.types';
 
 const FIELD =
   'w-full h-[52px] rounded-lg bg-[#EFF4FF] px-4 text-[#121C2A] placeholder:text-[#9AA3AE] ' +
   'outline-none transition-shadow focus:ring-2 focus:ring-[#048ED6]/40 text-[clamp(0.8125rem,0.78vw,0.9375rem)]';
 const LABEL = 'block mb-2 text-[#3F4941] text-[clamp(1rem,0.68vw,1.1rem)]';
 
-export function ContactSection() {
+export function ContactSection({ info }: { info?: ContactInfo }) {
   const id = useId();
   const t = useTranslations('contactPage');
   const locale = useLocale();
@@ -58,6 +42,34 @@ export function ContactSection() {
   const [accepted, setAccepted] = useState(false);
   const [sent, setSent] = useState(false);
   const [phoneValue, setPhoneValue] = useState('');
+
+  const addressLines = (info?.campusInfo?.address || t('campus.address1') + '\n' + t('campus.address2') + '\n' + t('campus.address3')).split('\n').filter(Boolean);
+  const adminPhone = info?.campusInfo?.phone || '+971 4 123 4567';
+  const whatsappPhone = info?.campusInfo?.whatsapp || info?.campusInfo?.phone || '+971 4 123 4567';
+  const adminEmail = info?.campusInfo?.email || 'admissions@yahaya.edu';
+  const officeHoursLines = (info?.campusInfo?.officeHours || t('campus.hours1') + '\n' + t('campus.hours2')).split('\n').filter(Boolean);
+
+  const dynamicCampus = [
+    {
+      Icon: MapPin,
+      key: 'mainCampus',
+      title: info?.campusInfo?.addressLabel || 'Main Campus',
+      lines: addressLines,
+      url: info?.campusInfo?.mapUrl || `https://www.google.com/maps/search/?api=1&query=${info?.campusInfo?.latitude || 6.3005},${info?.campusInfo?.longitude || -10.7969}`,
+      isRaw: true,
+    },
+    { Icon: Phone, key: 'administration', title: info?.campusInfo?.phoneLabel || 'Administration', lines: [adminPhone], isRaw: true, url: `tel:${adminPhone.replace(/\s+/g, '')}` },
+    { Icon: null, key: 'whatsapp', title: info?.campusInfo?.whatsappLabel || 'WhatsApp Us', lines: [whatsappPhone], isRaw: true, whatsapp: true, url: `https://wa.me/${whatsappPhone.replace(/[^0-9+]/g, '')}` },
+    { Icon: Mail, key: 'admissionsDesk', title: info?.campusInfo?.emailLabel || 'Admissions Desk', lines: [adminEmail], isRaw: true, url: `mailto:${adminEmail}` },
+    {
+      Icon: Clock,
+      key: 'officeHours',
+      title: info?.campusInfo?.officeHoursLabel || 'Office Hours',
+      lines: officeHoursLines,
+      url: '#',
+      isRaw: true,
+    },
+  ];
 
   return (
     <section className="w-full bg-white">
@@ -191,19 +203,19 @@ export function ContactSection() {
             >
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-[31px] gap-y-5">
                 <div>
-                  <label className={LABEL} htmlFor={`${id}-first`}>{t('form.firstName')}</label>
-                  <input id={`${id}-first`} name="firstName" className={FIELD} placeholder={t('form.firstNamePlaceholder')} required />
+                  <label className={LABEL} htmlFor={`${id}-first`}>{info?.contactForm?.formFirstNameLabel || t('form.firstName')}</label>
+                  <input id={`${id}-first`} name="firstName" className={FIELD} placeholder={info?.contactForm?.formFirstNamePlaceholder || t('form.firstNamePlaceholder')} required />
                 </div>
                 <div>
-                  <label className={LABEL} htmlFor={`${id}-last`}>{t('form.lastName')}</label>
-                  <input id={`${id}-last`} name="lastName" className={FIELD} placeholder={t('form.lastNamePlaceholder')} required />
+                  <label className={LABEL} htmlFor={`${id}-last`}>{info?.contactForm?.formLastNameLabel || t('form.lastName')}</label>
+                  <input id={`${id}-last`} name="lastName" className={FIELD} placeholder={info?.contactForm?.formLastNamePlaceholder || t('form.lastNamePlaceholder')} required />
                 </div>
                 <div>
-                  <label className={LABEL} htmlFor={`${id}-email`}>{t('form.email')}</label>
-                  <input id={`${id}-email`} name="email" type="email" className={FIELD} placeholder={t('form.emailPlaceholder')} dir="ltr" style={{ textAlign: isRtl ? 'right' : 'left' }} required />
+                  <label className={LABEL} htmlFor={`${id}-email`}>{info?.contactForm?.formEmailLabel || t('form.email')}</label>
+                  <input id={`${id}-email`} name="email" type="email" className={FIELD} placeholder={info?.contactForm?.formEmailPlaceholder || t('form.emailPlaceholder')} dir="ltr" style={{ textAlign: isRtl ? 'right' : 'left' }} required />
                 </div>
                 <div>
-                  <label className={LABEL} htmlFor={`${id}-phone`}>{t('form.phone')}</label>
+                  <label className={LABEL} htmlFor={`${id}-phone`}>{info?.contactForm?.formPhoneLabel || t('form.phone')}</label>
                   <PhoneInput
                     country={'lr'}
                     enableSearch={true}
@@ -220,20 +232,20 @@ export function ContactSection() {
               </div>
 
               <div className="mt-5">
-                <label className={LABEL} htmlFor={`${id}-subject`}>{t('form.subject')}</label>
+                <label className={LABEL} htmlFor={`${id}-subject`}>{info?.contactForm?.formSubjectLabel || t('form.subject')}</label>
                 <select id={`${id}-subject`} name="subject" className={`${FIELD} appearance-none bg-[url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%239AA3AE%22 stroke-width=%222%22><path d=%22M6 9l6 6 6-6%22/></svg>')] bg-no-repeat ltr:bg-[right_1rem_center] rtl:bg-[left_1rem_center] bg-[length:18px_18px] ltr:pr-12 rtl:pl-12`}>
                   {SUBJECT_KEYS.map((s) => <option key={s}>{t(`subjects.${s}`)}</option>)}
                 </select>
               </div>
 
               <div className="mt-5">
-                <label className={LABEL} htmlFor={`${id}-message`}>{t('form.message')}</label>
+                <label className={LABEL} htmlFor={`${id}-message`}>{info?.contactForm?.formMessageLabel || t('form.message')}</label>
                 <textarea
                   id={`${id}-message`}
                   name="message"
                   rows={5}
                   className={`${FIELD} h-auto py-3 resize-y`}
-                  placeholder={t('form.messagePlaceholder')}
+                  placeholder={info?.contactForm?.formMessagePlaceholder || t('form.messagePlaceholder')}
                   required
                 />
               </div>
@@ -248,8 +260,8 @@ export function ContactSection() {
                     required
                   />
                   <span className="leading-[1.5] text-[clamp(0.6875rem,0.68vw,0.8125rem)]">
-                    <Link href="?policy=terms" scroll={false} onClick={(e) => e.stopPropagation()} className="font-semibold text-[#121C2A] hover:underline hover:text-[#048ED6] transition-colors">{t('form.terms1')}</Link>{' '}
-                    <span className="text-[#7A828C]">{t('form.terms2')}</span>
+                    <Link href="?policy=terms" scroll={false} onClick={(e) => e.stopPropagation()} className="font-semibold text-[#121C2A] hover:underline hover:text-[#048ED6] transition-colors">{info?.contactForm?.formTermsLinkText || t('form.terms1')}</Link>{' '}
+                    <span className="text-[#7A828C]">{info?.contactForm?.formTermsSuffix || t('form.terms2')}</span>
                   </span>
                 </label>
 
@@ -258,7 +270,9 @@ export function ContactSection() {
                   disabled={!accepted}
                   className="inline-flex items-center justify-center gap-3 h-[52px] px-7 shrink-0 rounded-full bg-[#048ED6] text-white font-medium transition-colors hover:bg-[#037ab8] disabled:opacity-40 disabled:hover:bg-[#048ED6] disabled:cursor-not-allowed text-[clamp(0.8125rem,0.78vw,0.9375rem)]"
                 >
-                  {t('form.send')}
+                  <span className="font-semibold text-white/95 tracking-wide text-[clamp(0.9375rem,1.02vw,1rem)] relative z-10 transition-transform group-hover:-translate-x-1 duration-300">
+                    {info?.contactForm?.formSubmitButtonText || t('form.send')}
+                  </span>
                   <Send className="w-4 h-4 rtl:-scale-x-100" />
                 </button>
               </div>
@@ -280,11 +294,11 @@ export function ContactSection() {
             />
 
             <h2 className="relative font-serif leading-tight text-[clamp(1.5rem,1.77vw,2.125rem)]">
-              {t('campus.title')}
+              {info?.campusInfo?.campusTitle || t('campus.title')}
             </h2>
 
             <ul className="relative mt-[clamp(1.5rem,2.1vw,2.5rem)] flex flex-col gap-[clamp(1.25rem,1.7vw,2rem)]">
-              {CAMPUS.map((item) => (
+              {dynamicCampus.map((item) => (
                 <li key={item.key} className="w-full relative">
                   <a href={item.url} target="_blank" rel="noopener noreferrer">
                     <div className="flex gap-4">
@@ -299,7 +313,7 @@ export function ContactSection() {
                       </span>
 
                       <div className="min-w-0">
-                        <p className="font-semibold text-[1rem]">{t(`campus.${item.key}`)}</p>
+                        <p className="font-semibold text-[1rem]">{item.title}</p>
                         {item.lines.map((l) => (
                           <p key={l} className="text-white/85 leading-[1.55] text-[1rem]" dir={'isRaw' in item && item.isRaw ? 'ltr' : 'auto'}>
                             {'isRaw' in item && item.isRaw ? l : t(`campus.${l}`)}
@@ -319,21 +333,52 @@ export function ContactSection() {
   );
 }
 
-export function ContactMap() {
+export function ContactMap({ info }: { info?: ContactInfo }) {
+  // Extract embed URL using logic from the old map component
+  let embedUrl = "";
+  const rawUrl = info?.campusInfo?.mapUrl?.trim();
+  const lat = info?.campusInfo?.latitude ?? 6.3005;
+  const lon = info?.campusInfo?.longitude ?? -10.7969;
+  const zoomLevel = 15;
+
+  if (rawUrl) {
+    if (rawUrl.includes("google.com/maps/embed")) {
+      embedUrl = rawUrl;
+    } else if (rawUrl.includes("<iframe")) {
+      // Extract the src attribute if the user pasted the entire HTML iframe tag
+      const match = rawUrl.match(/src="([^"]+)"/);
+      embedUrl = match ? match[1] : rawUrl;
+    } else if (rawUrl.includes("google.com/maps") && rawUrl.includes("output=embed")) {
+      embedUrl = rawUrl;
+    } else {
+      // Fallback for standard Google Maps URLs that are not directly embeddable
+      embedUrl = `https://maps.google.com/maps?q=${lat},${lon}&z=${zoomLevel}&output=embed`;
+    }
+  } else {
+    embedUrl = `https://maps.google.com/maps?q=${lat},${lon}&z=${zoomLevel}&output=embed`;
+  }
+
+  const directionsUrl = info?.campusInfo?.mapUrl?.trim() || `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}`;
+
   return (
     <section className="w-full bg-white">
       <div className="max-w-[1920px] mx-auto px-(--spacing-side) pb-[clamp(2rem,4.2vw,5rem)]">
-        {/*
-          The design shows a map of Monrovia. No map asset exists in the repo, so
-          this is an OpenStreetMap embed — keyless and no third-party tracking,
-          unlike a Google Maps embed. The bbox is central Monrovia, NOT the real
-          campus: the address in the design ("123 Wisdom Avenue") is placeholder,
-          so re-centre this once the actual coordinates are known.
-        */}
-        <div className="max-w-[1152px] mx-auto aspect-[1152/500] overflow-hidden rounded-xl border border-black/[0.06]">
+        <div 
+          className="relative max-w-[1152px] mx-auto aspect-[1152/500] overflow-hidden rounded-xl border border-black/[0.06] bg-[#F7FBFE] bg-[url('/map-placeholder.jpg')] bg-cover bg-center"
+        >
+          {/* Floating 'Get Directions' button that doesn't block map interactivity */}
+          <a 
+            href={directionsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 bg-white/95 text-[#048ED6] px-6 py-2.5 rounded-full font-semibold shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:bg-[#048ED6] hover:text-white transition-colors"
+          >
+            Get Directions
+          </a>
+          
           <iframe
             title="Yahaya International campus location"
-            src="https://www.openstreetmap.org/export/embed.html?bbox=-10.85%2C6.24%2C-10.66%2C6.36&layer=mapnik"
+            src={embedUrl}
             loading="lazy"
             referrerPolicy="no-referrer-when-downgrade"
             className="w-full h-full border-0"

@@ -42,7 +42,7 @@ import type { Swiper as SwiperType } from 'swiper';
 import { useLenis } from 'lenis/react';
 import 'swiper/css';
 
-export function Navbar({ locale = 'en' }: { locale?: string }) {
+export function Navbar({ locale = 'en', menu, topbarMenu, contactInfo }: { locale?: string; menu?: any; topbarMenu?: any; contactInfo?: any }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileAboutOpen, setMobileAboutOpen] = useState(false);
   const [aboutDropdownOpen, setAboutDropdownOpen] = useState(false);
@@ -71,10 +71,6 @@ export function Navbar({ locale = 'en' }: { locale?: string }) {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Close every menu whenever the route changes. Without this the desktop
-  // dropdown's backdrop (fixed inset-0, bg-black/50 + backdrop-blur) survives
-  // client-side navigation and leaves the destination page blurred — and since
-  // that backdrop is pointer-events-none, it cannot be clicked away either.
   useEffect(() => {
     setAboutDropdownOpen(false);
     setMobileMenuOpen(false);
@@ -92,10 +88,35 @@ export function Navbar({ locale = 'en' }: { locale?: string }) {
     };
   }, [mobileMenuOpen, lenis]);
 
-  const aboutMenuOptions = [
-    { id: 'about', label: t('aboutUs'), href: '/about', image: '/images/figma-home/02-about.jpeg', badge: t('ourCommunity') },
-    { id: 'staffs', label: t('staffs'), href: '/staffs', image: '/images/figma-home/20-news.jpeg', badge: t('ourTeam') },
-    { id: 'career', label: t('career'), href: '/career', image: '/images/figma-home/15-news.jpeg', badge: t('joinUs') },
+  // Try to find the "About" item to build the mega-menu dynamically
+  const aboutMenuItem = menu?.items?.find((item: any) => item.subItems && item.subItems.length > 0) || menu?.items?.find((item: any) => item.title.toLowerCase().includes('about'));
+  
+  const dynamicAboutOptions = aboutMenuItem?.subItems?.map((child: any) => ({
+    id: child.title.toLowerCase().replace(/\s+/g, '-'),
+    label: child.title,
+    href: child.url,
+    image: child.media?.url || '/images/figma-home/02-about.jpeg',
+    badge: child.badge || t('ourCommunity')
+  }));
+
+  const aboutMenuOptions = dynamicAboutOptions && dynamicAboutOptions.length > 0 
+    ? dynamicAboutOptions 
+    : [
+        { id: 'about', label: t('aboutUs'), href: '/about', image: '/images/figma-home/02-about.jpeg', badge: t('ourCommunity') },
+        { id: 'staffs', label: t('staffs'), href: '/staffs', image: '/images/figma-home/20-news.jpeg', badge: t('ourTeam') },
+        { id: 'career', label: t('career'), href: '/career', image: '/images/figma-home/15-news.jpeg', badge: t('joinUs') },
+      ];
+
+  const isOnlineLearning = (url: string) => url.includes('online-learning');
+
+  const leftNavItems = menu?.items ? menu.items.filter((i: any) => i.id !== aboutMenuItem?.id && !isOnlineLearning(i.url)).slice(0, 3) : [
+    { title: t('home'), url: '/' },
+    { title: t('academicPrograms'), url: '/programs' },
+    { title: t('newsAndEvents'), url: '/news' }
+  ];
+
+  const rightNavItems = menu?.items ? menu.items.filter((i: any) => i.id !== aboutMenuItem?.id && !isOnlineLearning(i.url)).slice(3) : [
+    { title: t('contact'), url: '/contact' }
   ];
 
   // Basic link active check
@@ -132,31 +153,64 @@ export function Navbar({ locale = 'en' }: { locale?: string }) {
       {/* Top Bar - Desktop Only */}
       <div className="hidden h-[50px] lg:flex w-full bg-gradient-to-r from-primary via-white to-primary text-white py-2 px-[var(--spacing-side)] justify-between items-center text-sm font-medium z-20 relative border-b border-white/10">
         <div className="flex items-center gap-6">
-          <Link href={getHref('/online-learning')} className="group lg:hover:text-white/80 transition-colors flex items-center gap-2 font-semibold text-[13px] tracking-wide">
-            <div className="relative flex items-center justify-center">
-              <div className="absolute inset-0 bg-white/40 rounded-full animate-ping opacity-75 duration-1000"></div>
-              <div className="relative bg-white/10 group-hover:bg-white/20 p-1.5 rounded-full transition-colors flex items-center justify-center">
-                <GraduationCap className="w-4 h-4 relative z-10" />
+          {topbarMenu?.items ? topbarMenu.items.map((item: any, idx: number) => (
+            <Link key={idx} href={getHref(item.url)} className="group lg:hover:text-white/80 transition-colors flex items-center gap-2 font-semibold text-[13px] tracking-wide">
+              {item.url.includes('online-learning') && (
+                <div className="relative flex items-center justify-center">
+                  <div className="absolute inset-0 bg-white/40 rounded-full animate-ping opacity-75 duration-1000"></div>
+                  <div className="relative bg-white/10 group-hover:bg-white/20 p-1.5 rounded-full transition-colors flex items-center justify-center">
+                    <GraduationCap className="w-4 h-4 relative z-10" />
+                  </div>
+                </div>
+              )}
+              <div className='text-from-18 text-to-20'>
+                  {item.title}
               </div>
-            </div>
-            <div className='text-from-18 text-to-20'>
-                {'Online Learning'}
-            </div>
-          </Link>
+            </Link>
+          )) : (
+            <Link href={getHref('/online-learning')} className="group lg:hover:text-white/80 transition-colors flex items-center gap-2 font-semibold text-[13px] tracking-wide">
+              <div className="relative flex items-center justify-center">
+                <div className="absolute inset-0 bg-white/40 rounded-full animate-ping opacity-75 duration-1000"></div>
+                <div className="relative bg-white/10 group-hover:bg-white/20 p-1.5 rounded-full transition-colors flex items-center justify-center">
+                  <GraduationCap className="w-4 h-4 relative z-10" />
+                </div>
+              </div>
+              <div className='text-from-18 text-to-20'>
+                  {'Online Learning'}
+              </div>
+            </Link>
+          )}
         </div>
         <div className="flex items-center gap-5">
-          <div className="flex items-center gap-4">
-            <a href="#" aria-label="Facebook" className="lg:hover:text-white/80 transition-all lg:hover:-translate-y-[1px] block"><FacebookIcon className="w-4 h-4" /></a>
-            <a href="#" aria-label="Twitter" className="lg:hover:text-white/80 transition-all lg:hover:-translate-y-[1px] block"><TwitterIcon className="w-4 h-4" /></a>
-            <a href="#" aria-label="Instagram" className="lg:hover:text-white/80 transition-all lg:hover:-translate-y-[1px] block"><InstagramIcon className="w-4 h-4" /></a>
-            <a href="#" aria-label="LinkedIn" className="lg:hover:text-white/80 transition-all lg:hover:-translate-y-[1px] block"><LinkedinIcon className="w-4 h-4" /></a>
-          </div>
+          {contactInfo?.socialMedia?.length > 0 ? (
+            <div className="flex items-center gap-4 text-white/90">
+              {contactInfo.socialMedia.map((s: any, i: number) => {
+                let iconClass = 'icon-link';
+                const iconName = s.icon || s.title;
+                if (iconName) {
+                  iconClass = iconName.startsWith('icon-') ? iconName.toLowerCase() : `icon-${iconName.toLowerCase()}`;
+                }
+                return (
+                  <a key={i} href={s.url} target="_blank" rel="noopener noreferrer" aria-label={s.title} className="lg:hover:text-white/80 transition-all lg:hover:-translate-y-[1px] block">
+                    <i className={`${iconClass} text-[15px] flex justify-center items-center`} />
+                  </a>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="flex items-center gap-4 text-white/90">
+              <a href="#" aria-label="Facebook" className="lg:hover:text-white/80 transition-all lg:hover:-translate-y-[1px] block"><FacebookIcon className="w-4 h-4" /></a>
+              <a href="#" aria-label="Twitter" className="lg:hover:text-white/80 transition-all lg:hover:-translate-y-[1px] block"><TwitterIcon className="w-4 h-4" /></a>
+              <a href="#" aria-label="Instagram" className="lg:hover:text-white/80 transition-all lg:hover:-translate-y-[1px] block"><InstagramIcon className="w-4 h-4" /></a>
+              <a href="#" aria-label="LinkedIn" className="lg:hover:text-white/80 transition-all lg:hover:-translate-y-[1px] block"><LinkedinIcon className="w-4 h-4" /></a>
+            </div>
+          )}
           
           <div className="w-[1px] h-4 bg-white/40"></div>
           
-          <a href="/login" target="_blank" rel="noopener noreferrer" className="bg-transparent border border-white text-white hover:bg-white/10 px-5 py-1.5 rounded-full transition-all flex items-center gap-2 font-medium text-[13px]">
+          <a href={getHref(topbarMenu?.ctaButtonUrl || '/login')} target="_blank" rel="noopener noreferrer" className="bg-transparent border border-white text-white hover:bg-white/10 px-5 py-1.5 rounded-full transition-all flex items-center gap-2 font-medium text-[13px]">
             <User className="w-4 h-4" />
-            {t('loginPortal')}
+            {topbarMenu?.ctaButtonTitle || t('loginPortal')}
           </a>
         </div>
       </div>
@@ -177,10 +231,9 @@ export function Navbar({ locale = 'en' }: { locale?: string }) {
           {/* Left Navigation */}
           <nav className='w-full h-24.75 bg-white flex justify-between items-center lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,auto)_minmax(0,1fr)]'>
             <div className="hidden lg:flex items-center gap-2 xl:gap-(--spacing-gap)  lg:[&_*]:text-[18px] [&_*]:text-[16px]">
-              <NavLink href="/">{t('home')}</NavLink>
-              <NavLink href="/programs">{t('academicPrograms')}</NavLink>
-              <NavLink href="/news">{t('newsAndEvents')}</NavLink>
-
+              {leftNavItems.map((item: any, idx: number) => (
+                <NavLink key={idx} href={item.url}>{item.title}</NavLink>
+              ))}
             </div>
 
             {/* Center Logo */}
@@ -205,7 +258,7 @@ export function Navbar({ locale = 'en' }: { locale?: string }) {
                   className="group relative h-full flex items-center outline-none cursor-pointer"
                   onClick={() => setAboutDropdownOpen(!aboutDropdownOpen)}
                 >
-                  <NavLink href="/about" hasDropdown isOpen={aboutDropdownOpen} className="w-full h-full relative cursor-pointer">{t('about')}</NavLink>
+                  <NavLink href="/about" hasDropdown isOpen={aboutDropdownOpen} className="w-full h-full relative cursor-pointer">{aboutMenuItem?.title || t('about')}</NavLink>
                   
                   <div
                     // Clicks inside the panel must not reach the wrapper's toggle above:
@@ -285,18 +338,19 @@ export function Navbar({ locale = 'en' }: { locale?: string }) {
                   </div>
                 </div>
 
-                <NavLink href="/gallery">{t('gallery')}</NavLink>
-                <NavLink href="/contact">{t('contact')}</NavLink>
+                {rightNavItems.map((item: any, idx: number) => (
+                  <NavLink key={idx} href={item.url}>{item.title}</NavLink>
+                ))}
               </nav>
 
               <div className="flex items-center h-full gap-(--spacing-gap)  border-gray-200">
                 <LanguageSwitcher currentLocale={locale} />
                 <Link
-                  href={getHref('/donations')}
+                  href={getHref(menu?.ctaButtonUrl || '/donations')}
                   className="flex items-center gap-2 px-[32px] py-[13px] rounded-full text-sm font-bold text-white bg-[#048ED6] hover:bg-sky-500 shadow-md transition-all"
                 >
                   <HandHeart className="w-5 h-5" />
-                  <span>{t('donations')}</span>
+                  <span>{menu?.ctaButtonTitle || t('donations')}</span>
                   <ArrowRight className="w-4 h-4 rtl:rotate-180" />
                 </Link>
               </div>
@@ -331,41 +385,55 @@ export function Navbar({ locale = 'en' }: { locale?: string }) {
       {mobileMenuOpen && (
         <div className="lg:hidden bg-white border-t border-gray-100 pt-4 pb-6 shadow-xl absolute w-full left-0 z-550 overflow-hidden transition-all duration-300 origin-top animate-in fade-in slide-in-from-top-2">
           <div className="flex flex-col">
-            <Link href={getHref('/')} className="px-[var(--spacing-side)] py-3 rounded-lg text-[18px] font-semibold text-gray-800">{t('home')}</Link>
-            
-            {/* Mobile About Accordion */}
-            <div className="flex flex-col">
-              <button 
-                onClick={() => setMobileAboutOpen(!mobileAboutOpen)}
-                className={`flex justify-between items-center px-[var(--spacing-side)] py-3 text-[18px] font-semibold text-gray-800 transition-colors ${mobileAboutOpen ? 'bg-primary/5' : 'bg-white'}`}
-              >
-                {t('about')}
-                <ChevronDown className={`w-5 h-5 transition-transform duration-300 ${mobileAboutOpen ? 'rotate-180' : ''}`} />
-              </button>
-              <div className={`grid transition-all duration-300 ease-in-out ${mobileAboutOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
-                <div className="overflow-hidden flex flex-col">
-                  <div className='flex flex-col w-full bg-primary'>
-                  {aboutMenuOptions.map((item, index) => (
-                    <Link key={item.id} href={getHref(item.href)} onClick={() => setMobileMenuOpen(false)} className="pl-[calc(var(--spacing-side)+12px)] py-2 text-[16px] border-t-[1px] border-white font-medium text-white">
-                      {item.label}
-                    </Link>
-                  ))}
+            {(menu?.items || [
+              { id: 'home', title: t('home'), url: '/' },
+              { id: 'about-fallback', title: t('about'), url: '/about', subItems: aboutMenuOptions },
+              { id: 'programs', title: t('academicPrograms'), url: '/programs' },
+              { id: 'online', title: t('onlineLearning'), url: '/online-learning' },
+              { id: 'news', title: t('newsAndEvents'), url: '/news' },
+              { id: 'gallery', title: t('gallery'), url: '/gallery' },
+              { id: 'contact', title: t('contact'), url: '/contact' }
+            ]).map((item: any, idx: number) => {
+              const isAbout = item.id === aboutMenuItem?.id || item.id === 'about-fallback';
+              
+              if (isAbout) {
+                return (
+                  <div key={idx} className="flex flex-col">
+                    <button 
+                      onClick={() => setMobileAboutOpen(!mobileAboutOpen)}
+                      className={`flex justify-between items-center px-[var(--spacing-side)] py-3 text-[18px] font-semibold text-gray-800 transition-colors ${mobileAboutOpen ? 'bg-primary/5' : 'bg-white'}`}
+                    >
+                      {item.title}
+                      <ChevronDown className={`w-5 h-5 transition-transform duration-300 ${mobileAboutOpen ? 'rotate-180' : ''}`} />
+                    </button>
+                    <div className={`grid transition-all duration-300 ease-in-out ${mobileAboutOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+                      <div className="overflow-hidden flex flex-col">
+                        <div className='flex flex-col w-full bg-primary'>
+                        {aboutMenuOptions.map((subItem, index) => (
+                          <Link key={subItem.id} href={getHref(subItem.href)} onClick={() => setMobileMenuOpen(false)} className="pl-[calc(var(--spacing-side)+12px)] py-2 text-[16px] border-t-[1px] border-white font-medium text-white">
+                            {subItem.label}
+                          </Link>
+                        ))}
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-            </div>
-            <Link href={getHref('/programs')} className="px-[var(--spacing-side)] py-3 rounded-lg text-[18px] font-semibold text-gray-800 ">{t('academicPrograms')}</Link>
-            <Link href={getHref('/online-learning')} className="px-[var(--spacing-side)] py-3 rounded-lg text-[18px] font-semibold text-gray-800 ">{t('onlineLearning')}</Link>
-            <Link href={getHref('/news')} className="px-[var(--spacing-side)] py-3 rounded-lg text-[18px] font-semibold text-gray-800 ">{t('newsAndEvents')}</Link>
-            <Link href={getHref('/gallery')} className="px-[var(--spacing-side)] py-3 rounded-lg text-[18px] font-semibold text-gray-800 ">{t('gallery')}</Link>
-            <Link href={getHref('/contact')} className="px-[var(--spacing-side)] py-3 rounded-lg text-[18px] font-semibold text-gray-800 ">{t('contact')}</Link>
+                );
+              }
+
+              return (
+                <Link key={idx} href={getHref(item.url)} onClick={() => setMobileMenuOpen(false)} className="px-[var(--spacing-side)] py-3 rounded-lg text-[18px] font-semibold text-gray-800">
+                  {item.title}
+                </Link>
+              );
+            })}
             <div className="pt-4 mt-2 flex flex-col min-[450px]:flex-row gap-3 px-[var(--spacing-side)]">
               <Link
-                href={getHref('/donations')}
+                href={getHref(menu?.ctaButtonUrl || '/donations')}
                 className="flex-1 py-3 px-2 rounded-full text-center font-bold text-white bg-[#048ED6] hover:bg-sky-500 transition-colors flex items-center justify-center gap-1.5 text-[13px] sm:text-sm"
               >
                 <HandHeart className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
-                <span className="truncate">{t('donations')}</span>
+                <span className="truncate">{menu?.ctaButtonTitle || t('donations')}</span>
               </Link>
               <a
                 href="/login"

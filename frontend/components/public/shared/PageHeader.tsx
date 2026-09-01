@@ -15,12 +15,15 @@ export function PageHeader({
   crumb,
   children,
   subMaxWidth = 720,
+  parentPage,
 }: {
   title: string;
   /** Breadcrumb label when it differs from the heading (Contact → "Get in Touch"). */
   crumb?: string;
   children: React.ReactNode;
   subMaxWidth?: number;
+  /** Optional parent page for a 3-level breadcrumb. */
+  parentPage?: { label: string; href: string };
 }) {
   const t = useTranslations('publicNav');
 
@@ -35,6 +38,14 @@ export function PageHeader({
             {t('home')}
           </Link>
           <ChevronRight className="w-4 h-4 text-[#9AA3AE] rtl:rotate-180" aria-hidden />
+          {parentPage && (
+            <>
+              <Link href={parentPage.href} className="text-[#048ED6] transition-colors hover:text-[#037ab8]">
+                {parentPage.label}
+              </Link>
+              <ChevronRight className="w-4 h-4 text-[#9AA3AE] rtl:rotate-180" aria-hidden />
+            </>
+          )}
           <span className="text-[#121C2A] font-medium">{crumb ?? title}</span>
         </nav>
 

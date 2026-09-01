@@ -5,18 +5,12 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useState } from 'react';
 import {
-  BookOpen,
   ChevronDown,
-  GraduationCap,
-  LifeBuoy,
-  Mail,
-  Phone,
-  Sparkles,
-  Sunrise,
 } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
 import type { FooterConfig } from '../../types/cms.types';
 import { SOCIALS } from './shared/socials';
+import { getStrapiMediaUrl } from '@/services/cms.service';
 
 /**
  * Site footer.
@@ -35,7 +29,7 @@ import { SOCIALS } from './shared/socials';
 const LINK_COLUMNS = [
   {
     key: 'quickLinks',
-    Icon: BookOpen,
+    icon: 'icon-education',
     links: [
       { key: 'aboutUs', href: '/about' },
       { key: 'academicPrograms', href: '/programs' },
@@ -47,18 +41,18 @@ const LINK_COLUMNS = [
   },
   {
     key: 'academics',
-    Icon: GraduationCap,
+    icon: 'icon-education',
     links: [
-      { key: 'quranDepartment', href: '/departments' },
-      { key: 'arabicLanguage', href: '/programs/arabic' },
-      { key: 'englishDepartment', href: '/programs/english' },
-      { key: 'onlineLearning', href: '/online-learning' },
-      { key: 'studentLife', href: '/gallery' },
+      { key: 'Quran Department', href: '/programs' },
+      { key: 'Arabic Language', href: '/programs' },
+      { key: 'English Department', href: '/programs' },
+      { key: 'Online Learning', href: '/online-learning' },
+      { key: 'Student Life', href: '/gallery' },
     ],
   },
   {
     key: 'support',
-    Icon: LifeBuoy,
+    icon: 'icon-linking',
     links: [
       { key: 'faqs', href: '/faq' },
       { key: 'helpCenter', href: '/contact' },
@@ -67,12 +61,13 @@ const LINK_COLUMNS = [
 ];
 
 const PILLS = [
-  { key: 'islamicEducation', Icon: BookOpen },
-  { key: 'modernLearning', Icon: Sparkles },
-  { key: 'brightFuture', Icon: Sunrise },
+  { key: 'islamicEducation', href: '#' },
+  { key: 'modernLearning', href: '#' },
+  { key: 'brightFuture', href: '#' },
 ];
 
-type ColType = (typeof LINK_COLUMNS)[number];
+type LinkItem = { key: string; href: string; label?: string };
+type ColType = { key: string; title?: string; links: LinkItem[] };
 
 function FooterAccordion({ col, open, onToggle }: { col: ColType; open: boolean; onToggle: () => void }) {
   const t = useTranslations('footer.links');
@@ -87,8 +82,7 @@ function FooterAccordion({ col, open, onToggle }: { col: ColType; open: boolean;
         className="sm:hidden w-full flex items-center justify-between py-4 text-left"
       >
         <span className="flex items-center gap-2 font-semibold text-[#111C2D] text-[0.9375rem]">
-          <col.Icon className="w-[17px] h-[17px] text-[#048ED6]" />
-          {t(`${col.key}.title`)}
+          {col.title || t(`${col.key}.title`)}
         </span>
         <ChevronDown
           className={`w-5 h-5 text-[#048ED6] transition-transform duration-300 ${open ? 'rotate-180' : ''}`}
@@ -101,14 +95,14 @@ function FooterAccordion({ col, open, onToggle }: { col: ColType; open: boolean;
         className={`sm:hidden grid transition-[grid-template-rows] duration-300 ease-in-out ${open ? 'grid-rows-[1fr] pb-4' : 'grid-rows-[0fr]'
           }`}
       >
-        <ul className="overflow-hidden flex flex-col gap-4 ">
+        <ul className="overflow-hidden flex flex-col gap-2 ">
           {col.links.map((l) => (
             <li key={l.key}>
               <Link
                 href={l.href}
                 className="text-[#545F73] text-[0.9375rem] transition-colors md:hover:text-[#048ED6]"
               >
-                {t(`${col.key}.${l.key}`)}
+                {l.label || t(`${col.key}.${l.key}`)}
               </Link>
             </li>
           ))}
@@ -118,17 +112,16 @@ function FooterAccordion({ col, open, onToggle }: { col: ColType; open: boolean;
       {/* Desktop: plain visible block (hidden on max-sm) */}
       <div className="hidden sm:block">
         <h3 className="flex items-center gap-2 font-semibold text-[#111C2D] text-[clamp(0.9375rem,0.83vw,1rem)]">
-          <col.Icon className="w-[17px] h-[17px] text-[#048ED6]" />
-          {t(`${col.key}.title`)}
+          {col.title || t(`${col.key}.title`)}
         </h3>
-        <ul className="mt-[clamp(1.25rem,1.6vw,1.9rem)] flex flex-col gap-[clamp(0.9rem,1.16vw,1.4rem)]">
+        <ul className="mt-[clamp(1.25rem,1.6vw,1.9rem)] flex flex-col gap-[clamp(0.9rem,1.16vw,1rem)]">
           {col.links.map((l) => (
             <li key={l.key}>
               <Link
                 href={l.href}
                 className="text-[#545F73] text-[clamp(0.875rem,0.78vw,0.9375rem)] transition-colors md:hover:text-[#048ED6]"
               >
-                {t(`${col.key}.${l.key}`)}
+                {l.label || t(`${col.key}.${l.key}`)}
               </Link>
             </li>
           ))}
@@ -138,7 +131,7 @@ function FooterAccordion({ col, open, onToggle }: { col: ColType; open: boolean;
   );
 }
 
-export function Footer({ locale: propLocale }: { config?: FooterConfig | null; locale?: string }) {
+export function Footer({ locale: propLocale, config, contactInfo }: { config?: FooterConfig | null; locale?: string; contactInfo?: any }) {
   const t = useTranslations('footer');
   const activeLocale = useLocale();
   const locale = propLocale || activeLocale || 'en';
@@ -146,6 +139,57 @@ export function Footer({ locale: propLocale }: { config?: FooterConfig | null; l
 
   const currentYear = new Date().getFullYear();
   const formattedYear = new Intl.NumberFormat(locale, { useGrouping: false }).format(currentYear);
+
+  const logoUrl = config?.logo ? (getStrapiMediaUrl(config.logo) || '/headerlogo.png') : '/headerlogo.png';
+  const email = config?.email || 'Yahayahighschool@Gmail.Com';
+  const phone = config?.phone || '+23188368801';
+  const brandName = config?.brandName || t('brand.name');
+  const brandTagline1 = config?.brandTagline1 || t('brand.tagline1');
+  const brandTagline2 = config?.brandTagline2 || t('brand.tagline2');
+  const brandDescription = config?.brandDescription || t('brand.description');
+  const termsLabel = config?.termsLabel || t('bottom.terms');
+  const privacyUrl = config?.privacyUrl || '/privacy';
+  const privacyLabel = config?.privacyLabel || t('bottom.privacy');
+  const socialsLabel = config?.socialsLabel || t('contact.socials');
+  const emailLabel = config?.emailLabel || t('contact.email');
+  const phoneLabel = config?.phoneLabel || t('contact.phone');
+
+  const socialLinksData = contactInfo?.socialMedia?.length ? contactInfo.socialMedia : config?.socialLinks;
+  
+  const socialLinks = socialLinksData?.length ? socialLinksData.map((s: any) => {
+    let iconClass = 'icon-link';
+    const iconName = s.icon || s.title;
+    if (iconName) {
+      iconClass = iconName.startsWith('icon-') ? iconName.toLowerCase() : `icon-${iconName.toLowerCase()}`;
+    }
+    return { name: s.title, href: s.url, icon: iconClass };
+  }) : SOCIALS.map(s => ({ name: s.name, href: s.href, icon: `icon-${s.name.toLowerCase()}` }));
+
+  const pills = config?.pills?.length ? config.pills.map(p => {
+    return {
+      key: p.id?.toString() || p.title,
+      label: p.title,
+      href: p.url || '#'
+    };
+  }) : PILLS.map(p => ({ key: p.key, label: t(`pills.${p.key}`), href: p.href }));
+
+  const columns: ColType[] = [
+    {
+      key: 'quickLinks',
+      title: config?.quickLinksTitle || t('links.quickLinks.title'),
+      links: config?.quickLinks?.length ? config.quickLinks.map(l => ({ key: l.id?.toString() || l.title, label: l.title, href: l.url })) : LINK_COLUMNS[0].links,
+    },
+    {
+      key: 'academics',
+      title: config?.academicsTitle || t('links.academics.title'),
+      links: config?.academicsLinks?.length ? config.academicsLinks.map(l => ({ key: l.id?.toString() || l.title, label: l.title, href: l.url })) : LINK_COLUMNS[1].links,
+    },
+    {
+      key: 'support',
+      title: config?.supportTitle || t('links.support.title'),
+      links: config?.supportLinks?.length ? config.supportLinks.map(l => ({ key: l.id?.toString() || l.title, label: l.title, href: l.url })) : LINK_COLUMNS[2].links,
+    },
+  ];
 
   return (
     <footer className="w-full bg-white">
@@ -155,7 +199,7 @@ export function Footer({ locale: propLocale }: { config?: FooterConfig | null; l
         <div className="relative pt-[52px] max-sm:pt-[80px] max-xs:pt-[100px]">
           <span style={{ fill: '#FFF', filter: 'drop-shadow(0 2px 2px rgba(15, 108, 189, 0.20))' }} className="absolute top-0 left-1/2 -translate-x-1/2 z-10 md:w-[184px] md:h-[184px] w-[140px] h-[140px] rounded-full bg-white grid place-items-center overflow-hidden">
             <div className='relative w-full h-full flex justify-center items-center '>
-              <Image src="/headerlogo.png" alt="Yahaya International" width={78} height={78} className="object-contain w-full h-full max-h-[150px] max-w-[100px]" />
+              <Image src={logoUrl} alt={brandName} width={78} height={78} className="object-contain w-full h-full max-h-[150px] max-w-[100px]" />
             </div>
           </span>
 
@@ -163,18 +207,16 @@ export function Footer({ locale: propLocale }: { config?: FooterConfig | null; l
             {/* Social */}
             <div className="relative rounded-2xl bg-white m-[1px] px-[clamp(1.25rem,2.1vw,2.5rem)] py-[31px] max-lg:pt-[66px] flex flex-col lg:flex-row lg:items-center justify-between gap-8 max-md:gap-5">
               <div className="flex flex-col gap-[14px]">
-                <span className="text-[13px] text-[#6B7280]">{t('contact.socials')}</span>
+                <span className="text-[13px] text-[#6B7280]">{socialsLabel}</span>
                 <div className="flex items-center gap-[20px]">
-                  {SOCIALS.map((s) => (
+                  {socialLinks.map((s) => (
                     <a
                       key={s.name}
                       href={s.href}
                       aria-label={s.name}
                       className="w-[30px] h-[30px] grid place-items-center rounded-md bg-[#E6F0FB] text-[#048ED6] transition-colors hover:bg-[#048ED6] md:hover:text-white"
                     >
-                      <svg viewBox="0 0 24 24" fill="currentColor" className="w-[15px] h-[15px]" aria-hidden>
-                        <path d={s.path} />
-                      </svg>
+                      <i className={`${s.icon} text-[15px] flex justify-center items-center`} aria-hidden />
                     </a>
                   ))}
                 </div>
@@ -182,30 +224,30 @@ export function Footer({ locale: propLocale }: { config?: FooterConfig | null; l
 
               {/* Email / phone */}
               <div className="flex flex-col sm:flex-row sm:items-center gap-6 sm:gap-0">
-                <a href="mailto:Yahayahighschool@Gmail.Com" className="text-[15px] block text-[#111C2D] transition-colors">
+                <a href={`mailto:${email}`} className="text-[15px] block text-[#111C2D] transition-colors">
                   <div className="flex flex-col gap-[10px] sm:pe-[46px]">
-                    <span className="text-[13px] text-[#6B7280]">{t('contact.email')}</span>
+                    <span className="text-[13px] text-[#6B7280]">{emailLabel}</span>
                     <span className="flex items-center gap-3">
                       <span className="w-[30px] h-[30px] shrink-0 grid place-items-center rounded-md bg-[#E6F0FB] text-[#048ED6]">
-                        <Mail className="w-[15px] h-[15px]" />
+                        <i className="icon-mail text-[15px] flex justify-center items-center" />
                       </span>
                       <p className="text-[15px] text-[#111C2D] md:hover:text-[#048ED6] transition-colors">
-                        Yahayahighschool@Gmail.Com
+                        {email}
                       </p>
                     </span>
                   </div>
                 </a>
 
                 <span className="hidden sm:block w-px self-stretch bg-[#BCD5EE]" />
-                <a href="tel:+23188368801" className="text-[15px] text-[#111C2D] md:hover:text-[#048ED6] transition-colors">
+                <a href={`tel:${phone.replace(/[^\d+]/g, '')}`} className="text-[15px] text-[#111C2D] md:hover:text-[#048ED6] transition-colors">
                   <div className="flex flex-col gap-[10px] sm:ps-[46px]">
-                    <span className="text-[13px] text-[#6B7280]">{t('contact.phone')}</span>
+                    <span className="text-[13px] text-[#6B7280]">{phoneLabel}</span>
                     <span className="flex items-center gap-3">
                       <span className="w-[30px] h-[30px] shrink-0 grid place-items-center rounded-md bg-[#E6F0FB] text-[#048ED6]">
-                        <Phone className="w-[15px] h-[15px]" />
+                        <i className="icon-whatsapp text-[15px] flex justify-center items-center" />
                       </span>
                       <p className="text-[15px] block text-[#111C2D] md:hover:text-[#048ED6] transition-colors" dir="ltr">
-                        +23188368801
+                        {phone}
                       </p>
                     </span>
                   </div>
@@ -220,13 +262,13 @@ export function Footer({ locale: propLocale }: { config?: FooterConfig | null; l
 
           <div>
             <p className="text-[#048ED6] font-semibold uppercase tracking-[0.02em] text-[1rem]">
-              {t('brand.name')}
+              {brandName}
             </p>
 
             <h2 className="mt-[clamp(1.25rem,1.7vw,2.05rem)] font-bold text-[#111C2D] tracking-[-0.015em] leading-[1.1] text-[clamp(1.75rem,2.5vw,3rem)]">
-              {t('brand.tagline1')}{' '}
+              {brandTagline1}{' '}
               <span className="relative inline-block text-[#048ED6]">
-                {t('brand.tagline2')}
+                {brandTagline2}
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   viewBox="0 0 195 9"
@@ -248,24 +290,24 @@ export function Footer({ locale: propLocale }: { config?: FooterConfig | null; l
             </h2>
 
             <p className="mt-[clamp(1rem,1.2vw,1.45rem)] max-w-[460px] text-[#545F73] leading-[1.6] text-[1rem]">
-              {t('brand.description')}
+              {brandDescription}
             </p>
 
             <div className="mt-[clamp(1.75rem,2.4vw,2.9rem)] flex flex-wrap gap-[14px] max-w-[400px]">
-              {PILLS.map((p) => (
-                <span
+              {pills.map((p) => (
+                <Link
+                  href={p.href}
                   key={p.key}
-                  className="inline-flex items-center gap-2 h-[38px] px-4 rounded-full bg-[#048ED6] text-white font-medium text-[13px]"
+                  className="inline-flex items-center gap-2 h-[38px] px-4 rounded-full bg-[#048ED6] text-white font-medium text-[13px] transition-colors hover:bg-[#005396]"
                 >
-                  <p.Icon className="w-[15px] h-[15px]" />
-                  {t(`pills.${p.key}`)}
-                </span>
+                  {p.label}
+                </Link>
               ))}
             </div>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-[clamp(2rem,5.6vw,6.75rem)] gap-y-10 max-sm:grid-cols-1 max-sm:gap-y-0 max-sm:divide-y max-sm:divide-[#E8EEF5]">
-            {LINK_COLUMNS.map((col) => (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-[clamp(1.5rem,5.6vw,6.75rem)] gap-y-10 max-sm:grid-cols-1 max-sm:gap-y-0 max-sm:divide-y max-sm:divide-[#E8EEF5]">
+            {columns.map((col) => (
               <FooterAccordion
                 key={col.key}
                 col={col}
@@ -280,10 +322,15 @@ export function Footer({ locale: propLocale }: { config?: FooterConfig | null; l
       {/* ── Bottom bar ──────────────────────────────────────────── */}
       <div className="bg-[#048ED6] text-white">
         <div className="max-w-[1920px] max-sm:[&_p]:text-center mx-auto px-(--spacing-side) min-h-[79px] py-4 flex flex-col sm:flex-row items-center justify-between max-sm:justify-center gap-3 text-[clamp(0.8125rem,0.73vw,0.875rem)]">
-          <p>{t('bottom.copyright', { year: formattedYear })}</p>
+          <p>{config?.copyrightText || t('bottom.copyright', { year: formattedYear })}</p>
           <div className="flex items-center gap-8">
-            <Link href="?policy=terms" scroll={false} className="transition-opacity hover:opacity-80">{t('bottom.terms')}</Link>
-            <Link href="/privacy" className="transition-opacity hover:opacity-80">{t('bottom.privacy')}</Link>
+            <Link href="?policy=terms" scroll={false} className="transition-opacity hover:opacity-80">{termsLabel}</Link>
+            <Link href={privacyUrl} className="transition-opacity hover:opacity-80">{privacyLabel}</Link>
+          </div>
+          <div className="flex items-center gap-2 max-xs:gap-1">
+            <span className='text-[clamp(1rem,0.73vw,1.175rem)] text-white'>Done</span>
+            <Link href="https://github.com/Mus-k" target='_blank' rel='noopener noreferrer' className="transition-opacity hover:opacity-80 font-medium text-[clamp(0.8125rem,0.73vw,0.875rem)] text-white relative before:absolute before:bottom-0 before:left-0 before:w-0 lg:hover:before:w-full before:ease-out before:duration-300 before:h-px before:bg-white max-md:before:hidden">Musah</Link> &
+            <Link href="https://github.com/Hakromah" target='_blank' rel='noopener noreferrer' className="transition-opacity hover:opacity-80 font-medium text-[clamp(0.8125rem,0.73vw,0.875rem)] text-white relative before:absolute before:bottom-0 before:left-0 before:w-0 lg:hover:before:w-full before:ease-out before:duration-300 before:h-px before:bg-white max-md:before:hidden">Hassan</Link>
           </div>
         </div>
       </div>

@@ -851,6 +851,7 @@
       "applyNow": "Postuler Maintenant",
       "requirements": "Exigences",
       "responsibilities": "Responsabilités",
+      "noPositions": "Il n'y a actuellement aucun poste disponible. Veuillez revenir plus tard.",
       "positions": [
         {
           "title": "Instructeur de Langue Arabe",

@@ -11,7 +11,8 @@ import type { Swiper as SwiperClass } from 'swiper';
 import { useTranslations, useLocale } from 'next-intl';
 import { LeafImage } from '@/components/public/shared/LeafImage';
 import PhoneInput from 'react-phone-input-2';
-import type { DonationCampaignEntity } from '@/types/cms.types';
+import { getStrapiMediaUrl } from '@/services/cms.service';
+import type { DonationCampaignEntity, DonationSettingsEntity } from '@/types/cms.types';
 
 import 'swiper/css';
 import 'react-phone-input-2/lib/style.css';
@@ -69,21 +70,31 @@ const DESIGNATIONS = [
 ];
 
 const CAUSES = [
-  { tag: 'Scholarship', title: 'Sponsor Hifz', cta: 'Sponsor Now',
+  {
+    tag: 'Scholarship', title: 'Sponsor Hifz', cta: 'Sponsor Now',
     image: '/images/figma-home/13.png', alt: 'A student reading in the library',
-    desc: 'Support the sacred journey of a student memorizing the Holy Qur’an with full tuition and care.' },
-  { tag: 'Infrastructure', title: 'Build Facilities', cta: 'Fund Building',
+    desc: 'Support the sacred journey of a student memorizing the Holy Qur’an with full tuition and care.'
+  },
+  {
+    tag: 'Infrastructure', title: 'Build Facilities', cta: 'Fund Building',
     image: '/images/figma-home/09.png', alt: 'A lesson in progress',
-    desc: 'Contribute to the construction of state-of-the-art classrooms and research laboratories.' },
-  { tag: 'Living', title: 'Hostel Support', cta: 'Support Housing',
+    desc: 'Contribute to the construction of state-of-the-art classrooms and research laboratories.'
+  },
+  {
+    tag: 'Living', title: 'Hostel Support', cta: 'Support Housing',
     image: '/images/figma-home/17.png', alt: 'Group study in the library',
-    desc: 'Help provide a secure, nurturing, and professional environment for our boarding students.' },
-  { tag: 'Legacy', title: 'Mosque Fund', cta: 'Contribute',
+    desc: 'Help provide a secure, nurturing, and professional environment for our boarding students.'
+  },
+  {
+    tag: 'Legacy', title: 'Mosque Fund', cta: 'Contribute',
     image: '/images/figma-home/03-programs.jpeg', alt: 'The main campus building',
-    desc: 'Support the spiritual center of our institution, ensuring its maintenance and community life.' },
-  { tag: 'Learning', title: 'Library & Books', cta: 'Give Books',
+    desc: 'Support the spiritual center of our institution, ensuring its maintenance and community life.'
+  },
+  {
+    tag: 'Learning', title: 'Library & Books', cta: 'Give Books',
     image: '/images/figma-home/19.png', alt: 'Students walking on campus',
-    desc: 'Stock the shelves that every subject depends on, from Qur’anic study to the sciences.' },
+    desc: 'Stock the shelves that every subject depends on, from Qur’anic study to the sciences.'
+  },
 ];
 
 const PATRONS = [
@@ -95,10 +106,47 @@ const PATRONS = [
   { name: 'The Kromah Trust', quote: 'Education is the surest investment a community can make.' },
 ];
 
-export function DonationHero() {
+export function DonationHero({
+  title,
+  description,
+  bulletPoints,
+  coverImage,
+  breadcrumbTitle
+}: {
+  title?: string;
+  description?: string;
+  bulletPoints?: { text: string }[];
+  coverImage?: any;
+  breadcrumbTitle?: string;
+}) {
   const locale = useLocale();
   const t = useTranslations('donationsPage.hero');
   const href = (url: string) => (locale === 'en' ? url : `/${locale}${url}`);
+
+  const bullets = bulletPoints && bulletPoints.length > 0
+    ? bulletPoints.map(bp => bp.text)
+    : [t('bullet_1'), t('bullet_2')];
+
+  // Ensure the image URL is absolute since Strapi returns a relative path like `/uploads/...`
+  const rawUrl = coverImage?.url;
+  const strapiUrl = process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1337';
+  const imageUrl = rawUrl
+    ? (rawUrl.startsWith('http') ? rawUrl : `${strapiUrl}${rawUrl}`)
+    : "/images/figma-home/09.png";
+
+  const renderTitle = (text: string) => {
+    const parts = text.split(/(\*[^*]+\*)/g);
+    return parts.map((part, i) => {
+      if (part.startsWith('*') && part.endsWith('*')) {
+        return (
+          <span key={i} className="italic text-[#048ED6]">
+            {part.slice(1, -1)}
+          </span>
+        );
+      }
+      return <span key={i} className="text-[#121C2A]">{part}</span>;
+    });
+  };
 
   return (
     <section className="w-full bg-[#FAFAFA]">
@@ -107,53 +155,62 @@ export function DonationHero() {
           <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-[#6F757D] text-[clamp(0.75rem,0.68vw,0.8125rem)]">
             <Link href={href('/')} className="transition-colors hover:text-[#048ED6]">{t('breadcrumbHome')}</Link>
             <ChevronRight className="h-3.5 w-3.5 rtl:-scale-x-100" aria-hidden />
-            <span className="text-[#048ED6]">{t('breadcrumbDonation')}</span>
+            <span className="text-[#048ED6]">{breadcrumbTitle || t('breadcrumbDonation')}</span>
           </nav>
 
-          <h1 className="mt-[clamp(1.25rem,2.1vw,2.5rem)] font-serif leading-[1.1] text-[clamp(1.75rem,2.81vw,3.375rem)]">
-            <span className="text-[#121C2A]">{t('headline_1')}</span>
-            <span className="italic text-[#048ED6]">{t('headline_2')}</span>
-          </h1>
+          {title ? (
+            <h1 className="mt-[clamp(1.25rem,2.1vw,2.5rem)] leading-[1.1] text-[clamp(1.75rem,2.81vw,3.375rem)]">
+              {renderTitle(title)}
+            </h1>
+          ) : (
+            <h1 className="mt-[clamp(1.25rem,2.1vw,2.5rem)] leading-[1.1] text-[clamp(1.75rem,2.81vw,3.375rem)]">
+              <span className="text-[#121C2A]">{t('headline_1')}</span>
+              <span className="italic text-[#048ED6]">{t('headline_2')}</span>
+            </h1>
+          )}
 
           <p className="mt-[clamp(1rem,1.5vw,1.75rem)] max-w-[26rem] leading-[1.6] text-[#5A636D] text-[1rem]">
-            {t('lede')}
+            {description || t('lede')}
           </p>
 
           <ul className="mt-[clamp(1.5rem,2.4vw,2.9rem)] flex flex-wrap items-center gap-[clamp(1rem,1.35vw,1.625rem)]">
-            {[[ShieldCheck, t('bullet_1')], [HeartHandshake, t('bullet_2')]].map(
-              ([Icon, text]) => {
-                const I = Icon as typeof ShieldCheck;
-                return (
-                  <li key={text as string} className="flex items-center gap-2 text-[#121C2A] text-[clamp(0.6875rem,0.73vw,0.875rem)]">
-                    <span className="grid h-[clamp(1.75rem,1.98vw,2.375rem)] w-[clamp(1.75rem,1.98vw,2.375rem)] place-items-center rounded-full bg-[#E1EFF6] text-[#048ED6]">
-                      <I className="h-[45%] w-[45%]" aria-hidden />
-                    </span>
-                    {text as string}
-                  </li>
-                );
-              },
-            )}
+            {bullets.map((text, idx) => {
+              const I = idx === 0 ? ShieldCheck : HeartHandshake;
+              return (
+                <li key={idx} className="flex items-center gap-2 text-[#121C2A] text-[clamp(0.6875rem,0.73vw,0.875rem)]">
+                  <span className="grid h-[clamp(1.75rem,1.98vw,2.375rem)] w-[clamp(1.75rem,1.98vw,2.375rem)] place-items-center rounded-full bg-[#E1EFF6] text-[#048ED6]">
+                    <I className="h-[45%] w-[45%]" aria-hidden />
+                  </span>
+                  {text}
+                </li>
+              );
+            })}
           </ul>
         </div>
 
         <div className="w-full max-lg:hidden mt-[-10px] h-[calc(100%+10px)]">
-          <LeafImage src="/images/figma-home/09.png" alt="Students working together in class" />
+          <LeafImage src={imageUrl} alt={title || "Students working together in class"} />
         </div>
         <div className="w-full lg:hidden">
-          <img src="/images/figma-home/09.png" alt="Students working together in class" className="aspect-[704/532] w-full rounded-lg object-cover" />
+          <img src={imageUrl} alt={title || "Students working together in class"} className="aspect-[704/532] w-full rounded-lg object-cover" />
         </div>
       </div>
     </section>
   );
 }
 
-export function GiveSection() {
+export function GiveSection({ settings }: { settings?: DonationSettingsEntity | null }) {
   const t = useTranslations('donationsPage.give');
   const [openAccount, setOpenAccount] = useState<string | null>('intl');
   const [amountIdx, setAmountIdx] = useState(2);
   const [frequency, setFrequency] = useState<'one-time' | 'monthly'>('one-time');
   const [copied, setCopied] = useState<string | null>(null);
   const [phoneValue, setPhoneValue] = useState('');
+
+  const accountsToUse = settings?.bankAccounts?.length ? settings.bankAccounts : BANK_ACCOUNTS;
+  const amountsToUse = settings?.amounts?.length ? settings.amounts.map(a => a.value) : AMOUNTS;
+  const currenciesToUse = settings?.currencies?.length ? settings.currencies.map(c => c.value) : CURRENCIES;
+  const designationsToUse = settings?.designations?.length ? settings.designations.map(d => d.value) : DESIGNATIONS;
 
   const copy = async (value: string, key: string) => {
     try {
@@ -297,115 +354,111 @@ export function GiveSection() {
           <div className="flex flex-col gap-[clamp(1.25rem,2.29vw,2.75rem)]">
             <div className="rounded-lg bg-[#F8FAFC] p-[clamp(1.25rem,2.08vw,2.5rem)]">
               <h2 className="text-center font-semibold uppercase tracking-[0.18em] text-[#048ED6] text-[clamp(0.6875rem,0.68vw,0.8125rem)]">
-                {t('preferBank')}
+                {settings?.bankTransfer?.title || t('preferBank')}
               </h2>
 
-            <div className="mt-[clamp(1.25rem,1.66vw,2rem)] space-y-[clamp(0.75rem,1.04vw,1.25rem)]">
-              {[0, 1].map((idx) => {
-                const id = BANK_ACCOUNTS[idx].id;
-                const Icon = BANK_ACCOUNTS[idx].icon;
-                const on = openAccount === id;
-                return (
-                  <div key={id} className="overflow-hidden rounded-lg border border-[#E5EBF2] bg-white">
-                    <button
-                      type="button"
-                      onClick={() => setOpenAccount(on ? null : id)}
-                      aria-expanded={on}
-                      className="flex w-full items-center gap-3 p-[clamp(0.875rem,1.15vw,1.375rem)] text-left"
-                    >
-                      <span className="grid h-[clamp(1.75rem,1.98vw,2.375rem)] w-[clamp(1.75rem,1.98vw,2.375rem)] shrink-0 place-items-center rounded-lg bg-[#E1EFF6] text-[#048ED6]">
-                        <Icon className="h-[45%] w-[45%]" aria-hidden />
-                      </span>
-                      <span className={`min-w-0 flex-1 font-semibold text-[clamp(0.75rem,0.83vw,1rem)] ${on ? 'text-[#048ED6]' : 'text-[#121C2A]'}`}>
-                        {t(`bankAccounts.${idx}.label`)}
-                      </span>
-                      <ChevronDown className={`h-4 w-4 shrink-0 text-[#6F757D] transition-transform ${on ? 'rotate-180' : ''}`} aria-hidden />
-                    </button>
+              <div className="mt-[clamp(1.25rem,1.66vw,2rem)] space-y-[clamp(0.75rem,1.04vw,1.25rem)]">
+                {accountsToUse.map((account, idx) => {
+                  const id = account.id.toString();
+                  const Icon = account.icon === 'Globe' ? Globe : Building2;
+                  const on = openAccount === id;
+                  return (
+                    <div key={id} className="overflow-hidden rounded-lg border border-[#E5EBF2] bg-white">
+                      <button
+                        type="button"
+                        onClick={() => setOpenAccount(on ? null : id)}
+                        aria-expanded={on}
+                        className="flex w-full items-center gap-3 p-[clamp(0.875rem,1.15vw,1.375rem)] text-left"
+                      >
+                        <span className="grid h-[clamp(1.75rem,1.98vw,2.375rem)] w-[clamp(1.75rem,1.98vw,2.375rem)] shrink-0 place-items-center rounded-lg bg-[#E1EFF6] text-[#048ED6]">
+                          <Icon className="h-[45%] w-[45%]" aria-hidden />
+                        </span>
+                        <span className={`min-w-0 flex-1 font-semibold text-[clamp(0.75rem,0.83vw,1rem)] ${on ? 'text-[#048ED6]' : 'text-[#121C2A]'}`}>
+                          {account.title || account.label || t(`bankAccounts.${idx}.label`)}
+                        </span>
+                        <ChevronDown className={`h-4 w-4 shrink-0 text-[#6F757D] transition-transform ${on ? 'rotate-180' : ''}`} aria-hidden />
+                      </button>
 
-                    {/* grid-rows trick so the panel can animate to its own height */}
-                    <div className={`grid transition-[grid-template-rows] duration-300 ${on ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
-                      <div className="overflow-hidden">
-                        <dl className="grid grid-cols-1 gap-[clamp(0.75rem,1.04vw,1.25rem)] border-t border-[#E5EBF2] p-[clamp(0.875rem,1.15vw,1.375rem)] sm:grid-cols-2">
-                          {BANK_ACCOUNTS[idx].rows.map((r) => {
-                            const keyMap: Record<string, string> = {
-                              'Bank Name': t('bankKeys.bankName'),
-                              'Account Name': t('bankKeys.accountName'),
-                              'Account Number (IBAN)': t('bankKeys.iban'),
-                              'Swift / BIC Code': t('bankKeys.swift'),
-                              'Account Number': t('bankKeys.accountNum')
-                            };
-                            const valMap: Record<string, string> = {
-                              'Bank Name': t(`bankAccounts.${idx}.bankName`),
-                              'Account Name': t(`bankAccounts.${idx}.accountName`)
-                            };
-                            return (
-                            <div key={r.k} className="min-w-0">
-                              <dt className="font-semibold uppercase tracking-[0.1em] text-[#8A939C] text-[clamp(0.5rem,0.52vw,0.625rem)]">
-                                {keyMap[r.k] || r.k}
-                              </dt>
-                              <dd className="mt-1 flex items-start gap-2">
-                                <span className="min-w-0 break-words text-[#121C2A] text-[clamp(0.6875rem,0.73vw,0.875rem)]">
-                                  {valMap[r.k] || r.v}
-                                </span>
-                                {r.copy ? (
-                                  <button
-                                    type="button"
-                                    onClick={() => copy(r.v, `${id}-${r.k}`)}
-                                    aria-label={`Copy ${r.k}`}
-                                    className="relative shrink-0 text-[#048ED6] transition-opacity hover:opacity-70"
-                                  >
-                                    <span className="absolute -top-8 left-1/2 -translate-x-1/2 rounded bg-gray-900 px-2 py-1 text-xs text-white opacity-0 transition-opacity group-hover:opacity-100 whitespace-nowrap">
-                                      {copied === `${id}-${r.k}` ? t('copiedBtn') : t('copyBtn')}
+                      <div className={`grid transition-[grid-template-rows] duration-300 ${on ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
+                        <div className="overflow-hidden">
+                          <dl className="grid grid-cols-1 gap-[clamp(0.75rem,1.04vw,1.25rem)] border-t border-[#E5EBF2] p-[clamp(0.875rem,1.15vw,1.375rem)] sm:grid-cols-2">
+                            {account.rows.map((r: any) => {
+                              const keyMap: Record<string, string> = {
+                                'Bank Name': t('bankKeys.bankName'),
+                                'Account Name': t('bankKeys.accountName'),
+                                'Account Number (IBAN)': t('bankKeys.iban'),
+                                'Swift / BIC Code': t('bankKeys.swift'),
+                                'Account Number': t('bankKeys.accountNum')
+                              };
+                              const k = r.k || r.label;
+                              const v = r.v || r.value;
+                              const canCopy = r.copy !== undefined ? r.copy : r.canCopy;
+                              return (
+                                <div key={k} className="min-w-0">
+                                  <dt className="font-semibold uppercase tracking-[0.1em] text-[#8A939C] text-[clamp(0.5rem,0.52vw,0.625rem)]">
+                                    {keyMap[k] || k}
+                                  </dt>
+                                  <dd className="mt-1 flex items-start gap-2">
+                                    <span className="min-w-0 break-words text-[#121C2A] text-[clamp(0.6875rem,0.73vw,0.875rem)]">
+                                      {v}
                                     </span>
-                                    {copied === `${id}-${r.k}` ? (
-                                      <CheckCircle2 className="h-4 w-4" />
-                                    ) : (
-                                      <Copy className="h-4 w-4" />
-                                    )}
-                                  </button>
-                                ) : null}
-                              </dd>
-                            </div>
-                          )})}
-                        </dl>
+                                    {canCopy ? (
+                                      <button
+                                        type="button"
+                                        onClick={() => copy(v, `${id}-${k}`)}
+                                        aria-label={`Copy ${k}`}
+                                        className="relative shrink-0 text-[#048ED6] transition-opacity hover:opacity-70"
+                                      >
+                                        <span className="absolute -top-8 left-1/2 -translate-x-1/2 rounded bg-gray-900 px-2 py-1 text-xs text-white opacity-0 transition-opacity group-hover:opacity-100 whitespace-nowrap">
+                                          {copied === `${id}-${k}` ? t('copiedBtn') : t('copyBtn')}
+                                        </span>
+                                        {copied === `${id}-${k}` ? (
+                                          <CheckCircle2 className="h-4 w-4" />
+                                        ) : (
+                                          <Copy className="h-4 w-4" />
+                                        )}
+                                      </button>
+                                    ) : null}
+                                  </dd>
+                                </div>
+                              )
+                            })}
+                          </dl>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
+
             </div>
+            {settings?.bankTransfer?.image?.url && (
+              <div className="relative min-h-[300px] w-full flex-1 overflow-hidden rounded-lg hidden lg:block">
+                <img
+                  src={getStrapiMediaUrl(settings.bankTransfer.image.url) || '/images/figma-home/02-about.jpeg'}
+                  alt={settings.bankTransfer.image.alternativeText || "Bank Transfer Details"}
+                  className="absolute inset-0 h-full w-full object-cover" 
+                />
+              </div>
+            )}
           </div>
 
-          <div className="relative min-h-[300px] w-full flex-1 overflow-hidden rounded-lg hidden lg:block">
-            <img 
-              src="/images/figma-home/02-about.jpeg" 
-              alt="Students learning and smiling" 
-              className="absolute inset-0 h-full w-full object-cover" 
-            />
-          </div>
-        </div>
-
-        {/* Give online */}
-        <div className="rounded-lg border border-[#048ED6] p-[clamp(1.25rem,1.66vw,2rem)] h-fit">
+          <div className="rounded-lg border border-[#048ED6] p-[clamp(1.25rem,1.66vw,2rem)] h-fit">
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                // Integration point for the payment provider. Nothing is
-                // charged and no confirmation is shown, because telling someone
-                // their donation went through when it did not would be a lie.
               }}
             >
               <p className="grid h-[clamp(2.5rem,2.3vw,2.75rem)] place-items-center rounded-lg bg-[#048ED6] font-semibold text-white text-[1rem]">
-                {t('title')}
+                {settings?.formLabels?.formTitle || "Make a Contribution"}
               </p>
 
               <fieldset className="mt-[clamp(1.25rem,1.66vw,2rem)]">
-                <legend className="font-semibold text-[#121C2A] text-[clamp(0.75rem,0.78vw,0.9375rem)]">
-                  {t('amountLabel')}
+                <legend className="font-medium text-[#121C2A] text-[1.125rem]">
+                  {settings?.formLabels?.amountLabel || t('amountLabel')}
                 </legend>
                 <div className="mt-2 flex flex-wrap gap-2">
-                  {[0, 1, 2, 3, 4, 5].map((idx) => {
-                    const a = t(`amounts.${idx}`);
+                  {amountsToUse.map((a, idx) => {
                     const on = amountIdx === idx;
                     return (
                       <button
@@ -413,11 +466,10 @@ export function GiveSection() {
                         type="button"
                         onClick={() => setAmountIdx(idx)}
                         aria-pressed={on}
-                        className={`h-[clamp(2.25rem,2.29vw,2.75rem)] min-w-[clamp(3.25rem,3.6vw,4.375rem)] rounded-lg border px-3 font-semibold transition-colors text-[clamp(0.6875rem,0.73vw,0.875rem)] ${
-                          on
-                            ? 'border-[#048ED6] bg-[#048ED6] text-white'
-                            : 'border-[#DCE6F0] bg-white text-[#121C2A] hover:border-[#048ED6] hover:text-[#048ED6]'
-                        }`}
+                        className={`h-[clamp(2.25rem,2.29vw,2.75rem)] min-w-[clamp(3.25rem,3.6vw,4.375rem)] rounded-lg border px-3 font-semibold transition-colors text-[clamp(0.6875rem,0.73vw,0.875rem)] ${on
+                          ? 'border-[#048ED6] bg-[#048ED6] text-white'
+                          : 'border-[#DCE6F0] bg-white text-[#121C2A] hover:border-[#048ED6] hover:text-[#048ED6]'
+                          }`}
                       >
                         {a}
                       </button>
@@ -426,66 +478,68 @@ export function GiveSection() {
                 </div>
               </fieldset>
 
-              <div className="mt-[clamp(1.25rem,1.66vw,2rem)] grid grid-cols-1 gap-[clamp(0.75rem,1.04vw,1.25rem)] sm:grid-cols-2">
-                <fieldset>
-                  <legend className="font-semibold text-[#121C2A] text-[clamp(0.75rem,0.78vw,0.9375rem)]">{t('freqTitle')}</legend>
-                  <div className="mt-2 grid grid-cols-2 gap-2">
-                    {(['one-time', 'monthly'] as const).map((f) => {
-                      const on = frequency === f;
-                      return (
-                        <button
-                          key={f}
-                          type="button"
-                          onClick={() => setFrequency(f)}
-                          aria-pressed={on}
-                          className={`h-[clamp(2.5rem,2.6vw,3.125rem)] rounded-lg border font-semibold transition-colors text-[clamp(0.6875rem,0.73vw,0.875rem)] ${
-                            on
-                              ? 'border-[#048ED6] bg-[#EAF5FD] text-[#048ED6]'
-                              : 'border-[#DCE6F0] bg-white text-[#121C2A] hover:border-[#048ED6]'
-                          }`}
-                        >
-                          {f === 'one-time' ? t('oneTime') : t('monthly')}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </fieldset>
+              <fieldset className="mt-[clamp(1.25rem,1.66vw,2rem)]">
+                <legend className="font-medium text-[#121C2A] text-[1.125rem]">{settings?.formLabels?.frequencyLabel || t('frequencyLabel')}</legend>
+                <div className="mt-3 flex gap-4 max-sm:flex-col">
+                  <label
+                    className={`flex flex-1 cursor-pointer items-center justify-center rounded-[4px] border py-[clamp(0.75rem,0.8vw,1rem)] font-medium text-[clamp(0.875rem,0.9vw,1rem)] transition-all ${frequency === 'one-time'
+                      ? 'border-[#048ED6] bg-[#048ED6] text-white'
+                      : 'border-[#DAE0E7] bg-white text-[#5A636D]'
+                      }`}
+                  >
+                    <input type="radio" name="frequency" value="one-time" className="hidden" checked={frequency === 'one-time'} onChange={(e) => setFrequency(e.target.value as any)} />
+                    {settings?.formLabels?.oneTimeLabel || t('oneTimeLabel')}
+                  </label>
+                  <label
+                    className={`flex flex-1 cursor-pointer items-center justify-center rounded-[4px] border py-[clamp(0.75rem,0.8vw,1rem)] font-medium text-[clamp(0.875rem,0.9vw,1rem)] transition-all ${frequency === 'monthly'
+                      ? 'border-[#048ED6] bg-[#048ED6] text-white'
+                      : 'border-[#DAE0E7] bg-white text-[#5A636D]'
+                      }`}
+                  >
+                    <input type="radio" name="frequency" value="monthly" className="hidden" checked={frequency === 'monthly'} onChange={(e) => setFrequency(e.target.value as any)} />
+                    {settings?.formLabels?.monthlyLabel || t('monthlyLabel')}
+                  </label>
+                </div>
+              </fieldset>
 
-                <div>
-                  <label htmlFor="don-currency" className="font-semibold text-[#121C2A] text-[clamp(0.75rem,0.78vw,0.9375rem)]">{t('currencyLabel')}</label>
-                  <select id="don-currency" name="currency" className={`${customSelect} mt-2`}>
-                    {[0, 1, 2, 3].map((idx) => <option key={idx}>{t(`currencies.${idx}`)}</option>)}
+              <div className="mt-[clamp(1.25rem,1.66vw,2rem)] grid grid-cols-1 gap-[clamp(1rem,1.3vw,1.5rem)] sm:grid-cols-2">
+                <div className="flex flex-col gap-2">
+                  <label htmlFor="currency" className="font-medium text-[#121C2A] text-[1rem]">
+                    {settings?.formLabels?.currencyLabel || t('currencyLabel')}
+                  </label>
+                  <select id="currency" name="currency" className={`${customSelect} mt-0`}>
+                    {currenciesToUse.map((curr, idx) => <option key={idx}>{curr}</option>)}
+                  </select>
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <label htmlFor="designation" className="font-medium text-[#121C2A] text-[1rem]">
+                    {settings?.formLabels?.designationLabel || t('designationLabel')}
+                  </label>
+                  <select id="designation" name="designation" className={`${customSelect} mt-0`}>
+                    {designationsToUse.map((desig, idx) => <option key={idx}>{desig}</option>)}
                   </select>
                 </div>
               </div>
 
-              <div className="mt-[clamp(1.25rem,1.66vw,2rem)]">
-                <label htmlFor="don-designation" className="font-semibold text-[#121C2A] text-[clamp(0.75rem,0.78vw,0.9375rem)]">
-                  {t('designationLabel')}
-                </label>
-                <select id="don-designation" name="designation" className={`${customSelect} mt-2`}>
-                  {[0, 1, 2, 3, 4].map((idx) => <option key={idx}>{t(`designations.${idx}`)}</option>)}
-                </select>
-              </div>
-
               <div className="mt-[clamp(1.5rem,2vw,2.5rem)] border-t border-[#E5EBF2] pt-[clamp(1.25rem,1.66vw,2rem)]">
                 <h3 className="font-semibold text-[#121C2A] text-[clamp(0.875rem,0.94vw,1.125rem)] mb-4">
-                  {t('donorInfo')}
+                  {settings?.formLabels?.donorInfoLabel || t('donorInfo')}
                 </h3>
-                
+
                 <div className="grid grid-cols-1 gap-[clamp(1rem,1.25vw,1.5rem)] sm:grid-cols-2">
                   <div className="sm:col-span-2">
-                    <label htmlFor="don-name" className="font-semibold text-[#121C2A] text-[clamp(0.75rem,0.78vw,0.9375rem)]">{t('fullName')}</label>
-                    <input id="don-name" name="name" required placeholder={t('fullNamePlaceholder')} className={`${select} mt-2`} />
-                  </div>
-                  
-                  <div>
-                    <label htmlFor="don-email" className="font-semibold text-[#121C2A] text-[clamp(0.75rem,0.78vw,0.9375rem)]">{t('email')}</label>
-                    <input id="don-email" name="email" type="email" required placeholder={t('emailPlaceholder')} className={`${select} mt-2`} />
+                    <label htmlFor="don-name" className="font-semibold text-[#121C2A] text-[clamp(0.75rem,0.78vw,0.9375rem)]">{settings?.formLabels?.fullNameLabel || t('fullName')}</label>
+                    <input id="don-name" name="name" required placeholder={settings?.formLabels?.fullNamePlaceholder || t('fullNamePlaceholder')} className={`${select} mt-2`} />
                   </div>
 
                   <div>
-                    <label htmlFor="don-phone" className="font-semibold text-[#121C2A] text-[clamp(0.75rem,0.78vw,0.9375rem)]">{t('phone')}</label>
+                    <label htmlFor="don-email" className="font-semibold text-[#121C2A] text-[clamp(0.75rem,0.78vw,0.9375rem)]">{settings?.formLabels?.emailLabel || t('email')}</label>
+                    <input id="don-email" name="email" type="email" required placeholder={settings?.formLabels?.emailPlaceholder || t('emailPlaceholder')} className={`${select} mt-2`} />
+                  </div>
+
+                  <div>
+                    <label htmlFor="don-phone" className="font-semibold text-[#121C2A] text-[clamp(0.75rem,0.78vw,0.9375rem)]">{settings?.formLabels?.phoneLabel || t('phone')}</label>
                     <PhoneInput
                       country={'lr'}
                       enableSearch={true}
@@ -506,14 +560,14 @@ export function GiveSection() {
                 className="mt-[clamp(1.25rem,1.66vw,2rem)] flex h-[clamp(2.75rem,3.1vw,3.75rem)] w-full items-center justify-center gap-2 rounded-lg bg-[#048ED6] font-semibold text-white transition-colors hover:bg-[#037ab8] text-[clamp(0.875rem,0.94vw,1.125rem)]"
               >
                 <HeartHandshake className="h-4 w-4" />
-                {t('donateButton')}
+                {settings?.formLabels?.submitButtonLabel || t('donateButton')}
               </button>
 
               {/* The design reads "safe, secure and tax-deductible". Whether a
                   gift is deductible depends on the donor's jurisdiction and the
                   school's registered status, so that claim is not repeated. */}
               <p className="mt-3 text-center text-[#8A939C] text-[1rem]">
-                {t('secureInfo')}
+                {settings?.formLabels?.secureInfoText || t('secureInfo')}
               </p>
             </form>
           </div>
@@ -523,7 +577,7 @@ export function GiveSection() {
   );
 }
 
-export function TargetedGiving({ campaigns = [] }: { campaigns?: DonationCampaignEntity[] }) {
+export function TargetedGiving({ campaigns = [], settings }: { campaigns?: DonationCampaignEntity[], settings?: DonationSettingsEntity }) {
   const t = useTranslations('donationsPage.targeted');
   const [sw, setSw] = useState<SwiperClass | null>(null);
   const [active, setActive] = useState(0);
@@ -531,10 +585,10 @@ export function TargetedGiving({ campaigns = [] }: { campaigns?: DonationCampaig
   return (
     <section className="w-full bg-white">
       <div className="mx-auto max-w-[1920px] px-(--spacing-side) max-sm:pb-5 sm:py-[clamp(1.5rem,4vw,4.8rem)]">
-        <h2 className="text-center font-serif text-[#121C2A] text-[clamp(1.5rem,2.08vw,2.5rem)]">{t('title_1')} <span className="italic text-[#048ED6]">{t('title_2')}</span></h2>
+        <h2 className="text-center text-[#121C2A] text-[clamp(1.5rem,2.08vw,2.5rem)]">{settings?.targetedGiving?.title1 || t('title_1')} <span className="italic text-[#048ED6]">{settings?.targetedGiving?.title2 || t('title_2')}</span></h2>
         <span className="mx-auto mt-3 block h-[3px] w-[clamp(2rem,2.6vw,3.125rem)] rounded bg-[#048ED6]" />
         <p className="mx-auto mt-4 max-w-[38rem] text-center text-[#5A636D] text-[1rem]">
-          {t('subtitle')}
+          {settings?.targetedGiving?.subtitle || t('subtitle')}
         </p>
 
         <div className="relative mt-[clamp(1.5rem,2.6vw,3.125rem)]">
@@ -550,64 +604,68 @@ export function TargetedGiving({ campaigns = [] }: { campaigns?: DonationCampaig
             {campaigns.length > 0 ? campaigns.map((c, idx) => {
               const progress = c.targetAmount > 0 ? (c.raisedAmount / c.targetAmount) * 100 : 0;
               return (
-              <SwiperSlide key={c.slug || idx} className="!h-auto py-1">
-                <article className="group flex h-full flex-col cursor-pointer overflow-hidden rounded-lg bg-white shadow-[0_6px_24px_rgba(4,45,80,0.10)]">
-                  <div className="relative overflow-hidden">
-                    <img src={c.banner?.url || '/images/figma-home/13.png'} alt={c.title} className="aspect-[4/3] w-full object-cover transition-transform duration-500 ease-in-out lg:group-hover:scale-110 rtl:-scale-x-100" />
-                    <span className="absolute left-3 top-3 rounded bg-[#048ED6] px-2 py-1 font-semibold uppercase tracking-[0.08em] text-white text-[clamp(0.5rem,0.52vw,0.625rem)]">
-                      {t(`causes.${Math.min(idx, 4)}.tag`)}
-                    </span>
-                  </div>
-
-                  <div className="flex flex-1 flex-col p-[clamp(1rem,1.15vw,1.375rem)]">
-                    <div className="mb-[clamp(0.75rem,1vw,1.25rem)]">
-                      <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
-                        <div className="h-full bg-[#048ED6]" style={{ width: `${Math.min(progress, 100)}%` }} />
-                      </div>
-                      <div className="mt-2 flex justify-between text-[0.75rem] font-medium text-slate-500">
-                        <span>${c.raisedAmount?.toLocaleString() || 0} raised</span>
-                        {c.targetAmount > 0 && <span>${c.targetAmount.toLocaleString()} goal</span>}
-                      </div>
+                <SwiperSlide key={c.slug || idx} className="!h-auto py-1">
+                  <article className="group flex h-full flex-col cursor-pointer overflow-hidden rounded-lg bg-white shadow-[0_6px_24px_rgba(4,45,80,0.10)]">
+                    <div className="relative overflow-hidden">
+                      <img src={c.banner?.url ? getStrapiMediaUrl(c.banner.url) : '/images/figma-home/13.png'} alt={c.title} className="aspect-[4/3] w-full object-cover transition-transform duration-500 ease-in-out lg:group-hover:scale-110 rtl:-scale-x-100" />
+                      <span className="absolute left-3 top-3 rounded bg-[#048ED6] px-2 py-1 font-semibold uppercase tracking-[0.08em] text-white text-[clamp(0.5rem,0.52vw,0.625rem)]">
+                        {c.categoryTag || t(`causes.${Math.min(idx, 4)}.tag`)}
+                      </span>
                     </div>
 
-                    <h3 className="font-serif text-[#048ED6] text-[clamp(1rem,1.15vw,1.375rem)]">{c.title}</h3>
-                    <p className="mt-2 flex-1 leading-[1.6] text-[#5A636D] text-[1rem]">{c.description}</p>
-                    <button
-                      type="button"
-                      onClick={() => document.getElementById('give-online-form')?.scrollIntoView({ behavior: 'smooth' })}
-                      className="mt-[clamp(1rem,1.35vw,1.625rem)] rounded-full h-[clamp(2.25rem,2.4vw,2.875rem)] w-full bg-[#048ED6] font-semibold text-white transition-colors hover:bg-[#037ab8] text-[clamp(0.625rem,0.68vw,0.8125rem)]"
-                    >
-                      {t(`causes.${Math.min(idx, 4)}.cta`)}
-                    </button>
-                  </div>
-                </article>
-              </SwiperSlide>
-            )}) : [0, 1, 2, 3, 4].map((idx) => {
+                    <div className="flex flex-1 flex-col p-[clamp(1rem,1.15vw,1.375rem)]">
+                      <div className="mb-[clamp(0.75rem,1vw,1.25rem)]">
+                        <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+                          <div className="h-full bg-[#048ED6]" style={{ width: `${Math.min(progress, 100)}%` }} />
+                        </div>
+                        <div className="flex justify-between mt-3 text-[#5A636D] text-[clamp(0.75rem,0.73vw,0.875rem)]">
+                          <span>${c.raisedAmount?.toLocaleString() || 0} {c.raisedLabel || settings?.targetedGiving?.raisedLabel || "raised"}</span>
+                          {c.targetAmount != null && c.targetAmount > 0 && (
+                            <span>${c.targetAmount.toLocaleString()} {c.goalLabel || settings?.targetedGiving?.goalLabel || "goal"}</span>
+                          )}
+                        </div>
+                      </div>
+
+                      <h3 className="text-[#048ED6] text-[clamp(1rem,1.15vw,1.375rem)]">{c.title}</h3>
+                      <p className="mt-2 flex-1 leading-[1.6] text-[#5A636D] text-[1rem]">{c.description}</p>
+                      <button
+                        type="button"
+                        onClick={() => document.getElementById('give-online-form')?.scrollIntoView({ behavior: 'smooth' })}
+                        className="mt-[clamp(1rem,1.35vw,1.625rem)] rounded-full h-[clamp(2.25rem,2.4vw,2.875rem)] w-full bg-[#048ED6] font-semibold text-white transition-colors hover:bg-[#037ab8] text-[clamp(0.625rem,0.68vw,0.8125rem)]"
+                      >
+                        {c.buttonText || t(`causes.${Math.min(idx, 4)}.cta`)}
+                      </button>
+                    </div>
+                  </article>
+                </SwiperSlide>
+              )
+            }) : [0, 1, 2, 3, 4].map((idx) => {
               const c = CAUSES[idx];
               return (
-              <SwiperSlide key={c.title} className="!h-auto py-1">
-                <article className="group flex h-full flex-col cursor-pointer overflow-hidden rounded-lg bg-white shadow-[0_6px_24px_rgba(4,45,80,0.10)]">
-                  <div className="relative overflow-hidden">
-                    <img src={c.image} alt={c.alt} className="aspect-[4/3] w-full object-cover transition-transform duration-500 ease-in-out lg:group-hover:scale-110 rtl:-scale-x-100" />
-                    <span className="absolute left-3 top-3 rounded bg-[#048ED6] px-2 py-1 font-semibold uppercase tracking-[0.08em] text-white text-[clamp(0.5rem,0.52vw,0.625rem)]">
-                      {t(`causes.${idx}.tag`)}
-                    </span>
-                  </div>
+                <SwiperSlide key={c.title} className="!h-auto py-1">
+                  <article className="group flex h-full flex-col cursor-pointer overflow-hidden rounded-lg bg-white shadow-[0_6px_24px_rgba(4,45,80,0.10)]">
+                    <div className="relative overflow-hidden">
+                      <img src={c.image} alt={c.alt} className="aspect-[4/3] w-full object-cover transition-transform duration-500 ease-in-out lg:group-hover:scale-110 rtl:-scale-x-100" />
+                      <span className="absolute left-3 top-3 rounded bg-[#048ED6] px-2 py-1 font-semibold uppercase tracking-[0.08em] text-white text-[clamp(0.5rem,0.52vw,0.625rem)]">
+                        {t(`causes.${idx}.tag`)}
+                      </span>
+                    </div>
 
-                  <div className="flex flex-1 flex-col p-[clamp(1rem,1.15vw,1.375rem)]">
-                    <h3 className="font-serif text-[#048ED6] text-[clamp(1rem,1.15vw,1.375rem)]">{t(`causes.${idx}.title`)}</h3>
-                    <p className="mt-2 flex-1 leading-[1.6] text-[#5A636D] text-[1rem]">{t(`causes.${idx}.desc`)}</p>
-                    <button
-                      type="button"
-                      onClick={() => document.getElementById('give-online-form')?.scrollIntoView({ behavior: 'smooth' })}
-                      className="mt-[clamp(1rem,1.35vw,1.625rem)] rounded-full h-[clamp(2.25rem,2.4vw,2.875rem)] w-full bg-[#048ED6] font-semibold text-white transition-colors hover:bg-[#037ab8] text-[clamp(0.625rem,0.68vw,0.8125rem)]"
-                    >
-                      {t(`causes.${idx}.cta`)}
-                    </button>
-                  </div>
-                </article>
-              </SwiperSlide>
-            )})}
+                    <div className="flex flex-1 flex-col p-[clamp(1rem,1.15vw,1.375rem)]">
+                      <h3 className="text-[#048ED6] text-[clamp(1rem,1.15vw,1.375rem)]">{t(`causes.${idx}.title`)}</h3>
+                      <p className="mt-2 flex-1 leading-[1.6] text-[#5A636D] text-[1rem]">{t(`causes.${idx}.desc`)}</p>
+                      <button
+                        type="button"
+                        onClick={() => document.getElementById('give-online-form')?.scrollIntoView({ behavior: 'smooth' })}
+                        className="mt-[clamp(1rem,1.35vw,1.625rem)] rounded-full h-[clamp(2.25rem,2.4vw,2.875rem)] w-full bg-[#048ED6] font-semibold text-white transition-colors hover:bg-[#037ab8] text-[clamp(0.625rem,0.68vw,0.8125rem)]"
+                      >
+                        {t(`causes.${idx}.cta`)}
+                      </button>
+                    </div>
+                  </article>
+                </SwiperSlide>
+              )
+            })}
           </Swiper>
 
           <button
@@ -615,7 +673,7 @@ export function TargetedGiving({ campaigns = [] }: { campaigns?: DonationCampaig
             aria-label="Previous causes"
             onClick={() => sw?.slidePrev()}
             disabled={active === 0}
-            className="absolute -left-2 top-1/2 z-[2] grid h-[clamp(2rem,2.08vw,2.5rem)] w-[clamp(2rem,2.08vw,2.5rem)] -translate-y-1/2 place-items-center rounded-full border border-[#048ED6] bg-white text-[#048ED6] transition-colors hover:bg-[#048ED6] hover:text-white disabled:opacity-40 disabled:hover:bg-white disabled:hover:text-[#048ED6] max-lg:hidden"
+            className={`absolute -left-2 top-1/2 z-[2] grid h-[clamp(2rem,2.08vw,2.5rem)] w-[clamp(2rem,2.08vw,2.5rem)] -translate-y-1/2 place-items-center rounded-full border border-[#048ED6] bg-white text-[#048ED6] transition-colors hover:bg-[#048ED6] hover:text-white disabled:opacity-40 disabled:hover:bg-white disabled:hover:text-[#048ED6] max-lg:hidden ${sw?.isLocked ? 'hidden' : ''}`}
           >
             <ArrowLeft className="h-4 w-4" />
           </button>
@@ -624,7 +682,7 @@ export function TargetedGiving({ campaigns = [] }: { campaigns?: DonationCampaig
             aria-label="Next causes"
             onClick={() => sw?.slideNext()}
             disabled={!!sw?.isEnd}
-            className="absolute -right-2 top-1/2 z-[2] grid h-[clamp(2rem,2.08vw,2.5rem)] w-[clamp(2rem,2.08vw,2.5rem)] -translate-y-1/2 place-items-center rounded-full border border-[#048ED6] bg-white text-[#048ED6] transition-colors hover:bg-[#048ED6] hover:text-white disabled:opacity-40 disabled:hover:bg-white disabled:hover:text-[#048ED6] max-lg:hidden"
+            className={`absolute -right-2 top-1/2 z-[2] grid h-[clamp(2rem,2.08vw,2.5rem)] w-[clamp(2rem,2.08vw,2.5rem)] -translate-y-1/2 place-items-center rounded-full border border-[#048ED6] bg-white text-[#048ED6] transition-colors hover:bg-[#048ED6] hover:text-white disabled:opacity-40 disabled:hover:bg-white disabled:hover:text-[#048ED6] max-lg:hidden ${sw?.isLocked ? 'hidden' : ''}`}
           >
             <ArrowRight className="h-4 w-4" />
           </button>
@@ -638,7 +696,7 @@ export function TargetedGiving({ campaigns = [] }: { campaigns?: DonationCampaig
   );
 }
 
-export function WallOfGratitude() {
+export function WallOfGratitude({ settings }: { settings?: DonationSettingsEntity }) {
   const t = useTranslations('donationsPage.wall');
   const [sw, setSw] = useState<SwiperClass | null>(null);
   // Track Swiper's snap grid rather than dividing the slide index by the page
@@ -651,10 +709,10 @@ export function WallOfGratitude() {
   return (
     <section className="w-full bg-[#048ED6] mb-10 max-sm:mb-5">
       <div className="mx-auto max-w-[1920px] px-(--spacing-side) py-[clamp(1.5rem,4.7vw,5.6rem)]">
-        <h2 className="text-center font-serif text-white text-[clamp(1.5rem,2.08vw,2.5rem)]">{t('title')}</h2>
-        <span className="mx-auto mt-3 block h-[3px] w-[clamp(2rem,2.6vw,3.125rem)] rounded bg-white/70" />
-        <p className="mx-auto mt-4 max-w-[38rem] text-center text-white/85 text-[1rem]">
-          {t('subtitle')}
+        <h2 className="text-center font-semibold text-white text-[clamp(1.5rem,2.08vw,2.5rem)]">{settings?.wallOfGratitude?.title || "Wall of Gratitude"}</h2>
+        <span className="mx-auto mt-4 block h-[2px] w-8 bg-white/40" />
+        <p className="mx-auto mt-4 max-w-[42rem] text-center text-white/90 text-[clamp(0.875rem,0.94vw,1.125rem)]">
+          {settings?.wallOfGratitude?.subtitle || "May Allah reward all those who support the pursuit of beneficial knowledge."}
         </p>
 
         <Swiper
@@ -673,20 +731,20 @@ export function WallOfGratitude() {
           }}
           className="dn-patrons mt-[clamp(1.5rem,2.6vw,3.125rem)]"
         >
-          {[0, 1, 2, 3, 4, 5].map((idx) => {
-            const p = PATRONS[idx];
+          {(settings?.wallOfGratitude?.patrons?.length ? settings.wallOfGratitude.patrons : PATRONS).map((p, idx) => {
             return (
-            <SwiperSlide key={p.name} className="!h-auto">
-              <figure className="flex h-full flex-col items-center rounded-lg border border-white/40 p-[clamp(1.25rem,1.66vw,2rem)] text-center">
-                <Star className="h-5 w-5 fill-white text-white" aria-hidden />
-                <figcaption className="mt-4 font-serif text-white text-[clamp(1rem,1.15vw,1.375rem)]">{t(`patrons.${idx}.name`)}</figcaption>
-                <span className="mx-auto mt-3 block h-px w-16 bg-white/40" />
-                <blockquote className="mt-3 leading-[1.6] text-white/85 text-[clamp(0.625rem,0.68vw,0.8125rem)]">
-                  “{t(`patrons.${idx}.quote`)}”
-                </blockquote>
-              </figure>
-            </SwiperSlide>
-          )})}
+              <SwiperSlide key={p.name || idx} className="!h-auto">
+                <figure className="flex h-full flex-col items-center rounded-lg border border-white/40 p-[clamp(1.25rem,1.66vw,2rem)] text-center">
+                  <Star className="h-5 w-5 fill-white text-white" aria-hidden />
+                  <figcaption className="mt-4 text-white text-[clamp(1rem,1.15vw,1.375rem)]">{p.name || t(`patrons.${idx}.name`)}</figcaption>
+                  <span className="mx-auto mt-3 block h-px w-16 bg-white/40" />
+                  <blockquote className="mt-3 leading-[1.6] text-white/85 text-[clamp(0.625rem,0.68vw,0.8125rem)]">
+                    “{p.quote || t(`patrons.${idx}.quote`)}”
+                  </blockquote>
+                </figure>
+              </SwiperSlide>
+            )
+          })}
         </Swiper>
 
         <div className="mt-[clamp(1.5rem,2.1vw,2.5rem)] flex items-center justify-center gap-2">

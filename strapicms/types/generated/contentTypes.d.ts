@@ -1040,7 +1040,7 @@ export interface ApiAnnouncementAnnouncement
   collectionName: 'announcements';
   info: {
     description: 'Public and internal school announcements or ticker alerts';
-    displayName: 'Announcement';
+    displayName: '[F] Announcement';
     pluralName: 'announcements';
     singularName: 'announcement';
   };
@@ -1094,7 +1094,7 @@ export interface ApiArticleArticle extends Struct.CollectionTypeSchema {
   collectionName: 'articles';
   info: {
     description: 'School news, blog posts, and official publications';
-    displayName: 'News & Article';
+    displayName: '[F] News & Article';
     pluralName: 'articles';
     singularName: 'article';
   };
@@ -1420,11 +1420,150 @@ export interface ApiCampusCampus extends Struct.CollectionTypeSchema {
   };
 }
 
+export interface ApiCareerPositionCareerPosition
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'career_positions';
+  info: {
+    description: 'Join our mission of nurturing global leadership.';
+    displayName: '[F] Available Positions';
+    pluralName: 'career-positions';
+    singularName: 'career-position';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  pluginOptions: {
+    i18n: {
+      localized: true;
+    };
+  };
+  attributes: {
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    isActive: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
+    locale: Schema.Attribute.String;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::career-position.career-position'
+    >;
+    location: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Main Campus'>;
+    locationUrl: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false;
+        };
+      }>;
+    order: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<0>;
+    publishedAt: Schema.Attribute.DateTime;
+    requirements: Schema.Attribute.Component<'shared.string-item', true>;
+    responsibilities: Schema.Attribute.Component<'shared.string-item', true>;
+    title: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }>;
+    type: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Full-time'>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
+export interface ApiCareerSettingCareerSetting extends Struct.SingleTypeSchema {
+  collectionName: 'career_settings';
+  info: {
+    description: 'The title and description that appears above the list of positions.';
+    displayName: '[F] Available Positions Header';
+    pluralName: 'career-settings';
+    singularName: 'career-setting';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  pluginOptions: {
+    i18n: {
+      localized: true;
+    };
+  };
+  attributes: {
+    boardDescription: Schema.Attribute.Text &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Join our mission of nurturing global leadership.'>;
+    boardTitle: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Available Positions'>;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    formBackgroundImage: Schema.Attribute.Media<'images'>;
+    formEmailLabel: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'Email Address'>;
+    formEmailPlaceholder: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'Email Address'>;
+    formFullNameLabel: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'Full Name'>;
+    formFullNamePlaceholder: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'Full Name'>;
+    formPhoneLabel: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'Phone'>;
+    formPhonePlaceholder: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'Phone'>;
+    formSubmitButtonText: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'Send Message'>;
+    formTermsLinkText: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'legal terms and service'>;
+    formTermsPrefix: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'I read and accept the'>;
+    formTitle: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'Application Form'>;
+    formUploadInstruction: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'Click to upload or drag and drop'>;
+    formUploadRequirements: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'PDF, DOC (Maximum 5Mb)'>;
+    locale: Schema.Attribute.String;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::career-setting.career-setting'
+    >;
+    publishedAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
 export interface ApiCategoryCategory extends Struct.CollectionTypeSchema {
   collectionName: 'categories';
   info: {
     description: 'Content categories for news and articles';
-    displayName: 'Category';
+    displayName: '[F] Category';
     pluralName: 'categories';
     singularName: 'category';
   };
@@ -1529,12 +1668,12 @@ export interface ApiContactInfoContactInfo extends Struct.SingleTypeSchema {
   collectionName: 'contact_infos';
   info: {
     description: 'School contact details, office hours, and maps';
-    displayName: 'Contact Information';
+    displayName: '[F] Contact Information';
     pluralName: 'contact-infos';
     singularName: 'contact-info';
   };
   options: {
-    draftAndPublish: false;
+    draftAndPublish: true;
   };
   pluginOptions: {
     i18n: {
@@ -1542,34 +1681,18 @@ export interface ApiContactInfoContactInfo extends Struct.SingleTypeSchema {
     };
   };
   attributes: {
-    address: Schema.Attribute.Text &
-      Schema.Attribute.Required &
-      Schema.Attribute.SetPluginOptions<{
-        i18n: {
-          localized: true;
-        };
-      }>;
+    campusInfo: Schema.Attribute.Component<'contact.campus-info', false>;
+    contactForm: Schema.Attribute.Component<'contact.contact-form', false>;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
-    email: Schema.Attribute.Email & Schema.Attribute.Required;
-    emergencyContacts: Schema.Attribute.JSON;
-    googleMapUrl: Schema.Attribute.String;
     locale: Schema.Attribute.String;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
       'api::contact-info.contact-info'
     >;
-    officeHours: Schema.Attribute.String &
-      Schema.Attribute.SetPluginOptions<{
-        i18n: {
-          localized: true;
-        };
-      }> &
-      Schema.Attribute.DefaultTo<'Mon - Fri: 8:00 AM - 4:00 PM'>;
-    phone: Schema.Attribute.String & Schema.Attribute.Required;
     publishedAt: Schema.Attribute.DateTime;
-    socialMedia: Schema.Attribute.JSON;
+    socialMedia: Schema.Attribute.Component<'contact.social-media', true>;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -1715,7 +1838,7 @@ export interface ApiDepartmentDepartment extends Struct.CollectionTypeSchema {
   collectionName: 'departments';
   info: {
     description: 'Academic and administrative faculties/departments';
-    displayName: 'Department';
+    displayName: '[F] Department';
     pluralName: 'departments';
     singularName: 'department';
   };
@@ -1796,7 +1919,7 @@ export interface ApiDonationCampaignDonationCampaign
   collectionName: 'donation_campaigns';
   info: {
     description: 'School development, waqf, laboratory, and scholarship fundraising campaigns';
-    displayName: 'Donation Campaign';
+    displayName: '[F] Donation Campaign';
     pluralName: 'donation-campaigns';
     singularName: 'donation-campaign';
   };
@@ -1809,8 +1932,19 @@ export interface ApiDonationCampaignDonationCampaign
     };
   };
   attributes: {
-    bankInfo: Schema.Attribute.JSON;
     banner: Schema.Attribute.Media<'images'>;
+    buttonText: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }>;
+    categoryTag: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }>;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -1822,7 +1956,12 @@ export interface ApiDonationCampaignDonationCampaign
           localized: true;
         };
       }>;
-    donationMethods: Schema.Attribute.JSON;
+    goalLabel: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }>;
     isFeatured: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
     locale: Schema.Attribute.String;
     localizations: Schema.Attribute.Relation<
@@ -1831,6 +1970,12 @@ export interface ApiDonationCampaignDonationCampaign
     >;
     publishedAt: Schema.Attribute.DateTime;
     raisedAmount: Schema.Attribute.Decimal & Schema.Attribute.DefaultTo<0>;
+    raisedLabel: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }>;
     slug: Schema.Attribute.UID<'title'> &
       Schema.Attribute.Required &
       Schema.Attribute.SetPluginOptions<{
@@ -1838,7 +1983,7 @@ export interface ApiDonationCampaignDonationCampaign
           localized: true;
         };
       }>;
-    targetAmount: Schema.Attribute.Decimal & Schema.Attribute.Required;
+    targetAmount: Schema.Attribute.Decimal;
     title: Schema.Attribute.String &
       Schema.Attribute.Required &
       Schema.Attribute.SetPluginOptions<{
@@ -1849,6 +1994,65 @@ export interface ApiDonationCampaignDonationCampaign
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+  };
+}
+
+export interface ApiDonationSettingDonationSetting
+  extends Struct.SingleTypeSchema {
+  collectionName: 'donation_settings';
+  info: {
+    description: 'Global settings for the donation page (Bank Accounts, Form Options)';
+    displayName: '[F] Donation Settings';
+    pluralName: 'donation-settings';
+    singularName: 'donation-setting';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  pluginOptions: {
+    i18n: {
+      localized: true;
+    };
+  };
+  attributes: {
+    amounts: Schema.Attribute.Component<'shared.string-item', true>;
+    bankTransfer: Schema.Attribute.Component<
+      'shared.bank-transfer-settings',
+      false
+    >;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    currencies: Schema.Attribute.Component<'shared.string-item', true>;
+    designations: Schema.Attribute.Component<'shared.string-item', true>;
+    formLabels: Schema.Attribute.Component<'shared.form-labels', false>;
+    locale: Schema.Attribute.String;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::donation-setting.donation-setting'
+    >;
+    publishedAt: Schema.Attribute.DateTime;
+    targetedGiving: Schema.Attribute.Component<
+      'shared.targeted-giving-settings',
+      false
+    > &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    wallOfGratitude: Schema.Attribute.Component<
+      'shared.wall-of-gratitude',
+      false
+    > &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }>;
   };
 }
 
@@ -1912,7 +2116,7 @@ export interface ApiEventEvent extends Struct.CollectionTypeSchema {
   collectionName: 'events';
   info: {
     description: 'School calendar activities, sports, lectures, and parent gatherings';
-    displayName: 'Event';
+    displayName: '[F] Event';
     pluralName: 'events';
     singularName: 'event';
   };
@@ -2228,7 +2432,7 @@ export interface ApiFaqFaq extends Struct.CollectionTypeSchema {
   collectionName: 'faqs';
   info: {
     description: 'Frequently asked questions categorized by topic';
-    displayName: 'FAQ';
+    displayName: '[F] FAQ';
     pluralName: 'faqs';
     singularName: 'faq';
   };
@@ -2241,7 +2445,7 @@ export interface ApiFaqFaq extends Struct.CollectionTypeSchema {
     };
   };
   attributes: {
-    answer: Schema.Attribute.RichText &
+    answer: Schema.Attribute.Text &
       Schema.Attribute.Required &
       Schema.Attribute.SetPluginOptions<{
         i18n: {
@@ -2966,12 +3170,12 @@ export interface ApiFooterConfigFooterConfig extends Struct.SingleTypeSchema {
   collectionName: 'footer_configs';
   info: {
     description: 'Dynamic website footer columns, copyright, and newsletter links';
-    displayName: 'Footer Configuration';
+    displayName: '[F] Footer Configuration';
     pluralName: 'footer-configs';
     singularName: 'footer-config';
   };
   options: {
-    draftAndPublish: false;
+    draftAndPublish: true;
   };
   pluginOptions: {
     i18n: {
@@ -2979,6 +3183,37 @@ export interface ApiFooterConfigFooterConfig extends Struct.SingleTypeSchema {
     };
   };
   attributes: {
+    academicsLinks: Schema.Attribute.Component<'navigation.menu-item', true>;
+    academicsTitle: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }>;
+    brandDescription: Schema.Attribute.Text &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }>;
+    brandName: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }>;
+    brandTagline1: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }>;
+    brandTagline2: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }>;
     contactText: Schema.Attribute.Text &
       Schema.Attribute.SetPluginOptions<{
         i18n: {
@@ -2995,7 +3230,8 @@ export interface ApiFooterConfigFooterConfig extends Struct.SingleTypeSchema {
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
-    departmentsColumn: Schema.Attribute.JSON &
+    email: Schema.Attribute.String;
+    emailLabel: Schema.Attribute.String &
       Schema.Attribute.SetPluginOptions<{
         i18n: {
           localized: true;
@@ -3006,6 +3242,7 @@ export interface ApiFooterConfigFooterConfig extends Struct.SingleTypeSchema {
       'oneToMany',
       'api::footer-config.footer-config'
     >;
+    logo: Schema.Attribute.Media<'images' | 'files' | 'videos' | 'audios'>;
     newsletterHeading: Schema.Attribute.String &
       Schema.Attribute.SetPluginOptions<{
         i18n: {
@@ -3020,14 +3257,44 @@ export interface ApiFooterConfigFooterConfig extends Struct.SingleTypeSchema {
         };
       }> &
       Schema.Attribute.DefaultTo<'Subscribe for weekly updates and reminders.'>;
-    programsColumn: Schema.Attribute.JSON &
+    phone: Schema.Attribute.String;
+    phoneLabel: Schema.Attribute.String &
       Schema.Attribute.SetPluginOptions<{
         i18n: {
           localized: true;
         };
       }>;
+    pills: Schema.Attribute.Component<'navigation.menu-item', true>;
+    privacyLabel: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }>;
+    privacyUrl: Schema.Attribute.String;
     publishedAt: Schema.Attribute.DateTime;
-    quickLinks: Schema.Attribute.JSON &
+    quickLinks: Schema.Attribute.Component<'navigation.menu-item', true>;
+    quickLinksTitle: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }>;
+    socialLinks: Schema.Attribute.Component<'contact.social-media', true>;
+    socialsLabel: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }>;
+    supportLinks: Schema.Attribute.Component<'navigation.menu-item', true>;
+    supportTitle: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }>;
+    termsLabel: Schema.Attribute.String &
       Schema.Attribute.SetPluginOptions<{
         i18n: {
           localized: true;
@@ -3043,7 +3310,7 @@ export interface ApiGalleryItemGalleryItem extends Struct.CollectionTypeSchema {
   collectionName: 'gallery_items';
   info: {
     description: 'Photo and video albums for school gallery';
-    displayName: 'Gallery Item';
+    displayName: '[F] Gallery Item';
     pluralName: 'gallery-items';
     singularName: 'gallery-item';
   };
@@ -3576,7 +3843,7 @@ export interface ApiHomepageHomepage extends Struct.SingleTypeSchema {
   collectionName: 'homepages';
   info: {
     description: 'Dynamic homepage configuration and builder sections';
-    displayName: 'Homepage';
+    displayName: '[F] Homepage';
     pluralName: 'homepages';
     singularName: 'homepage';
   };
@@ -5077,12 +5344,12 @@ export interface ApiNavigationMenuNavigationMenu
   collectionName: 'navigation_menus';
   info: {
     description: 'Dynamic website menus supporting nested children and multi-language links';
-    displayName: 'Navigation Menu';
+    displayName: '[F] Navigation Menu';
     pluralName: 'navigation-menus';
     singularName: 'navigation-menu';
   };
   options: {
-    draftAndPublish: false;
+    draftAndPublish: true;
   };
   pluginOptions: {
     i18n: {
@@ -5093,6 +5360,8 @@ export interface ApiNavigationMenuNavigationMenu
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    ctaButtonTitle: Schema.Attribute.String;
+    ctaButtonUrl: Schema.Attribute.String;
     items: Schema.Attribute.Component<'navigation.menu-item', true>;
     locale: Schema.Attribute.String;
     localizations: Schema.Attribute.Relation<
@@ -5232,7 +5501,7 @@ export interface ApiPagePage extends Struct.CollectionTypeSchema {
   collectionName: 'pages';
   info: {
     description: 'Custom public pages (e.g. About, Admissions, FAQ)';
-    displayName: 'Page';
+    displayName: '[F] Page';
     pluralName: 'pages';
     singularName: 'page';
   };
@@ -5245,6 +5514,10 @@ export interface ApiPagePage extends Struct.CollectionTypeSchema {
     };
   };
   attributes: {
+    actionButtonText: Schema.Attribute.String;
+    breadcrumbTitle: Schema.Attribute.String;
+    bulletPoints: Schema.Attribute.Component<'shared.bullet-point', true>;
+    coverImage: Schema.Attribute.Media<'images'>;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -5469,7 +5742,7 @@ export interface ApiProgramProgram extends Struct.CollectionTypeSchema {
   collectionName: 'programs';
   info: {
     description: "Academic and specialized programs (e.g. Qur'an Memorization, Sciences, Languages)";
-    displayName: 'Program';
+    displayName: '[F] Program';
     pluralName: 'programs';
     singularName: 'program';
   };
@@ -6298,7 +6571,7 @@ export interface ApiSchoolProfileSchoolProfile extends Struct.SingleTypeSchema {
         maxLength: 200;
       }> &
       Schema.Attribute.DefaultTo<'Yahaya International Islamic and English High School'>;
-    socialLinks: Schema.Attribute.JSON &
+    socialLinks: Schema.Attribute.Component<'contact.social-media', true> &
       Schema.Attribute.SetPluginOptions<{
         i18n: {
           localized: false;
@@ -6440,6 +6713,96 @@ export interface ApiSkillAssessmentSkillAssessment
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+  };
+}
+
+export interface ApiStaffMemberStaffMember extends Struct.CollectionTypeSchema {
+  collectionName: 'staff_members';
+  info: {
+    description: 'Faculty and staff members';
+    displayName: '[F] Staff Member';
+    pluralName: 'staff-members';
+    singularName: 'staff-member';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  pluginOptions: {
+    i18n: {
+      localized: true;
+    };
+  };
+  attributes: {
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    email: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false;
+        };
+      }>;
+    facebookUrl: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false;
+        };
+      }>;
+    image: Schema.Attribute.Media<'images'> &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false;
+        };
+      }>;
+    instagramUrl: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false;
+        };
+      }>;
+    linkedinUrl: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false;
+        };
+      }>;
+    locale: Schema.Attribute.String;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::staff-member.staff-member'
+    >;
+    name: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }>;
+    order: Schema.Attribute.Integer &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<0>;
+    publishedAt: Schema.Attribute.DateTime;
+    role: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    xUrl: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false;
+        };
+      }>;
   };
 }
 
@@ -6973,7 +7336,7 @@ export interface ApiTestimonialTestimonial extends Struct.CollectionTypeSchema {
   collectionName: 'testimonials';
   info: {
     description: 'Parent, student, and alumni testimonials';
-    displayName: 'Testimonial';
+    displayName: '[F] Testimonial';
     pluralName: 'testimonials';
     singularName: 'testimonial';
   };
@@ -7832,6 +8195,8 @@ declare module '@strapi/strapi' {
       'api::attendance-record.attendance-record': ApiAttendanceRecordAttendanceRecord;
       'api::audit-log.audit-log': ApiAuditLogAuditLog;
       'api::campus.campus': ApiCampusCampus;
+      'api::career-position.career-position': ApiCareerPositionCareerPosition;
+      'api::career-setting.career-setting': ApiCareerSettingCareerSetting;
       'api::category.category': ApiCategoryCategory;
       'api::classroom.classroom': ApiClassroomClassroom;
       'api::contact-info.contact-info': ApiContactInfoContactInfo;
@@ -7840,6 +8205,7 @@ declare module '@strapi/strapi' {
       'api::dawah-activity.dawah-activity': ApiDawahActivityDawahActivity;
       'api::department.department': ApiDepartmentDepartment;
       'api::donation-campaign.donation-campaign': ApiDonationCampaignDonationCampaign;
+      'api::donation-setting.donation-setting': ApiDonationSettingDonationSetting;
       'api::download-item.download-item': ApiDownloadItemDownloadItem;
       'api::event.event': ApiEventEvent;
       'api::exam-room.exam-room': ApiExamRoomExamRoom;
@@ -7932,6 +8298,7 @@ declare module '@strapi/strapi' {
       'api::school-profile.school-profile': ApiSchoolProfileSchoolProfile;
       'api::section.section': ApiSectionSection;
       'api::skill-assessment.skill-assessment': ApiSkillAssessmentSkillAssessment;
+      'api::staff-member.staff-member': ApiStaffMemberStaffMember;
       'api::student-grade.student-grade': ApiStudentGradeStudentGrade;
       'api::student-ranking.student-ranking': ApiStudentRankingStudentRanking;
       'api::student-result.student-result': ApiStudentResultStudentResult;
