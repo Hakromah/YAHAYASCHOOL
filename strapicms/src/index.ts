@@ -50,6 +50,16 @@ const SCHOOL_ROLES = [
     description: 'Transport staff with access to vehicle assignments and student transport records',
     type: 'driver',
   },
+  {
+    name: 'Section Head',
+    description: 'Academic section head with full management access to their assigned section only — including teachers, students, subjects, course offerings, attendance, gradebook, assessments, timetable, and analytics for their section',
+    type: 'section-head',
+  },
+  {
+    name: 'Registrar',
+    description: 'Academic registrar with access to student enrollment, transcripts, report cards, promotions, graduation records, and academic clearances across all sections',
+    type: 'registrar',
+  },
 ] as const;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -264,7 +274,270 @@ function registerERPLifecycles(strapi: Core.Strapi): void {
     },
   });
 
+  // Automatically sync/generate name fields for Student Enrollments
+  strapi.db.lifecycles.subscribe({
+    models: ['api::student-enrollment.student-enrollment'],
+    async beforeCreate(event: any) {
+      await updateStudentEnrollmentName(event, strapi);
+    },
+    async beforeUpdate(event: any) {
+      await updateStudentEnrollmentName(event, strapi);
+    }
+  });
+
+  // Automatically sync/generate name fields for Teacher Assignments
+  strapi.db.lifecycles.subscribe({
+    models: ['api::teacher-assignment.teacher-assignment'],
+    async beforeCreate(event: any) {
+      await updateTeacherAssignmentName(event, strapi);
+    },
+    async beforeUpdate(event: any) {
+      await updateTeacherAssignmentName(event, strapi);
+    }
+  });
+
+  // Verify academicHead is a Section Head role profile
+  strapi.db.lifecycles.subscribe({
+    models: ['api::section.section'],
+    async beforeCreate(event: any) {
+      await validateAcademicHeadIsSectionHead(event, strapi);
+    },
+    async beforeUpdate(event: any) {
+      await validateAcademicHeadIsSectionHead(event, strapi);
+    }
+  });
+
   strapi.log.info('[YAHAYASCOOL] ERP lifecycle hooks registered.');
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Content Manager: Filter academicHead dropdown to only show Section Head profiles
+// ─────────────────────────────────────────────────────────────────────────────
+
+function registerContentManagerFilters(strapi: Core.Strapi): void {
+  // Intercept the Content Manager relation API endpoint for academicHead
+  // and filter results to only include teacher profiles linked to Section Head users.
+  // The endpoint pattern is: GET /content-manager/relations/api::section.section/academicHead
+  strapi.server.use(async (ctx: any, next: any) => {
+    await next();
+
+    const isRelationEndpoint =
+      ctx.method === 'GET' &&
+      ctx.path &&
+      ctx.path.includes('content-manager') &&
+      ctx.path.includes('relations') &&
+      ctx.path.includes('section') &&
+      ctx.path.includes('academicHead');
+
+    if (!isRelationEndpoint) return;
+
+    try {
+      const knex = strapi.db.connection;
+
+      // 1. Get the section-head role
+      const role = await knex('up_roles').where({ type: 'section-head' }).first();
+      if (!role) return;
+
+      // 2. Get teacher IDs AND documentIds for all section-head linked teacher profiles
+      //    Strapi v5 Content Manager uses 'documentId' (string) as primary identifier,
+      //    not the numeric database 'id'. We check both for safety.
+      const sectionHeadTeachers: Array<{ id: number | string; document_id: string }> = await knex('teachers as t')
+        .join('teachers_user_lnk as tul', 'tul.teacher_id', 't.id')
+        .join('up_users_role_lnk as url', 'url.user_id', 'tul.user_id')
+        .where('url.role_id', role.id)
+        .select('t.id', 't.document_id');
+
+      const numericIdSet = new Set(sectionHeadTeachers.map(t => Number(t.id)));
+      const documentIdSet = new Set(sectionHeadTeachers.map(t => t.document_id).filter(Boolean));
+
+      strapi.log.info(
+        `[YAHAYASCOOL] academicHead filter: allowed numeric IDs = [${[...numericIdSet].join(', ')}], ` +
+        `documentIds = [${[...documentIdSet].join(', ')}]`
+      );
+
+      // 3. Filter the response body
+      //    Strapi CM v5 uses { results: [...], pagination: {...} } where each item has:
+      //      item.id         → numeric DB id (may not always be present)
+      //      item.documentId → Strapi v5 stable string identifier
+      if (ctx.body) {
+        if (Array.isArray(ctx.body.results)) {
+          const before = ctx.body.results.length;
+          ctx.body.results = ctx.body.results.filter((item: any) => {
+            const matchesNumericId = item.id != null && numericIdSet.has(Number(item.id));
+            const matchesDocumentId = item.documentId && documentIdSet.has(item.documentId);
+            return matchesNumericId || matchesDocumentId;
+          });
+          strapi.log.info(
+            `[YAHAYASCOOL] academicHead filter: ${before} → ${ctx.body.results.length} results after filtering`
+          );
+          if (ctx.body.pagination) {
+            ctx.body.pagination.total = ctx.body.results.length;
+          }
+        }
+        // Some endpoints use { data: [...] }
+        if (Array.isArray(ctx.body.data)) {
+          ctx.body.data = ctx.body.data.filter((item: any) => {
+            const matchesNumericId = item.id != null && numericIdSet.has(Number(item.id));
+            const matchesDocumentId = item.documentId && documentIdSet.has(item.documentId);
+            return matchesNumericId || matchesDocumentId;
+          });
+        }
+      }
+
+      strapi.log.debug('[YAHAYASCOOL] Filtered academicHead relation dropdown to Section Head profiles only.');
+    } catch (err: any) {
+      strapi.log.warn('[YAHAYASCOOL] Could not filter academicHead dropdown:', err.message);
+    }
+  });
+}
+
+async function validateAcademicHeadIsSectionHead(event: any, strapi: any) {
+  const { data } = event.params || {};
+  if (!data || !data.academicHead) return;
+
+  try {
+    const academicHeadVal = data.academicHead;
+    let queryWhere: any = {};
+
+    if (typeof academicHeadVal === 'object' && academicHeadVal !== null) {
+      const docId = academicHeadVal.connect?.[0]?.documentId || academicHeadVal.id || academicHeadVal.documentId;
+      if (!docId) return;
+      if (typeof docId === 'number' || (typeof docId === 'string' && /^\d+$/.test(docId))) {
+        queryWhere = { id: Number(docId) };
+      } else {
+        queryWhere = { documentId: docId };
+      }
+    } else if (typeof academicHeadVal === 'number' || (typeof academicHeadVal === 'string' && /^\d+$/.test(academicHeadVal))) {
+      queryWhere = { id: Number(academicHeadVal) };
+    } else if (typeof academicHeadVal === 'string') {
+      queryWhere = { documentId: academicHeadVal };
+    } else {
+      return;
+    }
+
+    // 1. Find teacher and check linked user account role
+    const teacherLink = await strapi.db.query('api::teacher.teacher').findOne({
+      where: queryWhere,
+      populate: ['user.role']
+    });
+
+    if (!teacherLink) {
+      const { errors } = require('@strapi/utils');
+      throw new errors.ValidationError('Selected academic head profile does not exist.');
+    }
+
+    const roleType = teacherLink.user?.role?.type;
+    if (roleType !== 'section-head') {
+      const { errors } = require('@strapi/utils');
+      throw new errors.ValidationError(
+        `The selected teacher (${teacherLink.name}) does not have the 'Section Head' user role. Only registered Section Heads can be assigned as the Academic Head.`
+      );
+    }
+  } catch (err: any) {
+    const { errors } = require('@strapi/utils');
+    if (err instanceof errors.ValidationError) throw err;
+    throw new errors.ValidationError(err.message || 'Validation of academic head role failed.');
+  }
+}
+
+async function updateStudentEnrollmentName(event: any, strapi: any) {
+  const { data, where } = event.params || {};
+  if (!data) return;
+
+  let studentId = data.student;
+  let courseOfferingId = data.courseOffering;
+
+  // For updates, fetch missing IDs from existing record
+  if (where?.id && (!studentId || !courseOfferingId)) {
+    try {
+      const existing = await strapi.db.query('api::student-enrollment.student-enrollment').findOne({
+        where: { id: where.id },
+        populate: ['student', 'courseOffering']
+      });
+      if (existing) {
+        if (!studentId) studentId = existing.student?.id;
+        if (!courseOfferingId) courseOfferingId = existing.courseOffering?.id;
+      }
+    } catch (e) {}
+  }
+
+  let studentName = '';
+  let courseName = '';
+
+  if (studentId) {
+    try {
+      const student = await strapi.db.query('api::student.student').findOne({
+        where: { id: studentId }
+      });
+      if (student) {
+        studentName = student.firstName ? `${student.firstName} ${student.lastName}` : student.schoolId || '';
+      }
+    } catch (e) {}
+  }
+
+  if (courseOfferingId) {
+    try {
+      const course = await strapi.db.query('api::course-offering.course-offering').findOne({
+        where: { id: courseOfferingId },
+        populate: ['subject']
+      });
+      if (course) {
+        courseName = course.name || course.subject?.name || '';
+      }
+    } catch (e) {}
+  }
+
+  data.name = `${studentName} - ${courseName}`.trim() || `Enrollment #${Date.now()}`;
+}
+
+async function updateTeacherAssignmentName(event: any, strapi: any) {
+  const { data, where } = event.params || {};
+  if (!data) return;
+
+  let teacherId = data.teacher;
+  let courseOfferingId = data.courseOffering;
+
+  // For updates, fetch missing IDs from existing record
+  if (where?.id && (!teacherId || !courseOfferingId)) {
+    try {
+      const existing = await strapi.db.query('api::teacher-assignment.teacher-assignment').findOne({
+        where: { id: where.id },
+        populate: ['teacher', 'courseOffering']
+      });
+      if (existing) {
+        if (!teacherId) teacherId = existing.teacher?.id;
+        if (!courseOfferingId) courseOfferingId = existing.courseOffering?.id;
+      }
+    } catch (e) {}
+  }
+
+  let teacherName = '';
+  let courseName = '';
+
+  if (teacherId) {
+    try {
+      const teacher = await strapi.db.query('api::teacher.teacher').findOne({
+        where: { id: teacherId }
+      });
+      if (teacher) {
+        teacherName = teacher.displayName || teacher.name || (teacher.firstName ? `${teacher.firstName} ${teacher.lastName}` : teacher.schoolId || '');
+      }
+    } catch (e) {}
+  }
+
+  if (courseOfferingId) {
+    try {
+      const course = await strapi.db.query('api::course-offering.course-offering').findOne({
+        where: { id: courseOfferingId },
+        populate: ['subject']
+      });
+      if (course) {
+        courseName = course.name || course.subject?.name || '';
+      }
+    } catch (e) {}
+  }
+
+  data.name = `${teacherName} - ${courseName}`.trim() || `Assignment #${Date.now()}`;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -329,6 +602,39 @@ async function seedPublicPermissions(strapi: Core.Strapi): Promise<void> {
       'api::student.student',
       'api::teacher.teacher',
       'api::finance-expense.finance-expense',
+      'api::library-book.library-book',
+      'api::library-borrow-record.library-borrow-record',
+      'api::inventory-warehouse.inventory-warehouse',
+      'api::inventory-item.inventory-item',
+      'api::inventory-movement.inventory-movement',
+      'api::fixed-asset.fixed-asset',
+      'api::vendor.vendor',
+      'api::purchase-order.purchase-order',
+      'api::hostel-building.hostel-building',
+      'api::hostel-floor.hostel-floor',
+      'api::hostel-room.hostel-room',
+      'api::hostel-bed.hostel-bed',
+      'api::hostel-allocation.hostel-allocation',
+      'api::hostel-gate-pass.hostel-gate-pass',
+      'api::hostel-maintenance-ticket.hostel-maintenance-ticket',
+      'api::hostel-visitor.hostel-visitor',
+      'api::hostel-fee-plan.hostel-fee-plan',
+      'api::hostel-warden.hostel-warden',
+      'api::hostel-attendance.hostel-attendance',
+      'api::hostel-payment.hostel-payment',
+      'api::hostel-invoice.hostel-invoice',
+      'api::hostel-audit-log.hostel-audit-log',
+      'api::hostel-deposit-refund.hostel-deposit-refund',
+      'api::hostel-vacation.hostel-vacation',
+      'api::language-program.language-program',
+      'api::language-level.language-level',
+      'api::placement-test.placement-test',
+      'api::skill-assessment.skill-assessment',
+      'api::language-portfolio.language-portfolio',
+      'api::observation-journal.observation-journal',
+      'api::language-competition.language-competition',
+      'api::language-achievement.language-achievement',
+      'api::language-certificate.language-certificate',
     ];
 
     const actions = ['find', 'findOne', 'create', 'update'];
@@ -381,11 +687,53 @@ async function seedFinancePermissions(strapi: Core.Strapi): Promise<void> {
       'api::finance-currency.finance-currency',
       'api::finance-account.finance-account',
       'api::finance-financial-statement.finance-financial-statement',
+      'api::library-book.library-book',
+      'api::library-borrow-record.library-borrow-record',
+      'api::inventory-warehouse.inventory-warehouse',
+      'api::inventory-item.inventory-item',
+      'api::inventory-movement.inventory-movement',
+      'api::fixed-asset.fixed-asset',
+      'api::vendor.vendor',
+      'api::purchase-order.purchase-order',
+      'api::hostel-building.hostel-building',
+      'api::hostel-floor.hostel-floor',
+      'api::hostel-room.hostel-room',
+      'api::hostel-bed.hostel-bed',
+      'api::hostel-allocation.hostel-allocation',
+      'api::hostel-gate-pass.hostel-gate-pass',
+      'api::hostel-maintenance-ticket.hostel-maintenance-ticket',
+      'api::hostel-visitor.hostel-visitor',
+      'api::hostel-fee-plan.hostel-fee-plan',
+      'api::hostel-warden.hostel-warden',
+      'api::hostel-attendance.hostel-attendance',
+      'api::hostel-payment.hostel-payment',
+      'api::hostel-invoice.hostel-invoice',
+      'api::hostel-audit-log.hostel-audit-log',
+      'api::hostel-deposit-refund.hostel-deposit-refund',
+      'api::hostel-vacation.hostel-vacation',
+      'api::language-program.language-program',
+      'api::language-level.language-level',
+      'api::placement-test.placement-test',
+      'api::skill-assessment.skill-assessment',
+      'api::language-portfolio.language-portfolio',
+      'api::observation-journal.observation-journal',
+      'api::language-competition.language-competition',
+      'api::language-achievement.language-achievement',
+      'api::language-certificate.language-certificate',
+      'api::dashboard.dashboard',
+      'api::grade-level.grade-level',
+      'api::section.section',
+      'api::curriculum.curriculum',
+      'api::donation-campaign.donation-campaign',
+      'api::finance-ledger-entry.finance-ledger-entry',
+      'api::finance-statement.finance-statement',
     ];
 
     const actions = [
       'find', 'findOne', 'create', 'update', 'delete',
-      'processPayment', 'applyScholarship', 'generateStatement', 'reconcile'
+      'processPayment', 'applyScholarship', 'generateStatement', 'reconcile',
+      'getFinanceStats', 'getAdminDashboard', 'getTeacherDashboard', 'getAccountantDashboard',
+      'getStudentDashboard', 'getParentDashboard', 'getWorkerDashboard', 'getDriverDashboard'
     ];
 
     for (const role of targetRoles) {
@@ -505,6 +853,256 @@ async function seedWallOfGratitude(strapi: Core.Strapi) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+async function migrateLegacyAcademicData(strapi: Core.Strapi): Promise<void> {
+  strapi.log.info('[YAHAYASCOOL] Checking academic architecture migration...');
+  
+  try {
+    const gradeLevelsCount = await strapi.db.query('api::grade-level.grade-level').count({});
+    if (gradeLevelsCount > 0) {
+      strapi.log.info('[YAHAYASCOOL] ✓ Academic grade levels already exist. Migration skipped.');
+      return;
+    }
+    
+    strapi.log.info('[YAHAYASCOOL] Running Academic Architecture Refactor migration...');
+    
+    // 1. Ensure default Curriculum exists
+    let defaultCurriculum = await strapi.db.query('api::curriculum.curriculum').findOne({});
+    if (!defaultCurriculum) {
+      defaultCurriculum = await strapi.db.query('api::curriculum.curriculum').create({
+        data: {
+          title: "Standard Academic Curriculum",
+          version: "1.0",
+          recordStatus: "Active",
+          publishedAt: new Date()
+        }
+      });
+      strapi.log.info(`[YAHAYASCOOL] Created default Curriculum: ${defaultCurriculum.title}`);
+    }
+    
+    // 2. Ensure Academic Sections exist
+    const divisions = [
+      { name: "Arabic Section", code: "ARABIC", color: "#e11d48", icon: "languages" },
+      { name: "English Section", code: "ENGLISH", color: "#2563eb", icon: "book" },
+      { name: "Qur'an Memorization Section", code: "QURAN", color: "#16a34a", icon: "award" },
+      { name: "General Sciences Section", code: "SCIENCES", color: "#d97706", icon: "atom" }
+    ];
+    
+    const dbAcademicSections: any[] = [];
+    for (const div of divisions) {
+      let existing = await strapi.db.query('api::section.section').findOne({
+        where: { code: div.code }
+      });
+      if (!existing) {
+        existing = await strapi.db.query('api::section.section').create({
+          data: {
+            name: div.name,
+            code: div.code,
+            color: div.color,
+            icon: div.icon,
+            active: true,
+            publishedAt: new Date()
+          }
+        });
+        strapi.log.info(`[YAHAYASCOOL] Created Academic Section: ${div.name}`);
+      }
+      dbAcademicSections.push(existing);
+    }
+    
+    const defaultAcademicSection = dbAcademicSections.find(s => s.code === 'ENGLISH') || dbAcademicSections[0];
+    
+    // 3. Find legacy sections to migrate
+    const legacySections = await strapi.db.query('api::section.section').findMany({
+      populate: ['students', 'teachers', 'academicYear']
+    });
+    
+    strapi.log.info(`[YAHAYASCOOL] Migrating ${legacySections.length} legacy sections...`);
+    
+    for (const sec of legacySections) {
+      // Skip the Academic Sections we just created
+      if (['ARABIC', 'ENGLISH', 'QURAN', 'SCIENCES'].includes(sec.code)) {
+        continue;
+      }
+      
+      strapi.log.info(`[YAHAYASCOOL] Migrating legacy section: ${sec.name}`);
+      
+      // Determine Grade Level name (e.g. "Grade 10-A" -> "Grade 10")
+      let gradeName = String(sec.name);
+      if (gradeName.includes('-')) {
+        gradeName = gradeName.split('-')[0].trim();
+      }
+      
+      // Get or create Grade Level
+      let gradeLevel = await strapi.db.query('api::grade-level.grade-level').findOne({
+        where: { name: gradeName }
+      });
+      if (!gradeLevel) {
+        gradeLevel = await strapi.db.query('api::grade-level.grade-level').create({
+          data: {
+            name: gradeName,
+            code: gradeName.toUpperCase().replace(/\s+/g, ''),
+            order: 10,
+            capacity: sec.capacity || 35,
+            curriculum: defaultCurriculum.id,
+            publishedAt: new Date()
+          }
+        });
+        strapi.log.info(`[YAHAYASCOOL] Created Grade Level: ${gradeName}`);
+      }
+      
+      // Create Homeroom Counselor Cohort
+      const hrName = `${sec.name} Homeroom`;
+      let homeroom = await strapi.db.query('api::homeroom.homeroom').findOne({
+        where: { name: hrName }
+      });
+      if (!homeroom) {
+        const studentIds = (sec.students || []).map((s: any) => s.id);
+        const advisorId = sec.teachers?.[0]?.id || null;
+        
+        homeroom = await strapi.db.query('api::homeroom.homeroom').create({
+          data: {
+            name: hrName,
+            code: `${sec.code}_HR`,
+            gradeLevel: gradeLevel.id,
+            advisor: advisorId,
+            students: studentIds,
+            publishedAt: new Date()
+          }
+        });
+        strapi.log.info(`[YAHAYASCOOL] Created Homeroom cohort: ${hrName}`);
+      }
+      
+      // Get a default Subject to create the Course Offering
+      const subjects = await strapi.db.query('api::subject.subject').findMany({});
+      if (subjects.length === 0) {
+        strapi.log.warn('[YAHAYASCOOL] No subjects exist to map Course Offerings.');
+        continue;
+      }
+      
+      const defaultSubject = subjects[0];
+      const defaultTeacher = sec.teachers?.[0] || null;
+      
+      // Create Course Offering
+      let offering = await strapi.db.query('api::course-offering.course-offering').findOne({
+        where: {
+          gradeLevel: gradeLevel.id,
+          subject: defaultSubject.id,
+          academicSection: defaultAcademicSection.id
+        }
+      });
+      if (!offering) {
+        offering = await strapi.db.query('api::course-offering.course-offering').create({
+          data: {
+            academicSection: defaultAcademicSection.id,
+            gradeLevel: gradeLevel.id,
+            subject: defaultSubject.id,
+            teacher: defaultTeacher ? defaultTeacher.id : null,
+            academicYear: sec.academicYear ? sec.academicYear.id : null,
+            capacity: sec.capacity || 35,
+            deliveryMode: "in-person",
+            status: "ACTIVE",
+            publishedAt: new Date()
+          }
+        });
+        
+        // Enroll students
+        for (const stud of (sec.students || [])) {
+          await strapi.db.query('api::student-enrollment.student-enrollment').create({
+            data: {
+              student: stud.id,
+              courseOffering: offering.id,
+              enrollmentDate: new Date(),
+              enrollmentStatus: "active",
+              gradeStatus: "pending",
+              publishedAt: new Date()
+            }
+          });
+        }
+        
+        // Assign teacher
+        if (defaultTeacher) {
+          await strapi.db.query('api::teacher-assignment.teacher-assignment').create({
+            data: {
+              teacher: defaultTeacher.id,
+              courseOffering: offering.id,
+              workload: 3.0,
+              publishedAt: new Date()
+            }
+          });
+        }
+        strapi.log.info(`[YAHAYASCOOL] Created Course Offering and enrolled ${(sec.students || []).length} students.`);
+      }
+    }
+    
+    strapi.log.info('[YAHAYASCOOL] Migration completed successfully.');
+  } catch (err: any) {
+    strapi.log.error('[YAHAYASCOOL] Migration failed: ' + err.message);
+  }
+}
+
+async function seedGradingPoliciesAndBlueprints(strapi: Core.Strapi): Promise<void> {
+  strapi.log.info('[YAHAYASCOOL] Checking grading policy seeding...');
+  
+  try {
+    const policyCount = await strapi.db.query('api::grading-policy.grading-policy').count({});
+    if (policyCount === 0) {
+      const defaultPolicies = [
+        { gradeName: 'A+', minScore: 97.0, maxScore: 100.0, gpaPoints: 4.0, isPassing: true, isDistinction: true },
+        { gradeName: 'A', minScore: 93.0, maxScore: 96.9, gpaPoints: 3.8, isPassing: true, isDistinction: true },
+        { gradeName: 'B+', minScore: 87.0, maxScore: 92.9, gpaPoints: 3.5, isPassing: true, isDistinction: false },
+        { gradeName: 'B', minScore: 83.0, maxScore: 86.9, gpaPoints: 3.0, isPassing: true, isDistinction: false },
+        { gradeName: 'C+', minScore: 77.0, maxScore: 82.9, gpaPoints: 2.5, isPassing: true, isDistinction: false },
+        { gradeName: 'C', minScore: 70.0, maxScore: 76.9, gpaPoints: 2.0, isPassing: true, isDistinction: false },
+        { gradeName: 'D', minScore: 50.0, maxScore: 69.9, gpaPoints: 1.0, isPassing: true, isDistinction: false },
+        { gradeName: 'F', minScore: 0.0, maxScore: 49.9, gpaPoints: 0.0, isPassing: false, isDistinction: false }
+      ];
+      for (const p of defaultPolicies) {
+        await strapi.db.query('api::grading-policy.grading-policy').create({
+          data: {
+            ...p,
+            publishedAt: new Date()
+          }
+        });
+      }
+      strapi.log.info('[YAHAYASCOOL] ✅ Grading policies seeded.');
+    }
+    
+    const blueprintCount = await strapi.db.query('api::assessment-blueprint.assessment-blueprint').count({});
+    if (blueprintCount === 0) {
+      const subjects = await strapi.db.query('api::subject.subject').findMany({});
+      for (const sub of subjects) {
+        const isQuran = sub.name?.toLowerCase().includes('qur') || sub.code?.toLowerCase().includes('qur');
+        if (isQuran) {
+          await strapi.db.query('api::assessment-blueprint.assessment-blueprint').create({
+            data: { componentName: 'Oral', weightPercentage: 60.0, subject: sub.id, publishedAt: new Date() }
+          });
+          await strapi.db.query('api::assessment-blueprint.assessment-blueprint').create({
+            data: { componentName: 'Participation', weightPercentage: 20.0, subject: sub.id, publishedAt: new Date() }
+          });
+          await strapi.db.query('api::assessment-blueprint.assessment-blueprint').create({
+            data: { componentName: 'Homework', weightPercentage: 20.0, subject: sub.id, publishedAt: new Date() }
+          });
+        } else {
+          await strapi.db.query('api::assessment-blueprint.assessment-blueprint').create({
+            data: { componentName: 'Exam', weightPercentage: 50.0, subject: sub.id, publishedAt: new Date() }
+          });
+          await strapi.db.query('api::assessment-blueprint.assessment-blueprint').create({
+            data: { componentName: 'Quiz', weightPercentage: 20.0, subject: sub.id, publishedAt: new Date() }
+          });
+          await strapi.db.query('api::assessment-blueprint.assessment-blueprint').create({
+            data: { componentName: 'Homework', weightPercentage: 20.0, subject: sub.id, publishedAt: new Date() }
+          });
+          await strapi.db.query('api::assessment-blueprint.assessment-blueprint').create({
+            data: { componentName: 'Participation', weightPercentage: 10.0, subject: sub.id, publishedAt: new Date() }
+          });
+        }
+      }
+      strapi.log.info('[YAHAYASCOOL] ✅ Subject assessment blueprints seeded.');
+    }
+  } catch (err: any) {
+    strapi.log.error('[YAHAYASCOOL] Seeding enterprise configs failed: ' + err.message);
+  }
+}
+
 // Strapi Application Entry Point
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -512,7 +1110,10 @@ export default {
   register({ strapi }: { strapi: Core.Strapi }) {
     registerUserLifecycles(strapi);
     registerERPLifecycles(strapi);
+    // Note: academicHead relation filter is handled by global::academic-head-filter middleware
+    // registered in config/middlewares.ts → src/middlewares/academic-head-filter.ts
   },
+
 
   async bootstrap({ strapi }: { strapi: Core.Strapi }) {
     await seedRoles(strapi);
@@ -525,5 +1126,7 @@ export default {
     await seedDefaultUsers(strapi);
     await reconcileInvoiceBalances(strapi);
     await seedWallOfGratitude(strapi);
+    await migrateLegacyAcademicData(strapi);
+    await seedGradingPoliciesAndBlueprints(strapi);
   },
 };

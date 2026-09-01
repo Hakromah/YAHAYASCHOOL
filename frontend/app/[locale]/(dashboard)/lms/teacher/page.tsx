@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import {
   BookOpen, Calendar, ClipboardList, PenTool, ArrowRight, BookCheck, Users
 } from 'lucide-react';
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 import { getSubjects, getHomeworks, getTimetables } from '@/services/lms.service';
 import type { Subject, Homework, TimetableSlot } from '@/types/lms.types';
 import { toast } from 'sonner';

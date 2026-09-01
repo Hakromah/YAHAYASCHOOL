@@ -92,6 +92,12 @@
     },
     "graduationCredits": {
       "type": "integer"
+    },
+    "gradeLevels": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::grade-level.grade-level",
+      "mappedBy": "curriculum"
     }
   }
 }

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 import Image from 'next/image';
 import {
   UserCheck, Award, BookOpen, Layers, Calendar, Phone, Mail,
@@ -16,10 +16,13 @@ import { StatusBadge } from '@/components/erp/StatusBadge';
 import { RelationshipChip } from '@/components/erp/RelationshipChip';
 import { getStrapiMediaUrl } from '@/services/cms.service';
 
+import { apiClient } from '@/services/api.service';
+
 export default function TeacherProfilePage() {
   const params = useParams();
   const idOrDocumentId = params?.id as string;
   const [teacher, setTeacher] = useState<Teacher | null>(null);
+  const [courseOfferings, setCourseOfferings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'overview' | 'classes' | 'students' | 'documents'>('overview');
 
@@ -30,6 +33,17 @@ export default function TeacherProfilePage() {
       try {
         const data = await erpService.getTeacherById(idOrDocumentId);
         setTeacher(data);
+        // Also load course offerings for this teacher
+        if (data?.id) {
+          const offeringsRes = await apiClient.get('/course-offerings', {
+            params: {
+              filters: { teacher: { id: { $eq: data.id } } },
+              populate: ['subject', 'academicSection', 'gradeLevel', 'academicYear', 'academicTerm', 'room'],
+              pagination: { limit: 100 }
+            }
+          }).catch(() => ({ data: { data: [] } }));
+          setCourseOfferings(offeringsRes.data?.data || []);
+        }
       } catch (err) {
         console.error('Failed loading teacher profile:', err);
       } finally {
@@ -216,26 +230,51 @@ export default function TeacherProfilePage() {
       )}
 
       {activeTab === 'classes' && (
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-6 shadow-xl space-y-4">
-          <h3 className="text-lg font-bold text-slate-100 flex items-center gap-2">
-            <Layers className="w-5 h-5 text-amber-400" />
-            <span>Assigned Class Sections & Teaching Responsibility</span>
-          </h3>
-          {teacher.sections && teacher.sections.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {teacher.sections.map((sec: any) => (
-                <div key={sec.id} className="p-4 rounded-xl bg-slate-950 border border-slate-800">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-mono font-bold text-amber-400 text-sm">{sec.code}</span>
-                    <span className="text-[11px] text-slate-500 font-mono">Capacity: {sec.capacity || 30}</span>
+        <div className="space-y-6">
+          {/* Course Offerings */}
+          <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-6 shadow-xl space-y-4">
+            <h3 className="text-lg font-bold text-slate-100 flex items-center gap-2">
+              <Layers className="w-5 h-5 text-amber-400" />
+              <span>Assigned Course Offerings ({courseOfferings.length})</span>
+            </h3>
+            {courseOfferings.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {courseOfferings.map((o: any) => (
+                  <div key={o.id} className="p-4 rounded-xl bg-slate-950 border border-slate-800">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-mono font-bold text-amber-400 text-xs">{o.subject?.code || '—'}</span>
+                      <span className="text-[11px] text-slate-400">{o.academicTerm?.name}</span>
+                    </div>
+                    <h4 className="text-sm font-bold text-slate-100 mb-1">{o.subject?.name || 'Unnamed Subject'}</h4>
+                    <p className="text-xs text-slate-400">{o.academicSection?.name} · {o.gradeLevel?.name}</p>
+                    {o.room && <p className="text-[11px] text-slate-500 mt-1 font-mono">Room {o.room.roomNumber}</p>}
                   </div>
-                  <h4 className="text-sm font-bold text-slate-100 mb-1">{sec.name}</h4>
-                  <p className="text-xs text-slate-400">{sec.description || 'Academic section track'}</p>
-                </div>
-              ))}
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-slate-500 italic py-4 text-center">No course offerings assigned to this instructor.</p>
+            )}
+          </div>
+
+          {/* Linked Sections */}
+          {teacher?.sections && teacher.sections.length > 0 && (
+            <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-6 shadow-xl space-y-4">
+              <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
+                <Layers className="w-4 h-4 text-amber-400" />
+                <span>Linked Academic Sections</span>
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {teacher.sections.map((sec: any) => (
+                  <div key={sec.id} className="p-4 rounded-xl bg-slate-950 border border-slate-800">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-mono font-bold text-amber-400 text-sm">{sec.code}</span>
+                    </div>
+                    <h4 className="text-sm font-bold text-slate-100 mb-1">{sec.name}</h4>
+                    <p className="text-xs text-slate-400">{sec.description || 'Academic section'}</p>
+                  </div>
+                ))}
+              </div>
             </div>
-          ) : (
-            <p className="text-xs text-slate-500 italic py-8 text-center">No specific sections linked via Phase 2 schema yet.</p>
           )}
         </div>
       )}

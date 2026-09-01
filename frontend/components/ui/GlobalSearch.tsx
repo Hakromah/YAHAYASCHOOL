@@ -51,7 +51,7 @@ const SYSTEM_NAVIGATION_PAGES: SearchResultItem[] = [
   // Academic Structure
   { id: 'nav-departments', title: 'Academic Structure & Departments', subtitle: 'School Departments & Faculties', category: 'page', href: '/academic-structure', keywords: ['departments', 'structure', 'faculties', 'divisions'] },
   { id: 'nav-programs', title: 'Academic Programs', subtitle: 'Curriculum Degrees & Certifications', category: 'page', href: '/academic-structure/programs', keywords: ['programs', 'courses', 'degrees'] },
-  { id: 'nav-sections', title: 'Class Sections', subtitle: 'Classroom Sections & Student Roster', category: 'page', href: '/academic-structure/sections', keywords: ['sections', 'classes', 'cohorts'] },
+  { id: 'nav-sections', title: 'Academic Sections', subtitle: 'Academic Sections & Department Divisions', category: 'page', href: '/academic-structure/sections', keywords: ['sections', 'classes', 'divisions', 'departments'] },
   { id: 'nav-academic-years', title: 'Academic Years', subtitle: 'School Calendar Years & Terms', category: 'page', href: '/academic-structure/years', keywords: ['years', 'sessions', 'calendar'] },
   { id: 'nav-academic-terms', title: 'Academic Terms', subtitle: 'Semester & Term Periods', category: 'page', href: '/academic-structure/terms', keywords: ['terms', 'semesters', 'quarters'] },
   { id: 'nav-calendar', title: 'School Calendar', subtitle: 'Events, Exams & Holiday Schedules', category: 'page', href: '/calendar', keywords: ['calendar', 'events', 'holidays', 'schedule'] },

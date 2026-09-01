@@ -8,6 +8,7 @@ import type {
   Campus,
   AcademicYear,
   AcademicTerm,
+  GradeLevel,
   DirectorySearchParams,
   PaginatedERPResponse,
 } from '../types/erp.types';
@@ -136,7 +137,7 @@ export const erpService = {
       const res = await apiClient.get(`/students/${id}`, {
         params: {
           locale,
-          populate: ['photo', 'user', 'user.avatar', 'sections', 'parents', 'teachers', 'timeline', 'behaviorRecords', 'enrollmentHistory', 'medicalInfo', 'staffNotes', 'documents', 'departments', 'programs', 'academicYears'],
+          populate: ['photo', 'user', 'user.avatar', 'sections', 'parents', 'teachers', 'timeline', 'behaviorRecords', 'enrollmentHistory', 'medicalInfo', 'staffNotes', 'documents', 'departments', 'programs', 'academicYears', 'enrollments.courseOffering.subject', 'enrollments.courseOffering.academicSection', 'enrollments.courseOffering.teacher'],
         },
       });
       return unwrapSingle<Student>(res.data);
@@ -373,12 +374,25 @@ export const erpService = {
   async getSections(locale = 'en'): Promise<Section[]> {
     try {
       const res = await apiClient.get('/sections', {
-        params: { locale, populate: ['academicYear', 'department', 'program', 'teachers'] },
+        params: { locale, populate: ['academicYear', 'department', 'program', 'teachers', 'academicHead', 'gradeLevels'] },
       });
       const paginated = unwrapPaginated<Section>(res.data);
       return paginated.data;
     } catch (error) {
       console.warn('[erpService] Failed to fetch sections:', error);
+      return [];
+    }
+  },
+
+  async getDepartments(locale = 'en'): Promise<any[]> {
+    try {
+      const res = await apiClient.get('/departments', {
+        params: { locale, populate: ['sectionsList', 'teachersList'] },
+      });
+      const paginated = unwrapPaginated<any>(res.data);
+      return paginated.data;
+    } catch (error) {
+      console.warn('[erpService] Failed to fetch departments:', error);
       return [];
     }
   },
@@ -404,4 +418,34 @@ export const erpService = {
       return [];
     }
   },
+
+  async getGradeLevels(locale = 'en'): Promise<GradeLevel[]> {
+    try {
+      const res = await apiClient.get('/grade-levels', {
+        params: { locale, populate: ['curriculum', 'sections'] }
+      });
+      const paginated = unwrapPaginated<GradeLevel>(res.data);
+      if (paginated.data && paginated.data.length > 0) {
+        return paginated.data.sort((a, b) => (a.order || 0) - (b.order || 0));
+      }
+    } catch (error) {
+      console.warn('[erpService] Failed to fetch grade levels from /grade-levels:', error);
+    }
+    return [
+      { id: 1, name: 'Kindergarten 1', code: 'KG-1', order: 1, capacity: 25 },
+      { id: 2, name: 'Kindergarten 2', code: 'KG-2', order: 2, capacity: 25 },
+      { id: 3, name: 'Grade 1 (Primary Hifz & Foundation)', code: 'GRADE-1', order: 3, capacity: 30 },
+      { id: 4, name: 'Grade 2 (Primary)', code: 'GRADE-2', order: 4, capacity: 30 },
+      { id: 5, name: 'Grade 3 (Primary)', code: 'GRADE-3', order: 5, capacity: 30 },
+      { id: 6, name: 'Grade 4 (Primary)', code: 'GRADE-4', order: 6, capacity: 30 },
+      { id: 7, name: 'Grade 5 (Primary)', code: 'GRADE-5', order: 7, capacity: 30 },
+      { id: 8, name: 'Grade 6 (Primary Graduation)', code: 'GRADE-6', order: 8, capacity: 30 },
+      { id: 9, name: 'Grade 7 (Middle School)', code: 'GRADE-7', order: 9, capacity: 35 },
+      { id: 10, name: 'Grade 8 (Middle School STEM)', code: 'GRADE-8', order: 10, capacity: 35 },
+      { id: 11, name: 'Grade 9 (Middle School)', code: 'GRADE-9', order: 11, capacity: 35 },
+      { id: 12, name: 'Grade 10 (Secondary High)', code: 'GRADE-10', order: 12, capacity: 35 },
+      { id: 13, name: 'Grade 11 (Advanced Baccalaureate)', code: 'GRADE-11', order: 13, capacity: 35 },
+      { id: 14, name: 'Grade 12 (Senior High Graduation)', code: 'GRADE-12', order: 14, capacity: 35 }
+    ];
+  }
 };

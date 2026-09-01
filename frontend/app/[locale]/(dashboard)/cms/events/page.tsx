@@ -1,390 +1,637 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { Link } from '@/i18n/routing';
 import {
-  Calendar as CalendarIcon, Plus, Users, MapPin, Clock, Search,
-  Filter, Download, Upload, Eye, CheckCircle2, AlertCircle, Sparkles,
-  Radio, Share2, Globe
+  Calendar as CalendarIcon, Plus, Users, MapPin, Clock, Eye,
+  Globe, Radio, CheckCircle2, AlertCircle, X, RefreshCw,
+  Download, Edit2, Trash2, ExternalLink, Filter, Send
 } from 'lucide-react';
+import { cmsService } from '@/services/cms.service';
+import type { EventEntity } from '@/types/cms.types';
 import { EnterpriseModuleShell } from '@/components/erp/EnterpriseModuleShell';
 import { EnterpriseKPIDeck, type EnterpriseKPICard } from '@/components/erp/EnterpriseKPIDeck';
 import { EnterpriseToolbar, type TableDensity } from '@/components/erp/EnterpriseToolbar';
 import { EnterpriseDataGrid, type ColumnDef } from '@/components/erp/EnterpriseDataGrid';
-import { SlideOutDrawer } from '@/components/erp/SlideOutDrawer';
 import { StatusBadge } from '@/components/erp/StatusBadge';
 import { toast } from 'sonner';
 
-export interface SchoolEvent {
-  id: string;
-  code: string;
-  title: string;
-  description?: string;
-  date: string;
-  time: string;
-  location: string;
-  audience: 'All Campus' | 'Parents & Guardians' | 'Students & Faculty' | 'Faculty Only';
-  capacity: number;
-  registeredRSVPs: number;
-  status: 'published' | 'draft' | 'completed';
-  isLivestreamed: boolean;
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+function todayISO() {
+  return new Date().toISOString().split('T')[0];
 }
 
-export default function EventsPage() {
-  const [loading, setLoading] = useState(false);
-  const [query, setQuery] = useState('');
-  const [audienceFilter, setAudienceFilter] = useState('all');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [density, setDensity] = useState<TableDensity>('cozy');
-  const [selectedRow, setSelectedRow] = useState<any | null>(null);
+function isoToDisplay(iso: string) {
+  if (!iso) return '';
+  try { return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }); }
+  catch { return iso; }
+}
 
-  const sampleEvents: SchoolEvent[] = [
-    {
-      id: 'EV-101',
-      code: 'EVT-2026-881',
-      title: 'Annual Hifz Graduation & Crown Ceremony',
-      description: 'Institutional ceremony celebrating scholars completing full Quranic memorization with award presentations.',
-      date: '2026-08-28',
-      time: '09:00 AM - 02:00 PM',
-      location: 'Main School Auditorium & Grand Mosque',
-      audience: 'All Campus',
-      capacity: 1200,
-      registeredRSVPs: 1045,
-      status: 'published',
-      isLivestreamed: true
-    },
-    {
-      id: 'EV-102',
-      code: 'EVT-2026-882',
-      title: 'Inter-School Arabic Debate & Oratory Championship',
-      description: 'Regional competition testing classical Arabic fluency, rhetorical argumentation, and poetry recitation.',
-      date: '2026-08-14',
-      time: '10:00 AM - 01:00 PM',
-      location: 'Language Department Hall B',
-      audience: 'Students & Faculty',
-      capacity: 350,
-      registeredRSVPs: 290,
-      status: 'published',
-      isLivestreamed: true
-    },
-    {
-      id: 'EV-103',
-      code: 'EVT-2026-883',
-      title: 'Term 1 Parent-Teacher Academic Progress Conference',
-      description: 'One-on-one consultation sessions between faculty and parents regarding scholar academic and behavioural metrics.',
-      date: '2026-07-25',
-      time: '08:00 AM - 04:00 PM',
-      location: 'Homeroom Classrooms & Gym Hall',
-      audience: 'Parents & Guardians',
-      capacity: 1800,
-      registeredRSVPs: 1620,
-      status: 'published',
-      isLivestreamed: false
-    },
-    {
-      id: 'EV-104',
-      code: 'EVT-2026-884',
-      title: 'STEM Robotics & Islamic Architecture Exhibition',
-      description: 'Student showcase featuring automated robotics projects alongside geometric Islamic architectural models.',
-      date: '2026-09-05',
-      time: '11:00 AM - 03:00 PM',
-      location: 'Science Wing Exhibition Courtyard',
-      audience: 'All Campus',
-      capacity: 600,
-      registeredRSVPs: 140,
-      status: 'draft',
-      isLivestreamed: false
-    },
-    {
-      id: 'EV-105',
-      code: 'EVT-2026-885',
-      title: 'Curriculum & Tajweed Standardized Training Workshop',
-      description: 'Professional development seminar for teachers focusing on advanced Tajweed pedagogy and grading.',
-      date: '2026-07-30',
-      time: '01:00 PM - 04:30 PM',
-      location: 'Faculty Lounge & Media Lab',
-      audience: 'Faculty Only',
-      capacity: 150,
-      registeredRSVPs: 142,
-      status: 'published',
-      isLivestreamed: false
-    },
-  ];
+function isUpcoming(ev: EventEntity) {
+  return new Date(ev.startDate) > new Date();
+}
+
+function isPast(ev: EventEntity) {
+  return new Date(ev.endDate) < new Date();
+}
+
+function eventTypeColor(type?: string) {
+  const map: Record<string, string> = {
+    'Academic': 'bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-305',
+    'Islamic/Religious': 'bg-emerald-100 text-emerald-700 dark:bg-emerald-955/40 dark:text-emerald-305',
+    'Sports': 'bg-amber-100 text-amber-700 dark:bg-amber-955/40 dark:text-amber-305',
+    'Cultural': 'bg-violet-100 text-violet-700 dark:bg-violet-955/40 dark:text-violet-305',
+    'Parent Gathering': 'bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-305',
+    'Holiday': 'bg-rose-100 text-rose-700 dark:bg-rose-955/40 dark:text-rose-305',
+  };
+  return map[type || ''] || 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300';
+}
+
+// ─── Event Detail Panel ───────────────────────────────────────────────────────
+
+function EventDetailPanel({ event, onClose }: { event: EventEntity; onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-xl shadow-2xl flex flex-col max-h-[90vh]">
+        <div className="flex items-start justify-between p-5 border-b border-slate-200 dark:border-slate-800 shrink-0">
+          <div className="space-y-1.5 flex-1 min-w-0 mr-3">
+            <div className="flex items-center gap-2 flex-wrap">
+              {event.eventType && (
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${eventTypeColor(event.eventType)}`}>{event.eventType}</span>
+              )}
+              <span className="font-mono text-[10px] text-slate-400">{event.slug}</span>
+            </div>
+            <h3 className="font-black text-slate-900 dark:text-white text-base leading-tight">{event.title}</h3>
+          </div>
+          <button onClick={onClose} className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors shrink-0 cursor-pointer">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="overflow-y-auto flex-1">
+          <div className="grid grid-cols-2 gap-px bg-slate-100 dark:bg-slate-800">
+            {[
+              { label: 'Start Date', value: isoToDisplay(event.startDate) },
+              { label: 'End Date',   value: isoToDisplay(event.endDate) },
+              { label: 'Location',   value: event.location || '—' },
+              { label: 'Capacity',   value: event.capacity ? event.capacity.toLocaleString('en-US') + ' seats' : '—' },
+              { label: 'Registration', value: event.registrationRequired ? 'Required' : 'Open / None' },
+              { label: 'Reg. Deadline', value: event.registrationDeadline ? isoToDisplay(event.registrationDeadline) : '—' },
+            ].map(({ label, value }) => (
+              <div key={label} className="bg-white dark:bg-slate-900 p-3">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">{label}</p>
+                <p className="text-xs font-black text-slate-900 dark:text-white mt-0.5 truncate">{value}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="p-5 space-y-4">
+            {event.description && (
+              <div>
+                <h4 className="text-xs font-black text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1.5">Description</h4>
+                <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">{event.description}</p>
+              </div>
+            )}
+            {event.department && (
+              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 flex items-center gap-2">
+                <span className="text-[10px] font-black text-slate-400 uppercase">Department:</span>
+                <span className="text-xs font-bold text-slate-900 dark:text-white">{event.department.title}</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between p-4 border-t border-slate-200 dark:border-slate-800 shrink-0">
+          <Link href="/calendar" className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition-colors">
+            <CalendarIcon className="w-3.5 h-3.5" /> View on Calendar
+          </Link>
+          <button onClick={onClose} className="px-4 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-colors cursor-pointer">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Create Event Modal ───────────────────────────────────────────────────────
+
+function CreateEventModal({
+  onClose,
+  onSaved,
+}: {
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [title, setTitle]                           = useState('');
+  const [slug, setSlug]                             = useState('');
+  const [description, setDescription]               = useState('');
+  const [eventType, setEventType]                   = useState<EventEntity['eventType']>('Academic');
+  const [location, setLocation]                     = useState('');
+  const [startDate, setStartDate]                   = useState(todayISO());
+  const [endDate, setEndDate]                       = useState(todayISO());
+  const [registrationRequired, setRegRequired]     = useState(false);
+  const [capacity, setCapacity]                     = useState('');
+  const [registrationDeadline, setRegDeadline]     = useState('');
+  const [submitting, setSubmitting]                 = useState(false);
+
+  // Auto-generate slug from title
+  const handleTitleChange = (val: string) => {
+    setTitle(val);
+    setSlug(val.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!title.trim() || !startDate || !endDate) {
+      toast.error('Title, start date, and end date are required.');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      await cmsService.createEvent({
+        title,
+        slug: slug || undefined,
+        description,
+        eventType,
+        location: location || undefined,
+        startDate,
+        endDate,
+        registrationRequired,
+        capacity: capacity ? parseInt(capacity, 10) : undefined,
+        registrationDeadline: registrationDeadline || undefined,
+      });
+      toast.success('Event scheduled successfully.');
+      onSaved();
+      onClose();
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to schedule event.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-in fade-in duration-150">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-lg max-h-[92vh] flex flex-col shadow-2xl">
+        {/* Header */}
+        <div className="flex items-center justify-between p-5 border-b border-slate-200 dark:border-slate-800 shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/40">
+              <CalendarIcon className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+            </div>
+            <div>
+              <h3 className="font-black text-slate-900 dark:text-white text-base">Schedule Public Event</h3>
+              <p className="text-[11px] text-slate-400 font-mono">Create an institutional event on CMS</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto">
+          <div className="p-5 space-y-4">
+            <div className="space-y-1">
+              <label className="text-[11px] font-bold text-slate-650 dark:text-slate-300 uppercase tracking-wide">Event Title *</label>
+              <input
+                type="text"
+                required
+                value={title}
+                onChange={e => handleTitleChange(e.target.value)}
+                placeholder="e.g. Annual Hifz Graduation Ceremony"
+                className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-emerald-500 transition-colors"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[11px] font-bold text-slate-650 dark:text-slate-300 uppercase tracking-wide">Event URL Slug</label>
+              <input
+                type="text"
+                required
+                value={slug}
+                onChange={e => setSlug(e.target.value)}
+                placeholder="url-friendly-slug"
+                className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-mono text-xs focus:outline-none focus:border-emerald-500 transition-colors"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[11px] font-bold text-slate-650 dark:text-slate-300 uppercase tracking-wide">Description</label>
+              <textarea
+                rows={3}
+                value={description}
+                onChange={e => setDescription(e.target.value)}
+                placeholder="Explain ceremonies, agenda, target attendees..."
+                className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-emerald-500 transition-colors resize-none"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-slate-650 dark:text-slate-300 uppercase tracking-wide">Event Type</label>
+                <select
+                  value={eventType}
+                  onChange={e => setEventType(e.target.value as any)}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-emerald-500 transition-colors"
+                >
+                  <option value="Academic">Academic</option>
+                  <option value="Islamic/Religious">Islamic/Religious</option>
+                  <option value="Sports">Sports</option>
+                  <option value="Cultural">Cultural</option>
+                  <option value="Parent Gathering">Parent Gathering</option>
+                  <option value="Holiday">Holiday</option>
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-slate-650 dark:text-slate-300 uppercase tracking-wide">Location / Venue</label>
+                <input
+                  type="text"
+                  value={location}
+                  onChange={e => setLocation(e.target.value)}
+                  placeholder="e.g. Main Auditorium"
+                  className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-emerald-500 transition-colors"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-slate-650 dark:text-slate-300 uppercase tracking-wide">Start Date *</label>
+                <input
+                  type="date"
+                  required
+                  value={startDate}
+                  onChange={e => setStartDate(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-emerald-500 transition-colors"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-slate-650 dark:text-slate-300 uppercase tracking-wide">End Date *</label>
+                <input
+                  type="date"
+                  required
+                  value={endDate}
+                  onChange={e => setEndDate(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-emerald-500 transition-colors"
+                />
+              </div>
+            </div>
+
+            <div className="p-3 rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/30 space-y-3">
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={registrationRequired}
+                  onChange={e => setRegRequired(e.target.checked)}
+                  className="rounded border-slate-300 dark:border-slate-700 text-emerald-600 focus:ring-emerald-500"
+                />
+                <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide">Registration / RSVP Required</span>
+              </label>
+
+              {registrationRequired && (
+                <div className="grid grid-cols-2 gap-3 animate-in slide-in-from-top-2 duration-150">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-500">Seat Capacity</label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={capacity}
+                      onChange={e => setCapacity(e.target.value)}
+                      placeholder="e.g. 500"
+                      className="w-full px-2 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-mono text-xs focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-500">RSVP Deadline</label>
+                    <input
+                      type="date"
+                      value={registrationDeadline}
+                      onChange={e => setRegDeadline(e.target.value)}
+                      className="w-full px-2 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="flex items-center justify-end gap-2 p-5 border-t border-slate-200 dark:border-slate-800 shrink-0">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs cursor-pointer transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={submitting}
+              className="flex items-center gap-1.5 px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-black text-xs shadow-md transition-all cursor-pointer"
+            >
+              {submitting ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+              Publish Event
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main Page ────────────────────────────────────────────────────────────────
+
+export default function EventsPage() {
+  const [events, setEvents]   = useState<EventEntity[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [query, setQuery]     = useState('');
+  const [typeFilter, setTypeFilter]     = useState('all');
+  const [timingFilter, setTimingFilter] = useState('all');
+  const [density, setDensity] = useState<TableDensity>('cozy');
+  const [selectedEvent, setSelectedEvent] = useState<EventEntity | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await cmsService.getEvents('en', 200);
+      setEvents(data);
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to load events.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { loadData(); }, [loadData]);
 
   const filteredEvents = useMemo(() => {
-    return sampleEvents.filter(e => {
-      const matchQuery = !query || e.title.toLowerCase().includes(query.toLowerCase()) || e.code.toLowerCase().includes(query.toLowerCase()) || e.location.toLowerCase().includes(query.toLowerCase());
-      const matchAud = audienceFilter === 'all' || e.audience === audienceFilter;
-      const matchStatus = statusFilter === 'all' || e.status === statusFilter;
-      return matchQuery && matchAud && matchStatus;
+    return events.filter(ev => {
+      const q2 = query.toLowerCase();
+      const matchQ  = !query || ev.title.toLowerCase().includes(q2) || (ev.location || '').toLowerCase().includes(q2) || ev.slug.toLowerCase().includes(q2);
+      const matchTy = typeFilter === 'all' || ev.eventType === typeFilter;
+      const matchTm = timingFilter === 'all' || (timingFilter === 'upcoming' && isUpcoming(ev)) || (timingFilter === 'past' && isPast(ev));
+      return matchQ && matchTy && matchTm;
     });
-  }, [query, audienceFilter, statusFilter]);
+  }, [events, query, typeFilter, timingFilter]);
 
-  const activeFiltersCount = (audienceFilter !== 'all' ? 1 : 0) + (statusFilter !== 'all' ? 1 : 0);
+  const activeFiltersCount = [typeFilter !== 'all', timingFilter !== 'all'].filter(Boolean).length;
+  const clearFilters = () => { setTypeFilter('all'); setTimingFilter('all'); setQuery(''); };
 
-  const handleClearFilters = () => {
-    setAudienceFilter('all');
-    setStatusFilter('all');
-    setQuery('');
-    toast.success('Event filters reset.');
-  };
+  const upcomingCount  = events.filter(isUpcoming).length;
+  const pastCount      = events.filter(isPast).length;
+  const regRequired    = events.filter(e => e.registrationRequired).length;
+  const totalCapacity  = events.reduce((s, e) => s + (e.capacity || 0), 0);
 
   const kpiCards: EnterpriseKPICard[] = [
     {
-      id: 'published',
-      title: 'Active Public Events',
-      value: sampleEvents.filter(e => e.status === 'published').length.toString(),
-      subtitle: '▲ +2 ceremonies confirmed this term',
-      trendDirection: 'up',
-      icon: <Globe className="w-5 h-5" />,
-      isActive: statusFilter === 'published',
-      onClick: () => {
-        setStatusFilter(statusFilter === 'published' ? 'all' : 'published');
-        toast.info(statusFilter === 'published' ? 'Showing all events' : 'Filtered to Published Events');
-      },
-      badgeText: 'CMS Live'
+      id: 'total', title: 'Total Events', value: String(events.length),
+      subtitle: `${upcomingCount} upcoming · ${pastCount} past`,
+      trendDirection: 'up', icon: <CalendarIcon className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />,
     },
     {
-      id: 'rsvps',
-      title: 'Total Confirmed RSVPs',
-      value: sampleEvents.reduce((acc, e) => acc + e.registeredRSVPs, 0).toLocaleString('en-US'),
-      subtitle: '89.4% venue capacity utilization rate',
-      trendDirection: 'up',
-      icon: <Users className="w-5 h-5" />,
-      onClick: () => toast.success('Opened institutional venue capacity overview')
+      id: 'upcoming', title: 'Upcoming', value: String(upcomingCount),
+      subtitle: 'Scheduled future events',
+      trendDirection: 'up', icon: <Clock className="w-5 h-5 text-sky-600 dark:text-sky-400" />,
+      isActive: timingFilter === 'upcoming',
+      onClick: () => setTimingFilter(timingFilter === 'upcoming' ? 'all' : 'upcoming'),
     },
     {
-      id: 'stream',
-      title: 'Livestream Broadcasts',
-      value: sampleEvents.filter(e => e.isLivestreamed).length.toString(),
-      subtitle: 'Multi-cam YouTube & Parent Portal feeds',
-      trendDirection: 'up',
-      icon: <Radio className="w-5 h-5 text-rose-400 animate-pulse" />,
-      onClick: () => toast.info('Opened broadcast media studio dashboard')
+      id: 'registration', title: 'Reg. Required', value: String(regRequired),
+      subtitle: 'Events with RSVP/registration',
+      trendDirection: 'neutral', icon: <Users className="w-5 h-5 text-violet-600 dark:text-violet-400" />,
     },
     {
-      id: 'draft',
-      title: 'Draft / Review Queue',
-      value: sampleEvents.filter(e => e.status === 'draft').length.toString(),
-      subtitle: 'Awaiting directorate sign-off',
-      trendDirection: 'neutral',
-      icon: <Clock className="w-5 h-5" />,
-      isActive: statusFilter === 'draft',
-      onClick: () => {
-        setStatusFilter(statusFilter === 'draft' ? 'all' : 'draft');
-        toast.info(statusFilter === 'draft' ? 'Showing all events' : 'Filtered to Draft Queue');
-      }
-    }
+      id: 'capacity', title: 'Total Capacity', value: totalCapacity.toLocaleString('en-US'),
+      subtitle: 'Aggregate seat count',
+      trendDirection: 'neutral', icon: <Globe className="w-5 h-5 text-amber-600 dark:text-amber-400" />,
+    },
   ];
 
-  const columns = useMemo<ColumnDef<SchoolEvent, any>[]>(() => {
-    return [
-      {
-        accessorKey: 'title',
-        header: 'Event Code & Title',
-        cell: ({ row }) => {
-          const ev = row.original;
-          return (
-            <div className="space-y-1 max-w-md py-1">
-              <div className="flex items-center gap-2">
-                <span className="font-mono text-xs font-black text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800">{ev.code}</span>
-                {ev.isLivestreamed && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-100 dark:bg-rose-950/60 border border-rose-300 dark:border-rose-800 text-[10px] text-rose-700 dark:text-rose-300 font-bold">
-                    <Radio className="w-2.5 h-2.5 text-rose-600 dark:text-rose-400 animate-pulse" /> Live Broadcast
-                  </span>
-                )}
-              </div>
-              <p className="font-extrabold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors text-sm truncate">
-                {ev.title}
-              </p>
-              {ev.description && (
-                <p className="text-xs text-slate-600 dark:text-slate-400 font-normal line-clamp-2 leading-relaxed">
-                  {ev.description}
-                </p>
+  const EVENT_TYPES = ['Academic', 'Islamic/Religious', 'Sports', 'Cultural', 'Parent Gathering', 'Holiday'];
+
+  const columns = useMemo<ColumnDef<EventEntity, any>[]>(() => [
+    {
+      accessorKey: 'title',
+      header: 'Event',
+      cell: ({ row }) => {
+        const ev = row.original;
+        return (
+          <div className="space-y-1 max-w-sm py-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              {ev.eventType && (
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${eventTypeColor(ev.eventType)}`}>{ev.eventType}</span>
+              )}
+              {ev.registrationRequired && (
+                <span className="px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-955/40 text-amber-700 dark:text-amber-305 text-[10px] font-bold">RSVP</span>
               )}
             </div>
-          );
-        }
-      },
-      {
-        accessorKey: 'date',
-        header: 'Schedule & Timing',
-        cell: ({ row }) => (
-          <div className="space-y-1 font-mono text-xs py-1">
-            <span className="text-slate-900 dark:text-white block font-extrabold flex items-center gap-1.5">
-              <CalendarIcon className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-              <span>{row.original.date}</span>
-            </span>
-            <span className="text-slate-600 dark:text-slate-400 block font-medium flex items-center gap-1.5 pl-5">
-              <Clock className="w-3 h-3 text-slate-400" />
-              <span>{row.original.time}</span>
-            </span>
+            <p className="font-black text-slate-900 dark:text-white text-sm truncate">{ev.title}</p>
+            {ev.description && <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">{ev.description}</p>}
           </div>
-        )
+        );
       },
-      {
-        accessorKey: 'location',
-        header: 'Venue & Capacity',
-        cell: ({ row }) => {
-          const ev = row.original;
-          const occPct = Math.min(100, Math.round((ev.registeredRSVPs / ev.capacity) * 100));
-          return (
-            <div className="space-y-1.5 text-xs py-1 max-w-xs">
-              <span className="text-slate-900 dark:text-white font-bold block truncate flex items-center gap-1.5">
-                <MapPin className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                <span>{ev.location}</span>
+    },
+    {
+      accessorKey: 'startDate',
+      header: 'Schedule',
+      cell: ({ row }) => {
+        const ev = row.original;
+        return (
+          <div className="font-mono text-xs space-y-0.5">
+            <span className="font-black text-slate-900 dark:text-white block">{isoToDisplay(ev.startDate)}</span>
+            {ev.startDate !== ev.endDate && (
+              <span className="text-slate-400 block">to {isoToDisplay(ev.endDate)}</span>
+            )}
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: 'location',
+      header: 'Venue & Capacity',
+      cell: ({ row }) => {
+        const ev = row.original;
+        return (
+          <div className="space-y-1 text-xs">
+            {ev.location && (
+              <span className="flex items-center gap-1 text-slate-700 dark:text-slate-200 font-bold truncate max-w-[180px]">
+                <MapPin className="w-3.5 h-3.5 text-emerald-500 shrink-0" />{ev.location}
               </span>
-              <div className="flex items-center justify-between gap-2 text-[11px] font-mono text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/60 p-1.5 rounded-lg border border-slate-200 dark:border-slate-700">
-                <span>RSVPs: <strong className="text-slate-900 dark:text-white">{ev.registeredRSVPs.toLocaleString('en-US')}</strong> / {ev.capacity.toLocaleString('en-US')}</span>
-                <span className={`px-1.5 py-0.5 rounded font-extrabold ${
-                  occPct >= 90 
-                    ? 'bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700' 
-                    : 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700'
-                }`}>
-                  {occPct}%
-                </span>
-              </div>
-            </div>
-          );
-        }
+            )}
+            {ev.capacity && (
+              <span className="flex items-center gap-1 text-slate-400">
+                <Users className="w-3 h-3" />{ev.capacity.toLocaleString('en-US')} seats
+              </span>
+            )}
+          </div>
+        );
       },
-      {
-        accessorKey: 'audience',
-        header: 'Target Audience',
-        cell: ({ row }) => {
-          const aud = row.original.audience;
-          return (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold shadow-2xs">
-              <Users className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
-              <span>{aud}</span>
-            </span>
-          );
-        }
+    },
+    {
+      accessorKey: 'department',
+      header: 'Department',
+      cell: ({ row }) => {
+        const d = row.original.department;
+        return d ? (
+          <span className="text-xs font-bold text-slate-700 dark:text-slate-200">{d.title}</span>
+        ) : <span className="text-xs text-slate-400">-</span>;
       },
-      {
-        accessorKey: 'status',
-        header: 'CMS Status',
-        cell: ({ row }) => <StatusBadge status={row.original.status === 'published' ? 'active' : row.original.status === 'draft' ? 'pending' : 'completed'} size="sm" />
+    },
+    {
+      id: 'timing',
+      header: 'Status',
+      cell: ({ row }) => {
+        const ev = row.original;
+        if (isPast(ev)) return <StatusBadge status="completed" size="sm" />;
+        if (isUpcoming(ev)) return <StatusBadge status="active" size="sm" />;
+        return <StatusBadge status="pending" size="sm" />;
       },
-      {
-        id: 'actions',
-        header: 'Inspect Event',
-        cell: ({ row }) => (
+    },
+    {
+      id: 'actions',
+      header: '',
+      cell: ({ row }) => (
+        <div className="flex items-center gap-1.5">
           <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setSelectedRow(row.original);
-            }}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-emerald-600 dark:hover:bg-emerald-600 text-slate-800 dark:text-slate-200 hover:text-white font-bold text-xs transition-all border border-slate-200 dark:border-slate-700 hover:border-emerald-600 shadow-sm cursor-pointer"
+            onClick={e => { e.stopPropagation(); setSelectedEvent(row.original); }}
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-emerald-600 hover:text-white text-slate-700 dark:text-slate-200 text-[11px] font-bold transition-all border border-slate-200 dark:border-slate-700 cursor-pointer"
           >
-            <Eye className="w-3.5 h-3.5" />
-            <span>Inspect</span>
+            <Eye className="w-3 h-3" /> Inspect
           </button>
-        )
-      }
-    ];
-  }, []);
+          <Link
+            href="/calendar"
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-[11px] font-bold transition-all border border-slate-200 dark:border-slate-700"
+          >
+            <CalendarIcon className="w-3 h-3" />
+          </Link>
+        </div>
+      ),
+    },
+  ], []);
 
   return (
     <EnterpriseModuleShell
       title="Events & Institutional CMS Console"
-      description="Organize institutional ceremonies, Hifz graduations, debate championships, parent conferences, and livestream broadcasts with venue RSVP tracking."
-      breadcrumbs={[{ label: 'School ERP' }, { label: 'Events & CMS' }]}
+      description="Manage institutional ceremonies, Hifz graduations, debate championships, parent conferences, and academic events. All events sync to the School Calendar."
+      breadcrumbs={[{ label: 'School ERP' }, { label: 'CMS' }, { label: 'Events' }]}
       icon={<CalendarIcon className="w-8 h-8" />}
       recordCount={filteredEvents.length}
       recordLabel="Events"
       activeFilterCount={activeFiltersCount}
-      onClearFilters={handleClearFilters}
+      onClearFilters={clearFilters}
       headerActions={
         <div className="flex items-center gap-2">
+          <Link
+            href="/calendar"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white text-xs font-bold transition-all"
+          >
+            <CalendarIcon className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            View Calendar
+          </Link>
           <button
-            onClick={() => toast.info('New Event Creator wizard opened.')}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 text-white text-xs font-black transition-all shadow-lg shadow-emerald-600/30 cursor-pointer"
+            onClick={() => setShowCreateModal(true)}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 text-white text-xs font-black shadow-lg shadow-emerald-600/30 hover:scale-[1.02] transition-all cursor-pointer"
           >
             <Plus className="w-4 h-4 stroke-[3]" />
-            <span>+ Create Public Event</span>
+            Create Event
           </button>
         </div>
       }
     >
-      {/* Interactive Clickable KPI Deck */}
       <EnterpriseKPIDeck cards={kpiCards} />
 
-      {/* Unified Toolbar */}
+      {/* Quick links to related modules */}
+      <div className="flex flex-wrap items-center gap-2 pb-2 border-b border-slate-200 dark:border-slate-800">
+        {[
+          { href: '/cms/events',       label: 'Events',        active: true  },
+          { href: '/announcements',    label: 'Announcements', active: false },
+          { href: '/calendar',         label: 'Calendar View', active: false },
+        ].map(({ href, label, active }) => (
+          <Link key={href} href={href}
+            className={`px-3.5 py-1.5 rounded-xl font-bold text-xs transition-all ${ active ? 'bg-emerald-600 text-white shadow-md' : 'bg-slate-50 hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300' }`}
+          >
+            {label}
+          </Link>
+        ))}
+      </div>
+
+      {/* Filter bar */}
+      <div className="flex flex-wrap items-center gap-3 p-3 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-200 dark:border-slate-800">
+        <div className="flex items-center gap-1.5">
+          <label className="text-[10px] font-bold text-slate-400 uppercase">Type</label>
+          <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)}
+            className="px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:border-emerald-500">
+            <option value="all">All Types</option>
+            {EVENT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+          </select>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <label className="text-[10px] font-bold text-slate-400 uppercase">Timing</label>
+          <select value={timingFilter} onChange={e => setTimingFilter(e.target.value)}
+            className="px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:border-emerald-500">
+            <option value="all">All</option>
+            <option value="upcoming">Upcoming</option>
+            <option value="past">Past</option>
+          </select>
+        </div>
+        {activeFiltersCount > 0 && (
+          <button onClick={clearFilters} className="px-2.5 py-1 rounded-lg bg-rose-50 dark:bg-rose-955/30 border border-rose-200 dark:border-rose-800 text-rose-600 dark:text-rose-400 text-[11px] font-bold hover:bg-rose-100 transition-colors cursor-pointer">
+            Clear ({activeFiltersCount})
+          </button>
+        )}
+      </div>
+
       <EnterpriseToolbar
         searchQuery={query}
         onSearchChange={setQuery}
-        searchPlaceholder="Search events by ceremony title, venue hall name, code, or audience..."
+        searchPlaceholder="Search events by title, venue, or slug…"
         density={density}
         onDensityChange={setDensity}
-        onRefresh={() => toast.success('Public CMS calendar refreshed')}
+        onRefresh={() => { loadData(); toast.success('Events refreshed from CMS.'); }}
         activeFilterCount={activeFiltersCount}
-        onResetFilters={handleClearFilters}
-        createButtonLabel="+ Schedule Event"
-        onCreate={() => toast.info('Opened New Institutional Event scheduler.')}
-        customFilterNodes={
-          <div className="flex flex-wrap items-center gap-2">
-            <select
-              value={audienceFilter}
-              onChange={(e) => setAudienceFilter(e.target.value)}
-              aria-label="Filter events by audience"
-              className="px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-700 dark:text-slate-300 font-medium focus:outline-none focus:border-emerald-600 shadow-2xs"
-            >
-              <option value="all">All Audiences</option>
-              <option value="All Campus">All Campus</option>
-              <option value="Parents & Guardians">Parents & Guardians</option>
-              <option value="Students & Faculty">Students & Faculty</option>
-              <option value="Faculty Only">Faculty Only</option>
-            </select>
-
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              aria-label="Filter events by status"
-              className="px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-700 dark:text-slate-300 font-medium focus:outline-none focus:border-emerald-600 shadow-2xs"
-            >
-              <option value="all">All CMS Statuses</option>
-              <option value="published">Published Active</option>
-              <option value="draft">Draft Review</option>
-              <option value="completed">Past Completed</option>
-            </select>
-          </div>
-        }
+        onResetFilters={clearFilters}
+        createButtonLabel="+ Create Event"
+        onCreate={() => setShowCreateModal(true)}
       />
 
-      {/* High-Density Enterprise Data Grid */}
       <EnterpriseDataGrid
         data={filteredEvents}
         columns={columns}
         isLoading={loading}
         density={density}
-        onRowInspect={(row) => setSelectedRow(row)}
-        onRowClick={(row) => setSelectedRow(row)}
-        onRowEdit={(row) => toast.info(`Opening event editor for ${row.title}`)}
+        onRowInspect={setSelectedEvent}
+        onRowClick={setSelectedEvent}
         emptyStateProps={{
           title: 'No Events Found',
-          description: 'No scheduled school ceremonies or CMS announcements match your search or filter combination.',
+          description: 'No CMS events match your current filters. Click "Create Event" to schedule one.',
           isFilterActive: activeFiltersCount > 0 || query.length > 0,
-          onResetFilters: handleClearFilters,
-          createLabel: 'Schedule New Ceremony',
-          onCreate: () => toast.info('Opened new event scheduling dialog')
+          onResetFilters: clearFilters,
+          createLabel: 'Create New Event',
+          onCreate: () => setShowCreateModal(true)
         }}
       />
 
-      {/* Slide-Out Profile Inspection Drawer */}
-      <SlideOutDrawer
-        isOpen={!!selectedRow}
-        onClose={() => setSelectedRow(null)}
-        record={selectedRow ? {
-          ...selectedRow,
-          name: selectedRow.title,
-          id: selectedRow.code,
-          role: `INSTITUTIONAL EVENT (${selectedRow.status.toUpperCase()})`,
-          status: selectedRow.status === 'published' ? 'active' : 'pending',
-          email: `${selectedRow.location} | Capacity: ${selectedRow.capacity}`,
-          balance: `${selectedRow.registeredRSVPs} RSVPs Confirmed (${Math.round((selectedRow.registeredRSVPs / selectedRow.capacity) * 100)}% Full)`
-        } : null}
-        category="event"
-      />
+      {selectedEvent && (
+        <EventDetailPanel event={selectedEvent} onClose={() => setSelectedEvent(null)} />
+      )}
+
+      {/* Create Modal */}
+      {showCreateModal && (
+        <CreateEventModal
+          onClose={() => setShowCreateModal(false)}
+          onSaved={loadData}
+        />
+      )}
     </EnterpriseModuleShell>
   );
 }

@@ -7,69 +7,105 @@ import { toast } from 'sonner';
 // ─────────────────────────────────────────────────────────────────────────────
 // YAHAYASCOOL — Fixed Asset Management ERP Service
 // Integrated Fixed Asset Register, Depreciation Engine & GL Journal Posting
+// Live database integration with Strapi
 // ─────────────────────────────────────────────────────────────────────────────
+
+const mapAsset = (raw: any): FixedAsset => ({
+  id: raw.documentId,
+  assetTag: raw.assetTag,
+  name: raw.name,
+  category: raw.category,
+  purchaseDate: raw.purchaseDate || new Date().toISOString().split('T')[0],
+  purchaseCostUSD: Number(raw.purchaseCost ?? 0),
+  salvageValueUSD: Number(raw.salvageValue ?? 0),
+  usefulLifeYears: Number(raw.usefulLifeYears ?? 5),
+  currentBookValueUSD: Number(raw.currentBookValue ?? 0),
+  accumulatedDepreciationUSD: Number(raw.accumulatedDepreciation ?? 0),
+  depreciationMethod: raw.depreciationMethod || 'Straight Line',
+  location: raw.location || 'Central Campus',
+  assignedDepartment: raw.assignedDepartment || 'Campus Operations',
+  assignedStaffName: raw.assignedStaffName || '',
+  barcode: raw.barcode || `99000${Math.floor(1000000 + Math.random() * 9000000)}`,
+  status: raw.status || 'active',
+});
 
 export const assetService = {
   /**
    * Get all Fixed Assets in Register.
    */
   async getAssets(): Promise<FixedAsset[]> {
-    return [
-      { id: 'AST-01', assetTag: 'AST-2026-00412', name: 'Dell PowerEdge R750 Rack Server (Primary ERP Server)', category: 'IT & Computers', purchaseDate: '2025-08-10', purchaseCostUSD: 8500.00, salvageValueUSD: 500.00, usefulLifeYears: 5, currentBookValueUSD: 6900.00, accumulatedDepreciationUSD: 1600.00, depreciationMethod: 'Straight Line', location: 'Data Center Server Room', assignedDepartment: 'IT Infrastructure & Operations', barcode: '9900000000101', status: 'active' },
-      { id: 'AST-02', assetTag: 'AST-2026-00415', name: 'Physics & STEM High-Precision Spectrometer', category: 'Lab Equipment', purchaseDate: '2026-01-15', purchaseCostUSD: 12400.00, salvageValueUSD: 1000.00, usefulLifeYears: 7, currentBookValueUSD: 10771.00, accumulatedDepreciationUSD: 1629.00, depreciationMethod: 'Straight Line', location: 'Science Wing Lab 302', assignedDepartment: 'Science & STEM Department', barcode: '9900000000104', status: 'active' },
-      { id: 'AST-03', assetTag: 'AST-2026-00420', name: 'Toyota Coaster 30-Seater Campus Bus', category: 'Vehicles & Transport', purchaseDate: '2024-05-20', purchaseCostUSD: 45000.00, salvageValueUSD: 5000.00, usefulLifeYears: 8, currentBookValueUSD: 35000.00, accumulatedDepreciationUSD: 10000.00, depreciationMethod: 'Straight Line', location: 'Campus Fleet Garage', assignedDepartment: 'Transport Logistics', barcode: '9900000000108', status: 'active' }
-    ];
+    try {
+      const res = await apiClient.get('/fixed-assets?pagination[limit]=500&sort=createdAt:desc');
+      return (res.data?.data || []).map(mapAsset);
+    } catch (err) {
+      console.error('[AssetService] getAssets failed:', err);
+      return [];
+    }
   },
 
   /**
    * Register a New Fixed Asset & Post Asset Capitalization Journal Entry.
    */
-  async registerAsset(payload: Partial<FixedAsset>): Promise<FixedAsset> {
+  async registerAsset(payload: {
+    name: string;
+    category: FixedAsset['category'];
+    purchaseDate?: string;
+    purchaseCostUSD: number;
+    salvageValueUSD: number;
+    usefulLifeYears: number;
+    depreciationMethod: FixedAsset['depreciationMethod'];
+    location: string;
+    assignedDepartment?: string;
+    assignedStaffName?: string;
+  }): Promise<FixedAsset> {
     const assetTag = sequenceService.generateDocumentNumber('AST');
-    const cost = payload.purchaseCostUSD || 1000.00;
-    const salvage = payload.salvageValueUSD || 100.00;
+    const cost = payload.purchaseCostUSD || 0;
+    const salvage = payload.salvageValueUSD || 0;
     const life = payload.usefulLifeYears || 5;
+    const barcode = `99000${Math.floor(1000000 + Math.random() * 9000000)}`;
 
-    const newAsset: FixedAsset = {
-      id: sequenceService.generateUUID(),
+    const data = {
       assetTag,
-      name: payload.name || 'New Institutional Asset',
-      category: payload.category || 'IT & Computers',
+      name: payload.name,
+      category: payload.category,
       purchaseDate: payload.purchaseDate || new Date().toISOString().split('T')[0],
-      purchaseCostUSD: cost,
-      salvageValueUSD: salvage,
+      purchaseCost: cost,
+      salvageValue: salvage,
       usefulLifeYears: life,
-      currentBookValueUSD: cost,
-      accumulatedDepreciationUSD: 0,
+      currentBookValue: cost,
+      accumulatedDepreciation: 0,
       depreciationMethod: payload.depreciationMethod || 'Straight Line',
-      location: payload.location || 'Central Campus',
-      assignedDepartment: payload.assignedDepartment || 'Campus Operations',
-      assignedStaffName: payload.assignedStaffName,
-      barcode: `99000${Math.floor(1000000 + Math.random() * 9000000)}`,
-      status: 'active'
+      location: payload.location,
+      assignedDepartment: payload.assignedDepartment || '',
+      assignedStaffName: payload.assignedStaffName || '',
+      barcode,
+      status: 'active',
     };
+
+    const res = await apiClient.post('/fixed-assets', { data });
+    const createdAsset = mapAsset(res.data.data);
 
     // Auto Finance Integration: Post Asset Capitalization GL Journal Entry
     try {
       await financeService.postManualJournalEntry({
         reference: assetTag,
-        description: `Fixed Asset Capitalization: ${newAsset.name}`,
+        description: `Fixed Asset Capitalization: ${createdAsset.name}`,
         lines: [
           { id: '1', accountCode: '1500', accountName: 'Property, Plant & Equipment Assets (Series 1500)', debit: cost, credit: 0 },
           { id: '2', accountCode: '1010', accountName: 'Commercial Bank Treasury', debit: 0, credit: cost }
         ]
       });
-      toast.success(`Finance Integration: Posted Capitalization Journal for ${assetTag} ($${cost.toFixed(2)})`);
+      toast.success(`Finance Integration: Posted Capitalization Journal for ${assetTag}`);
     } catch (err) {
       console.warn('Failed to post asset capitalization journal:', err);
     }
 
-    toast.success(`Registered Fixed Asset ${assetTag}: ${newAsset.name}`);
-    return newAsset;
+    toast.success(`Registered Fixed Asset ${assetTag}: ${createdAsset.name}`);
+    return createdAsset;
   },
 
   /**
-   * Generate Depreciation Schedule & Post Monthly Depreciation Journal.
+   * Run Monthly Depreciation on Asset & Update DB + Post GL Journal.
    */
   async runDepreciationSchedule(asset: FixedAsset): Promise<{ schedule: DepreciationScheduleItem[]; monthlyDepreciation: number }> {
     const depreciableBase = asset.purchaseCostUSD - asset.salvageValueUSD;
@@ -95,6 +131,21 @@ export const assetService = {
       });
     }
 
+    // Update asset state in DB: add 1 month's depreciation
+    const newAccumDep = Number((asset.accumulatedDepreciationUSD + monthlyDepreciation).toFixed(2));
+    const newBookValue = Math.max(asset.salvageValueUSD, Number((asset.purchaseCostUSD - newAccumDep).toFixed(2)));
+
+    try {
+      await apiClient.put(`/fixed-assets/${asset.id}`, {
+        data: {
+          accumulatedDepreciation: newAccumDep,
+          currentBookValue: newBookValue,
+        }
+      });
+    } catch (err) {
+      console.warn('[AssetService] Failed to update asset depreciation in DB:', err);
+    }
+
     // Auto Finance Integration: Post Monthly Depreciation Journal Entry
     try {
       await financeService.postManualJournalEntry({
@@ -105,11 +156,19 @@ export const assetService = {
           { id: '2', accountCode: '1500', accountName: 'Accumulated Depreciation contra-Asset', debit: 0, credit: monthlyDepreciation }
         ]
       });
-      toast.success(`Finance Integration: Posted Monthly Depreciation Journal ($${monthlyDepreciation.toFixed(2)}/mo)`);
+      toast.success(`Finance Integration: Posted Monthly Depreciation Journal`);
     } catch (err) {
       console.warn('Failed to post depreciation journal:', err);
     }
 
     return { schedule, monthlyDepreciation };
+  },
+
+  /**
+   * Delete an Asset from Register.
+   */
+  async deleteAsset(id: string): Promise<void> {
+    await apiClient.delete(`/fixed-assets/${id}`);
+    toast.success('Asset removed from register.');
   }
 };

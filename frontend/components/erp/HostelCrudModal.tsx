@@ -102,8 +102,15 @@ export function HostelCrudModal({ isOpen, onClose, onSuccess, type, editItem }: 
       } else if (type === 'beds') {
         initialData.roomId = editItem.room?.documentId || editItem.room?.id || '';
       } else if (type === 'wardens') {
-        initialData.name = editItem.employee;
-        initialData.buildingId = editItem.assignedBuilding?.documentId || editItem.assignedBuilding?.id || '';
+        initialData.name = editItem.employee || editItem.name || '';
+        initialData.employee = initialData.name;
+        initialData.phone = editItem.phone || '';
+        initialData.email = editItem.email || '';
+        initialData.status = editItem.status || 'active';
+        initialData.dutyShift = editItem.dutyShift || 'full_day';
+        initialData.role = editItem.role || 'warden';
+        initialData.notes = editItem.notes || '';
+        initialData.buildingId = editItem.assignedBuilding?.documentId || editItem.assignedBuilding?.id || editItem.buildingId || '';
       } else if (type === 'feeplans') {
         initialData.planName = editItem.planName || editItem.name || '';
         initialData.academicYear = editItem.academicYear || 'AY 2026/2027';
@@ -135,6 +142,12 @@ export function HostelCrudModal({ isOpen, onClose, onSuccess, type, editItem }: 
         initialData.floorId = editItem.floor?.documentId || editItem.floor?.id || '';
         initialData.roomId = editItem.room?.documentId || editItem.room?.id || '';
         initialData.bedId = editItem.bed?.documentId || editItem.bed?.id || '';
+      } else if (type === 'attendance') {
+        initialData.studentId = editItem.student?.documentId || editItem.student?.id || editItem.studentId || '';
+        initialData.date = editItem.date || '';
+        initialData.attendanceStatus = editItem.attendanceStatus || 'present';
+        initialData.checkInTime = editItem.checkInTime || '';
+        initialData.notes = editItem.notes || '';
       }
       setFormData(initialData);
     } else {
@@ -204,13 +217,19 @@ export function HostelCrudModal({ isOpen, onClose, onSuccess, type, editItem }: 
         defaults.bedId = '';
       } else if (type === 'wardens') {
         defaults.name = '';
+        defaults.employee = '';
         defaults.phone = '';
+        defaults.email = '';
         defaults.buildingId = '';
         defaults.status = 'active';
+        defaults.role = 'warden';
+        defaults.dutyShift = 'full_day';
+        defaults.notes = '';
       } else if (type === 'attendance') {
-        defaults.studentName = '';
+        defaults.studentId = '';
         defaults.date = new Date().toISOString().split('T')[0];
         defaults.attendanceStatus = 'present';
+        defaults.checkInTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
         defaults.notes = '';
       }
       setFormData(defaults);
@@ -301,7 +320,13 @@ export function HostelCrudModal({ isOpen, onClose, onSuccess, type, editItem }: 
         payload.room = formData.roomId || null;
         payload.bed = formData.bedId || null;
       } else if (type === 'wardens') {
-        payload.employee = formData.name;
+        payload.employee = formData.name || formData.employee || '';
+        payload.phone = formData.phone || '';
+        payload.email = formData.email || '';
+        payload.status = formData.status || 'active';
+        payload.dutyShift = formData.dutyShift || 'full_day';
+        payload.role = formData.role || 'warden';
+        payload.notes = formData.notes || '';
         if (formData.buildingId) {
           payload.assignedBuilding = formData.buildingId;
         }
@@ -310,7 +335,11 @@ export function HostelCrudModal({ isOpen, onClose, onSuccess, type, editItem }: 
       } else if (type === 'attendance') {
         payload.date = formData.date;
         payload.attendanceStatus = formData.attendanceStatus;
-        payload.notes = formData.notes;
+        payload.checkInTime = formData.checkInTime || '';
+        payload.notes = formData.notes || '';
+        if (formData.studentId) {
+          payload.student = formData.studentId;
+        }
       }
 
       const isDummyId = (id: any) => {
@@ -1077,10 +1106,41 @@ export function HostelCrudModal({ isOpen, onClose, onSuccess, type, editItem }: 
                 <input
                   type="text"
                   required
-                  value={formData.name || ''}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-755 text-slate-900 dark:text-white font-semibold"
+                  value={formData.name || formData.employee || ''}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value, employee: e.target.value })}
+                  className="w-full px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-semibold focus:outline-none focus:border-indigo-500"
+                  placeholder="e.g. Ustadh Omar Bilal"
                 />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Role / Title *</label>
+                  <select
+                    required
+                    value={formData.role || 'warden'}
+                    onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-semibold"
+                  >
+                    <option value="chief_warden">Chief Warden</option>
+                    <option value="warden">Warden</option>
+                    <option value="assistant_warden">Assistant Warden</option>
+                    <option value="resident_assistant">Resident Assistant</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Duty Shift</label>
+                  <select
+                    value={formData.dutyShift || 'full_day'}
+                    onChange={(e) => setFormData({ ...formData, dutyShift: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-semibold"
+                  >
+                    <option value="morning">Morning</option>
+                    <option value="afternoon">Afternoon</option>
+                    <option value="evening">Evening</option>
+                    <option value="night">Night</option>
+                    <option value="full_day">Full Day</option>
+                  </select>
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -1089,9 +1149,22 @@ export function HostelCrudModal({ isOpen, onClose, onSuccess, type, editItem }: 
                     type="text"
                     value={formData.phone || ''}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="w-full px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-755 text-slate-900 dark:text-white font-semibold"
+                    className="w-full px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-mono font-bold"
+                    placeholder="+231 886 000 000"
                   />
                 </div>
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Email Address</label>
+                  <input
+                    type="email"
+                    value={formData.email || ''}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    className="w-full px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-semibold"
+                    placeholder="warden@school.edu"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Assigned Building *</label>
                   <select
@@ -1106,45 +1179,85 @@ export function HostelCrudModal({ isOpen, onClose, onSuccess, type, editItem }: 
                     ))}
                   </select>
                 </div>
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Active Status</label>
+                  <select
+                    value={formData.status || 'active'}
+                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-semibold"
+                  >
+                    <option value="active">Active (On Duty)</option>
+                    <option value="inactive">Inactive (Off Duty)</option>
+                    <option value="on_leave">On Leave</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Notes / Remarks</label>
+                <textarea
+                  rows={2}
+                  value={formData.notes || ''}
+                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  className="w-full px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-semibold"
+                  placeholder="Any notes about this warden's responsibilities..."
+                />
               </div>
             </>
           )}
 
+
           {type === 'attendance' && (
             <>
               <div>
-                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Scholar / Student Name *</label>
-                <input
-                  type="text"
+                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Scholar / Boarder *</label>
+                <select
                   required
-                  value={formData.studentName || ''}
-                  onChange={(e) => setFormData({ ...formData, studentName: e.target.value })}
-                  className="w-full px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-755 text-slate-900 dark:text-white font-semibold"
-                />
+                  value={formData.studentId || ''}
+                  onChange={(e) => setFormData({ ...formData, studentId: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-semibold focus:outline-none focus:border-indigo-500"
+                >
+                  <option value="">Select Active Boarder...</option>
+                  {studentsList.map((s: any) => (
+                    <option key={s.id} value={s.documentId || s.id}>
+                      {s.name || `${s.firstName || ''} ${s.lastName || ''}`.trim()} ({s.studentId || s.admissionNumber || s.id})
+                    </option>
+                  ))}
+                </select>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Date</label>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Date *</label>
                   <input
                     type="date"
+                    required
                     value={formData.date || ''}
                     onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                    className="w-full px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-755 text-slate-950 dark:text-white font-semibold"
+                    className="w-full px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-950 dark:text-white font-semibold"
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Attendance Status</label>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Attendance Status *</label>
                   <select
+                    required
                     value={formData.attendanceStatus || 'present'}
                     onChange={(e) => setFormData({ ...formData, attendanceStatus: e.target.value })}
                     className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-950 dark:text-white font-semibold"
                   >
-                    <option value="present">Present</option>
-                    <option value="absent">Absent</option>
-                    <option value="late">Late</option>
-                    <option value="excused">Excused</option>
+                    <option value="present">✅ Present</option>
+                    <option value="absent">❌ Absent</option>
+                    <option value="late">⚠️ Late</option>
+                    <option value="excused">📋 Excused</option>
                   </select>
                 </div>
+              </div>
+              <div>
+                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Check-In Time</label>
+                <input
+                  type="time"
+                  value={formData.checkInTime || ''}
+                  onChange={(e) => setFormData({ ...formData, checkInTime: e.target.value })}
+                  className="w-full px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-mono font-bold"
+                />
               </div>
               <div>
                 <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Notes</label>
@@ -1152,11 +1265,13 @@ export function HostelCrudModal({ isOpen, onClose, onSuccess, type, editItem }: 
                   type="text"
                   value={formData.notes || ''}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  className="w-full px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-755 text-slate-900 dark:text-white font-semibold"
+                  className="w-full px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-semibold"
+                  placeholder="e.g. Late due to medical visit..."
                 />
               </div>
             </>
           )}
+
 
           <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
             <button

@@ -87,12 +87,33 @@ const createApiClient = (): AxiosInstance => {
     },
   });
 
-  // ── Request Interceptor: Attach JWT ──────────────────────────────────────
+  // ── Request Interceptor: Attach JWT and Auto-Locale ──────────────────────
   instance.interceptors.request.use(
-    (config: InternalAxiosRequestConfig) => {
+    (config: InternalAxiosRequestConfig & { _retryWithoutLocale?: boolean }) => {
       const token = getToken();
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
+      }
+
+      const isProfileEndpoint = config.url && (
+        config.url.startsWith('/teachers') ||
+        config.url.startsWith('/students') ||
+        config.url.startsWith('/parents') ||
+        config.url.startsWith('/workers')
+      );
+
+      // Auto-inject locale for Strapi query strings — always wins over default 'en'
+      if (typeof window !== 'undefined' && !config._retryWithoutLocale && !isProfileEndpoint) {
+        const path = window.location.pathname;
+        const match = path.match(/^\/(en|ar|fr|tr)\b/);
+        if (match) {
+          const currentLocale = match[1];
+          // Current URL locale always overrides any default passed in params
+          config.params = {
+            ...config.params,
+            locale: currentLocale,
+          };
+        }
       }
       return config;
     },
@@ -105,7 +126,16 @@ const createApiClient = (): AxiosInstance => {
     async (error: AxiosError) => {
       const originalRequest = error.config as InternalAxiosRequestConfig & {
         _retry?: boolean;
+        _retryWithoutLocale?: boolean;
       };
+
+      if (error.response?.status === 404 && originalRequest.method === 'get' && originalRequest.params?.locale && !originalRequest._retryWithoutLocale) {
+        originalRequest._retryWithoutLocale = true;
+        const newParams = { ...originalRequest.params };
+        delete newParams.locale;
+        originalRequest.params = newParams;
+        return instance(originalRequest);
+      }
 
       if (error.response?.status === 401 && !originalRequest._retry) {
         if (isRefreshing) {
@@ -172,6 +202,18 @@ uploadClient.interceptors.request.use((config) => {
   const token = getToken();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
+  }
+
+  // Auto-inject locale for upload request parameters
+  if (typeof window !== 'undefined') {
+    const path = window.location.pathname;
+    const match = path.match(/^\/(en|ar|fr|tr)\b/);
+    if (match) {
+      config.params = {
+        locale: match[1],
+        ...config.params,
+      };
+    }
   }
   return config;
 });

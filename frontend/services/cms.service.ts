@@ -350,6 +350,22 @@ export const cmsService = {
     });
     return data || [];
   },
+
+  /**
+   * Create a new event
+   */
+  async createEvent(payload: Partial<EventEntity>): Promise<EventEntity> {
+    const res = await apiClient.post('/events', { data: payload });
+    return unwrapResponse<EventEntity>(res.data) || res.data;
+  },
+
+  /**
+   * Create a new announcement
+   */
+  async createAnnouncement(payload: Partial<AnnouncementEntity>): Promise<AnnouncementEntity> {
+    const res = await apiClient.post('/announcements', { data: payload });
+    return unwrapResponse<AnnouncementEntity>(res.data) || res.data;
+  },
 };
 
 export function getStrapiMediaUrl(media: any): string | null {

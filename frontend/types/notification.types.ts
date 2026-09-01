@@ -14,7 +14,8 @@ export interface Notification extends StrapiEntity {
   title: string;
   body: string;
   channel: NotificationChannelEnum;
-  status: NotificationStatusEnum;
+  status?: NotificationStatusEnum;
+  recordStatus?: NotificationStatusEnum;
   priority: NotificationPriorityEnum;
   metadata: Record<string, unknown> | null;
   scheduledAt: string | null;
@@ -32,7 +33,8 @@ export interface CreateNotificationPayload {
   body: string;
   channel?: NotificationChannelEnum;
   priority?: NotificationPriorityEnum;
-  recipientId: number;
+  recipientId?: number;
+  senderId?: number;
   metadata?: Record<string, unknown>;
   scheduledAt?: string;
   relatedEntity?: string;
@@ -46,4 +48,5 @@ export interface NotificationFilters {
   priority?: NotificationPriorityEnum | '';
   page?: number;
   pageSize?: number;
+  recipientId?: number;
 }

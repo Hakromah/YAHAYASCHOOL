@@ -1,5 +1,5 @@
 export default () => ({
-  async getAdminStats() {
+  async getAdminStats({ locale = 'en' } = {}) {
     const [
       students,
       teachers,
@@ -50,14 +50,16 @@ export default () => ({
       pagination: { limit: 10 },
     });
 
-    // Upcoming events
+    // Upcoming events (localized)
     const upcomingEvents = await strapi.documents('api::event.event').findMany({
+      locale,
       sort: { createdAt: 'desc' },
       pagination: { limit: 5 },
     });
 
-    // Recent announcements
+    // Recent announcements (localized)
     const recentAnnouncements = await strapi.documents('api::announcement.announcement').findMany({
+      locale,
       sort: { createdAt: 'desc' },
       pagination: { limit: 5 },
     });
@@ -92,7 +94,7 @@ export default () => ({
     };
   },
 
-  async getDirectorStats() {
+  async getDirectorStats({ locale = 'en' } = {}) {
     const [
       students,
       teachers,
@@ -114,6 +116,7 @@ export default () => ({
     ]);
 
     const recentAnnouncements = await strapi.documents('api::announcement.announcement').findMany({
+      locale,
       sort: { createdAt: 'desc' },
       pagination: { limit: 5 },
     });
@@ -134,7 +137,7 @@ export default () => ({
     };
   },
 
-  async getTeacherStats(userId: number) {
+  async getTeacherStats(userId: number, { locale = 'en' } = {}) {
     // Find the teacher profile linked to this user
     const teacherProfiles = await strapi.documents('api::teacher.teacher').findMany({
       filters: { user: { id: { $eq: userId } } } as any,
@@ -175,7 +178,7 @@ export default () => ({
     };
   },
 
-  async getStudentStats(userId: number) {
+  async getStudentStats(userId: number, { locale = 'en' } = {}) {
     const studentProfiles = await strapi.documents('api::student.student').findMany({
       filters: { user: { id: { $eq: userId } } } as any,
       populate: ['sections', 'academicYears', 'teachers'] as any,
@@ -197,6 +200,7 @@ export default () => ({
         filters: { student: { id: { $eq: student.id } } } as any,
       }),
       strapi.documents('api::announcement.announcement').findMany({
+        locale,
         sort: { createdAt: 'desc' },
         pagination: { limit: 5 },
       }),
@@ -215,7 +219,7 @@ export default () => ({
     };
   },
 
-  async getParentStats(userId: number) {
+  async getParentStats(userId: number, { locale = 'en' } = {}) {
     const parentProfiles = await strapi.documents('api::parent.parent').findMany({
       filters: { user: { id: { $eq: userId } } } as any,
       populate: ['children'] as any,
@@ -231,6 +235,7 @@ export default () => ({
     const [upcomingEvents, announcements] = await Promise.all([
       strapi.documents('api::event.event').count({}),
       strapi.documents('api::announcement.announcement').findMany({
+        locale,
         sort: { createdAt: 'desc' },
         pagination: { limit: 5 },
       }),
@@ -245,11 +250,12 @@ export default () => ({
     };
   },
 
-  async getAccountantStats() {
+  async getAccountantStats({ locale = 'en' } = {}) {
     const [donations, workers, announcements] = await Promise.all([
       strapi.documents('api::donation-campaign.donation-campaign').count({}),
       strapi.documents('api::worker.worker').count({}),
       strapi.documents('api::announcement.announcement').findMany({
+        locale,
         sort: { createdAt: 'desc' },
         pagination: { limit: 5 },
       }),
@@ -268,8 +274,8 @@ export default () => ({
     };
   },
 
-  async getAccountLeadStats() {
-    const base = await strapi.service('api::dashboard.dashboard').getAccountantStats();
+  async getAccountLeadStats({ locale = 'en' } = {}) {
+    const base = await strapi.service('api::dashboard.dashboard').getAccountantStats({ locale });
     const auditLogs = await strapi.documents('api::audit-log.audit-log').findMany({
       sort: { createdAt: 'desc' },
       pagination: { limit: 10 },
@@ -277,13 +283,14 @@ export default () => ({
     return { ...base, auditLogs };
   },
 
-  async getWorkerStats(userId: number) {
+  async getWorkerStats(userId: number, { locale = 'en' } = {}) {
     const workerProfiles = await strapi.documents('api::worker.worker').findMany({
       filters: { user: { id: { $eq: userId } } } as any,
     });
     const worker = workerProfiles[0];
 
     const announcements = await strapi.documents('api::announcement.announcement').findMany({
+      locale,
       sort: { createdAt: 'desc' },
       pagination: { limit: 5 },
     });
@@ -297,11 +304,11 @@ export default () => ({
     };
   },
 
-  async getDriverStats(userId: number) {
-    return strapi.service('api::dashboard.dashboard').getWorkerStats(userId);
+  async getDriverDashboardStats(userId: number, { locale = 'en' } = {}) {
+    return strapi.service('api::dashboard.dashboard').getWorkerStats(userId, { locale });
   },
 
-  async getExecutiveFinanceStats(academicYear = '2026-2027') {
+  async getExecutiveFinanceStats(academicYear = '2026-2027', { locale = 'en' } = {}) {
     // 1. Invoices Aggregation (Single source of truth for revenue & receivables)
     const invoices = await strapi.documents('api::finance-invoice.finance-invoice').findMany({
       filters: { academicYearId: { $eq: academicYear } } as any,

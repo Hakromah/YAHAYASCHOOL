@@ -61,6 +61,11 @@
       "type": "relation",
       "relation": "manyToOne",
       "target": "api::language-program.language-program"
+    },
+    "courseOffering": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::course-offering.course-offering"
     }
   }
 }

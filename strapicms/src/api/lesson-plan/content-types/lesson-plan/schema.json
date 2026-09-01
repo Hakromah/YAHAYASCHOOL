@@ -78,6 +78,9 @@
         "videos",
         "audios"
       ]
+    },
+    "rejectionReason": {
+      "type": "text"
     }
   }
 }

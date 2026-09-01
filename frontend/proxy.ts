@@ -3,7 +3,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { routing } from './i18n/routing';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// YAHAYASCOOL — Next.js Middleware
+// YAHAYASCOOL — Next.js Proxy Middleware (Next.js 16+ Convention)
 // Handles: i18n locale routing + JWT auth protection
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -28,7 +28,6 @@ const PROTECTED_PREFIXES = [
   '/messages',
   '/notifications',
   '/reports',
-  // Module routes (previously unprotected — security fix)
   '/erp',
   '/lms',
   '/qms',
@@ -64,14 +63,22 @@ function getJWT(request: NextRequest): string | null {
   return request.cookies.get('jwt')?.value ?? null;
 }
 
-export default function middleware(request: NextRequest) {
+export default function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const jwt = getJWT(request);
   const isAuthenticated = !!jwt;
 
   // Extract locale prefix if present
-  const localeMatch = pathname.match(/^\/(en|ar|fr|tr)/);
-  const localePrefix = localeMatch ? localeMatch[0] : '';
+  const localeMatch = pathname.match(/^\/(en|ar|fr|tr)\b/);
+  const hasLocale = !!localeMatch;
+  const localePrefix = hasLocale ? localeMatch[0] : '';
+
+  // ── Redirect requests lacking a locale prefix to default /en prefix ──
+  if (!hasLocale) {
+    const redirectUrl = new URL(`/en${pathname === '/' ? '' : pathname}`, request.url);
+    redirectUrl.search = request.nextUrl.search;
+    return NextResponse.redirect(redirectUrl);
+  }
 
   // ── Auth Guard ────────────────────────────────────────────
   if (isProtectedRoute(pathname) && !isAuthenticated) {
@@ -91,8 +98,11 @@ export default function middleware(request: NextRequest) {
 }
 
 export const config = {
-  // Match all routes EXCEPT Next.js internals and static files
+  // Match all pathnames except for the ones starting with:
+  // - api (API routes)
+  // - _next (Next.js internals)
+  // - static files (contain a dot in path)
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|yahaya-logo.jpeg|.*\\..*).*)' ,
+    '/((?!api|_next|[^?]*\\.[^?]*$).*)'
   ],
 };

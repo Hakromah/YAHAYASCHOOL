@@ -9,8 +9,8 @@ export const routing = defineRouting({
   // Default locale — no URL prefix (e.g., /dashboard not /en/dashboard)
   defaultLocale: 'en',
 
-  // Only add locale prefix when not the default locale
-  localePrefix: 'as-needed',
+  // Always add locale prefix
+  localePrefix: 'always',
 
   // Disable automatic browser language detection so it always defaults to English
   localeDetection: false,

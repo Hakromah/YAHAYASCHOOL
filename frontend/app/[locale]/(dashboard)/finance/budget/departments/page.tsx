@@ -1,11 +1,14 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 import {
   Building2, PieChart, ShieldCheck, Clock, DollarSign,
   AlertTriangle, ArrowRight, CheckCircle2, Plus
 } from 'lucide-react';
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
 import { financeService } from '@/services/finance.service';
 import type { DepartmentalBudget } from '@/types/finance.types';
 import { EnterpriseModuleShell } from '@/components/erp/EnterpriseModuleShell';
@@ -15,6 +18,9 @@ import { StatusBadge } from '@/components/erp/StatusBadge';
 import { toast } from 'sonner';
 
 export default function DepartmentLineItemControlPage() {
+  const locale = useLocale();
+  const t = (key: string) => i18nT(key, locale);
+
   const [budgets, setBudgets] = useState<DepartmentalBudget[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -25,7 +31,7 @@ export default function DepartmentLineItemControlPage() {
         const data = await financeService.getBudgets();
         setBudgets(data);
       } catch {
-        toast.error('Failed to load departmental line item allocations.');
+        toast.error(t('Failed to load departmental line item allocations.'));
       } finally {
         setLoading(false);
       }
@@ -33,31 +39,31 @@ export default function DepartmentLineItemControlPage() {
     fetchBudgets();
   }, []);
 
-  const totalAllocated = budgets.reduce((s, b) => s + b.allocatedAmount, 0);
-  const totalSpent = budgets.reduce((s, b) => s + b.spentAmount, 0);
+  const totalAllocated = budgets.reduce((s, b) => s + (Number(b.allocatedAmount) || 0), 0);
+  const totalSpent = budgets.reduce((s, b) => s + (Number(b.spentAmount) || 0), 0);
 
   const kpiCards: EnterpriseKPICard[] = [
     {
       id: 'allocated',
-      title: 'Total Line Item Allocation Ceiling',
+      title: t('Total Line Item Allocation Ceiling'),
       value: `$${totalAllocated.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
-      subtitle: `${budgets.length} institutional departments`,
+      subtitle: `${budgets.length} ${t('institutional departments')}`,
       trendDirection: 'up',
       icon: <Building2 className="w-5 h-5 text-sky-400" />
     },
     {
       id: 'spent',
-      title: 'Real-Time Line Item Drawdown',
+      title: t('Real-Time Line Item Drawdown'),
       value: `$${totalSpent.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
-      subtitle: `${((totalSpent / (totalAllocated || 1)) * 100).toFixed(1)}% total drawdown`,
+      subtitle: `${totalAllocated > 0 ? ((totalSpent / totalAllocated) * 100).toFixed(1) : 0}% ${t('total drawdown')}`,
       trendDirection: 'neutral',
       icon: <PieChart className="w-5 h-5 text-emerald-400" />
     },
     {
       id: 'governance',
-      title: 'Line Item Transfer Governance',
-      value: 'Restricted (HOD/Director)',
-      subtitle: 'Mandatory approval for inter-department budget reallocations',
+      title: t('Line Item Transfer Governance'),
+      value: t('Restricted (HOD/Director)'),
+      subtitle: t('Mandatory approval for inter-department budget reallocations'),
       trendDirection: 'up',
       icon: <ShieldCheck className="w-5 h-5 text-amber-400" />
     }
@@ -66,7 +72,7 @@ export default function DepartmentLineItemControlPage() {
   const columns: ColumnDef<DepartmentalBudget, any>[] = [
     {
       accessorKey: 'departmentName',
-      header: 'Department & Cost Center HOD',
+      header: t('Department & Cost Center HOD'),
       cell: ({ row }) => (
         <div className="space-y-0.5">
           <span className="font-bold text-white text-xs block">{row.original.departmentName}</span>
@@ -76,61 +82,52 @@ export default function DepartmentLineItemControlPage() {
     },
     {
       accessorKey: 'allocatedAmount',
-      header: 'Line Item Allocation ($)',
+      header: `${t('Line Item Allocation')} ($)`,
       cell: ({ row }) => (
         <span className="font-mono text-xs sm:text-sm font-black text-white">
-          ${row.original.allocatedAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+          ${(Number(row.original.allocatedAmount) || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
         </span>
       )
     },
     {
       accessorKey: 'spentAmount',
-      header: 'Disbursed Drawdown ($)',
+      header: `${t('Disbursed Drawdown')} ($)`,
       cell: ({ row }) => (
         <span className="font-mono text-xs sm:text-sm font-black text-amber-400">
-          ${row.original.spentAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+          ${(Number(row.original.spentAmount) || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
         </span>
       )
     },
     {
       accessorKey: 'remainingAmount',
-      header: 'Available Line Capacity ($)',
+      header: `${t('Available Line Capacity')} ($)`,
       cell: ({ row }) => (
         <span className="font-mono text-xs sm:text-sm font-black text-emerald-400">
-          ${row.original.remainingAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+          ${(Number(row.original.remainingAmount) || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
         </span>
       )
     },
     {
-      id: 'actions',
-      header: 'Reallocate Line Item',
-      cell: ({ row }) => (
-        <button
-          onClick={() => toast.success(`Initiated line-item transfer wizard for ${row.original.departmentName}.`)}
-          className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-emerald-600 text-slate-300 hover:text-white font-bold text-xs border border-slate-700 transition-all cursor-pointer"
-        >
-          Reallocate Funds →
-        </button>
-      )
+      accessorKey: 'status',
+      header: t('Capacity Status'),
+      cell: ({ row }) => <StatusBadge status={row.original.status} size="sm" />
     }
   ];
 
   return (
     <EnterpriseModuleShell
-      title="Departmental Line Item Allocation Control"
-      description="Manage fine-grained cost-center allocations within institutional budgets and govern inter-departmental capital transfers."
-      breadcrumbs={[{ label: 'Finance ERP', href: '/finance' }, { label: 'Payroll & Budget' }, { label: 'Line Item Allocations' }]}
-      icon={<PieChart className="w-8 h-8 text-sky-400" />}
+      title={t('Departmental Line Item Fiscal Control')}
+      description={t('Granular sub-ledger spending constraints, preventing department budget overflows across academic disciplines.')}
+      breadcrumbs={[{ label: t('Finance ERP'), href: '/finance' }, { label: t('Payroll & Budget'), href: '/finance/budget' }, { label: t('Department Control') }]}
+      icon={<Building2 className="w-8 h-8 text-sky-400" />}
       recordCount={budgets.length}
-      recordLabel="Departments"
-      activeFilterCount={0}
-      onClearFilters={() => {}}
+      recordLabel={t('Departments')}
       headerActions={
         <Link
           href="/finance/budget"
-          className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white text-xs font-bold transition-all shadow-sm cursor-pointer"
+          className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs font-bold transition-all shadow-sm"
         >
-          <span>← Back to Budget Analytics</span>
+          ← {t('Back to Global Budget')}
         </Link>
       }
     >
@@ -142,8 +139,8 @@ export default function DepartmentLineItemControlPage() {
         isLoading={loading}
         density="cozy"
         emptyStateProps={{
-          title: 'No Line Item Budgets',
-          description: 'No cost centers configured.',
+          title: t('No Department Line Items Found'),
+          description: t('No departmental cost centers found.'),
           isFilterActive: false,
           onResetFilters: () => {}
         }}

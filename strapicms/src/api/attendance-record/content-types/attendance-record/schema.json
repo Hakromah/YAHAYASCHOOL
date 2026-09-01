@@ -60,6 +60,11 @@
       "type": "relation",
       "relation": "manyToOne",
       "target": "api::academic-term.academic-term"
+    },
+    "courseOffering": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::course-offering.course-offering"
     }
   }
 }

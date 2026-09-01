@@ -5,6 +5,8 @@ import { TrendingUp, TrendingDown, Minus, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 
+import { useTranslations } from 'next-intl';
+
 interface StatCardProps {
   id?: string;
   title: string;
@@ -25,6 +27,81 @@ export function StatCard({
   icon: Icon, color = 'text-primary', bgColor = 'bg-primary/10',
   href, isLoading = false, delay = 0,
 }: StatCardProps) {
+  const tD = useTranslations('dashboard');
+  const tN = useTranslations('navigation');
+  const tC = useTranslations('common');
+
+  const getTranslatedText = (text: string | undefined): string => {
+    if (!text) return '';
+    const norm = text.toLowerCase().trim();
+
+    // Mapping dictionary for dynamic translation lookups
+    const keyMap: Record<string, { ns: 'dashboard' | 'navigation' | 'common'; key: string }> = {
+      'total students': { ns: 'dashboard', key: 'totalStudents' },
+      'faculty members': { ns: 'dashboard', key: 'totalTeachers' },
+      'parent accounts': { ns: 'dashboard', key: 'totalParents' },
+      'attendance logs': { ns: 'navigation', key: 'attendance' },
+      'active homework': { ns: 'navigation', key: 'homework' },
+      'examinations': { ns: 'navigation', key: 'exams' },
+      'audit trail logs': { ns: 'navigation', key: 'auditLogs' },
+      'dashboard': { ns: 'navigation', key: 'dashboard' },
+      'users': { ns: 'navigation', key: 'users' },
+      'students': { ns: 'navigation', key: 'students' },
+      'teachers': { ns: 'navigation', key: 'teachers' },
+      'parents': { ns: 'navigation', key: 'parents' },
+      'staff': { ns: 'navigation', key: 'workers' },
+      'finance': { ns: 'navigation', key: 'finance' },
+      'hostel': { ns: 'navigation', key: 'hostel' },
+      'exams': { ns: 'navigation', key: 'exams' },
+      'attendance': { ns: 'navigation', key: 'attendance' },
+      'timetable': { ns: 'navigation', key: 'timetable' },
+      'events': { ns: 'navigation', key: 'events' },
+      'messages': { ns: 'navigation', key: 'messages' },
+      'notifications': { ns: 'navigation', key: 'notifications' },
+      'audit logs': { ns: 'navigation', key: 'auditLogs' },
+      'settings': { ns: 'navigation', key: 'settings' },
+      'school profile': { ns: 'navigation', key: 'schoolProfile' },
+      'roles & permissions': { ns: 'navigation', key: 'roles' },
+      'reports': { ns: 'navigation', key: 'reports' },
+    };
+
+    const mapping = keyMap[norm];
+    if (mapping) {
+      if (mapping.ns === 'dashboard' && tD.has(mapping.key)) return tD(mapping.key);
+      if (mapping.ns === 'navigation' && tN.has(mapping.key)) return tN(mapping.key);
+      if (mapping.ns === 'common' && tC.has(mapping.key)) return tC(mapping.key);
+    }
+
+    // Secondary translation map for change labels and subtitles
+    const phraseMap: Record<string, string> = {
+      'live vs last term': 'الطلاب الحاليين مقابل الفصل الماضي',
+      'active teaching staff': 'أعضاء هيئة التدريس النشطين',
+      'registered guardians': 'الأوصياء المسجلين',
+      'active classes': 'الفصول الدراسية النشطة',
+      'marked today': 'تم رصد الحضور اليوم',
+      'submissions pending': 'الواجبات المعلقة',
+      'active exam cycles': 'الامتحانات الجارية',
+      'security audit feed': 'سجل مراقبة الأمان',
+    };
+
+    const locale = tC('loading') === 'Loading...' ? 'en' : 'other';
+    if (locale !== 'en' && phraseMap[norm]) {
+      // Localized subtext values fallback (will fall back gracefully)
+      const arMap: Record<string, string> = {
+        'live vs last term': 'مقارنة بالفصل السابق',
+        'active teaching staff': 'الكادر التعليمي النشط',
+        'registered guardians': 'أولياء الأمور المسجلين',
+        'active classes': 'الشعب الدراسية النشطة',
+        'marked today': 'تم تسجيل الحضور اليوم',
+        'submissions pending': 'واجبات في انتظار التقديم',
+        'active exam cycles': 'دورات الامتحانات النشطة',
+        'security audit feed': 'نشاط تدقيق النظام المباشر',
+      };
+      if (tC('confirm') === 'تأكيد' && arMap[norm]) return arMap[norm];
+    }
+
+    return text;
+  };
   const trend = change === undefined ? null : change > 0 ? 'up' : change < 0 ? 'down' : 'neutral';
 
   const cardContent = (
@@ -70,9 +147,9 @@ export function StatCard({
           <p className="text-2xl font-bold text-foreground tracking-tight mb-0.5">
             {typeof value === 'number' ? value.toLocaleString() : value}
           </p>
-          <p className="text-sm font-medium text-foreground/70">{title}</p>
+          <p className="text-sm font-medium text-foreground/70">{getTranslatedText(title)}</p>
           {(subtitle || changeLabel) && (
-            <p className="text-[10px] text-muted-foreground mt-1">{subtitle ?? changeLabel}</p>
+            <p className="text-[10px] text-muted-foreground mt-1">{getTranslatedText(subtitle ?? changeLabel)}</p>
           )}
           {href && (
             <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">

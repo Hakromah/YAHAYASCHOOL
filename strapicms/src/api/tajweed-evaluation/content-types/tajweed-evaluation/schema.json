@@ -58,6 +58,16 @@
       "type": "relation",
       "relation": "manyToOne",
       "target": "api::teacher.teacher"
+    },
+    "courseOffering": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::course-offering.course-offering"
+    },
+    "academicTerm": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::academic-term.academic-term"
     }
   }
 }

@@ -12,6 +12,9 @@ import { apiClient } from '@/services/api.service';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
+import { useNotifications } from '@/hooks/useNotifications';
+import { Link } from '@/i18n/routing';
+
 interface NotificationItem {
   id: number | string;
   title: string;
@@ -25,95 +28,78 @@ interface NotificationItem {
 
 export function NotificationCenter() {
   const [isOpen, setIsOpen] = useState(false);
-  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [activeTab, setActiveTab] = useState<'all' | 'unread' | 'academic' | 'finance'>('all');
-  const [isLoading, setIsLoading] = useState(true);
 
-  const { userRole } = usePermissions();
+  const {
+    notifications: rawNotifications,
+    unreadCount,
+    isLoading,
+    markAsRead,
+    markAllAsRead,
+    deleteNotification,
+    refresh,
+  } = useNotifications();
 
   useEffect(() => {
-    async function fetchNotifications() {
-      setIsLoading(true);
-      try {
-        const res = await apiClient.get('/notifications?sort[0]=createdAt:desc&pagination[limit]=20');
-        const data = res.data?.data || [];
-        if (data.length > 0) {
-          setNotifications(
-            data.map((item: any) => ({
-              id: item.id,
-              title: item.title || 'Notification',
-              message: item.message || item.content || '',
-              type: item.type || 'info',
-              channel: item.channel || 'in-app',
-              isRead: item.isRead ?? false,
-              createdAt: item.createdAt || new Date().toISOString(),
-              link: item.link,
-            }))
-          );
-        } else {
-          // Generate role-specific live sample notifications if empty in Strapi
-          generateRoleSpecificDefaults(userRole);
-        }
-      } catch (e) {
-        generateRoleSpecificDefaults(userRole);
-      } finally {
-        setIsLoading(false);
-      }
+    if (isOpen) {
+      refresh();
     }
-    fetchNotifications();
-  }, [userRole]);
+  }, [isOpen, refresh]);
 
-  function generateRoleSpecificDefaults(role: string | null | undefined) {
-    const now = new Date().toISOString();
-    if (role === 'teacher') {
-      setNotifications([
-        { id: 1, title: 'Homework Submitted', message: 'Ahmad Abdullahi submitted Biology SS3 Homework #4.', type: 'academic', isRead: false, createdAt: now, link: '/lms/homework' },
-        { id: 2, title: 'Exam Timetable Published', message: 'First Term Examination schedule is now live.', type: 'info', isRead: false, createdAt: now, link: '/assessment/exams' },
-        { id: 3, title: 'Student Absent', message: 'Fatima Musa was marked absent in Chemistry Section A.', type: 'warning', isRead: true, createdAt: now, link: '/lms/attendance' },
-      ]);
-    } else if (role === 'student') {
-      setNotifications([
-        { id: 1, title: 'Homework Due Soon', message: 'Mathematics Trigonometry assignment is due tomorrow at 8:00 AM.', type: 'academic', isRead: false, createdAt: now, link: '/lms/homework' },
-        { id: 2, title: 'Results Published', message: 'Mid-term continuous assessment scores are now available.', type: 'success', isRead: false, createdAt: now, link: '/results/report-cards' },
-      ]);
-    } else if (role === 'parent') {
-      setNotifications([
-        { id: 1, title: 'Fee Due Reminder', message: 'Second Term Tuition Fee balance is due by Friday.', type: 'finance', isRead: false, createdAt: now, link: '/finance' },
-        { id: 2, title: 'Child Attendance Alert', message: 'Your ward Yusuf was marked present today at 7:45 AM.', type: 'info', isRead: true, createdAt: now, link: '/lms/attendance' },
-      ]);
-    } else if (role === 'director' || role === 'super-administrator') {
-      setNotifications([
-        { id: 1, title: 'Pending Approval', message: '5 Report Cards require Director signature & verification.', type: 'warning', isRead: false, createdAt: now, link: '/results/director-approval' },
-        { id: 2, title: 'New Student Enrolled', message: 'Zainab Ibrahim completed registration for JSS1.', type: 'success', isRead: false, createdAt: now, link: '/students' },
-        { id: 3, title: 'System Backup Completed', message: 'Database & Media storage snapshot created successfully.', type: 'info', isRead: true, createdAt: now, link: '/settings' },
-      ]);
-    } else {
-      setNotifications([
-        { id: 1, title: 'Welcome to YAHAYASCOOL', message: 'Your enterprise ERP account is active and verified.', type: 'success', isRead: false, createdAt: now },
-      ]);
+  const notifications: NotificationItem[] = rawNotifications.map((n) => {
+    let type: NotificationItem['type'] = 'info';
+    const titleLower = (n.title || '').toLowerCase();
+    const bodyLower = (n.body || '').toLowerCase();
+    
+    if (
+      titleLower.includes('exam') || 
+      titleLower.includes('homework') || 
+      titleLower.includes('result') || 
+      titleLower.includes('grade') || 
+      n.relatedEntity === 'CourseOffering' || 
+      n.relatedEntity === 'Homework'
+    ) {
+      type = 'academic';
+    } else if (
+      titleLower.includes('fee') || 
+      titleLower.includes('invoice') || 
+      titleLower.includes('payment') || 
+      titleLower.includes('billing') || 
+      n.relatedEntity === 'Invoice' || 
+      n.relatedEntity === 'Payment'
+    ) {
+      type = 'finance';
+    } else if (n.priority === 'urgent') {
+      type = 'alert';
+    } else if (n.priority === 'high') {
+      type = 'warning';
     }
-  }
 
-  const unreadCount = notifications.filter((n) => !n.isRead).length;
+    const isRead = n.status === 'read' || n.recordStatus === 'read' || (n as any).status === 'read' || (n as any).recordStatus === 'read';
+
+    return {
+      id: n.id,
+      title: n.title,
+      message: n.body,
+      type,
+      channel: 'in-app',
+      isRead,
+      createdAt: n.createdAt,
+      link: (n as any).link || (n.metadata?.link as string) || undefined,
+    };
+  });
 
   const handleMarkAsRead = async (id: number | string) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
-    );
-    try {
-      if (typeof id === 'number') {
-        await apiClient.put(`/notifications/${id}`, { data: { isRead: true } });
-      }
-    } catch (e) { /* ignore */ }
+    await markAsRead(id);
   };
 
   const handleMarkAllAsRead = async () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+    await markAllAsRead();
     toast.success('All notifications marked as read');
   };
 
-  const handleDelete = (id: number | string) => {
-    setNotifications((prev) => prev.filter((n) => n.id !== id));
+  const handleDelete = async (id: number | string) => {
+    await deleteNotification(id);
     toast.success('Notification removed');
   };
 
@@ -145,7 +131,7 @@ export function NotificationCenter() {
       >
         <Bell className="w-4 h-4" />
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center animate-pulse">
+          <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-500 text-white text-[10px] font-black flex items-center justify-center animate-pulse shadow-sm">
             {unreadCount}
           </span>
         )}
@@ -228,22 +214,32 @@ export function NotificationCenter() {
                           </span>
                         </div>
                         <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{n.message}</p>
-                        {n.link && (
-                          <a
-                            href={n.link}
-                            className="inline-flex items-center gap-1 text-[11px] font-semibold text-primary hover:underline mt-1.5"
+                        <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                          <Link
+                            href={`/messages?id=${n.id}`}
+                            onClick={() => setIsOpen(false)}
+                            className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-lg border border-emerald-200 dark:border-emerald-800"
                           >
-                            <span>View Action</span>
-                            <ExternalLink className="w-3 h-3" />
-                          </a>
-                        )}
+                            <MessageSquare className="w-2.5 h-2.5" />
+                            <span>Reply / Open Message</span>
+                          </Link>
+                          {n.link && (
+                            <a
+                              href={n.link}
+                              className="inline-flex items-center gap-1 text-[10px] font-semibold text-primary hover:underline"
+                            >
+                              <span>View Action</span>
+                              <ExternalLink className="w-2.5 h-2.5" />
+                            </a>
+                          )}
+                        </div>
                       </div>
                       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         {!n.isRead && (
                           <button
                             onClick={() => handleMarkAsRead(n.id)}
                             title="Mark as read"
-                            className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
+                            className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer"
                           >
                             <Check className="w-3.5 h-3.5" />
                           </button>
@@ -251,7 +247,7 @@ export function NotificationCenter() {
                         <button
                           onClick={() => handleDelete(n.id)}
                           title="Delete"
-                          className="p-1 rounded hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-colors"
+                          className="p-1 rounded hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-colors cursor-pointer"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -268,11 +264,22 @@ export function NotificationCenter() {
               </div>
 
               {/* Footer */}
-              <div className="px-4 py-2 border-t border-border bg-muted/20 flex items-center justify-between text-[11px] text-muted-foreground">
-                <span>Unified Engine • In-App</span>
-                <a href="/notifications" className="text-primary font-medium hover:underline">
-                  View full history →
-                </a>
+              <div className="px-4 py-2.5 border-t border-border bg-muted/20 flex items-center justify-between text-[11px] text-muted-foreground">
+                <Link
+                  href="/messages"
+                  onClick={() => setIsOpen(false)}
+                  className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-bold hover:underline"
+                >
+                  <MessageSquare className="w-3 h-3" />
+                  <span>Messages Hub →</span>
+                </Link>
+                <Link
+                  href="/notifications"
+                  onClick={() => setIsOpen(false)}
+                  className="text-primary font-medium hover:underline"
+                >
+                  Full History →
+                </Link>
               </div>
             </motion.div>
           </>

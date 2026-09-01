@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link, usePathname } from '@/i18n/routing';
 import Image from 'next/image';
+import { useTranslations, useLocale } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -16,9 +17,10 @@ import {
   MessageSquare, Clock, UserCog, Landmark, ScrollText, BookMarked,
   HeartHandshake, UsersRound, Cpu, Fuel, AlertTriangle, Presentation,
   FolderOpen, SquareCheckBig, Star, BadgeCheck, Compass, CreditCard,
-  QrCode, Coins, PiggyBank, Scale, Percent, ShoppingBag, Bed, KeyRound, ShieldAlert
+  QrCode, Coins, PiggyBank, Scale, Percent, ShoppingBag, Bed, KeyRound, ShieldAlert,
+  Briefcase, Book
 } from 'lucide-react';
-import { useTheme } from 'next-themes';
+import { useTheme } from '@/providers/theme.provider';
 import { toast } from 'sonner';
 
 import { useAuth } from '@/hooks/useAuth';
@@ -77,13 +79,20 @@ function getSuperAdminNav(): NavSection[] {
         { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
       ],
     },
+    // DYNAMIC: Academic Sections group is injected at runtime by useSidebarSections() hook
+    // The __ACADEMIC_SECTIONS__ sentinel is replaced by the AcademicSectionsGroup component
+    {
+      title: '__ACADEMIC_SECTIONS__',
+      items: [],
+    },
     {
       title: 'Administration',
       items: [
+        { label: 'Messages', href: '/messages', icon: MessageSquare },
+        { label: 'Notifications', href: '/notifications', icon: Bell },
         { label: 'Users', href: '/users', icon: Users },
         { label: 'Roles & Permissions', href: '/settings/roles', icon: ShieldCheck },
         { label: 'Audit Logs', href: '/audit-logs', icon: FileSearch },
-        { label: 'Notifications', href: '/notifications', icon: Bell },
         { label: 'Activity Logs', href: '/activity-logs', icon: AlignLeft },
         { label: 'Login Sessions', href: '/settings/sessions', icon: Key },
         { label: 'Localization', href: '/settings/languages', icon: Globe },
@@ -100,7 +109,8 @@ function getSuperAdminNav(): NavSection[] {
         { label: 'Workers', href: '/workers', icon: Clipboard },
         { label: 'Departments', href: '/academic-structure', icon: Layers },
         { label: 'Programs', href: '/academic-structure/programs', icon: BookMarked },
-        { label: 'Sections', href: '/academic-structure/sections', icon: Boxes },
+        { label: 'All Sections', href: '/academic-structure/sections', icon: Boxes },
+        { label: 'Grade Levels', href: '/academic-structure?tab=grade-levels', icon: Layers },
         { label: 'Academic Years', href: '/academic-structure/years', icon: Calendar },
         { label: 'Academic Terms', href: '/academic-structure/terms', icon: Clock },
         { label: 'School Calendar', href: '/calendar', icon: Calendar },
@@ -110,7 +120,6 @@ function getSuperAdminNav(): NavSection[] {
     {
       title: 'Enterprise Operations ERP',
       items: [
-        { label: 'Admissions ERP', href: '/erp/admissions', icon: GraduationCap },
         { label: 'Transport Logistics', href: '/transport', icon: Bus },
         { label: 'Library System', href: '/library', icon: BookOpen },
         { label: 'Inventory & Supplies', href: '/inventory', icon: Package },
@@ -123,6 +132,7 @@ function getSuperAdminNav(): NavSection[] {
       title: 'Academic Management',
       items: [
         { label: 'Subjects & Curriculum', href: '/lms/subjects', icon: BookOpen },
+        { label: 'Course Offerings', href: '/lms/offerings', icon: GraduationCap },
         { label: 'Classes & Timetable', href: '/lms/timetables', icon: School },
         { label: 'Lesson Plans', href: '/lms/lesson-plans', icon: PenTool },
         { label: 'Homework', href: '/lms/homework', icon: BookCheck },
@@ -242,16 +252,20 @@ function getSuperAdminNav(): NavSection[] {
 function getDirectorNav(): NavSection[] {
   return [
     { title: 'Overview', items: [{ label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard }] },
+    // Dynamic Academic Sections group — injected at runtime
+    { title: '__ACADEMIC_SECTIONS__', items: [] },
     {
-      title: 'Academic Management',
+      title: 'Academic Administration',
       items: [
-        { label: 'Subjects & Curriculum', href: '/lms/subjects', icon: BookOpen },
+        { label: 'All Subjects', href: '/lms/subjects', icon: BookOpen },
+        { label: 'All Course Offerings', href: '/lms/offerings', icon: GraduationCap },
         { label: 'Timetable', href: '/lms/timetables', icon: School },
         { label: 'Lesson Plans', href: '/lms/lesson-plans', icon: PenTool },
         { label: 'Homework', href: '/lms/homework', icon: BookCheck },
-        { label: 'Attendance', href: '/lms/attendance', icon: SquareCheckBig },
-        { label: 'Gradebook', href: '/lms/gradebook', icon: Award },
+        { label: 'Attendance Console', href: '/lms/attendance', icon: SquareCheckBig },
+        { label: 'Gradebook Console', href: '/lms/gradebook', icon: Award },
         { label: 'Resources', href: '/lms/resources', icon: Library },
+        { label: 'Academic Structure', href: '/academic-structure', icon: Layers },
       ],
     },
     {
@@ -310,6 +324,7 @@ function getDirectorNav(): NavSection[] {
     {
       title: 'System',
       items: [
+        { label: 'Messages', href: '/messages', icon: MessageSquare },
         { label: 'Notifications', href: '/notifications', icon: Bell },
         { label: 'Events', href: '/cms/events', icon: Calendar },
         { label: 'Announcements', href: '/announcements', icon: Megaphone },
@@ -321,19 +336,16 @@ function getDirectorNav(): NavSection[] {
 
 function getTeacherNav(): NavSection[] {
   return [
-    { title: 'Overview', items: [{ label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard }] },
+    { title: 'Overview', items: [{ label: 'Course Offering Portal', href: '/dashboard', icon: LayoutDashboard }] },
     {
-      title: 'My Work',
+      title: 'Academic Workspace',
       items: [
+        { label: 'My Course Offerings', href: '/dashboard', icon: BookOpen },
         { label: 'My Timetable', href: '/lms/timetables', icon: School },
-        { label: 'My Classes', href: '/lms/subjects', icon: BookOpen },
-        { label: 'My Students', href: '/students', icon: GraduationCap },
-        { label: 'Attendance', href: '/lms/attendance', icon: SquareCheckBig },
         { label: 'Lesson Plans', href: '/lms/lesson-plans', icon: PenTool },
+        { label: 'Teaching Workload', href: '/lms/teacher/workload', icon: BarChart3 },
+        { label: 'Curriculum Progress', href: '/lms/curriculum', icon: Clipboard },
         { label: 'Homework', href: '/lms/homework', icon: BookCheck },
-        { label: 'Assessments', href: '/assessment/teacher', icon: FileText },
-        { label: 'Marks Entry', href: '/assessment/marks-entry', icon: Award },
-        { label: 'Gradebook', href: '/lms/gradebook', icon: BarChart3 },
       ],
     },
     {
@@ -386,6 +398,7 @@ function getStudentNav(): NavSection[] {
         { label: 'Homework', href: '/lms/homework', icon: BookCheck },
         { label: 'Attendance', href: '/lms/attendance', icon: SquareCheckBig },
         { label: 'My Results', href: '/results/report-cards', icon: FileText },
+        { label: 'Transcripts', href: '/dashboard?view=transcript', icon: ScrollText },
         { label: 'Certificates', href: '/results/certificates', icon: BadgeCheck },
         { label: 'Achievements', href: '/results/rankings', icon: Trophy },
       ],
@@ -506,6 +519,7 @@ function getAccountantNav(): NavSection[] {
     {
       title: 'System',
       items: [
+        { label: 'Messages', href: '/messages', icon: MessageSquare },
         { label: 'Notifications', href: '/notifications', icon: Bell },
         { label: 'Profile', href: '/profile', icon: UserCog },
       ],
@@ -556,6 +570,7 @@ function getAccountLeadNav(): NavSection[] {
     {
       title: 'System',
       items: [
+        { label: 'Messages', href: '/messages', icon: MessageSquare },
         { label: 'Notifications', href: '/notifications', icon: Bell },
         { label: 'Profile', href: '/profile', icon: UserCog },
         { label: 'Settings', href: '/settings/finance', icon: Settings },
@@ -615,19 +630,318 @@ function getDriverNav(): NavSection[] {
   ];
 }
 
-function getNavForRole(role: string | undefined): NavSection[] {
-  switch (role) {
-    case 'super-administrator': return getSuperAdminNav();
-    case 'director':            return getDirectorNav();
-    case 'teacher':             return getTeacherNav();
-    case 'student':             return getStudentNav();
-    case 'parent':              return getParentNav();
-    case 'accountant':          return getAccountantNav();
-    case 'account-lead':        return getAccountLeadNav();
-    case 'worker':              return getWorkerNav();
-    case 'driver':              return getDriverNav();
-    default:                    return [{ title: 'Overview', items: [{ label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard }] }];
+// ─────────────────────────────────────────────────────────────────────────────
+// Section Head & Registrar Navigations
+// ─────────────────────────────────────────────────────────────────────────────
+
+function getSectionHeadNav(sectionId?: string): NavSection[] {
+  const basePrefix = sectionId ? `/academic/sections/${sectionId}` : '';
+
+  return [
+    { title: 'Overview', items: [{ label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard }] },
+    // Dynamic: shows only sections this teacher is head of
+    { title: '__ACADEMIC_SECTIONS__', items: [] },
+    // My Section items — only shown when inside a section workspace (sectionId extracted from URL)
+    // On the console, the Academic Sections group above gives direct section access
+    ...(sectionId ? [{
+      title: 'My Section',
+      items: [
+        { label: 'Overview',          href: `${basePrefix}`,               icon: BarChart3 },
+        { label: 'Grade Levels',      href: `${basePrefix}/grade-levels`,  icon: Layers },
+        { label: 'Subjects',          href: `${basePrefix}/subjects`,      icon: BookOpen },
+        { label: 'Course Offerings',  href: `${basePrefix}/offerings`,     icon: GraduationCap },
+        { label: 'My Teachers',       href: `${basePrefix}/teachers`,      icon: UserCheck },
+        { label: 'My Students',       href: `${basePrefix}/students`,      icon: Users },
+        { label: 'Attendance',        href: `${basePrefix}/attendance`,    icon: SquareCheckBig },
+        { label: 'Gradebook',         href: `${basePrefix}/gradebook`,     icon: Award },
+        { label: 'Assessments',       href: `${basePrefix}/assessments`,   icon: PenTool },
+        { label: 'Timetable',         href: `${basePrefix}/timetable`,     icon: School },
+        { label: 'Transcripts',       href: `${basePrefix}/transcripts`,   icon: ScrollText },
+        { label: 'Analytics',         href: `${basePrefix}/analytics`,     icon: BarChart3 },
+      ],
+    }] : []),
+    // Transcripts is accessible globally — redirects to the section head's first managed section
+    ...(!sectionId ? [{
+      title: 'Tools',
+      items: [
+        { label: 'Transcripts', href: '/lms/transcripts', icon: ScrollText },
+      ],
+    }] : []),
+    {
+      title: 'Communication',
+      items: [
+        { label: 'Messages',       href: '/messages',       icon: MessageSquare },
+        { label: 'Notifications',  href: '/notifications',  icon: Bell },
+        { label: 'Announcements',  href: '/announcements',  icon: Megaphone },
+        { label: 'Profile',        href: '/profile',        icon: UserCog },
+      ],
+    },
+  ];
+}
+
+function getRegistrarNav(): NavSection[] {
+  return [
+    { title: 'Overview', items: [{ label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard }] },
+    { title: '__ACADEMIC_SECTIONS__', items: [] },
+    {
+      title: 'Enrollment & Records',
+      items: [
+        { label: 'Students', href: '/students', icon: GraduationCap },
+        { label: 'Student Enrollments', href: '/lms/offerings', icon: Clipboard },
+        { label: 'Admissions', href: '/erp/admissions', icon: GraduationCap },
+        { label: 'Academic Structure', href: '/academic-structure', icon: Layers },
+      ],
+    },
+    {
+      title: 'Results & Certification',
+      items: [
+        { label: 'Results Overview', href: '/results', icon: BarChart3 },
+        { label: 'Report Cards', href: '/results/report-cards', icon: FileText },
+        { label: 'Transcripts', href: '/results/transcripts', icon: ScrollText },
+        { label: 'Certificates', href: '/results/certificates', icon: BadgeCheck },
+        { label: 'Promotions', href: '/results/promotions', icon: ArrowRight },
+        { label: 'Grade Moderation', href: '/results/approvals', icon: Award },
+        { label: 'Academic Appeals', href: '/results/appeals', icon: FileText },
+        { label: 'Graduation Records', href: '/results/rankings', icon: Trophy },
+        { label: 'Academic Clearance', href: '/directory/clearance', icon: ShieldCheck },
+      ],
+    },
+    {
+      title: 'System',
+      items: [
+        { label: 'Messages', href: '/messages', icon: MessageSquare },
+        { label: 'Notifications', href: '/notifications', icon: Bell },
+        { label: 'Profile', href: '/profile', icon: UserCog },
+      ],
+    },
+  ];
+}
+
+function getNavForRole(role: string | undefined, pathname?: string): NavSection[] {
+  let nav: NavSection[] = [];
+  
+  // Extract sectionId from pathname if we are on a section page
+  // Path pattern: /academic/sections/[sectionId]
+  let sectionId: string | undefined;
+  if (pathname) {
+    const match = pathname.match(/\/academic\/sections\/([^\/]+)/);
+    if (match) {
+      sectionId = match[1];
+    }
   }
+
+  switch (role) {
+    case 'super-administrator': nav = getSuperAdminNav(); break;
+    case 'director':            nav = getDirectorNav(); break;
+    case 'section-head':        nav = getSectionHeadNav(sectionId); break;
+    case 'registrar':           nav = getRegistrarNav(); break;
+    case 'teacher':             nav = getTeacherNav(); break;
+    case 'student':             nav = getStudentNav(); break;
+    case 'parent':              nav = getParentNav(); break;
+    case 'accountant':          nav = getAccountantNav(); break;
+    case 'account-lead':        nav = getAccountLeadNav(); break;
+    case 'worker':              nav = getWorkerNav(); break;
+    case 'driver':              nav = getDriverNav(); break;
+    default:                    nav = [{ title: 'Overview', items: [{ label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard }] }]; break;
+  }
+
+  if (role === 'super-administrator' || role === 'director' || role === 'teacher') {
+    nav = nav.map(section => {
+      if (section.title === 'Academic Management') {
+        const hasCurr = section.items.some(i => i.href === '/lms/curriculum');
+        if (!hasCurr) {
+          return {
+            ...section,
+            items: [
+              ...section.items,
+              { label: 'Curriculum Outlines', href: '/lms/curriculum', icon: Compass },
+              { label: 'Teacher Workload', href: '/lms/teacher/workload', icon: Briefcase }
+            ]
+          };
+        }
+      }
+      if (section.title === 'Results & Certification') {
+        const hasAppr = section.items.some(i => i.href === '/results/approvals');
+        if (!hasAppr) {
+          return {
+            ...section,
+            items: [
+              ...section.items,
+              { label: 'Grade Moderation', href: '/results/approvals', icon: Award },
+              { label: 'Retakes & Appeals', href: '/results/appeals', icon: FileText }
+            ]
+          };
+        }
+      }
+      if (section.title === "Qur'an Department") {
+        const hasHifz = section.items.some(i => i.href === '/qms/hifz-profile');
+        if (!hasHifz) {
+          return {
+            ...section,
+            items: [
+              ...section.items,
+              { label: 'Quran Hifz Portal', href: '/qms/hifz-profile', icon: Book }
+            ]
+          };
+        }
+      }
+      return section;
+    });
+
+    const hasClearance = nav.some(s => s.items.some(i => i.href === '/directory/clearance'));
+    if (!hasClearance) {
+      nav.push({
+        title: 'Enterprise Audits',
+        items: [
+          { label: 'Academic Clearance', href: '/directory/clearance', icon: ShieldCheck },
+          { label: 'AI Advisor Alerts', href: '/dashboard/advisor', icon: Cpu }
+        ]
+      });
+    }
+  }
+
+  return nav;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Dynamic Academic Sections Sidebar Group
+// Fetches all published sections from Strapi and renders clickable workspace links
+// ─────────────────────────────────────────────────────────────────────────────
+
+const SECTION_TYPE_ICONS: Record<string, string> = {
+  quran: '📖',
+  language: '🌐',
+  stem: '🔬',
+  islamic: '🕌',
+  sports: '⚽',
+  arts: '🎨',
+  vocational: '🔧',
+  general: '📚',
+  other: '📚',
+};
+
+function AcademicSectionsNav({
+  isCollapsed,
+  isActive,
+  locale,
+  user,
+  role,
+}: {
+  isCollapsed: boolean;
+  isActive: (href: string) => boolean;
+  locale: string;
+  user: any;
+  role: string | undefined;
+}) {
+  const [sections, setSections] = useState<Array<{
+    id: number; documentId: string; name: string; code: string;
+    color?: string; sectionType?: string;
+  }>>([]);
+  const [isExpanded, setIsExpanded] = useState(true);
+
+  useEffect(() => {
+    // Fetch sections from the public Strapi endpoint
+    // We use fetch directly to avoid circular dependency issues
+    const baseUrl = process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1339';
+    const token = typeof document !== 'undefined'
+      ? document.cookie.split(';').find(c => c.trim().startsWith('token='))?.split('=')?.[1]
+      : null;
+    
+    // If the role is section-head, we filter sections down to only those led by this user
+    let fetchUrl = `${baseUrl}/api/sections?locale=${locale}&populate=*&pagination[limit]=30&sort=name:asc`;
+    if (role === 'section-head' && user?.id) {
+      fetchUrl += `&filters[academicHead][user][id][$eq]=${user.id}`;
+    }
+
+    fetch(fetchUrl, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
+      .then(r => r.json())
+      .then(data => {
+        const items = data?.data ?? [];
+        setSections(items);
+      })
+      .catch(() => {/* silently fail */});
+  }, [locale, role, user]);
+
+  const sectionTitle = locale === 'ar' ? 'المراحل الأكاديمية' : 'Academic Sections';
+
+  if (sections.length === 0) return null;
+
+  return (
+    <div className="mb-1">
+      {!isCollapsed && (
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="w-full flex items-center justify-between px-2 py-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70 hover:text-muted-foreground transition-colors"
+        >
+          <span>{sectionTitle}</span>
+          {isExpanded
+            ? <ChevronUp className="w-3 h-3" />
+            : <ChevronDown className="w-3 h-3" />}
+        </button>
+      )}
+      <AnimatePresence initial={false}>
+        {(isCollapsed || isExpanded) && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.15 }}
+            className="space-y-0.5"
+          >
+            {sections.map(sec => {
+              const href = `/academic/sections/${sec.documentId}`;
+              const active = isActive(href) || (typeof window !== 'undefined' && window.location.pathname.includes(`/academic/sections/${sec.documentId}`));
+              const emoji = SECTION_TYPE_ICONS[sec.sectionType ?? 'general'] ?? '📚';
+              const dotColor = sec.color || '#6366f1';
+              return (
+                <Link
+                  key={sec.documentId}
+                  href={href}
+                  title={isCollapsed ? sec.name : undefined}
+                  className={cn(
+                    'flex items-center gap-3 rounded-xl transition-all duration-150 group relative',
+                    isCollapsed ? 'h-10 w-10 mx-auto justify-center' : 'px-3 py-2',
+                    active
+                      ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/20'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                  )}
+                >
+                  {isCollapsed ? (
+                    <span className="text-base leading-none">{emoji}</span>
+                  ) : (
+                    <>
+                      <span
+                        className="w-2 h-2 rounded-full flex-shrink-0"
+                        style={{ background: dotColor }}
+                      />
+                      <AnimatePresence>
+                        <motion.span
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          className="text-sm font-medium truncate flex-1"
+                        >
+                          {sec.name}
+                        </motion.span>
+                      </AnimatePresence>
+                      <span className="text-[10px] font-bold opacity-40 flex-shrink-0">{sec.code}</span>
+                    </>
+                  )}
+                  {isCollapsed && (
+                    <div className="absolute left-full ml-3 px-2 py-1 rounded-lg bg-popover border border-border shadow-lg text-xs font-medium text-popover-foreground whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50">
+                      {sec.name}
+                    </div>
+                  )}
+                </Link>
+              );
+            })}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -638,12 +952,489 @@ interface SidebarProps {
   className?: string;
 }
 
+const getSectionIconAndColor = (title: string) => {
+  const normalized = title.toLowerCase();
+  
+  if (normalized.includes('overview') || normalized.includes('dashboard')) {
+    return { icon: LayoutGrid, color: 'text-sky-500 bg-sky-500/10 dark:bg-sky-500/20' };
+  }
+  if (normalized.includes('administration') || normalized.includes('system') || normalized.includes('settings')) {
+    return { icon: Settings, color: 'text-slate-500 bg-slate-500/10 dark:bg-slate-500/20' };
+  }
+  if (normalized.includes('school erp') || normalized.includes('people') || normalized.includes('academic administration')) {
+    return { icon: School, color: 'text-indigo-500 bg-indigo-500/10 dark:bg-indigo-500/20' };
+  }
+  if (normalized.includes('operations erp') || normalized.includes('hostel') || normalized.includes('transport') || normalized.includes('operations')) {
+    if (normalized.includes('payroll') || normalized.includes('expenses') || normalized.includes('budgets')) {
+      return { icon: Coins, color: 'text-rose-500 bg-rose-500/10 dark:bg-rose-500/20' };
+    }
+    return { icon: Landmark, color: 'text-blue-500 bg-blue-500/10 dark:bg-blue-500/20' };
+  }
+  if (normalized.includes('academic management') || normalized.includes('academic workspace') || normalized.includes('my academics')) {
+    return { icon: BookOpen, color: 'text-violet-500 bg-violet-500/10 dark:bg-violet-500/20' };
+  }
+  if (normalized.includes('qur\'an') || normalized.includes('halaqah')) {
+    return { icon: BookCheck, color: 'text-emerald-500 bg-emerald-500/10 dark:bg-emerald-500/20' };
+  }
+  if (normalized.includes('language') || normalized.includes('placement')) {
+    return { icon: Globe, color: 'text-amber-500 bg-amber-500/10 dark:bg-amber-500/20' };
+  }
+  if (normalized.includes('assessment') || normalized.includes('exam')) {
+    return { icon: ClipboardList, color: 'text-pink-500 bg-pink-500/10 dark:bg-pink-500/20' };
+  }
+  if (normalized.includes('results') || normalized.includes('cert')) {
+    return { icon: Award, color: 'text-teal-500 bg-teal-500/10 dark:bg-teal-500/20' };
+  }
+  if (normalized.includes('finance') || normalized.includes('billing') || normalized.includes('payroll') || normalized.includes('cashier') || normalized.includes('accounting') || normalized.includes('expenses') || normalized.includes('ledger') || normalized.includes('payment') || normalized.includes('budget')) {
+    return { icon: Coins, color: 'text-rose-500 bg-rose-500/10 dark:bg-rose-500/20' };
+  }
+  if (normalized.includes('cms') || normalized.includes('event')) {
+    return { icon: Megaphone, color: 'text-fuchsia-500 bg-fuchsia-500/10 dark:bg-fuchsia-500/20' };
+  }
+  
+  return { icon: Layers, color: 'text-slate-400 bg-slate-500/5 dark:bg-slate-500/10' };
+};
+
 export function Sidebar({ className }: SidebarProps) {
   const { user, logout } = useAuth();
   const { theme, setTheme } = useTheme();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const isMobile = useMobile();
+
+  const t = useTranslations('navigation');
+  const locale = useLocale();
+  const isRtl = locale === 'ar';
+
+  const getTranslatedLabel = (label: string) => {
+    const labelKeyMap: Record<string, string> = {
+      'Dashboard': 'dashboard',
+      'Users': 'users',
+      'Students': 'students',
+      'Teachers': 'teachers',
+      'Parents': 'parents',
+      'Workers': 'workers',
+      'Staff': 'workers',
+      'Finance': 'finance',
+      'Hostel': 'hostel',
+      'Exams': 'exams',
+      'Attendance': 'attendance',
+      'Timetable': 'timetable',
+      'Events': 'events',
+      'Qur\'an': 'quran',
+      'Messages': 'messages',
+      'Notifications': 'notifications',
+      'Audit Logs': 'auditLogs',
+      'Settings': 'settings',
+      'School Profile': 'schoolProfile',
+      'Roles & Permissions': 'roles',
+      'Reports': 'reports',
+    };
+    const key = labelKeyMap[label];
+    if (key && t.has(key)) {
+      return t(key);
+    }
+
+    const localDict: Record<string, Record<string, string>> = {
+      ar: {
+        'Activity Logs': 'سجلات الأنشطة',
+        'Login Sessions': 'جلسات تسجيل الدخول',
+        'Localization': 'الترجمة واللغات',
+        'Media Library': 'مكتبة الوسائط',
+        'People Directory': 'دليل الأشخاص',
+        'Departments': 'الأقسام والمستويات',
+        'Programs': 'البرامج الدراسية',
+        'Academic Sections': 'المراحل الدراسية',
+        'Academic Years': 'السنوات الدراسية',
+        'Academic Terms': 'الفصول الدراسية',
+        'School Calendar': 'التقويم المدرسي',
+        'Admissions Hub': 'مركز القبول',
+        'Admissions ERP': 'نظام القبول',
+        'Transport Logistics': 'الخدمات اللوجستية والنقل',
+        'Library System': 'نظام المكتبة',
+        'Inventory & Supplies': 'المخزون والمستلزمات',
+        'Fixed Assets': 'الأصول الثابتة',
+        'Procurement & AP': 'المشتريات والحسابات الدائنة',
+        'Hostel Dashboard': 'لوحة السكن',
+        'Buildings & Floors': 'المباني والطوابق',
+        'Rooms & Beds': 'الغرف والأسرة',
+        'Bed Allocations': 'توزيع الأسرة',
+        'Waiting List': 'قائمة الانتظار',
+        'Fee Plans & Setup': 'خطط الرسوم',
+        'Security Deposits': 'التأمينات المستردة',
+        'Visitor Logs': 'سجلات الزوار',
+        'Gate Passes': 'تصاريح البوابات',
+        'Attendance Logs': 'سجلات الحضور',
+        'Wardens & Duty': 'المشرفون والمناوبات',
+        'Maintenance Tickets': 'طلبات الصيانة',
+        'Reports & Settings': 'التقارير والإعدادات',
+        'Subjects & Curriculum': 'المواد والمناهج',
+        'Course Offerings': 'المواد المطروحة',
+        'Classes & Timetable': 'الفصول والجدول',
+        'Lesson Plans': 'خطط الدروس',
+        'Homework': 'الواجبات المنزلية',
+        'Attendance': 'الحضور والغياب',
+        'Assessments & Gradebook': 'التقييمات ودفتر الدرجات',
+        'Learning Resources': 'مصادر التعلم',
+        'Curriculum Outlines': 'الخطط الدراسية',
+        'Teacher Workload': 'العبء الدراسي للمعلم',
+        'Programs & Groups': 'البرامج والمجموعات',
+        'Hifz Tracking': 'متابعة الحفظ',
+        "Muraja'ah": 'المراجعة والتمكين',
+        'Tajweed': 'التجويد المخارج',
+        'Daily Halaqah': 'الحلقة اليومية',
+        "Qur'an Attendance": 'حضور القرآن',
+        "Da'wah Activities": 'الأنشطة الدعوية',
+        'Competitions & Certs': 'المسابقات والشهادات',
+        'Quran Hifz Portal': 'بوابة حفظ القرآن',
+        'Programs & Levels': 'البرامج والمستويات',
+        'Placement Tests': 'اختبارات تحديد المستوى',
+        'Skill Analytics': 'تحليل المهارات',
+        'Learning Portfolio': 'الملف التعليمي',
+        'Competitions': 'المسابقات والجوائز',
+        'Achievements': 'الإنجازات المدرسية',
+        'Assessment Types': 'أنواع التقييمات',
+        'Examinations': 'الامتحانات والتقييم',
+        'Question Bank': 'بنك الأسئلة',
+        'Scheduling': 'جدولة الامتحانات',
+        'Marks Entry': 'رصد الدرجات',
+        'Results Overview': 'نظرة عامة على النتائج',
+        'Report Cards': 'الشهادات المدرسية',
+        'Transcripts': 'كشوف الدرجات',
+        'Certificates': 'الشهادات المعتمدة',
+        'Promotions': 'الترقيات والترفيع',
+        'Rankings': 'الترتيب والمراكز',
+        'Grade Moderation': 'اعتماد الدرجات',
+        'Retakes & Appeals': 'الإعادات والاعتراضات',
+        'Executive Dashboard': 'لوحة التحكم التنفيذية',
+        'Chart of Accounts': 'شجرة الحسابات',
+        'Double-Entry Journals': 'قيود اليومية',
+        'General Ledger': 'دفتر الأستاذ العام',
+        'Bank & Cash Treasury': 'الخزينة والحسابات البنكية',
+        'Accounting Periods': 'الفترات المالية',
+        'Student Invoices': 'فواتير الطلاب',
+        'Multi-Method Payments': 'الدفع متعدد الوسائل',
+        'Fee Structures': 'هياكل الرسوم',
+        'Installment Plans': 'خطط التقسيط',
+        'Scholarships & Aid': 'المنح والمساعدات',
+        'Discounts & Rules': 'الخصومات والقواعد',
+        'Cashier Sessions': 'جلسات الصندوق',
+        'Staff Payroll Runs': 'مسيرات الرواتب',
+        'Payroll Approvals': 'موافقات الرواتب',
+        'Expense Requests': 'طلبات المصروفات',
+        'Expense Approvals': 'موافقات المصروفات',
+        'Department Budgets': 'ميزانيات الأقسام',
+        'Donation Campaigns': 'حملات التبرعات',
+        'Financial Statements': 'القوائم المالية',
+        'Audit Log & Search': 'دفتر التدقيق والبحث',
+        'Finance Settings': 'إعدادات المالية',
+        'Events': 'الفعاليات والنشاطات',
+        'Announcements': 'الإعلانات والتعاميم',
+        'Website CMS': 'إدارة محتوى الموقع',
+        'Gallery': 'معرض الصور',
+        'Contact Messages': 'رسائل التواصل',
+        'Settings': 'الإعدادات العامة',
+        'School Profile': 'ملف المدرسة التعريف',
+        'Integrations': 'الربط البرمجي والأنظمة',
+        'Academic Clearance': 'المخالصة الأكاديمية',
+        'AI Advisor Alerts': 'تنبيهات مستشار الذكاء الاصطناعي',
+        'Course Offering Portal': 'بوابة المواد المطروحة',
+        'My Course Offerings': 'مواد التدريس المطروحة',
+        'Academic Workspace': 'مساحة العمل الأكاديمية',
+        'Curriculum Progress': 'تقدم المنهج الدراسي',
+        'Teaching Workload': 'العبء التدريسي',
+      },
+      fr: {
+        'Activity Logs': "Journaux d'activité",
+        'Login Sessions': 'Sessions de connexion',
+        'Localization': 'Localisation',
+        'Media Library': 'Médiathèque',
+        'People Directory': 'Annuaire des personnes',
+        'Departments': 'Départements',
+        'Programs': 'Programmes',
+        'Academic Sections': 'Sections académiques',
+        'Academic Years': 'Années académiques',
+        'Academic Terms': 'Trimestres académiques',
+        'School Calendar': 'Calendrier scolaire',
+        'Admissions Hub': 'Portail des admissions',
+        'Admissions ERP': 'ERP des admissions',
+        'Transport Logistics': 'Transport et Logistique',
+        'Library System': 'Système de bibliothèque',
+        'Inventory & Supplies': 'Inventaire et Fournitures',
+        'Fixed Assets': 'Immobilisations',
+        'Procurement & AP': 'Achats et Dépenses',
+        'Hostel Dashboard': "Tableau d'hébergement",
+        'Buildings & Floors': 'Bâtiments et Étages',
+        'Rooms & Beds': 'Chambres et Lits',
+        'Bed Allocations': 'Allocations de lits',
+        'Waiting List': "Liste d'attente",
+        'Fee Plans & Setup': 'Plans de frais',
+        'Security Deposits': 'Dépôts de sécurité',
+        'Visitor Logs': 'Registre des visiteurs',
+        'Gate Passes': 'Laisser-passer',
+        'Attendance Logs': 'Registres de présence',
+        'Wardens & Duty': 'Gardiens et Devoirs',
+        'Maintenance Tickets': 'Tickets de maintenance',
+        'Reports & Settings': 'Rapports et Paramètres',
+        'Subjects & Curriculum': 'Matières et Curriculum',
+        'Course Offerings': 'Offres de cours',
+        'Classes & Timetable': 'Classes et Emplois du temps',
+        'Lesson Plans': 'Plans de cours',
+        'Homework': 'Devoirs',
+        'Attendance': 'Présence',
+        'Assessments & Gradebook': 'Évaluations et Notes',
+        'Learning Resources': "Ressources d'apprentissage",
+        'Curriculum Outlines': 'Grandes lignes du curriculum',
+        'Teacher Workload': "Charge de travail de l'enseignant",
+        'Programs & Groups': 'Programmes et Groupes',
+        'Hifz Tracking': 'Suivi de la mémorisation',
+        "Muraja'ah": 'Révision',
+        'Tajweed': 'Tajweed',
+        'Daily Halaqah': 'Halaqah quotidienne',
+        "Qur'an Attendance": 'Présence au Coran',
+        "Da'wah Activities": "Activités de Da'wah",
+        'Competitions & Certs': 'Compétitions et Certificats',
+        'Quran Hifz Portal': 'Portail de mémorisation du Coran',
+        'Programs & Levels': 'Programmes et Niveaux',
+        'Placement Tests': 'Tests de placement',
+        'Skill Analytics': 'Analyses de compétences',
+        'Learning Portfolio': "Portfolio d'apprentissage",
+        'Competitions': 'Compétitions',
+        'Achievements': 'Réalisations',
+        'Assessment Types': "Types d'évaluation",
+        'Examinations': 'Examens',
+        'Question Bank': 'Banque de questions',
+        'Scheduling': 'Planification',
+        'Marks Entry': 'Saisie des notes',
+        'Results Overview': 'Aperçu des résultats',
+        'Report Cards': 'Bulletins de notes',
+        'Transcripts': 'Relevés de notes',
+        'Certificates': 'Certificats',
+        'Promotions': 'Promotions',
+        'Rankings': 'Classements',
+        'Grade Moderation': 'Modération des notes',
+        'Retakes & Appeals': 'Rattrapages et Appels',
+        'Executive Dashboard': 'Tableau de bord exécutif',
+        'Chart of Accounts': 'Plan comptable',
+        'Double-Entry Journals': "Journaux d'écriture",
+        'General Ledger': 'Grand livre',
+        'Bank & Cash Treasury': 'Trésorerie et Banque',
+        'Accounting Periods': 'Périodes comptables',
+        'Student Invoices': 'Factures des élèves',
+        'Multi-Method Payments': 'Paiements multi-méthodes',
+        'Fee Structures': 'Structures de frais',
+        'Installment Plans': 'Plans de versement',
+        'Scholarships & Aid': 'Bourses et Aides',
+        'Discounts & Rules': 'Remises et Règles',
+        'Cashier Sessions': 'Sessions de caisse',
+        'Staff Payroll Runs': 'Fiches de paie',
+        'Payroll Approvals': 'Approbations de paie',
+        'Expense Requests': 'Demandes de dépenses',
+        'Expense Approvals': 'Approbations de dépenses',
+        'Department Budgets': 'Budgets par département',
+        'Donation Campaigns': 'Campagnes de dons',
+        'Financial Statements': 'États financiers',
+        'Audit Log & Search': "Journal d'audit et Recherche",
+        'Finance Settings': 'Paramètres financiers',
+        'Events': 'Événements',
+        'Announcements': 'Annonces',
+        'Website CMS': 'CMS du site web',
+        'Gallery': 'Galerie',
+        'Contact Messages': 'Messages de contact',
+        'Settings': 'Paramètres',
+        'School Profile': "Profil de l'école",
+        'Integrations': 'Intégrations',
+        'Academic Clearance': 'Clairance académique',
+        'AI Advisor Alerts': 'Alertes du conseiller IA',
+        'Course Offering Portal': 'Portail des cours proposés',
+        'My Course Offerings': 'Mes cours proposés',
+        'Academic Workspace': 'Espace de travail académique',
+        'Curriculum Progress': 'Progression du curriculum',
+        'Teaching Workload': "Charge d'enseignement",
+      },
+      tr: {
+        'Activity Logs': 'Aktivite Günlükleri',
+        'Login Sessions': 'Oturum Yönetimi',
+        'Localization': 'Yerelleştirme',
+        'Media Library': 'Medya Kütüphanesi',
+        'People Directory': 'Kişi Rehberi',
+        'Departments': 'Bölümler',
+        'Programs': 'Programlar',
+        'Academic Sections': 'Akademik Seksiyonlar',
+        'Academic Years': 'Akademik Yıllar',
+        'Academic Terms': 'Akademik Dönemler',
+        'School Calendar': 'Okul Takvimi',
+        'Admissions Hub': 'Kabul Merkezi',
+        'Admissions ERP': 'Kabul ERP',
+        'Transport Logistics': 'Ulaşım Lojistiği',
+        'Library System': 'Kütüphane Sistemi',
+        'Inventory & Supplies': 'Envanter ve Malzemeler',
+        'Fixed Assets': 'Sabit Varlıklar',
+        'Procurement & AP': 'Satın Alma',
+        'Hostel Dashboard': 'Yurt Paneli',
+        'Buildings & Floors': 'Binalar ve Katlar',
+        'Rooms & Beds': 'Odalar ve Yataklar',
+        'Bed Allocations': 'Yatak Tahsisleri',
+        'Waiting List': 'Bekleme Listesi',
+        'Fee Plans & Setup': 'Ücret Planları',
+        'Security Deposits': 'Güvenlik Depozitoları',
+        'Visitor Logs': 'Ziyaretçi Defteri',
+        'Gate Passes': 'Kapı İzinleri',
+        'Attendance Logs': 'Yoklama Günlükleri',
+        'Wardens & Duty': 'Nöbetçiler ve Görevler',
+        'Maintenance Tickets': 'Bakım Talepleri',
+        'Reports & Settings': 'Raporlar ve Ayarlar',
+        'Subjects & Curriculum': 'Dersler ve Müfredat',
+        'Course Offerings': 'Açılan Dersler',
+        'Classes & Timetable': 'Sınıflar ve Programlar',
+        'Lesson Plans': 'Ders Planları',
+        'Homework': 'Ödevler',
+        'Attendance': 'Yoklama',
+        'Assessments & Gradebook': 'Değerlendirmeler ve Not Defteri',
+        'Learning Resources': 'Öğrenme Kaynakları',
+        'Curriculum Outlines': 'Müfredat Ana Hatları',
+        'Teacher Workload': 'Öğretmen İş Yükü',
+        'Programs & Groups': 'Programlar ve Gruplar',
+        'Hifz Tracking': 'Hıfız Takibi',
+        "Muraja'ah": 'Mürafaa / Tekrar',
+        'Tajweed': 'Tecvid',
+        'Daily Halaqah': 'Günlük Halka',
+        "Qur'an Attendance": 'Kuran Yoklaması',
+        "Da'wah Activities": 'Davet Faaliyetleri',
+        'Competitions & Certs': 'Yarışmalar ve Belgeler',
+        'Quran Hifz Portal': 'Kuran Hıfız Portalı',
+        'Programs & Levels': 'Programlar ve Seviyeler',
+        'Placement Tests': 'Seviye Tespit Sınavları',
+        'Skill Analytics': 'Beceri Analitiği',
+        'Learning Portfolio': 'Öğrenim Portföyü',
+        'Competitions': 'Yarışmalar',
+        'Achievements': 'Başarılar',
+        'Assessment Types': 'Değerlendirme Türleri',
+        'Examinations': 'Sınavlar',
+        'Question Bank': 'Soru Bankası',
+        'Scheduling': 'Sınav Takvimi',
+        'Marks Entry': 'Not Girişi',
+        'Results Overview': 'Sonuçlara Genel Bakış',
+        'Report Cards': 'Karne Raporları',
+        'Transcripts': 'Transkriptler',
+        'Certificates': 'Sertifikalar',
+        'Promotions': 'Sınıf Geçme',
+        'Rankings': 'Sıralamalar',
+        'Grade Moderation': 'Not Moderasyonu',
+        'Retakes & Appeals': 'İtirazlar ve Bütünleme',
+        'Executive Dashboard': 'Yönetici Finans Paneli',
+        'Chart of Accounts': 'Hesap Planı',
+        'Double-Entry Journals': 'Yevmiye Kayıtları',
+        'General Ledger': 'Defter-i Kebir',
+        'Bank & Cash Treasury': 'Kasa ve Banka',
+        'Accounting Periods': 'Muhasebe Dönemleri',
+        'Student Invoices': 'Öğrenci Faturaları',
+        'Multi-Method Payments': 'Çok Yöntemli Ödemeler',
+        'Fee Structures': 'Harç Yapıları',
+        'Installment Plans': 'Taksit Planları',
+        'Scholarships & Aid': 'Burslar ve Destekler',
+        'Discounts & Rules': 'İndirimler ve Kurallar',
+        'Cashier Sessions': 'Kasa Oturumları',
+        'Staff Payroll Runs': 'Personel Bordroları',
+        'Payroll Approvals': 'Bordro Onayları',
+        'Expense Requests': 'Gider Talepleri',
+        'Expense Approvals': 'Gider Onayları',
+        'Department Budgets': 'Bölüm Bütçeleri',
+        'Donation Campaigns': 'Bağış Kampanyaları',
+        'Financial Statements': 'Finansal Tablolar',
+        'Audit Log & Search': 'Denetim ve Arama',
+        'Finance Settings': 'Finans Ayarları',
+        'Events': 'Etkinlikler',
+        'Announcements': 'Duyurular',
+        'Website CMS': 'Web Sitesi CMS',
+        'Gallery': 'Galeri',
+        'Contact Messages': 'İletişim Mesajları',
+        'Settings': 'Ayarlar',
+        'School Profile': 'Okul Profili',
+        'Integrations': 'Entegrasyonlar',
+        'Academic Clearance': 'Akademik Tahliye',
+        'AI Advisor Alerts': 'YZ Danışman Uyarıları',
+        'Course Offering Portal': 'Ders Teklif Portalı',
+        'My Course Offerings': 'Ders Tekliflerim',
+        'Academic Workspace': 'Akademik Çalışma Alanı',
+        'Curriculum Progress': 'Müfredat İlerlemesi',
+        'Teaching Workload': 'Öğretim Yükü',
+      },
+    };
+
+    return localDict[locale]?.[label] || label;
+  };
+
+  const getTranslatedSectionTitle = (title: string) => {
+    const titleKeyMap: Record<string, string> = {
+      'Overview': 'overview',
+      'Administration': 'administration',
+      'School ERP': 'academics',
+      'LMS Academics': 'academics',
+      'System Settings': 'system',
+      'System': 'system',
+    };
+    const key = titleKeyMap[title];
+    if (key && t.has(key)) {
+      return t(key);
+    }
+
+    const sectionDict: Record<string, Record<string, string>> = {
+      ar: {
+        'Academic Management': 'الإدارة الأكاديمية',
+        "Qur'an Department": 'قسم القرآن الكريم',
+        'Language Department': 'قسم اللغات',
+        'Assessment & Exams': 'التقييم والامتحانات',
+        'Results & Certification': 'النتائج والشهادات',
+        'Finance ERP (Executive)': 'إدارة المالية (تنفيذي)',
+        'Billing & Cashier Suite': 'نظام الفواتير والخزينة',
+        'Payroll, Expenses & Budgets': 'الرواتب والمصروفات المدرسية',
+        'Finance Reports & Audit': 'التقارير المالية والتدقيق',
+        'Events & CMS': 'الفعاليات ومحتوى الموقع',
+        'Enterprise Operations ERP': 'العمليات والخدمات اللوجستية',
+        'Hostel ERP Suite': 'إدارة السكن الداخلي',
+        'Enterprise Audits': 'التدقيق والتحليل الذكي',
+        'Academic Workspace': 'مساحة العمل الأكاديمية',
+        'My Work': 'أعمالي التدريسية',
+      },
+      fr: {
+        'Academic Management': 'Gestion académique',
+        "Qur'an Department": 'Département du Coran',
+        'Language Department': 'Département des langues',
+        'Assessment & Exams': 'Évaluations et Examens',
+        'Results & Certification': 'Résultats et Certifications',
+        'Finance ERP (Executive)': 'Finance (Exécutif)',
+        'Billing & Cashier Suite': 'Facturation et Caisse',
+        'Payroll, Expenses & Budgets': 'Paie, Dépenses et Budgets',
+        'Finance Reports & Audit': 'Rapports financiers et Audit',
+        'Events & CMS': 'Événements et CMS',
+        'Enterprise Operations ERP': 'Opérations d\'entreprise',
+        'Hostel ERP Suite': 'Hébergement ERP',
+        'Enterprise Audits': "Audits d'entreprise",
+        'Academic Workspace': 'Espace académique',
+        'My Work': 'Mon espace de cours',
+      },
+      tr: {
+        'Academic Management': 'Akademik Yönetim',
+        "Qur'an Department": 'Kuran Departmanı',
+        'Language Department': 'Dil Departmanı',
+        'Assessment & Exams': 'Değerlendirme ve Sınavlar',
+        'Results & Certification': 'Sonuçlar ve Sertifikalar',
+        'Finance ERP (Executive)': 'Finans ERP (Yönetici)',
+        'Billing & Cashier Suite': 'Faturalandırma ve Vezne',
+        'Payroll, Expenses & Budgets': 'Bordro, Giderler ve Bütçeler',
+        'Finance Reports & Audit': 'Finansal Raporlar ve Denetim',
+        'Events & CMS': 'Etkinlikler ve CMS',
+        'Enterprise Operations ERP': 'Operasyonel ERP',
+        'Hostel ERP Suite': 'Yurt ERP',
+        'Enterprise Audits': 'Kurumsal Denetim',
+        'Academic Workspace': 'Akademik Çalışma Alanı',
+        'My Work': 'Ders Alanım',
+      }
+    };
+
+    return sectionDict[locale]?.[title] || title;
+  };
 
   const [isCollapsed, setIsCollapsed] = useLocalStorage(STORAGE_KEYS.SIDEBAR_COLLAPSED, false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
@@ -652,7 +1443,7 @@ export function Sidebar({ className }: SidebarProps) {
   useEffect(() => { setIsMobileOpen(false); }, [pathname]);
 
   const role = (user as any)?.role?.type as string | undefined;
-  const navSections = useMemo(() => getNavForRole(role), [role]);
+  const navSections = useMemo(() => getNavForRole(role, pathname), [role, pathname]);
 
   const activeHref = useMemo(() => {
     let best = '';
@@ -756,7 +1547,8 @@ export function Sidebar({ className }: SidebarProps) {
   const sidebarContent = (
     <aside
       className={cn(
-        'fixed inset-y-0 left-0 z-40 flex flex-col h-full bg-card border-r border-border',
+        'fixed inset-y-0 z-40 flex flex-col h-full bg-card border-border',
+        isRtl ? 'right-0 border-l' : 'left-0 border-r',
         'transition-all duration-300 ease-in-out overflow-hidden',
         className
       )}
@@ -784,29 +1576,60 @@ export function Sidebar({ className }: SidebarProps) {
         {!isMobile && (
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className={cn('ml-auto p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground flex-shrink-0', isCollapsed && 'ml-0')}
+            className={cn(
+              'p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground flex-shrink-0',
+              isRtl ? 'mr-auto' : 'ml-auto',
+              isCollapsed && (isRtl ? 'mr-0' : 'ml-0')
+            )}
           >
-            {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+            {isRtl ? (
+              isCollapsed ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />
+            ) : (
+              isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />
+            )}
           </button>
         )}
       </div>
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-0.5 scrollbar-thin">
-        {navSections.map((section) => (
+        {navSections.map((section) => {
+          // Render the dynamic Academic Sections group
+          if (section.title === '__ACADEMIC_SECTIONS__') {
+            return (
+              <AcademicSectionsNav
+                key="__academic_sections__"
+                isCollapsed={isCollapsed}
+                isActive={isActive}
+                locale={locale}
+                user={user}
+                role={role}
+              />
+            );
+          }
+          return (
           <div key={section.title} className="mb-1">
-            {/* Section Header */}
-            {!isCollapsed && (
-              <button
-                onClick={() => toggleSection(section.title)}
-                className="w-full flex items-center justify-between px-2 py-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70 hover:text-muted-foreground transition-colors"
-              >
-                <span>{section.title}</span>
-                {isSectionExpanded(section.title)
-                  ? <ChevronUp className="w-3 h-3" />
-                  : <ChevronDown className="w-3 h-3" />}
-              </button>
-            )}
+            {!isCollapsed && (() => {
+              const { icon: Icon, color } = getSectionIconAndColor(section.title);
+              return (
+                <button
+                  onClick={() => toggleSection(section.title)}
+                  className="w-full flex items-center justify-between px-2 py-2 text-[10px] font-black uppercase tracking-wider text-muted-foreground hover:text-foreground hover:bg-muted/40 rounded-xl transition-all duration-200 group mt-3 mb-1 border-none bg-transparent cursor-pointer"
+                >
+                  <div className="flex items-center gap-2">
+                    <div className={cn("p-1 rounded-lg transition-transform group-hover:scale-105", color)}>
+                      <Icon className="w-3.5 h-3.5" />
+                    </div>
+                    <span className="font-extrabold text-[10.5px] text-slate-600 dark:text-slate-300 group-hover:text-foreground transition-colors">
+                      {getTranslatedSectionTitle(section.title)}
+                    </span>
+                  </div>
+                  {isSectionExpanded(section.title)
+                    ? <ChevronUp className="w-3.5 h-3.5 text-muted-foreground/60 group-hover:text-foreground transition-colors" />
+                    : <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/60 group-hover:text-foreground transition-colors" />}
+                </button>
+              );
+            })()}
 
             {/* Section Items */}
             <AnimatePresence initial={false}>
@@ -820,11 +1643,12 @@ export function Sidebar({ className }: SidebarProps) {
                 >
                   {section.items.map((item) => {
                     const active = isActive(item.href);
+                    const translatedLabel = getTranslatedLabel(item.label);
                     return (
                       <Link
                         key={item.href}
                         href={item.href}
-                        title={isCollapsed ? item.label : undefined}
+                        title={isCollapsed ? translatedLabel : undefined}
                         className={cn(
                           'flex items-center gap-3 rounded-xl transition-all duration-150 group relative',
                           isCollapsed ? 'h-10 w-10 mx-auto justify-center' : 'px-3 py-2.5',
@@ -842,13 +1666,13 @@ export function Sidebar({ className }: SidebarProps) {
                               exit={{ opacity: 0 }}
                               className="text-sm font-medium truncate"
                             >
-                              {item.label}
+                              {translatedLabel}
                             </motion.span>
                           )}
                         </AnimatePresence>
                         {isCollapsed && (
                           <div className="absolute left-full ml-3 px-2 py-1 rounded-lg bg-popover border border-border shadow-lg text-xs font-medium text-popover-foreground whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50">
-                            {item.label}
+                            {translatedLabel}
                           </div>
                         )}
                         {!isCollapsed && item.badge && (
@@ -863,7 +1687,8 @@ export function Sidebar({ className }: SidebarProps) {
               )}
             </AnimatePresence>
           </div>
-        ))}
+          );
+        })}
       </nav>
 
       {/* Footer */}
@@ -948,7 +1773,10 @@ export function Sidebar({ className }: SidebarProps) {
         {/* Mobile Trigger */}
         <button
           onClick={() => setIsMobileOpen(true)}
-          className="fixed top-4 left-4 z-40 p-2.5 rounded-xl bg-card border border-border shadow-md text-foreground"
+          className={cn(
+            "fixed top-4 z-40 p-2.5 rounded-xl bg-card border border-border shadow-md text-foreground",
+            isRtl ? 'right-4' : 'left-4'
+          )}
         >
           <Menu className="w-5 h-5" />
         </button>
@@ -965,15 +1793,21 @@ export function Sidebar({ className }: SidebarProps) {
                 className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
               />
               <motion.div
-                initial={{ x: -280 }}
+                initial={{ x: isRtl ? 280 : -280 }}
                 animate={{ x: 0 }}
-                exit={{ x: -280 }}
+                exit={{ x: isRtl ? 280 : -280 }}
                 transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                className="fixed inset-y-0 left-0 z-50 w-[280px]"
+                className={cn(
+                  "fixed inset-y-0 z-50 w-[280px]",
+                  isRtl ? 'right-0' : 'left-0'
+                )}
               >
                 <button
                   onClick={() => setIsMobileOpen(false)}
-                  className="absolute top-4 right-4 p-1.5 rounded-lg bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                  className={cn(
+                    "absolute top-4 p-1.5 rounded-lg bg-muted text-muted-foreground hover:text-foreground transition-colors",
+                    isRtl ? 'left-4' : 'right-4'
+                  )}
                 >
                   <X className="w-4 h-4" />
                 </button>

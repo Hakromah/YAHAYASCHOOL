@@ -4,6 +4,8 @@ import React from 'react';
 import { ArrowUpRight, ArrowDownRight, Minus, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
+import { useLocale } from 'next-intl';
+import { getTranslation } from './EnterpriseModuleShell';
 
 export interface EnterpriseKPICard {
   id: string | number;
@@ -28,6 +30,8 @@ export interface EnterpriseKPIDeckProps {
 }
 
 export function EnterpriseKPIDeck({ cards, isLoading = false, className }: EnterpriseKPIDeckProps) {
+  const locale = useLocale();
+
   if (isLoading) {
     return (
       <div className={cn("grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3", className)}>
@@ -83,7 +87,7 @@ export function EnterpriseKPIDeck({ cards, isLoading = false, className }: Enter
             {/* Top Bar: Title & Icon */}
             <div className="flex items-center justify-between gap-2">
               <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider truncate">
-                {card.title}
+                {getTranslation(card.title, locale)}
               </span>
               {card.icon && (
                 <div
@@ -106,7 +110,7 @@ export function EnterpriseKPIDeck({ cards, isLoading = false, className }: Enter
               </h3>
               {card.badgeText && (
                 <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 font-mono">
-                  {card.badgeText}
+                  {getTranslation(card.badgeText, locale)}
                 </span>
               )}
             </div>
@@ -117,19 +121,19 @@ export function EnterpriseKPIDeck({ cards, isLoading = false, className }: Enter
                 {card.trend && (
                   <span className={cn("inline-flex items-center font-bold font-mono", card.trendColor || defaultTrendColor)}>
                     <TrendIcon className="w-3 h-3 mr-0.5 shrink-0" />
-                    {card.trend}
+                    {getTranslation(card.trend, locale)}
                   </span>
                 )}
                 {card.subtitle && (
                   <span className="text-slate-500 dark:text-slate-400 truncate">
-                    {card.subtitle}
+                    {getTranslation(card.subtitle, locale)}
                   </span>
                 )}
               </div>
 
               {card.onClick && (
                 <div className="flex items-center gap-0.5 text-[11px] font-semibold text-slate-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors shrink-0">
-                  <span>{card.actionText || 'Filter'}</span>
+                  <span>{getTranslation(card.actionText || 'Filter', locale)}</span>
                   <ChevronRight className="w-3 h-3 transition-transform group-hover:translate-x-0.5" />
                 </div>
               )}

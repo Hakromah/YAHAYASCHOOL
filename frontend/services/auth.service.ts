@@ -65,7 +65,7 @@ export const authService = {
       let profile = null;
 
       try {
-        if (roleType === 'teacher') {
+        if (roleType === 'teacher' || roleType === 'section-head') {
           const res = await apiClient.get<{ data: any[] }>('/teachers', {
             params: { filters: { user: { id: data.id } }, populate: '*' }
           });

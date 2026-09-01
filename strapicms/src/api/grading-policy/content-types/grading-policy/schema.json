@@ -4,45 +4,39 @@
   "info": {
     "singularName": "grading-policy",
     "pluralName": "grading-policies",
-    "displayName": "Grading Policy",
-    "description": "Configurable CA and Exam percentage weight rules"
+    "displayName": "Grading Policy"
   },
   "options": {
     "draftAndPublish": false
   },
-  "pluginOptions": {
-    "i18n": {
-      "localized": true
-    }
-  },
   "attributes": {
-    "name": {
+    "gradeName": {
       "type": "string",
       "required": true
     },
-    "caPercent": {
+    "minScore": {
       "type": "decimal",
-      "default": 40
+      "required": true
     },
-    "midtermPercent": {
+    "maxScore": {
       "type": "decimal",
-      "default": 30
+      "required": true
     },
-    "finalPercent": {
+    "gpaPoints": {
       "type": "decimal",
-      "default": 30
+      "required": true
     },
-    "practicalPercent": {
-      "type": "decimal",
-      "default": 0
+    "isPassing": {
+      "type": "boolean",
+      "default": true
     },
-    "attendancePercent": {
-      "type": "decimal",
-      "default": 0
+    "isDistinction": {
+      "type": "boolean",
+      "default": false
     },
-    "projectPercent": {
+    "remedialThreshold": {
       "type": "decimal",
-      "default": 0
+      "default": 50
     }
   }
 }

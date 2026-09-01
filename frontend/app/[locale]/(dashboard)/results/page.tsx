@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 import { BarChart3, FileText, ScrollText, BadgeCheck, ArrowRight, Trophy, CheckCircle2, Award } from 'lucide-react';
 
 export default function ResultsOverviewPage() {

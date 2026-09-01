@@ -61,8 +61,12 @@ export interface StudentFinanceAccount extends FinancialPartition {
   parentPhone: string;
   parentEmail: string;
   netBalance: number;       // Positive means student owes school; negative means credit/overpaid
+  netBalanceDue?: number;   // alias for netBalance
   totalInvoiced: number;
+  totalInvoicedYTD?: number;// alias for totalInvoiced
   totalPaid: number;
+  totalPaidYTD?: number;    // alias for totalPaid
+  gradeLevel?: string;      // alias for gradeCode
   totalDiscounts: number;
   totalScholarships: number;
   financialHold: boolean;
@@ -194,13 +198,13 @@ export interface Invoice extends FinancialPartition {
 // 6. Multi-Method Payments, Gateways & Cashier Sessions
 export interface CashierSession {
   id: string;
-  sessionCode: string; // CSH-YYYY-XXXX
+  sessionCode?: string; // CSH-YYYY-XXXX
   sessionNumber: string; // alias for sessionCode
   cashierName: string;
-  cashierUserId: string;
-  schoolId: string;
+  cashierUserId?: string;
+  schoolId?: string;
   campusId?: string;
-  openingDate: string;
+  openingDate?: string;
   openedAt: string; // alias for openingDate
   closingDate?: string;
   closedAt?: string; // alias for closingDate
@@ -276,10 +280,10 @@ export interface Scholarship extends FinancialPartition {
 
 export interface DiscountRule extends FinancialPartition {
   id: string;
-  code: string;
+  code?: string;
   name: string;
   type: string;
-  discountValue: any;
+  discountValue?: any;
   value: any; // alias for discountValue
   isPercentage?: boolean;
   requiresApprovalAbove?: number;
@@ -573,6 +577,12 @@ export interface ExecutiveFinanceStats {
     date: string;
     status: string;
   }[];
+  treasury?: {
+    bank?: { name: string; balance: number; currency: string };
+    mobileMoney?: { name: string; balance: number; currency: string };
+    cashDrawer?: { name: string; balance: number; currency: string };
+    cheque?: { name: string; balance: number; currency: string };
+  };
 }
 
 export interface AuditLogRecord {
@@ -585,6 +595,8 @@ export interface AuditLogRecord {
   module: string;
   entityId: string;
   details: string;
+  hash?: string;
+  payloadSnapshot?: any;
 }
 
 export interface DonationRecord {
@@ -625,9 +637,12 @@ export interface MultiCurrencyRate {
   currencyName: string;
   symbol: string;
   exchangeRateToUSD: number;
+  isBase?: boolean;
   isBaseCurrency?: boolean;
+  isActive?: boolean;
   isAutoSynced?: boolean;
   lastUpdated: string;
+  [key: string]: any;
 }
 
 export interface FinanceSettings {

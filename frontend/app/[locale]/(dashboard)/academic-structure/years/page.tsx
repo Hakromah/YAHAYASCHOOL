@@ -2,12 +2,15 @@
 
 import React, { useState, useEffect } from 'react';
 import { Calendar, Plus, CheckCircle2, Clock, RefreshCw } from 'lucide-react';
+import { useParams } from 'next/navigation';
 import { erpService } from '@/services/erp.service';
 import type { AcademicYear } from '@/types/erp.types';
 import { StatusBadge } from '@/components/erp/StatusBadge';
 import { toast } from 'sonner';
 
 export default function AcademicYearsPage() {
+  const params = useParams();
+  const locale = (params?.locale as string) || 'en';
   const [years, setYears] = useState<AcademicYear[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -15,7 +18,7 @@ export default function AcademicYearsPage() {
     async function loadYears() {
       setLoading(true);
       try {
-        const yrRes = await erpService.getAcademicYears();
+        const yrRes = await erpService.getAcademicYears(locale);
         setYears(yrRes);
       } catch (err) {
         console.error('Error fetching academic years:', err);
@@ -24,7 +27,7 @@ export default function AcademicYearsPage() {
       }
     }
     loadYears();
-  }, []);
+  }, [locale]);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">

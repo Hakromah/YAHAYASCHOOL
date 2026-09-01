@@ -1,10 +1,13 @@
 'use client';
 
 import React, { useState } from 'react';
-import { FileSearch, Search, Filter, ShieldAlert, CheckCircle2, AlertTriangle, Download, RefreshCw } from 'lucide-react';
+import { FileSearch, Search, Download } from 'lucide-react';
 import { toast } from 'sonner';
+import { useLocale } from 'next-intl';
+import { t } from '@/lib/i18n-dict';
 
 export default function AuditLogsPage() {
+  const locale = useLocale();
   const [query, setQuery] = useState('');
   const [severityFilter, setSeverityFilter] = useState('all');
 
@@ -27,10 +30,10 @@ export default function AuditLogsPage() {
         <div>
           <h1 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-slate-100 flex items-center gap-2.5">
             <FileSearch className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
-            <span>Enterprise Security & Audit Logs</span>
+            <span>{t('Enterprise Security & Audit Logs', locale)}</span>
           </h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Immutable system audit trail tracking administrative actions, data mutations, and access anomalies.
+            {t('Immutable system audit trail tracking administrative actions, data mutations, and access anomalies.', locale)}
           </p>
         </div>
 
@@ -40,7 +43,7 @@ export default function AuditLogsPage() {
             className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 font-bold text-xs transition-all shadow-sm"
           >
             <Download className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-            <span>Export Audit CSV</span>
+            <span>{t('Export Audit CSV', locale)}</span>
           </button>
         </div>
       </div>
@@ -50,7 +53,7 @@ export default function AuditLogsPage() {
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input
             type="text"
-            placeholder="Search logs by user, action code (UPDATE_ROLE), or target..."
+            placeholder={t('Search logs by user, action code (UPDATE_ROLE), or target...', locale)}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 font-medium"
@@ -62,11 +65,11 @@ export default function AuditLogsPage() {
           onChange={(e) => setSeverityFilter(e.target.value)}
           className="px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-sm font-semibold text-slate-800 dark:text-slate-300"
         >
-          <option value="all">Severity: All</option>
-          <option value="CRITICAL">Critical Alerts</option>
-          <option value="HIGH">High Severity</option>
-          <option value="NORMAL">Normal Operations</option>
-          <option value="INFO">System Info</option>
+          <option value="all">{t('Severity: All', locale)}</option>
+          <option value="CRITICAL">{t('Critical Alerts', locale)}</option>
+          <option value="HIGH">{t('High Severity', locale)}</option>
+          <option value="NORMAL">{t('Normal Operations', locale)}</option>
+          <option value="INFO">{t('System Info', locale)}</option>
         </select>
       </div>
 
@@ -75,13 +78,13 @@ export default function AuditLogsPage() {
           <table className="w-full text-left border-collapse text-sm">
             <thead>
               <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider bg-slate-50 dark:bg-slate-800/50">
-                <th className="py-3.5 px-4">Log ID</th>
-                <th className="py-3.5 px-4">Timestamp</th>
-                <th className="py-3.5 px-4">User / Actor</th>
-                <th className="py-3.5 px-4">Action Code</th>
-                <th className="py-3.5 px-4">Target Resource</th>
-                <th className="py-3.5 px-4">Severity</th>
-                <th className="py-3.5 px-4">IP Address</th>
+                <th className="py-3.5 px-4">{t('Log ID', locale)}</th>
+                <th className="py-3.5 px-4">{t('Timestamp', locale)}</th>
+                <th className="py-3.5 px-4">{t('User / Actor', locale)}</th>
+                <th className="py-3.5 px-4">{t('Action Code', locale)}</th>
+                <th className="py-3.5 px-4">{t('Target Resource', locale)}</th>
+                <th className="py-3.5 px-4">{t('Severity', locale)}</th>
+                <th className="py-3.5 px-4">{t('IP Address', locale)}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60 text-slate-700 dark:text-slate-300">

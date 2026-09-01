@@ -2,6 +2,10 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { usePathname, useRouter } from '@/i18n/routing';
+import type { Locale } from '@/i18n/routing';
+import { useLocale } from 'next-intl';
+import { Globe } from 'lucide-react';
 import { Breadcrumb } from '@/components/shared/layout/Breadcrumb';
 import { GlobalSearch } from '@/components/ui/GlobalSearch';
 import { NotificationCenter } from '@/components/ui/NotificationCenter';
@@ -11,6 +15,15 @@ import { cn } from '@/lib/utils';
 
 export function DashboardHeader() {
   const { user, logout } = useAuth();
+  const currentLocale = useLocale();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const handleLocaleChange = (newLocale: string) => {
+    if (newLocale === currentLocale) return;
+    router.push(pathname, { locale: newLocale as Locale });
+  };
+
   const getStrapiMediaUrlLocal = (media: any) => {
     if (!media) return null;
     const rawUrl = typeof media === 'string' ? media : (media.url || media.photoUrl || media.avatarUrl);
@@ -43,10 +56,34 @@ export function DashboardHeader() {
           <span>AY: 2026/2027 (Term 2)</span>
         </div>
 
+        {/* Language Selector */}
+        <div className={cn("flex items-center gap-1.5 border-slate-200 dark:border-slate-800", currentLocale === 'ar' ? 'border-l pl-3' : 'border-r pr-3')}>
+          <Globe className="w-4 h-4 text-slate-400 dark:text-slate-500" />
+          <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 rounded-full p-0.5 border border-slate-200 dark:border-slate-700">
+            {['en', 'ar', 'fr', 'tr'].map((code) => {
+              const isActive = currentLocale === code;
+              return (
+                <button
+                  key={code}
+                  onClick={() => handleLocaleChange(code)}
+                  className={cn(
+                    "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase transition-all",
+                    isActive
+                      ? "bg-indigo-500 text-white shadow-sm font-black"
+                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                  )}
+                >
+                  {code}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         <NotificationCenter />
 
         {/* Always-visible User Profile Chip */}
-        <Link href="/profile" className="flex items-center gap-2.5 pl-3 border-l border-slate-200 dark:border-slate-800 py-1 hover:opacity-90 transition-opacity cursor-pointer">
+        <Link href="/profile" className={cn("flex items-center gap-2.5 py-1 hover:opacity-90 transition-opacity cursor-pointer border-slate-200 dark:border-slate-800", currentLocale === 'ar' ? 'pr-3 border-r' : 'pl-3 border-l')}>
           <div className="relative shrink-0">
             {avatarUrl ? (
               <img
@@ -66,7 +103,7 @@ export function DashboardHeader() {
               {displayName.substring(0, 2).toUpperCase()}
             </div>
           </div>
-          <div className="hidden md:flex flex-col text-left">
+          <div className={cn("hidden md:flex flex-col", currentLocale === 'ar' ? 'text-right' : 'text-left')}>
             <div className="flex items-center gap-1.5">
               <span className="text-xs font-bold text-slate-900 dark:text-slate-100 leading-tight">{displayName}</span>
               <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-slate-100 dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 border border-slate-200 dark:border-slate-700">

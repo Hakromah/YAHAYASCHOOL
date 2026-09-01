@@ -2,14 +2,17 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 import {
   Receipt, Plus, Search, Filter, Download, Eye, CheckCircle2,
   Clock, DollarSign, FileText, ShieldCheck, AlertCircle, ArrowRight,
   Sparkles, Building2, User, Upload, Printer, Users
 } from 'lucide-react';
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
+import { useAuth } from '@/hooks/useAuth';
 import { financeService } from '@/services/finance.service';
-import type { ExpenseVoucher } from '@/types/finance.types';
+import type { ExpenseRequest } from '@/types/finance.types';
 import { EnterpriseModuleShell } from '@/components/erp/EnterpriseModuleShell';
 import { EnterpriseKPIDeck, type EnterpriseKPICard } from '@/components/erp/EnterpriseKPIDeck';
 import { EnterpriseToolbar, type TableDensity } from '@/components/erp/EnterpriseToolbar';
@@ -20,29 +23,33 @@ import { generateExpenseVoucherPDF } from '@/utils/pdfGenerator';
 import { toast } from 'sonner';
 
 export default function CategorizedOperatingExpensesPage() {
-  const [expenses, setExpenses] = useState<ExpenseVoucher[]>([]);
+  const locale = useLocale();
+  const t = (key: string) => i18nT(key, locale);
+  const { user } = useAuth();
+
+  const [expenses, setExpenses] = useState<ExpenseRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [density, setDensity] = useState<TableDensity>('cozy');
-  const [selectedExpense, setSelectedExpense] = useState<ExpenseVoucher | null>(null);
+  const [selectedExpense, setSelectedExpense] = useState<ExpenseRequest | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
 
-  // New Expense Form state
-  const [title, setTitle] = useState('Campus Generator Diesel Supply & Maintenance');
+  // New Expense Form state - clean empty defaults
+  const [title, setTitle] = useState('');
   const [category, setCategory] = useState<'Utilities' | 'Equipment' | 'Maintenance' | 'Supplies' | 'Salaries' | 'Other'>('Utilities');
-  const [department, setDepartment] = useState('Campus Operations & Facilities');
-  const [amount, setAmount] = useState('650');
-  const [vendorName, setVendorName] = useState('Dakar Energy & Power Ltd');
-  const [invoiceReference, setInvoiceReference] = useState('INV-DEP-9941');
+  const [department, setDepartment] = useState('');
+  const [amount, setAmount] = useState('');
+  const [vendorName, setVendorName] = useState('');
+  const [invoiceReference, setInvoiceReference] = useState('');
 
   const loadData = async () => {
     setLoading(true);
     try {
-      const data = await financeService.getExpenses();
+      const data = await financeService.getExpenseRequests();
       setExpenses(data);
     } catch {
-      toast.error('Failed to load operating expenses.');
+      toast.error(t('Failed to load operating expenses.'));
     } finally {
       setLoading(false);
     }
@@ -55,8 +62,8 @@ export default function CategorizedOperatingExpensesPage() {
   const filteredExpenses = useMemo(() => {
     return expenses.filter(e => {
       const matchQuery = !query ||
-        e.voucherNumber.toLowerCase().includes(query.toLowerCase()) ||
-        e.title.toLowerCase().includes(query.toLowerCase()) ||
+        (e.voucherNumber || '').toLowerCase().includes(query.toLowerCase()) ||
+        (e.title || '').toLowerCase().includes(query.toLowerCase()) ||
         (e.vendorName || '').toLowerCase().includes(query.toLowerCase()) ||
         (e.department || '').toLowerCase().includes(query.toLowerCase());
       const matchCat = categoryFilter === 'all' || e.category === categoryFilter;
@@ -68,190 +75,173 @@ export default function CategorizedOperatingExpensesPage() {
 
   const handleCreateExpense = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!title.trim() || !amount) {
+      toast.error(t('Title and expense amount are required.'));
+      return;
+    }
     const amountNum = parseFloat(amount || '0');
+    const requestedBy = (user as any)?.name || user?.username || 'Finance Officer';
 
     try {
-      const created = await financeService.createExpenseVoucher({
+      const created = await financeService.createExpenseRequest({
         voucherNumber: `EXP-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
         title,
         category,
-        department,
+        department: department || 'Campus Operations & Facilities',
         amount: amountNum,
-        vendorName,
+        vendorName: vendorName || 'Direct Vendor',
         invoiceReference: invoiceReference || undefined,
-        requestedBy: 'Ustadh Tariq Al-Hasan (Operations Lead)',
-        receiptUrl: 'https://cdn.yahayaschool.edu/receipts/diesel_650.pdf',
+        requestedBy,
         status: 'submitted'
       });
 
       setExpenses([created, ...expenses]);
-      toast.success(`Created Expense Claim ${created.voucherNumber || 'EXP'} for ${vendorName} ($${amountNum.toFixed(2)})`);
+      toast.success(`${t('Created Expense Claim')} ${created.voucherNumber || 'EXP'} ($${amountNum.toFixed(2)})`);
+      setTitle('');
+      setDepartment('');
+      setAmount('');
+      setVendorName('');
+      setInvoiceReference('');
       setShowCreateModal(false);
     } catch (err: any) {
-      console.error('Create expense error:', err);
-      toast.error('Failed to create expense claim voucher: ' + (err.response?.data?.error?.message || err.message || 'Error'));
+      toast.error(t('Failed to create expense claim'));
     }
   };
 
-  const handleAdvanceWorkflow = async (e: ExpenseVoucher) => {
-    const nextMap: Record<string, any> = {
+  const handleAdvanceWorkflow = async (e: ExpenseRequest) => {
+    const nextMap: Record<string, string> = {
       draft: 'submitted',
       submitted: 'reviewed',
       reviewed: 'approved',
-      approved: 'paid',
-      paid: 'closed'
+      approved: 'paid'
     };
-    const nextStatus = nextMap[e.status];
-    if (!nextStatus) return;
-
+    const next = nextMap[e.status || 'submitted'] || 'paid';
+    const targetId = e.documentId || e.id;
     try {
-      if (e.id) {
-        await financeService.updateExpenseStatus(e.id, nextStatus);
-      }
-      e.status = nextStatus;
-      setExpenses([...expenses]);
-      toast.success(`Expense ${e.voucherNumber} advanced to [${nextStatus.toUpperCase()}].`);
-    } catch (err: any) {
-      // Graceful local update fallback
-      e.status = nextStatus;
-      setExpenses([...expenses]);
-      toast.success(`Expense ${e.voucherNumber} advanced to [${nextStatus.toUpperCase()}].`);
+      await financeService.updateExpenseStatus(String(targetId), next);
+      toast.success(`${t('Expense')} ${e.voucherNumber} ${t('advanced to')} ${next.toUpperCase()}`);
+      loadData();
+    } catch {
+      toast.error(t('Failed to advance workflow'));
     }
   };
 
-  const handlePrintPDF = async (expense: ExpenseVoucher) => {
-    toast.info(`Generating certified PDF voucher for ${expense.voucherNumber}...`);
-    await generateExpenseVoucherPDF(expense);
-    toast.success(`Voucher ${expense.voucherNumber} PDF downloaded successfully!`);
-  };
-
-  const totalExpenseAmount = useMemo(() => expenses.reduce((s, e) => s + e.amount, 0), [expenses]);
-  const approvedOrPaidAmount = useMemo(() => expenses.filter(e => e.status === 'approved' || e.status === 'paid' || e.status === 'closed').reduce((s, e) => s + e.amount, 0), [expenses]);
+  const totalExpenses = useMemo(() => expenses.reduce((s, e) => s + (Number(e.amount) || 0), 0), [expenses]);
+  const pendingApprovals = useMemo(() => expenses.filter(e => e.status === 'submitted' || e.status === 'reviewed').length, [expenses]);
+  const disbursedTotal = useMemo(() => expenses.filter(e => e.status === 'paid').reduce((s, e) => s + (Number(e.amount) || 0), 0), [expenses]);
 
   const kpiCards: EnterpriseKPICard[] = [
     {
       id: 'total_expenses',
-      title: 'Total Cumulative Expenditures',
-      value: `$${totalExpenseAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
-      subtitle: `${expenses.length} claims filed across institutional departments`,
-      trendDirection: 'neutral',
-      icon: <Receipt className="w-5 h-5 text-amber-400" />
-    },
-    {
-      id: 'approved_spend',
-      title: 'Approved / Paid Outflows',
-      value: `$${approvedOrPaidAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
-      subtitle: `${Math.round((approvedOrPaidAmount / (totalExpenseAmount || 1)) * 100)}% workflow approval compliance`,
+      title: t('Total Incurred Operating Expenses (YTD)'),
+      value: `$${totalExpenses.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
+      subtitle: `${expenses.length} ${t('claims and disbursement vouchers')}`,
       trendDirection: 'up',
-      icon: <ShieldCheck className="w-5 h-5 text-emerald-400" />
+      icon: <Receipt className="w-5 h-5 text-rose-400" />,
+      isActive: categoryFilter === 'all',
+      onClick: () => setCategoryFilter('all')
     },
     {
-      id: 'pending_claims',
-      title: 'Pending Review Queue',
-      value: `${expenses.filter(e => e.status === 'submitted' || e.status === 'reviewed').length} Claims`,
-      subtitle: 'Awaiting Director / Bursar check',
-      trendDirection: 'neutral',
-      icon: <Clock className="w-5 h-5 text-sky-400" />,
-      onClick: () => toast.info('Directing to pending review claims queue')
+      id: 'pending_approvals',
+      title: t('Pending Multi-Stage Approvals'),
+      value: `${pendingApprovals} ${t('Claims')}`,
+      subtitle: t('Requisitions awaiting Director authorization'),
+      trendDirection: pendingApprovals > 0 ? 'down' : 'up',
+      icon: <Clock className="w-5 h-5 text-amber-400" />,
+      onClick: () => toast.info(t('Inspect approval queue in Approvals view.'))
     },
     {
-      id: 'audit_receipts',
-      title: 'Digital Vendor Receipt Verification',
-      value: '100% Attached',
-      subtitle: 'All vouchers carry scanned invoice attachments',
+      id: 'disbursed_funds',
+      title: t('Disbursed & Settled Capital Outflows'),
+      value: `$${disbursedTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
+      subtitle: t('Settled via commercial bank or mobile money'),
       trendDirection: 'up',
-      icon: <FileText className="w-5 h-5 text-emerald-400" />
+      icon: <CheckCircle2 className="w-5 h-5 text-emerald-400" />
     }
   ];
 
-  const columns = useMemo<ColumnDef<ExpenseVoucher, any>[]>(() => {
-    return [
-      {
-        accessorKey: 'voucherNumber',
-        header: 'Voucher Ref & Title',
-        cell: ({ row }) => (
-          <div className="space-y-0.5">
-            <span className="font-mono text-xs font-bold text-indigo-600 dark:text-indigo-400 block">{row.original.voucherNumber || `EXP-${row.original.id}`}</span>
-            <span className="font-bold text-slate-900 dark:text-white text-xs sm:text-sm block max-w-sm truncate">{row.original.title}</span>
-          </div>
-        )
-      },
-      {
-        accessorKey: 'category',
-        header: 'Category & Department',
-        cell: ({ row }) => (
-          <div className="space-y-0.5 text-xs">
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded font-mono font-bold text-[11px] uppercase bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
-              {row.original.category} (Series 5000)
-            </span>
-            <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium block truncate max-w-[180px]">{row.original.department}</span>
-          </div>
-        )
-      },
-      {
-        accessorKey: 'vendorName',
-        header: 'Vendor & Invoice Ref',
-        cell: ({ row }) => (
-          <div className="space-y-0.5 text-xs">
-            <span className="font-semibold text-slate-900 dark:text-slate-100 block">{row.original.vendorName}</span>
-            <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400 block">Inv: {row.original.invoiceReference || 'CASH-REC'}</span>
-          </div>
-        )
-      },
-      {
-        accessorKey: 'amount',
-        header: 'Claim Amount ($)',
-        cell: ({ row }) => (
-          <span className="font-mono text-xs sm:text-sm font-extrabold text-slate-900 dark:text-emerald-400 block">
-            ${(row.original.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+  const columns = useMemo<ColumnDef<ExpenseRequest, any>[]>(() => [
+    {
+      accessorKey: 'voucherNumber',
+      header: t('Voucher # & Title'),
+      cell: ({ row }) => (
+        <div className="space-y-0.5">
+          <span className="font-mono text-xs font-black text-rose-400 block">{row.original.voucherNumber}</span>
+          <span className="font-bold text-white text-xs sm:text-sm block max-w-sm truncate">{row.original.title}</span>
+        </div>
+      )
+    },
+    {
+      accessorKey: 'category',
+      header: t('Category & Department'),
+      cell: ({ row }) => (
+        <div className="space-y-0.5 text-xs">
+          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-slate-800 text-slate-300 border border-slate-700 font-mono">
+            {t(row.original.category)}
           </span>
-        )
-      },
-      {
-        accessorKey: 'status',
-        header: 'Workflow Stage',
-        cell: ({ row }) => <StatusBadge status={row.original.status} size="sm" />
-      },
-      {
-        id: 'actions',
-        header: 'Actions',
-        cell: ({ row }) => (
-          <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
-            {row.original.status !== 'closed' && (
+          <span className="text-[11px] text-slate-400 block truncate max-w-xs">{row.original.department}</span>
+        </div>
+      )
+    },
+    {
+      accessorKey: 'vendorName',
+      header: t('Vendor / Payee'),
+      cell: ({ row }) => (
+        <div className="space-y-0.5 text-xs">
+          <span className="font-bold text-slate-200 block">{row.original.vendorName}</span>
+          {row.original.invoiceReference && <span className="text-[10px] text-slate-400 font-mono">Ref: {row.original.invoiceReference}</span>}
+        </div>
+      )
+    },
+    {
+      accessorKey: 'amount',
+      header: `${t('Claim Amount')} ($)`,
+      cell: ({ row }) => (
+        <span className="font-mono text-xs sm:text-sm font-black text-rose-400 block">
+          -${(Number(row.original.amount) || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+        </span>
+      )
+    },
+    {
+      accessorKey: 'status',
+      header: t('Workflow Status'),
+      cell: ({ row }) => <StatusBadge status={row.original.status || 'submitted'} size="sm" />
+    },
+    {
+      id: 'actions',
+      header: t('Actions'),
+      cell: ({ row }) => {
+        const e = row.original;
+        return (
+          <div className="flex items-center gap-1.5" onClick={(evt) => evt.stopPropagation()}>
+            {e.status !== 'paid' && (
               <button
-                onClick={() => handleAdvanceWorkflow(row.original)}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-xs transition-all cursor-pointer"
+                onClick={() => handleAdvanceWorkflow(e)}
+                className="px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-black text-xs shadow-md transition-all cursor-pointer"
               >
-                <span>Advance Stage →</span>
+                {e.status === 'submitted' ? t('Review') : e.status === 'reviewed' ? t('Approve') : t('Disburse')}
               </button>
             )}
             <button
-              onClick={() => handlePrintPDF(row.original)}
-              className="p-1.5 rounded-lg bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs border border-slate-200 dark:border-slate-700 transition-all cursor-pointer shadow-2xs"
-              title="Print Certified PDF Voucher"
+              onClick={() => setSelectedExpense(e)}
+              className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs border border-slate-700 transition-all cursor-pointer"
             >
-              <Printer className="w-4 h-4 text-slate-600 dark:text-slate-300" />
-            </button>
-            <button
-              onClick={() => setSelectedExpense(row.original)}
-              className="px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs border border-slate-200 dark:border-slate-700 transition-all cursor-pointer shadow-2xs"
-            >
-              Inspect
+              {t('Inspect')}
             </button>
           </div>
-        )
+        );
       }
-    ];
-  }, [expenses]);
+    }
+  ], [locale]);
 
   return (
     <EnterpriseModuleShell
-      title="Categorized Operating Expenses & Vendor Claims"
-      description="Track institutional expenditures across utilities, teaching materials, IT hardware, and campus security. Enforces multi-stage workflow authorization (Draft -> Submitted -> Reviewed -> Approved -> Paid -> Closed)."
-      breadcrumbs={[{ label: 'Finance ERP', href: '/finance' }, { label: 'Payroll & Budget' }, { label: 'Operating Expenses' }]}
-      icon={<Receipt className="w-8 h-8 text-amber-400" />}
+      title={t('Operating Expenses & Supplier Claims Console')}
+      description={t('Multi-stage expense requisition lifecycle (Draft → Submitted → Reviewed → Approved → Paid). Automated GL posting upon disbursement.')}
+      breadcrumbs={[{ label: t('Finance ERP'), href: '/finance' }, { label: t('Payroll & Budget') }, { label: t('Operating Expenses') }]}
+      icon={<Receipt className="w-8 h-8 text-rose-400" />}
       recordCount={filteredExpenses.length}
-      recordLabel="Expense Vouchers"
+      recordLabel={t('Claims')}
       activeFilterCount={activeFiltersCount}
       onClearFilters={() => { setCategoryFilter('all'); setQuery(''); }}
       headerActions={
@@ -260,77 +250,57 @@ export default function CategorizedOperatingExpensesPage() {
             href="/finance/expenses/approvals"
             className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white text-xs font-bold transition-all shadow-sm cursor-pointer"
           >
-            <ShieldCheck className="w-4 h-4 text-emerald-400" />
-            <span>Multi-Stage Approvals</span>
+            <ShieldCheck className="w-4 h-4 text-amber-400" />
+            <span>{t('Approval Queue')}</span>
           </Link>
           <button
             onClick={() => setShowCreateModal(true)}
             className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 text-white text-xs font-black transition-all shadow-lg shadow-emerald-600/30 hover:scale-[1.02] cursor-pointer"
           >
             <Plus className="w-4 h-4 stroke-[3]" />
-            <span>+ File Expense Claim</span>
+            <span>{t('+ Create Expense Claim')}</span>
           </button>
         </div>
       }
     >
-      {/* Interactive KPI Deck */}
       <EnterpriseKPIDeck cards={kpiCards} />
 
       {/* Domain Sub-Navigation */}
       <div className="flex flex-wrap items-center gap-2 pb-2 border-b border-slate-800">
         <Link href="/finance/payroll" className="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white font-bold text-xs transition-all flex items-center gap-1.5">
           <Users className="w-3.5 h-3.5 text-emerald-400" />
-          <span>Staff Payroll Runs</span>
+          <span>{t('Staff Payroll Runs')}</span>
         </Link>
         <Link href="/finance/expenses" className="px-3.5 py-1.5 rounded-xl bg-emerald-600 text-white font-black text-xs shadow-md flex items-center gap-1.5">
           <Receipt className="w-3.5 h-3.5" />
-          <span>Operating Expenses</span>
+          <span>{t('Operating Expenses')}</span>
         </Link>
         <Link href="/finance/expenses/approvals" className="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white font-bold text-xs transition-all flex items-center gap-1.5">
-          <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-          <span>Expense Approval Pipeline</span>
+          <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
+          <span>{t('Multi-Stage Approvals')}</span>
         </Link>
         <Link href="/finance/budget" className="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white font-bold text-xs transition-all flex items-center gap-1.5">
           <Building2 className="w-3.5 h-3.5 text-sky-400" />
-          <span>Departmental Budget vs Actual</span>
+          <span>{t('Departmental Budget vs Actual')}</span>
         </Link>
       </div>
 
-      {/* Unified Toolbar */}
       <EnterpriseToolbar
         searchQuery={query}
         onSearchChange={setQuery}
-        searchPlaceholder="Search vouchers by EXP-XXXX sequence, vendor name, or title description..."
+        searchPlaceholder={t('Search expenses by voucher #, title, vendor name, or department...')}
         density={density}
         onDensityChange={setDensity}
         onRefresh={() => {
           loadData();
-          toast.success('Operating expenses synced with institutional ledger.');
+          toast.success(t('Operating expenses refreshed'));
         }}
         activeFilterCount={activeFiltersCount}
         onResetFilters={() => { setCategoryFilter('all'); setQuery(''); }}
-        createButtonLabel="+ New Expense Voucher"
+        createButtonLabel={t('+ New Expense Claim')}
         onCreate={() => setShowCreateModal(true)}
-        customFilterNodes={
-          <div className="flex items-center gap-2">
-            <select
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-              aria-label="Filter expenses by category"
-              className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white font-bold focus:outline-none focus:border-emerald-500 shadow-2xs cursor-pointer"
-            >
-              <option value="all">All Expense Categories</option>
-              <option value="Utilities">Utilities & Power</option>
-              <option value="Equipment">IT & Lab Equipment</option>
-              <option value="Supplies">Academic Teaching Supplies</option>
-              <option value="Maintenance">Campus Maintenance</option>
-              <option value="Other">Other Operating Expense</option>
-            </select>
-          </div>
-        }
       />
 
-      {/* High-Density Enterprise Data Grid */}
       <EnterpriseDataGrid
         data={filteredExpenses}
         columns={columns}
@@ -339,122 +309,96 @@ export default function CategorizedOperatingExpensesPage() {
         onRowInspect={(row) => setSelectedExpense(row)}
         onRowClick={(row) => setSelectedExpense(row)}
         emptyStateProps={{
-          title: 'No Expense Vouchers Found',
-          description: 'No operating expenditure claims match your current query.',
+          title: t('No Expenses Found'),
+          description: t('No operating expenses match your search or filter criteria.'),
           isFilterActive: activeFiltersCount > 0 || query.length > 0,
           onResetFilters: () => { setCategoryFilter('all'); setQuery(''); },
-          createLabel: 'File First Expense Claim',
+          createLabel: t('Log First Expense Claim'),
           onCreate: () => setShowCreateModal(true)
         }}
       />
 
-      {/* Create Modal — Strapi CMS Content Manager Inspired */}
+      {/* Create Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 max-w-lg w-full shadow-2xl space-y-5">
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 shadow-2xs">
-                  <Receipt className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-slate-900 dark:text-white">Create New Expense Entry</h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">File operating claim for Strapi backend approval</p>
-                </div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-lg w-full shadow-2xl space-y-5">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2.5">
+                <Receipt className="w-6 h-6 text-rose-400" />
+                <h3 className="text-base font-black text-white">{t('Create Operating Expense Claim')}</h3>
               </div>
-              <button
-                type="button"
-                onClick={() => setShowCreateModal(false)}
-                className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold text-sm flex items-center justify-center transition-colors cursor-pointer"
-              >
-                ✕
-              </button>
+              <button onClick={() => setShowCreateModal(false)} className="text-slate-400 hover:text-white font-bold text-sm">✕</button>
             </div>
 
             <form onSubmit={handleCreateExpense} className="space-y-4">
-              <div className="bg-slate-50/50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-4 space-y-4 shadow-2xs">
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-300">{t('Expense Title / Purpose')}</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Science Lab Consumables & Reagents"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs font-medium focus:outline-none focus:border-emerald-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-200 block">Expenditure Title / Description</label>
+                  <label className="text-xs font-bold text-slate-300">{t('GL Category')}</label>
+                  <select
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value as any)}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs font-bold focus:outline-none focus:border-emerald-500 cursor-pointer"
+                  >
+                    <option value="Utilities">{t('Utilities (5020)')}</option>
+                    <option value="Equipment">{t('Equipment & IT (5030)')}</option>
+                    <option value="Supplies">{t('Teaching Supplies (5040)')}</option>
+                    <option value="Maintenance">{t('Maintenance & Repairs (5050)')}</option>
+                    <option value="Salaries">{t('Staff Salaries & Benefits (5010)')}</option>
+                    <option value="Other">{t('Other Operating Expense')}</option>
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-300">{t('Department / Cost Center')}</label>
                   <input
                     type="text"
-                    required
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    placeholder="e.g. Campus Generator Diesel Supply"
-                    className="w-full px-3.5 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white font-medium text-xs placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                    placeholder="e.g. Science Department"
+                    value={department}
+                    onChange={(e) => setDepartment(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs font-medium focus:outline-none focus:border-emerald-500"
                   />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-700 dark:text-slate-200 block">GL Category (Series 5000)</label>
-                    <select
-                      value={category}
-                      onChange={(e) => setCategory(e.target.value as any)}
-                      className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white font-medium text-xs focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all"
-                    >
-                      <option value="Utilities">Utilities & Power</option>
-                      <option value="Equipment">IT & Lab Equipment</option>
-                      <option value="Supplies">Academic Supplies</option>
-                      <option value="Maintenance">Campus Maintenance</option>
-                      <option value="Other">Other Operating Expense</option>
-                    </select>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-700 dark:text-slate-200 block">Claim Amount ($ USD)</label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      required
-                      value={amount}
-                      onChange={(e) => setAmount(e.target.value)}
-                      placeholder="0.00"
-                      className="w-full px-3.5 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-emerald-400 font-mono text-xs font-bold focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-700 dark:text-slate-200 block">Vendor / Supplier</label>
-                    <input
-                      type="text"
-                      required
-                      value={vendorName}
-                      onChange={(e) => setVendorName(e.target.value)}
-                      placeholder="Supplier company name"
-                      className="w-full px-3.5 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white font-medium text-xs placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-700 dark:text-slate-200 block">Vendor Invoice Ref</label>
-                    <input
-                      type="text"
-                      value={invoiceReference}
-                      onChange={(e) => setInvoiceReference(e.target.value)}
-                      placeholder="e.g. INV-1092"
-                      className="w-full px-3.5 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white font-mono text-xs font-medium placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all"
-                    />
-                  </div>
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowCreateModal(false)}
-                  className="px-4 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs transition-all cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-sm transition-all cursor-pointer"
-                >
-                  Save Entry ✓
-                </button>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-300">{t('Vendor / Supplier Name')}</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Dakar Lab Supplies Ltd"
+                    value={vendorName}
+                    onChange={(e) => setVendorName(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs font-medium focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-300">{t('Claim Amount ($ USD)')}</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    required
+                    placeholder="450"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-rose-400 font-mono text-sm font-black focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
+                <button type="button" onClick={() => setShowCreateModal(false)} className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 font-bold text-xs">{t('Cancel')}</button>
+                <button type="submit" className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs shadow-md">{t('Submit Expense Claim')}</button>
               </div>
             </form>
           </div>
@@ -468,13 +412,13 @@ export default function CategorizedOperatingExpensesPage() {
         record={selectedExpense ? {
           name: selectedExpense.title,
           id: selectedExpense.voucherNumber,
-          role: `CATEGORY: ${selectedExpense.category.toUpperCase()}`,
-          status: selectedExpense.status,
-          email: `Vendor: ${selectedExpense.vendorName}`,
-          phone: `Inv Ref: ${selectedExpense.invoiceReference || 'CASH-REC'}`,
-          department: `Dept: ${selectedExpense.department} | Requested By: ${selectedExpense.requestedBy}`,
+          role: `VENDOR: ${selectedExpense.vendorName || 'Direct'}`,
+          status: selectedExpense.status || 'submitted',
+          email: `Requested By: ${selectedExpense.requestedBy || 'Staff'}`,
+          phone: `Category: ${selectedExpense.category}`,
+          department: `Dept: ${selectedExpense.department}`,
           joinDate: selectedExpense.status,
-          balance: `EXPENDITURE TOTAL: $${selectedExpense.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}`
+          balance: `AMOUNT: $${(Number(selectedExpense.amount) || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}`
         } : null}
         category="finance"
       />

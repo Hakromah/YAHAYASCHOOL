@@ -44,6 +44,9 @@ const config: Core.Config.Middlewares = [
   'strapi::session',
   'strapi::favicon',
   'strapi::public',
+  // Custom: Filter academicHead relation dropdown to only show Section Head teacher profiles
+  'global::academic-head-filter',
 ];
 
 export default config;
+
