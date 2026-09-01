@@ -1,38 +1,127 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from '@/i18n/routing';
-import { Menu, X, ChevronDown, BookOpen, HeartHandshake, GraduationCap } from 'lucide-react';
-import type { NavigationMenuItem } from '../../types/cms.types';
+import { Menu, X, ChevronDown, ChevronRight, ArrowRight, User, HandHeart, GraduationCap } from 'lucide-react';
 
-interface NavbarProps {
-  items?: NavigationMenuItem[];
-  locale?: string;
-}
+const FacebookIcon = ({ className }: { className?: string }) => (
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
+  </svg>
+);
 
-const DEFAULT_NAV_ITEMS: NavigationMenuItem[] = [
-  { title: 'Home', url: '/' },
-  { title: 'About Us', url: '/about' },
-  { title: 'Programs', url: '/programs' },
-  { title: 'Departments', url: '/departments' },
-  { title: 'Admissions', url: '/admissions' },
-  { title: 'News & Events', url: '/news' },
-  { title: 'Waqf & Donations', url: '/donations' },
-  { title: 'FAQ', url: '/faq' },
-];
+const TwitterIcon = ({ className }: { className?: string }) => (
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z" />
+  </svg>
+);
 
-export function Navbar({ items = DEFAULT_NAV_ITEMS, locale = 'en' }: NavbarProps) {
+const InstagramIcon = ({ className }: { className?: string }) => (
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+  </svg>
+);
+
+const LinkedinIcon = ({ className }: { className?: string }) => (
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-4 0v7h-4v-7a6 6 0 0 1 6-6z"></path>
+    <rect x="2" y="9" width="4" height="12"></rect>
+    <circle cx="4" cy="4" r="2"></circle>
+  </svg>
+);
+import { LanguageSwitcher } from './LanguageSwitcher';
+import { Container } from '../ui/Container';
+import { useTranslations } from 'next-intl';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Parallax } from 'swiper/modules';
+import type { Swiper as SwiperType } from 'swiper';
+import { useLenis } from 'lenis/react';
+import 'swiper/css';
+
+export function Navbar({ locale = 'en', menu, topbarMenu, contactInfo }: { locale?: string; menu?: any; topbarMenu?: any; contactInfo?: any }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [activeDropdown, setActiveDropdown] = useState<number | null>(null);
+  const [mobileAboutOpen, setMobileAboutOpen] = useState(false);
+  const [aboutDropdownOpen, setAboutDropdownOpen] = useState(false);
+  const [activeAboutMenu, setActiveAboutMenu] = useState('about');
+  const lenis = useLenis();
+  const swiperRef = useRef<SwiperType | null>(null);
   const pathname = usePathname();
+  const [isVisible, setIsVisible] = useState(true);
+  const lastScrollY = useRef(0);
+  const t = useTranslations('publicNav');
 
-  const navItems = items && items.length > 0 ? items : DEFAULT_NAV_ITEMS;
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
 
-  const isLinkActive = (url: string) => {
-    if (url === '/') {
-      return pathname === '/' || pathname === `/${locale}` || pathname === `/${locale}/`;
+      if (currentScrollY > lastScrollY.current && currentScrollY > 50) {
+        setIsVisible(false);
+      } else if (currentScrollY < lastScrollY.current) {
+        setIsVisible(true);
+      }
+
+      lastScrollY.current = currentScrollY;
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  useEffect(() => {
+    setAboutDropdownOpen(false);
+    setMobileMenuOpen(false);
+    setMobileAboutOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      lenis?.stop();
+    } else {
+      lenis?.start();
     }
+    return () => {
+      lenis?.start();
+    };
+  }, [mobileMenuOpen, lenis]);
+
+  // Try to find the "About" item to build the mega-menu dynamically
+  const aboutMenuItem = menu?.items?.find((item: any) => item.subItems && item.subItems.length > 0) || menu?.items?.find((item: any) => item.title.toLowerCase().includes('about'));
+  
+  const dynamicAboutOptions = aboutMenuItem?.subItems?.map((child: any) => ({
+    id: child.title.toLowerCase().replace(/\s+/g, '-'),
+    label: child.title,
+    href: child.url,
+    image: child.media?.url || '/images/figma-home/02-about.jpeg',
+    badge: child.badge || t('ourCommunity')
+  }));
+
+  const aboutMenuOptions = dynamicAboutOptions && dynamicAboutOptions.length > 0 
+    ? dynamicAboutOptions 
+    : [
+        { id: 'about', label: t('aboutUs'), href: '/about', image: '/images/figma-home/02-about.jpeg', badge: t('ourCommunity') },
+        { id: 'staffs', label: t('staffs'), href: '/staffs', image: '/images/figma-home/20-news.jpeg', badge: t('ourTeam') },
+        { id: 'career', label: t('career'), href: '/career', image: '/images/figma-home/15-news.jpeg', badge: t('joinUs') },
+      ];
+
+  const isOnlineLearning = (url: string) => url.includes('online-learning');
+
+  const leftNavItems = menu?.items ? menu.items.filter((i: any) => i.id !== aboutMenuItem?.id && !isOnlineLearning(i.url)).slice(0, 3) : [
+    { title: t('home'), url: '/' },
+    { title: t('academicPrograms'), url: '/programs' },
+    { title: t('newsAndEvents'), url: '/news' }
+  ];
+
+  const rightNavItems = menu?.items ? menu.items.filter((i: any) => i.id !== aboutMenuItem?.id && !isOnlineLearning(i.url)).slice(3) : [
+    { title: t('contact'), url: '/contact' }
+  ];
+
+  // Basic link active check
+  const isLinkActive = (url: string) => {
+    if (url === '/') return pathname === '/' || pathname === `/${locale}` || pathname === `/${locale}/`;
     return pathname.includes(url);
   };
 
@@ -43,140 +132,333 @@ export function Navbar({ items = DEFAULT_NAV_ITEMS, locale = 'en' }: NavbarProps
     return cleanUrl === '/' ? `/${locale}` : `/${locale}${cleanUrl}`;
   };
 
+  const NavLink = ({ href, children, hasDropdown = false, isOpen = false, className = '' }: { href: string; children: React.ReactNode; hasDropdown?: boolean; isOpen?: boolean; className?: string }) => {
+    const active = isLinkActive(href);
+    return (
+      <Link
+        href={getHref(href)}
+        className={`flex items-center gap-1 text-[15px] font-semibold transition-colors outline-none ${active ? 'text-[#048ED6]' : 'text-gray-800 hover:text-[#048ED6]'
+          } ${className}`}
+      >
+        {children}
+        {hasDropdown && <ChevronDown className={`w-4 h-4 transition-transform duration-500 ${isOpen ? '-rotate-180' : 'lg:group-hover:-rotate-180'}`} />}
+      </Link>
+    );
+  };
+
   return (
-    <header className="sticky top-0 z-50 bg-white border-b border-emerald-900/10 shadow-sm transition-all">
-      <div className="max-w-7xl mx-auto px-4 sm:px-8">
-        <div className="flex items-center justify-between h-20">
-          {/* Logo & School Title */}
-          <Link href={getHref('/')} className="flex items-center gap-3.5 group">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-800 via-emerald-900 to-emerald-950 flex items-center justify-center text-amber-400 font-extrabold text-2xl shadow-md group-hover:scale-105 transition-transform border border-emerald-700/50">
-              Y<span className="text-emerald-300 text-sm font-semibold">S</span>
-            </div>
-            <div className="flex flex-col">
-              <span className="font-extrabold text-xl tracking-tight text-emerald-950 group-hover:text-emerald-800 transition-colors">
-                YAHAYASCOOL
-              </span>
-              <span className="text-[11px] font-medium uppercase tracking-wider text-amber-700 font-serif">
-                Islamic & English High School
-              </span>
-            </div>
-          </Link>
-
-          {/* Desktop Navigation Links */}
-          <nav className="hidden lg:flex items-center gap-1 xl:gap-2">
-            {navItems.map((item, idx) => {
-              const active = isLinkActive(item.url);
-              const hasChildren = item.children && item.children.length > 0;
-
-              return (
-                <div
-                  key={idx}
-                  className="relative"
-                  onMouseEnter={() => hasChildren && setActiveDropdown(idx)}
-                  onMouseLeave={() => hasChildren && setActiveDropdown(null)}
-                >
-                  <Link
-                    href={getHref(item.url)}
-                    target={item.target || '_self'}
-                    className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                      active
-                        ? 'text-emerald-900 bg-emerald-50/80 font-bold shadow-2xs'
-                        : 'text-gray-700 hover:text-emerald-900 hover:bg-gray-50'
-                    }`}
-                  >
-                    <span>{item.title}</span>
-                    {hasChildren && <ChevronDown className="w-3.5 h-3.5 opacity-60" />}
-                  </Link>
-
-                  {/* Dropdown Menu */}
-                  {hasChildren && activeDropdown === idx && (
-                    <div className="absolute top-full left-0 mt-1 w-56 bg-white rounded-xl shadow-xl border border-gray-100 py-2 animate-in fade-in slide-in-from-top-2 duration-150">
-                      {item.children!.map((child, cIdx) => (
-                        <Link
-                          key={cIdx}
-                          href={getHref(child.url)}
-                          target={child.target || '_self'}
-                          className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-emerald-50/80 hover:text-emerald-900 transition-colors"
-                        >
-                          {child.title}
-                        </Link>
-                      ))}
-                    </div>
-                  )}
+    <>
+    <header className={`sticky top-0 z-50 bg-white border-b border-gray-100 transition-transform duration-500 ${isVisible ? 'translate-y-0' : '-translate-y-[calc(100%+40px)]'}`}>
+      
+      {/* Top Bar - Desktop Only */}
+      <div className="hidden h-[50px] lg:flex w-full bg-gradient-to-r from-primary via-white to-primary text-white py-2 px-[var(--spacing-side)] justify-between items-center text-sm font-medium z-20 relative border-b border-white/10">
+        <div className="flex items-center gap-6">
+          {topbarMenu?.items ? topbarMenu.items.map((item: any, idx: number) => (
+            <Link key={idx} href={getHref(item.url)} className="group lg:hover:text-white/80 transition-colors flex items-center gap-2 font-semibold text-[13px] tracking-wide">
+              {item.url.includes('online-learning') && (
+                <div className="relative flex items-center justify-center">
+                  <div className="absolute inset-0 bg-white/40 rounded-full animate-ping opacity-75 duration-1000"></div>
+                  <div className="relative bg-white/10 group-hover:bg-white/20 p-1.5 rounded-full transition-colors flex items-center justify-center">
+                    <GraduationCap className="w-4 h-4 relative z-10" />
+                  </div>
                 </div>
-              );
-            })}
-          </nav>
-
-          {/* Right Action Buttons */}
-          <div className="hidden sm:flex items-center gap-3">
-            <Link
-              href={getHref('/donations')}
-              className="hidden xl:flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold text-emerald-900 bg-amber-100 hover:bg-amber-200 border border-amber-300/60 transition-colors shadow-2xs"
-            >
-              <HeartHandshake className="w-3.5 h-3.5 text-amber-700" />
-              <span>Waqf Fund</span>
+              )}
+              <div className='text-from-18 text-to-20'>
+                  {item.title}
+              </div>
             </Link>
-            <Link
-              href={getHref('/online-registration')}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-emerald-800 to-emerald-950 hover:from-emerald-700 hover:to-emerald-900 shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5"
-            >
-              <GraduationCap className="w-4 h-4 text-amber-300" />
-              <span>Apply Online</span>
+          )) : (
+            <Link href={getHref('/online-learning')} className="group lg:hover:text-white/80 transition-colors flex items-center gap-2 font-semibold text-[13px] tracking-wide">
+              <div className="relative flex items-center justify-center">
+                <div className="absolute inset-0 bg-white/40 rounded-full animate-ping opacity-75 duration-1000"></div>
+                <div className="relative bg-white/10 group-hover:bg-white/20 p-1.5 rounded-full transition-colors flex items-center justify-center">
+                  <GraduationCap className="w-4 h-4 relative z-10" />
+                </div>
+              </div>
+              <div className='text-from-18 text-to-20'>
+                  {'Online Learning'}
+              </div>
             </Link>
-          </div>
-
-          {/* Mobile Menu Toggle Button */}
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="lg:hidden p-2 rounded-lg text-gray-700 hover:bg-gray-100 focus:outline-hidden"
-            aria-label="Toggle Navigation Menu"
-          >
-            {mobileMenuOpen ? <X className="w-6 h-6 text-emerald-900" /> : <Menu className="w-6 h-6" />}
-          </button>
+          )}
+        </div>
+        <div className="flex items-center gap-5">
+          {contactInfo?.socialMedia?.length > 0 ? (
+            <div className="flex items-center gap-4 text-white/90">
+              {contactInfo.socialMedia.map((s: any, i: number) => {
+                let iconClass = 'icon-link';
+                const iconName = s.icon || s.title;
+                if (iconName) {
+                  iconClass = iconName.startsWith('icon-') ? iconName.toLowerCase() : `icon-${iconName.toLowerCase()}`;
+                }
+                return (
+                  <a key={i} href={s.url} target="_blank" rel="noopener noreferrer" aria-label={s.title} className="lg:hover:text-white/80 transition-all lg:hover:-translate-y-[1px] block">
+                    <i className={`${iconClass} text-[15px] flex justify-center items-center`} />
+                  </a>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="flex items-center gap-4 text-white/90">
+              <a href="#" aria-label="Facebook" className="lg:hover:text-white/80 transition-all lg:hover:-translate-y-[1px] block"><FacebookIcon className="w-4 h-4" /></a>
+              <a href="#" aria-label="Twitter" className="lg:hover:text-white/80 transition-all lg:hover:-translate-y-[1px] block"><TwitterIcon className="w-4 h-4" /></a>
+              <a href="#" aria-label="Instagram" className="lg:hover:text-white/80 transition-all lg:hover:-translate-y-[1px] block"><InstagramIcon className="w-4 h-4" /></a>
+              <a href="#" aria-label="LinkedIn" className="lg:hover:text-white/80 transition-all lg:hover:-translate-y-[1px] block"><LinkedinIcon className="w-4 h-4" /></a>
+            </div>
+          )}
+          
+          <div className="w-[1px] h-4 bg-white/40"></div>
+          
+          <a href={getHref(topbarMenu?.ctaButtonUrl || '/login')} target="_blank" rel="noopener noreferrer" className="bg-transparent border border-white text-white hover:bg-white/10 px-5 py-1.5 rounded-full transition-all flex items-center gap-2 font-medium text-[13px]">
+            <User className="w-4 h-4" />
+            {topbarMenu?.ctaButtonTitle || t('loginPortal')}
+          </a>
         </div>
       </div>
 
+      <Container className='max-w-[1920px] px-[var(--spacing-side)]'>
+        <div className="w-[300px] h-[40px] max-lg:hidden flex justify-center items-end pointer-events-none absolute bottom-[-12px] left-1/2 -translate-x-1/2 z-[10]">
+          <Image
+            src="/logo-under.webp"
+            alt="Logo under please ignore it"
+            width={185}
+            height={145}
+            className="object-contain lg:hover:scale-105 transition-transform"
+            priority
+          />
+        </div>
+        <div className="w-full h-full relative">
+
+          {/* Left Navigation */}
+          <nav className='w-full h-24.75 bg-white flex justify-between items-center lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,auto)_minmax(0,1fr)]'>
+            <div className="hidden lg:flex items-center gap-2 xl:gap-(--spacing-gap)  lg:[&_*]:text-[18px] [&_*]:text-[16px]">
+              {leftNavItems.map((item: any, idx: number) => (
+                <NavLink key={idx} href={item.url}>{item.title}</NavLink>
+              ))}
+            </div>
+
+            {/* Center Logo */}
+            <Link href={getHref('/')} className="flex lg:max-w-[76px] items-center justify-center z-10 shrink-0">
+              <Image
+                src="/headerlogo.png"
+                alt="YAHAYASCHOOL Logo"
+                width={80}
+                height={95}
+                className="object-contain lg:hover:scale-105  lg:max-w-[76px] max-w-[65px] max-xs:max-w-[55px] transition-transform"
+                priority
+              />
+            </Link>
+
+            {/* Right Navigation & Actions */}
+            <div className="hidden lg:flex items-center  gap-5 xl:gap-[40px] h-full justify-end ps-8">
+              <nav className="flex items-center h-full gap-2 xl:gap-(--spacing-gap) gap-(--spacing-gap) xl:[&_*]:text-[18px] [&_*]:text-[16px]">
+
+
+                {/* About Dropdown */}
+                <div
+                  className="group relative h-full flex items-center outline-none cursor-pointer"
+                  onClick={() => setAboutDropdownOpen(!aboutDropdownOpen)}
+                >
+                  <NavLink href="/about" hasDropdown isOpen={aboutDropdownOpen} className="w-full h-full relative cursor-pointer">{aboutMenuItem?.title || t('about')}</NavLink>
+                  
+                  <div
+                    // Clicks inside the panel must not reach the wrapper's toggle above:
+                    // it would flip the dropdown *open*, and since the backdrop is
+                    // pointer-events-none the page would be left blurred with no way to
+                    // dismiss it. Most visible when picking the page you are already on,
+                    // where the route never changes so no navigation reset fires.
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setAboutDropdownOpen(false);
+                    }}
+                    className={`lg:absolute lg:top-full z-50 lg:left-[-150px] pointer-events-none w-full lg:w-[clamp(600px,50vw,690px)] bg-white rounded-2xl shadow-2xl border border-gray-100 p-4 transition-all duration-300 origin-top ${aboutDropdownOpen
+                      ? 'opacity-100 visible scale-100 pointer-events-auto'
+                      : 'opacity-0 invisible scale-95 pointer-events-none lg:group-hover:opacity-100 lg:group-hover:visible lg:group-hover:scale-100 lg:group-hover:pointer-events-auto'
+                      }`}
+                  >
+                    <div className="grid grid-cols-1 lg:grid-cols-[200px_1fr] gap-(--spacing-gap)">
+                      {/* Left Column - List */}
+                      <div className="flex flex-col gap-2">
+                        {aboutMenuOptions.map((item, index) => (
+                          <Link
+                            key={item.id}
+                            href={getHref(item.href)}
+                            onMouseEnter={() => {
+                              setActiveAboutMenu(item.id);
+                              if (swiperRef.current) {
+                                swiperRef.current.slideTo(index);
+                              }
+                            }}
+                            className={`flex items-center border border-gray-200 text-gray-700 justify-between px-4 py-3 rounded-xl text-[16px] font-medium transition-all cursor-pointer ${activeAboutMenu === item.id
+                              ? 'bg-[#048ED6] text-white duration-500 border border-gray-200'
+                              : 'bg-white border border-gray-200 text-gray-700 lg:hover:border-gray-300 lg:hover:bg-gray-50'
+                              }`}
+                          >
+                            {item.label}
+                            <ChevronRight className="w-5 h-5" />
+                          </Link>
+                        ))}
+                      </div>
+
+                      {/* Right Column - Slider Image (hidden on small screens) */}
+                      <div className="hidden lg:block relative rounded-2xl overflow-hidden h-[240px] bg-gray-100">
+                        <Swiper
+                          direction="vertical"
+                          className="w-full h-full"
+                          parallax={true}
+                          modules={[Parallax]}
+                          onSwiper={(swiper) => {
+                            swiperRef.current = swiper;
+                          }}
+                          allowTouchMove={false}
+                          speed={800}
+                        >
+                          {aboutMenuOptions.map((item) => (
+                            <SwiperSlide key={item.id} className="group/slide w-full h-full relative overflow-hidden">
+                              <div className='w-full h-full relative overflow-hidden'>
+                                <a href={getHref(item.href)} className='w-full h-full block overflow-hidden'>
+                                  <div className="w-full h-full relative scale-125" data-swiper-parallax-y="-20%">
+                                    <Image
+                                      src={item.image}
+                                      alt={item.label}
+                                      fill
+                                      className="object-cover w-full h-full"
+                                    />
+                                  </div>
+                                  <div className="absolute opacity-0 group-[&.swiper-slide-active]/slide:opacity-100 translate-x-[-100%] group-[&.swiper-slide-active]/slide:translate-x-0  group-[&.swiper-slide-active]/slide:delay-300 duration-500 top-4 left-4 group-[&.swiper-slide-active]/slide:bg-white group-[&.swiper-slide-active]/slide:backdrop-blur-sm px-4 py-1.5 rounded-full text-[#048ED6] font-medium text-sm shadow-sm z-10" data-swiper-parallax-y="-20" data-swiper-parallax-opacity="0">
+                                    {item.badge}
+                                  </div>
+                                </a>
+                              </div>
+
+                            </SwiperSlide>
+                          ))}
+                        </Swiper>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {rightNavItems.map((item: any, idx: number) => (
+                  <NavLink key={idx} href={item.url}>{item.title}</NavLink>
+                ))}
+              </nav>
+
+              <div className="flex items-center h-full gap-(--spacing-gap)  border-gray-200">
+                <LanguageSwitcher currentLocale={locale} />
+                <Link
+                  href={getHref(menu?.ctaButtonUrl || '/donations')}
+                  className="flex items-center gap-2 px-[32px] py-[13px] rounded-full text-sm font-bold text-white bg-[#048ED6] hover:bg-sky-500 shadow-md transition-all"
+                >
+                  <HandHeart className="w-5 h-5" />
+                  <span>{menu?.ctaButtonTitle || t('donations')}</span>
+                  <ArrowRight className="w-4 h-4 rtl:rotate-180" />
+                </Link>
+              </div>
+            </div>
+
+            {/* Mobile Menu Toggle & Language */}
+            <div className="lg:hidden h-full flex items-center gap-2 max-lg:gap-5 z-50 relative">
+              <LanguageSwitcher 
+                currentLocale={locale} 
+                forceClose={mobileMenuOpen}
+                onToggle={(isOpen) => {
+                  if (isOpen) setMobileMenuOpen(false);
+                }}
+              />
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="cursor-pointer"
+                aria-label="Toggle Navigation Menu"
+              >
+                <div className="w-8 h-6 flex flex-col justify-between items-center relative">
+                  <span className={`block h-[2px] w-full transform transition duration-300 ease-in-out ${mobileMenuOpen ? 'rotate-45 translate-y-[11px] bg-[#048ED6]' : 'bg-gray-800'}`} />
+                  <span className={`block h-[2px] w-full transform transition duration-300 ease-in-out ${mobileMenuOpen ? 'opacity-0 bg-white/0 w-0' : 'bg-gray-800'}`} />
+                  <span className={`block h-[2px] w-full transform transition duration-300 ease-in-out ${mobileMenuOpen ? '-rotate-45 -translate-y-[11px] bg-[#048ED6]' : 'bg-gray-800'}`} />
+                </div>
+              </button>
+            </div>
+          </nav>
+        </div>
+      </Container>
+
       {/* Mobile Menu Drawer */}
       {mobileMenuOpen && (
-        <div className="lg:hidden bg-white border-t border-gray-100 px-4 pt-2 pb-6 shadow-xl animate-in fade-in duration-200">
-          <div className="flex flex-col space-y-1">
-            {navItems.map((item, idx) => {
-              const active = isLinkActive(item.url);
+        <div className="lg:hidden bg-white border-t border-gray-100 pt-4 pb-6 shadow-xl absolute w-full left-0 z-550 overflow-hidden transition-all duration-300 origin-top animate-in fade-in slide-in-from-top-2">
+          <div className="flex flex-col">
+            {(menu?.items || [
+              { id: 'home', title: t('home'), url: '/' },
+              { id: 'about-fallback', title: t('about'), url: '/about', subItems: aboutMenuOptions },
+              { id: 'programs', title: t('academicPrograms'), url: '/programs' },
+              { id: 'online', title: t('onlineLearning'), url: '/online-learning' },
+              { id: 'news', title: t('newsAndEvents'), url: '/news' },
+              { id: 'gallery', title: t('gallery'), url: '/gallery' },
+              { id: 'contact', title: t('contact'), url: '/contact' }
+            ]).map((item: any, idx: number) => {
+              const isAbout = item.id === aboutMenuItem?.id || item.id === 'about-fallback';
+              
+              if (isAbout) {
+                return (
+                  <div key={idx} className="flex flex-col">
+                    <button 
+                      onClick={() => setMobileAboutOpen(!mobileAboutOpen)}
+                      className={`flex justify-between items-center px-[var(--spacing-side)] py-3 text-[18px] font-semibold text-gray-800 transition-colors ${mobileAboutOpen ? 'bg-primary/5' : 'bg-white'}`}
+                    >
+                      {item.title}
+                      <ChevronDown className={`w-5 h-5 transition-transform duration-300 ${mobileAboutOpen ? 'rotate-180' : ''}`} />
+                    </button>
+                    <div className={`grid transition-all duration-300 ease-in-out ${mobileAboutOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+                      <div className="overflow-hidden flex flex-col">
+                        <div className='flex flex-col w-full bg-primary'>
+                        {aboutMenuOptions.map((subItem, index) => (
+                          <Link key={subItem.id} href={getHref(subItem.href)} onClick={() => setMobileMenuOpen(false)} className="pl-[calc(var(--spacing-side)+12px)] py-2 text-[16px] border-t-[1px] border-white font-medium text-white">
+                            {subItem.label}
+                          </Link>
+                        ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+
               return (
-                <Link
-                  key={idx}
-                  href={getHref(item.url)}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={`px-4 py-3 rounded-lg text-base font-medium transition-colors ${
-                    active ? 'bg-emerald-900 text-white font-bold' : 'text-gray-800 hover:bg-emerald-50 hover:text-emerald-900'
-                  }`}
-                >
+                <Link key={idx} href={getHref(item.url)} onClick={() => setMobileMenuOpen(false)} className="px-[var(--spacing-side)] py-3 rounded-lg text-[18px] font-semibold text-gray-800">
                   {item.title}
                 </Link>
               );
             })}
-            <div className="pt-4 mt-2 border-t border-gray-100 flex flex-col gap-2">
+            <div className="pt-4 mt-2 flex flex-col min-[450px]:flex-row gap-3 px-[var(--spacing-side)]">
               <Link
-                href={getHref('/online-registration')}
-                onClick={() => setMobileMenuOpen(false)}
-                className="w-full py-3 rounded-xl text-center font-bold text-white bg-emerald-900 hover:bg-emerald-800 shadow-md transition-colors flex items-center justify-center gap-2"
+                href={getHref(menu?.ctaButtonUrl || '/donations')}
+                className="flex-1 py-3 px-2 rounded-full text-center font-bold text-white bg-[#048ED6] hover:bg-sky-500 transition-colors flex items-center justify-center gap-1.5 text-[13px] sm:text-sm"
               >
-                <GraduationCap className="w-4 h-4 text-amber-300" />
-                <span>Apply Online for Admission</span>
+                <HandHeart className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
+                <span className="truncate">{menu?.ctaButtonTitle || t('donations')}</span>
               </Link>
-              <Link
-                href={getHref('/donations')}
-                onClick={() => setMobileMenuOpen(false)}
-                className="w-full py-2.5 rounded-xl text-center font-semibold text-emerald-900 bg-amber-100 hover:bg-amber-200 border border-amber-300 transition-colors flex items-center justify-center gap-2 text-sm"
+              <a
+                href="/login"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 py-3 px-2 rounded-full text-center font-bold text-[#048ED6] bg-blue-50 border border-[#048ED6]/20 hover:bg-blue-100 transition-colors flex items-center justify-center gap-1.5 text-[13px] sm:text-sm"
               >
-                <HeartHandshake className="w-4 h-4 text-amber-700" />
-                <span>Support Our Waqf & Scholarships</span>
-              </Link>
+                <User className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
+                <span className="truncate">{t('loginPortal')}</span>
+              </a>
             </div>
           </div>
         </div>
       )}
     </header>
+
+    {/* Mobile Menu Overlay */}
+    {mobileMenuOpen && (
+      <div 
+        className="fixed inset-0 z-[45] bg-black/50 backdrop-blur-sm lg:hidden"
+        onClick={() => setMobileMenuOpen(false)}
+        aria-hidden="true"
+      />
+    )}
+
+    </>
   );
 }

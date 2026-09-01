@@ -1,143 +1,158 @@
 import React from 'react';
-import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { cmsService } from '@/services/cms.service';
-import { ArrowLeft, Building2, UserCheck, GraduationCap, ArrowRight } from 'lucide-react';
+import { ArrowRight, Download, CheckCircle2, GraduationCap } from 'lucide-react';
+import { Container } from '@/components/ui/Container';
+import { LearningApproachSection } from '@/components/public/academics/LearningApproachSection';
 
-interface DepartmentDetailProps {
-  params: Promise<{ locale: string; slug: string }>;
-}
-
-export async function generateMetadata({ params }: DepartmentDetailProps): Promise<Metadata> {
-  const { locale, slug } = await params;
-  const department = await cmsService.getDepartmentBySlug(slug, locale);
-
-  if (!department) {
-    return { title: 'Department Not Found | YAHAYASCOOL' };
-  }
-
-  return {
-    title: department.seo?.metaTitle || `${department.title} | YAHAYASCOOL`,
-    description: department.seo?.metaDescription || department.description,
-  };
-}
-
-export default async function DepartmentDetailPage({ params }: DepartmentDetailProps) {
-  const { locale, slug } = await params;
-  const department = await cmsService.getDepartmentBySlug(slug, locale);
-
-  if (!department) {
-    notFound();
-  }
-
-  const getHref = (url: string) => (locale === 'en' ? url : `/${locale}${url}`);
+export default async function AcademicDetailPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  
+  // In a real app, you would fetch data based on the slug here.
+  // We'll use static mock data representing the Qur'an Memorization detail page.
 
   return (
-    <main className="min-h-screen bg-gray-50/70 pb-24">
-      {/* Hero Header */}
-      <section className="bg-gradient-to-br from-emerald-950 via-emerald-900 to-emerald-950 text-white py-20 relative overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-8 relative z-10">
-          <Link
-            href={getHref('/departments')}
-            className="inline-flex items-center gap-2 text-emerald-300 hover:text-amber-400 font-semibold text-sm mb-8 transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4 rtl:rotate-180" />
-            <span>Back to All Departments</span>
-          </Link>
-
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
-            <div className="max-w-3xl">
-              {department.headOfDepartment && (
-                <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 mb-4">
-                  <UserCheck className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Head of Department: {department.headOfDepartment}</span>
-                </span>
-              )}
-
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white mb-6">
-                {department.title}
-              </h1>
-
-              <div
-                className="text-lg text-emerald-100 font-light leading-relaxed max-w-2xl"
-                dangerouslySetInnerHTML={{ __html: typeof department.description === 'string' ? department.description : '' }}
-              />
+    <main className="min-h-screen bg-white">
+      {/* Hero Section */}
+      <section className="pt-32 pb-24 relative overflow-hidden">
+        <Container>
+          <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
+            {/* Left Content */}
+            <div className="w-full lg:w-1/2 flex flex-col">
+              {/* Breadcrumbs */}
+              <div className="flex items-center gap-2 text-sm text-slate-500 mb-8 font-medium">
+                <Link href="/" className="hover:text-[#048ED6] transition-colors">Home</Link>
+                <span className="text-slate-300">/</span>
+                <Link href="/departments" className="hover:text-[#048ED6] transition-colors">Departments</Link>
+                <span className="text-slate-300">/</span>
+                <span className="text-[#048ED6]">Department-details</span>
+              </div>
+              
+              <div className="mb-6">
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-sky-50 border border-sky-100 text-[#048ED6] text-xs font-bold tracking-widest uppercase mb-6">
+                  <GraduationCap className="w-4 h-4" />
+                  <span>Academic Excellence</span>
+                </div>
+                <h1 className="text-5xl md:text-6xl font-bold text-slate-900 leading-tight mb-2">
+                  Knowledge Rooted in Faith.
+                </h1>
+                <h2 className="text-5xl md:text-6xl font-bold text-[#048ED6] italic leading-tight mb-8">
+                  Excellence Built for Life.
+                </h2>
+              </div>
+              
+              <p className="text-slate-600 text-lg leading-relaxed mb-10 max-w-xl">
+                Yahaya International's Quran Memorization & Hifz Program offers a scholarly environment where spiritual devotion meets academic rigor, nurturing tomorrow's leaders through the wisdom of the Holy Quran.
+              </p>
+              
+              <div className="flex flex-wrap items-center gap-4">
+                <Link
+                  href="/admissions"
+                  className="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-[#048ED6] text-white text-[15px] font-semibold rounded-full hover:bg-sky-500 transition-colors shadow-md hover:shadow-lg"
+                >
+                  <span>Apply for Admission</span>
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+                
+                <button
+                  className="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-white text-[#048ED6] border border-[#048ED6] text-[15px] font-semibold rounded-full hover:bg-sky-50 transition-colors"
+                >
+                  <span>Download Pdf</span>
+                  <Download className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+            
+            {/* Right Image */}
+            <div className="w-full lg:w-1/2 relative">
+              <div className="relative rounded-t-[100px] rounded-br-[100px] rounded-bl-3xl overflow-hidden shadow-2xl aspect-[4/3] border-8 border-white">
+                <img 
+                  src="https://images.unsplash.com/photo-1609599006353-e629aaab315d?auto=format&fit=crop&w=1200&q=80" 
+                  alt="Student reciting Quran"
+                  className="w-full h-full object-cover"
+                />
+              </div>
             </div>
           </div>
-        </div>
+        </Container>
       </section>
 
-      {/* Associated Programs & Teachers */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-8 mt-14 space-y-16">
-        {/* Academic Programs under this Department */}
-        {department.programs && department.programs.length > 0 && (
-          <div>
-            <div className="flex items-center justify-between mb-8">
-              <div>
-                <h2 className="text-2xl sm:text-3xl font-extrabold text-emerald-950">
-                  Academic Tracks in this Faculty
-                </h2>
-                <p className="text-gray-600 text-sm mt-1">
-                  Specialized curriculum tracks supervised by {department.title}
-                </p>
+      {/* Pathway Section */}
+      <section className="py-24 bg-white border-t border-slate-100">
+        <Container>
+          <div className="flex flex-col lg:flex-row gap-16 lg:gap-24 items-center">
+            
+            {/* Left: Text and List */}
+            <div className="w-full lg:w-1/2 flex flex-col">
+              <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-6">
+                The Hifz Pathway
+              </h2>
+              
+              <p className="text-slate-600 text-[1rem] leading-relaxed mb-10">
+                Our Quran Memorization program is more than a curriculum; it is a transformative journey. We combine traditional Ottoman and African memorization techniques with modern pedagogical approaches to ensure deep retention and authentic Tajweed.
+              </p>
+              
+              <div className="flex flex-col gap-8">
+                {/* Pathway Items */}
+                {[
+                  { title: 'Intensive Memorization', desc: 'Daily structured sessions focused on new verses, previous revision, and long-term retention.' },
+                  { title: 'Tafsir & Understanding', desc: 'Weekly sessions exploring the context and meaning of the memorized portions.' },
+                  { title: 'Tajweed Mastery', desc: 'Rigorous phonetics training ensuring perfect pronunciation and adherence to recitation rules.' },
+                  { title: 'Character Building', desc: 'Aligning student behavior with the morals and ethics found within the memorized texts.' },
+                ].map((item, idx) => (
+                  <div key={idx} className="flex gap-4">
+                    <div className="shrink-0 mt-1">
+                      <CheckCircle2 className="w-6 h-6 text-[#048ED6]" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-bold text-slate-900 mb-1">{item.title}</h3>
+                      <p className="text-slate-600 text-base leading-relaxed">{item.desc}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {department.programs.map((prog, idx) => (
-                <div
-                  key={idx}
-                  className="bg-white rounded-3xl p-8 border border-gray-200/80 shadow-xs hover:shadow-xl transition-all flex flex-col justify-between group"
-                >
-                  <div>
-                    <div className="w-12 h-12 rounded-2xl bg-emerald-900 text-amber-400 flex items-center justify-center font-bold shadow-md mb-6">
-                      <GraduationCap className="w-6 h-6" />
-                    </div>
-                    <h3 className="text-xl font-bold text-emerald-950 mb-3 group-hover:text-emerald-800 transition-colors">
-                      {prog.title}
-                    </h3>
-                    <p className="text-gray-600 text-sm leading-relaxed line-clamp-3 mb-6">
-                      {prog.description}
-                    </p>
+            {/* Right: Masonry Images */}
+            <div className="w-full lg:w-1/2">
+              <div className="grid grid-cols-2 gap-4 h-[500px]">
+                {/* Tall left image */}
+                <div className="col-span-1 rounded-2xl overflow-hidden shadow-lg h-full">
+                  <img 
+                    src="https://images.unsplash.com/photo-1584551246679-0daf3d275d0f?auto=format&fit=crop&w=800&q=80" 
+                    alt="Quran on stand"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                {/* Two stacked right images */}
+                <div className="col-span-1 grid grid-rows-2 gap-4 h-full">
+                  <div className="row-span-1 rounded-2xl overflow-hidden shadow-lg h-full">
+                    <img 
+                      src="https://images.unsplash.com/photo-1577896851231-70ef18881754?auto=format&fit=crop&w=600&q=80" 
+                      alt="Teacher and student"
+                      className="w-full h-full object-cover"
+                    />
                   </div>
-
-                  <div className="pt-6 border-t border-gray-100 flex items-center justify-between">
-                    <Link
-                      href={getHref(`/programs/${prog.slug}`)}
-                      className="inline-flex items-center gap-1.5 font-bold text-sm text-emerald-900 group-hover:text-amber-600 transition-colors"
-                    >
-                      <span>Track Details</span>
-                      <ArrowRight className="w-4 h-4 rtl:rotate-180" />
-                    </Link>
+                  <div className="row-span-1 rounded-2xl overflow-hidden shadow-lg h-full">
+                    <img 
+                      src="https://images.unsplash.com/photo-1529390079861-591de354faf5?auto=format&fit=crop&w=600&q=80" 
+                      alt="Students collaborating"
+                      className="w-full h-full object-cover"
+                    />
                   </div>
                 </div>
-              ))}
+              </div>
             </div>
-          </div>
-        )}
 
-        {/* Teachers / Faculty Members */}
-        {department.teachers && department.teachers.length > 0 && (
-          <div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-emerald-950 mb-8">
-              Faculty & Teaching Staff
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {department.teachers.map((teacher, idx) => (
-                <div key={idx} className="bg-white rounded-2xl p-6 border border-gray-200 shadow-2xs text-center flex flex-col items-center">
-                  <div className="w-16 h-16 rounded-full bg-emerald-900 text-amber-400 font-bold text-xl flex items-center justify-center mb-4 shadow-sm border-2 border-amber-400/30">
-                    {teacher.name.charAt(0).toUpperCase()}
-                  </div>
-                  <h4 className="font-bold text-emerald-950 text-base">{teacher.name}</h4>
-                  <span className="text-xs text-amber-600 font-semibold mt-0.5">{teacher.title}</span>
-                  {teacher.bio && <p className="text-gray-600 text-xs mt-3 line-clamp-2">{teacher.bio}</p>}
-                </div>
-              ))}
-            </div>
           </div>
-        )}
-      </div>
+        </Container>
+      </section>
+
+      {/* Shared Learning Approach Section */}
+      <LearningApproachSection />
     </main>
   );
 }

@@ -418,7 +418,7 @@ export default function OnlineRegistrationPage() {
               <div className="bg-emerald-50 rounded-2xl p-6 border border-emerald-100 flex items-center justify-between">
                 <div>
                   <h4 className="font-bold text-emerald-950 text-base">Hostel Boarding Accommodation</h4>
-                  <p className="text-gray-600 text-xs mt-1">
+                  <p className="text-gray-600 text-base mt-1">
                     Supervised 24/7 boarding facilities with nutritious halal meals and evening Qur\'anic revision circles.
                   </p>
                 </div>

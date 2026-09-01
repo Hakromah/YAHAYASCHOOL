@@ -1,149 +1,283 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { BookOpen, GraduationCap, ArrowRight, CheckCircle2, Clock } from 'lucide-react';
-import type { ProgramsGridSectionComponent, ProgramEntity } from '../../../types/cms.types';
-import { cmsService } from '../../../services/cms.service';
+import { motion } from 'framer-motion';
+import { ArrowRight, BookOpen, BookOpenText, GraduationCap, Laptop } from 'lucide-react';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Pagination } from 'swiper/modules';
+import { useTranslations } from 'next-intl';
 
-interface ProgramsGridProps {
-  data?: ProgramsGridSectionComponent;
-  initialPrograms?: ProgramEntity[];
-  locale?: string;
+import 'swiper/css';
+import 'swiper/css/pagination';
+
+/**
+ * Home — "Explore Our Programs" section.
+ * Implemented from Figma node 537-452 (frame 1920×1080).
+ *
+ * Design reference values (measured at the 1920 frame):
+ *   brand #048ED6 · ink #000000 · body #576059 · wells #E6F0FB · rule #EBEBEB
+ *   heading 44 · row title 50 · body 16/21 · wells 50 · CTA 175×52 pill
+ *   image column 557 wide (34.6% of content) — 255 tall open, 101 tall closed
+ *
+ * md and up  → accordion; hovering a row opens it (first row open at rest).
+ * below md   → the same rows become a swipeable slider.
+ * Note `--breakpoint-md` is 1025px in globals.css, not Tailwind's default.
+ */
+
+/** The Figma uses a mosque glyph here; lucide has no equivalent. */
+function MosqueIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden>
+      <path d="M4.5 8.2c0-1 .8-1.6.8-2.6 0-.7-.4-1.1-.8-1.5-.4.4-.8.8-.8 1.5 0 1 .8 1.6.8 2.6Z" />
+      <path d="M3.7 9.4h1.6V20H3.7V9.4Z" />
+      <path d="M13 4.2c2.6 1.3 4.4 3.3 4.4 5.5v.5H8.6v-.5c0-2.2 1.8-4.2 4.4-5.5Z" />
+      <path d="M6.8 20v-6.4c0-1.6 1.3-2.9 2.9-2.9h6.6c1.6 0 2.9 1.3 2.9 2.9V20h-3.6v-3.1a2.6 2.6 0 0 0-5.2 0V20H6.8Z" />
+      <path d="M19.9 12.6c.9.5 1.4 1.3 1.4 2.2V20h-1.4v-7.4Z" />
+    </svg>
+  );
 }
 
-const FALLBACK_PROGRAMS: ProgramEntity[] = [
+const PROGRAMS = [
   {
-    id: 1,
-    title: 'Tahfidz Al-Qur\'an & Tajweed Mastery',
-    slug: 'quran-memorization',
-    description: 'A dedicated, structured 3-year memorization track guiding students to memorize the entire Holy Qur\'an with flawless Tajweed alongside standard high school coursework.',
-    duration: '3 Academic Years',
-    isFeatured: true,
+    id: 'arabic',
+    iconImg: '/images/figma-home/11.png',
+    image: '/images/figma-home/19.png',
+    link: '/programs/arabic',
   },
   {
-    id: 2,
-    title: 'Advanced Arabic Immersion Track',
-    slug: 'arabic-immersion',
-    description: 'Immersive Classical and Modern Standard Arabic curriculum designed to foster fluency, classical text analysis, and eloquence in speech.',
-    duration: 'Full High School Track',
-    isFeatured: true,
+    id: 'english',
+    Icon: BookOpen,
+    image: '/images/figma-home/03-programs.jpeg',
+    link: '/programs/english',
   },
   {
-    id: 3,
-    title: 'STEM & Robotics Honors Track',
-    slug: 'stem-robotics',
-    description: 'Rigorous Western science preparation in Physics, Chemistry, Biology, and Advanced Computing, preparing graduates for top global engineering and medical universities.',
-    duration: '4 Academic Years',
-    isFeatured: true,
+    id: 'dawah',
+    Icon: MosqueIcon,
+    image: '/images/figma-home/17.png',
+    link: '/programs/dawah',
   },
-];
+  {
+    id: 'online',
+    Icon: Laptop,
+    image: '/images/figma-home/03-programs.jpeg',
+    link: '/online-learning',
+  },
+] as const;
 
-export function ProgramsGridSection({ data, initialPrograms, locale = 'en' }: ProgramsGridProps) {
-  const [programs, setPrograms] = useState<ProgramEntity[]>(initialPrograms || FALLBACK_PROGRAMS);
-  const [loading, setLoading] = useState(false);
+/** Rows carry either a lucide component or an exported illustration. */
+function RowIcon({ p, className }: { p: { Icon?: React.ElementType; iconImg?: string }; className?: string }) {
+  if (p.iconImg) return <img src={p.iconImg} alt="" aria-hidden className={className} />;
+  const I = p.Icon!;
+  return <I className={className} />;
+}
 
-  const title = data?.title || 'Our Academic Programs';
-  const subtitle = data?.subtitle || 'Excellence harmonized across Islamic Sciences and rigorous Western Disciplines';
-  const limit = data?.limit || 6;
-  const showFeaturedOnly = data?.showFeaturedOnly ?? false;
+const TITLE_CLS =
+  'font-bold text-black leading-[1.05] tracking-[-0.015em] text-[clamp(1.5rem,2.6vw,3.125rem)]';
+const BODY_CLS = 'text-[#576059] leading-[1.31] text-[clamp(0.9375rem,0.83vw,1rem)]';
+
+function LearnMore({ href, text }: { href: string; text: string }) {
+  return (
+    <Link
+      href={href}
+      className="inline-flex items-center justify-center gap-2 h-[52px] px-8 rounded-full bg-[#048ED6] text-white font-semibold text-[15px] shadow-md transition-colors hover:bg-[#037ab8]"
+    >
+      <span>{text}</span>
+      <ArrowRight className="w-4 h-4 rtl:rotate-180" />
+    </Link>
+  );
+}
+
+export function ProgramsGridSection({ locale = 'en', data }: { locale?: string; data?: unknown }) {
+  void locale;
+  void data;
+  const t = useTranslations('programsSection');
+  const [active, setActive] = useState(0);
+  const [isDesktop, setIsDesktop] = useState(false);
 
   useEffect(() => {
-    if (initialPrograms && initialPrograms.length > 0) return;
-    setLoading(true);
-    cmsService.getPrograms(locale, showFeaturedOnly, limit).then((fetched) => {
-      if (fetched && fetched.length > 0) {
-        setPrograms(fetched);
-      }
-      setLoading(false);
-    });
-  }, [locale, showFeaturedOnly, limit, initialPrograms]);
+    const mq = window.matchMedia('(min-width: 1024px)');
+    setIsDesktop(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
 
-  const getHref = (slug: string) => {
-    return locale === 'en' ? `/programs/${slug}` : `/${locale}/programs/${slug}`;
+  const headerVariants = {
+    hidden: {},
+    visible: { transition: { staggerChildren: 0.15 } }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 30 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } }
   };
 
   return (
-    <section className="bg-white py-20 sm:py-28 border-b border-gray-100">
-      <div className="max-w-7xl mx-auto px-4 sm:px-8">
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
-          <div>
-            <span className="inline-block px-3.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-emerald-100 text-emerald-900 mb-3">
-              Curriculum Tracks
-            </span>
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-emerald-950 tracking-tight">
-              {title}
-            </h2>
-            <p className="text-gray-600 text-base sm:text-lg mt-2 max-w-2xl">
-              {subtitle}
-            </p>
-          </div>
+    <section className="relative w-full bg-white overflow-hidden pt-[clamp(2rem,2.5vw,3rem)] sm:pt-[clamp(3rem,4.5vw,5.5rem)] pb-[clamp(1.5rem,3.8vw,4.8rem)] sm:pb-[clamp(3.5rem,4.8vw,5.8rem)]">
+      <div key={isDesktop ? 'desktop' : 'mobile'} className="contents">
+        <div className="max-w-[1920px] mx-auto px-(--spacing-side)">
 
-          <Link
-            href={locale === 'en' ? '/programs' : `/${locale}/programs`}
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm bg-emerald-900 text-white hover:bg-emerald-800 shadow-md transition-all self-start md:self-auto shrink-0"
+        {/* ── Header ──────────────────────────────────────────────── */}
+        <motion.div 
+          className="flex flex-col items-center text-center"
+          initial={isDesktop ? "hidden" : "visible"}
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.3 }}
+          variants={isDesktop ? headerVariants : {}}
+        >
+          <motion.span 
+            variants={isDesktop ? itemVariants : {}}
+            className="inline-flex items-center gap-2 h-10 px-4 rounded-full bg-[#E6F0FB] text-[#048ED6] font-semibold text-[15px]"
           >
-            <span>View All Programs</span>
-            <ArrowRight className="w-4 h-4 rtl:rotate-180" />
-          </Link>
+            <GraduationCap className="w-5 h-5" />
+            {t('eyebrow')}
+          </motion.span>
+          <motion.h2 
+            variants={isDesktop ? itemVariants : {}}
+            className="mt-[clamp(0.75rem,1.1vw,1.3rem)] font-bold text-black tracking-[-0.015em] leading-[1.09] text-[clamp(1.5rem,2.29vw,2.75rem)]"
+          >
+            {t('heading')}
+          </motion.h2>
+          <motion.p 
+            variants={isDesktop ? itemVariants : {}}
+            className={`mt-[clamp(0.75rem,1.1vw,1.3rem)] max-w-[620px] ${BODY_CLS}`}
+          >
+            {t('description')}
+          </motion.p>
+        </motion.div>
+
+        {/* ── md+ : hover-driven accordion ────────────────────────── */}
+        <motion.div 
+          className="max-md:hidden mt-[clamp(2.5rem,3.7vw,4.4rem)]"
+          initial={isDesktop ? "hidden" : "visible"}
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.1 }}
+          variants={isDesktop ? {
+            hidden: {},
+            visible: { transition: { staggerChildren: 0.15 } }
+          } : {}}
+        >
+          {PROGRAMS.map((p, i) => {
+            const open = active === i;
+            // The Figma drops the rule above the first row and above the row
+            // that follows the open one; every other row keeps its divider.
+            const rule = i !== 0 && i !== active + 1;
+            return (
+              <motion.div
+                key={p.id}
+                variants={isDesktop ? itemVariants : {}}
+                onMouseEnter={() => setActive(i)}
+                onFocus={() => setActive(i)}
+                className={`flex items-center gap-x-8 py-[14px] transition-colors ${rule ? 'border-t border-[#EBEBEB]' : 'border-t border-transparent'
+                  }`}
+              >
+                {/* Left: icon + copy */}
+                <div className="flex-1 min-w-0 flex items-start gap-8">
+                  <span className="mt-1 w-[50px] h-[50px] shrink-0 grid place-items-center rounded-full bg-[#E6F0FB] text-[#048ED6]">
+                    <RowIcon p={p} className="w-6 h-6 object-contain" />
+                  </span>
+                  <div className="min-w-0">
+                    <h3 className={TITLE_CLS}>{t(`programs.${p.id}.title`)}</h3>
+                    {/* Collapsed rows keep the copy in the DOM but at zero height. */}
+                    <div
+                      className={`grid transition-[grid-template-rows,opacity] duration-500 ease-out ${open ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+                        }`}
+                    >
+                      <div className="overflow-hidden">
+                        <p className={`mt-[clamp(1.1rem,2vw,2.4rem)] max-w-[620px] ${BODY_CLS}`}>
+                          {t(`programs.${p.id}.desc`)}
+                        </p>
+                        <div className="mt-[clamp(1.1rem,1.9vw,2.3rem)] pb-1">
+                          <LearnMore href={p.link} text={t('learnMore')} />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right: image, 255 tall open / 101 tall closed */}
+                <div
+                  className={`shrink-0 w-[34.6%] rounded-lg overflow-hidden transition-[height] duration-500 ease-out ${open ? 'h-[255px]' : 'h-[101px]'
+                    }`}
+                >
+                  <img src={p.image} alt={t(`programs.${p.id}.title`)} className="w-full h-full object-cover" />
+                </div>
+              </motion.div>
+            );
+          })}
+        </motion.div>
+
+        {/* ── below md : slider ───────────────────────────────────── */}
+        <div className="md:hidden mt-10">
+     
+            <Swiper
+  modules={[Pagination]}
+  slidesPerView={1}
+  spaceBetween={20}
+  speed={800}
+  autoplay={{
+    delay: 5000,
+    disableOnInteraction: false,
+  }}
+  pagination={{ clickable: true }}
+  breakpoints={{
+    690: {
+      slidesPerView: 2,
+      spaceBetween: 20,
+    },
+   
+  }}
+     className="programs-swiper !pb-12"
+>
+            {PROGRAMS.map((p) => (
+              <SwiperSlide key={p.id}>
+                <div className="flex flex-col">
+                  <div className="w-full h-[210px] rounded-lg overflow-hidden">
+                    <img src={p.image} alt={t(`programs.${p.id}.title`)} className="w-full h-full object-cover" />
+                  </div>
+                  <div className="flex items-center gap-4 mt-5">
+                    <span className="w-[50px] h-[50px] shrink-0 grid place-items-center rounded-full bg-[#E6F0FB] text-[#048ED6]">
+                      <RowIcon p={p} className="w-6 h-6 object-contain" />
+                    </span>
+                    <h3 className={TITLE_CLS}>{t(`programs.${p.id}.title`)}</h3>
+                  </div>
+                  <p className={`mt-4 ${BODY_CLS}`}>{t(`programs.${p.id}.desc`)}</p>
+                  <div className="mt-6">
+                    <LearnMore href={p.link} text={t('learnMore')} />
+                  </div>
+                </div>
+              </SwiperSlide>
+            ))}
+          </Swiper>
         </div>
 
-        {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 animate-pulse">
-            {[1, 2, 3].map((n) => (
-              <div key={n} className="bg-gray-100 h-80 rounded-3xl" />
-            ))}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {programs.map((prog, idx) => (
-              <div
-                key={idx}
-                className="bg-gray-50 hover:bg-white rounded-3xl p-8 border border-gray-200/80 shadow-xs hover:shadow-xl transition-all flex flex-col justify-between group"
-              >
-                <div>
-                  <div className="flex items-center justify-between mb-6">
-                    <div className="w-12 h-12 rounded-2xl bg-emerald-900 text-amber-400 flex items-center justify-center font-bold shadow-md">
-                      <GraduationCap className="w-6 h-6" />
-                    </div>
-                    {prog.duration && (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white text-xs font-semibold text-emerald-900 border border-gray-200">
-                        <Clock className="w-3.5 h-3.5 text-amber-500" />
-                        <span>{prog.duration}</span>
-                      </span>
-                    )}
-                  </div>
-
-                  <h3 className="text-xl font-bold text-emerald-950 mb-3 group-hover:text-emerald-800 transition-colors">
-                    {prog.title}
-                  </h3>
-
-                  <p className="text-gray-600 text-sm sm:text-base leading-relaxed line-clamp-3 mb-6">
-                    {prog.description}
-                  </p>
-                </div>
-
-                <div className="pt-6 border-t border-gray-200/60 flex items-center justify-between">
-                  <Link
-                    href={getHref(prog.slug)}
-                    className="inline-flex items-center gap-2 font-bold text-sm text-emerald-900 group-hover:text-amber-600 transition-colors"
-                  >
-                    <span>Program Syllabus</span>
-                    <ArrowRight className="w-4 h-4 rtl:rotate-180" />
-                  </Link>
-
-                  <Link
-                    href={locale === 'en' ? '/online-registration' : `/${locale}/online-registration`}
-                    className="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-amber-400/20 text-amber-800 hover:bg-amber-400 hover:text-emerald-950 transition-colors"
-                  >
-                    Apply Now
-                  </Link>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+        </div>
       </div>
+
+      <style>{`
+     
+           .programs-swiper  .swiper-pagination-bullet {
+          width: 14px;
+          height: 14px;
+          background-color: #d1d5db; /* Light gray inner */
+          border: 1.5px solid #0066ff; /* Blue border */
+          opacity: 1;
+          border-radius: 50%;
+          transition: all 0.3s ease;
+          margin: 0 6px !important;
+          cursor: pointer;
+          pointer-events: auto;
+          position: relative;
+          z-index: 50;
+        }
+        .programs-swiper  .swiper-pagination-bullet-active {
+          width: 36px;
+          background-color: #0066ff; /* Solid blue */
+          border-color: #0066ff;
+          border-radius: 14px;
+        }
+      `}</style>
     </section>
   );
 }

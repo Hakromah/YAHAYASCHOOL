@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Outfit } from "next/font/google";
 import { ThemeProvider } from "@/providers/theme.provider";
+import { LenisProvider } from "@/providers/lenis.provider";
 import "./globals.css";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -44,7 +45,9 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen antialiased bg-background text-foreground" suppressHydrationWarning>
         <ThemeProvider>
-          {children}
+          <LenisProvider>
+            {children}
+          </LenisProvider>
         </ThemeProvider>
       </body>
     </html>

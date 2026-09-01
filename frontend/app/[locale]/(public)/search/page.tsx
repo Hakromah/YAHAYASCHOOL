@@ -113,7 +113,7 @@ export default function SearchPage({ params }: SearchPageProps) {
           <div className="bg-white rounded-3xl p-12 text-center border border-gray-200/80 shadow-xs space-y-4">
             <BookOpen className="w-16 h-16 text-gray-300 mx-auto" />
             <h3 className="text-xl font-bold text-emerald-950">No matching content found</h3>
-            <p className="text-gray-600 text-sm max-w-md mx-auto">
+            <p className="text-gray-600 text-base max-w-md mx-auto">
               We couldn\'t find any programs, news articles, or events matching your search. Please try broader terms or contact admissions directly.
             </p>
           </div>
@@ -132,7 +132,7 @@ export default function SearchPage({ params }: SearchPageProps) {
                   <div key={idx} className="bg-white rounded-2xl p-6 border border-gray-200 shadow-xs flex flex-col justify-between">
                     <div>
                       <h4 className="font-bold text-emerald-950 mb-2">{p.title}</h4>
-                      <p className="text-xs text-gray-600 line-clamp-2 mb-4">{p.description}</p>
+                      <p className="text-base text-gray-600 line-clamp-2 mb-4">{p.description}</p>
                     </div>
                     <Link
                       href={`/programs/${p.slug}`}
@@ -159,7 +159,7 @@ export default function SearchPage({ params }: SearchPageProps) {
                   <div key={idx} className="bg-white rounded-2xl p-6 border border-gray-200 shadow-xs flex flex-col justify-between">
                     <div>
                       <h4 className="font-bold text-emerald-950 mb-2">{d.title}</h4>
-                      <p className="text-xs text-gray-600 line-clamp-2 mb-4">{d.description}</p>
+                      <p className="text-base text-gray-600 line-clamp-2 mb-4">{d.description}</p>
                     </div>
                     <Link
                       href={`/departments/${d.slug}`}
@@ -186,7 +186,7 @@ export default function SearchPage({ params }: SearchPageProps) {
                   <div key={idx} className="bg-white rounded-2xl p-6 border border-gray-200 shadow-xs flex flex-col justify-between">
                     <div>
                       <h4 className="font-bold text-emerald-950 mb-2">{a.title}</h4>
-                      <p className="text-xs text-gray-600 line-clamp-2 mb-4">{a.summary}</p>
+                      <p className="text-base text-gray-600 line-clamp-2 mb-4">{a.summary}</p>
                     </div>
                     <Link
                       href={`/news/${a.slug}`}
@@ -213,7 +213,7 @@ export default function SearchPage({ params }: SearchPageProps) {
                   <div key={idx} className="bg-white rounded-2xl p-6 border border-gray-200 shadow-xs flex flex-col justify-between">
                     <div>
                       <h4 className="font-bold text-emerald-950 mb-2">{ev.title}</h4>
-                      <p className="text-xs text-gray-600 line-clamp-2 mb-4">{ev.description}</p>
+                      <p className="text-base text-gray-600 line-clamp-2 mb-4">{ev.description}</p>
                     </div>
                     <Link
                       href={`/events/${ev.slug}`}

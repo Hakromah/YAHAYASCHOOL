@@ -1,171 +1,257 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Calendar, ArrowRight, Eye, Tag, Newspaper } from 'lucide-react';
-import type { NewsGridSectionComponent, ArticleEntity } from '../../../types/cms.types';
-import { cmsService } from '../../../services/cms.service';
+import { motion } from 'framer-motion';
+import { ArrowLeft, ArrowRight, GraduationCap } from 'lucide-react';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import type { Swiper as SwiperClass } from 'swiper';
+import { useTranslations } from 'next-intl';
 
-interface NewsGridProps {
-  data?: NewsGridSectionComponent;
-  initialArticles?: ArticleEntity[];
-  locale?: string;
+import 'swiper/css';
+
+/**
+ * Home — "Latest News & Updates".
+ * Implemented from Figma node 546-673 (frame 1920×1029).
+ *
+ * Design reference values (measured at the 1920 frame):
+ *   ink #1A1C1C · body #3F4941 · excerpt #545F73 · brand #048ED6 · well #E6F0FB
+ *   heading 35 · body 16/21 · card title 21/25 · excerpt 15/20 · Read More 15
+ *   card 392 wide, gap 23 · image 392×257 · card padding 25 · arrows 45×45
+ *
+ * Copy note: cards 1–3 still carry the Figma's template placeholder copy
+ * ("New Office Opening", "TrustVibe 2.0", …), which came from the same
+ * source template as the testimonials section. Replace with real Yahaya
+ * news — this list is the static fallback until Strapi is wired up.
+ */
+
+// const NEWS = [
+//   {
+//     id: 1,
+//     title: 'Expanding Our Horizons: New Office Opening',
+//     excerpt:
+//       'We are thrilled to announce the opening of our newest innovation hub, designed to foster...',
+//     category: 'CORPORATE',
+//     image: '/images/figma-home/02-about.jpeg',
+//     link: '/news/expanding-horizons',
+//   },
+// ...
+// ];
+
+function NavButton({
+  dir,
+  onClick,
+  disabled,
+}: {
+  dir: 'prev' | 'next';
+  onClick: () => void;
+  disabled?: boolean;
+}) {
+  const Icon = dir === 'prev' ? ArrowLeft : ArrowRight;
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={dir === 'prev' ? 'Previous news' : 'Next news'}
+      className="w-[45px] h-[45px] shrink-0 grid place-items-center rounded-full border border-[#81B6EB] text-[#048ED6] bg-white transition-colors hover:bg-[#E6F0FB] disabled:opacity-35 disabled:hover:bg-white disabled:cursor-default"
+    >
+      <Icon className="w-[18px] h-[18px] rtl:rotate-180" />
+    </button>
+  );
 }
 
-const FALLBACK_ARTICLES: ArticleEntity[] = [
-  {
-    id: 1,
-    title: 'YAHAYASCOOL Students Achieve 100% Pass Rate in National Science Olympiad',
-    slug: 'science-olympiad-success',
-    summary: 'Our Senior High robotics and chemistry teams took home 5 gold medals and 3 regional distinctions.',
-    body: 'Full article content...',
-    publishDate: '2026-07-10',
-    viewsCount: 342,
-  },
-  {
-    id: 2,
-    title: 'Annual Tahfidz Al-Qur\'an Graduation Ceremony Scheduled for August',
-    slug: 'annual-tahfidz-graduation-2026',
-    summary: '34 Hafiz and Hafizah students will complete their Qur\'anic memorization track before school leadership and parents.',
-    body: 'Full article content...',
-    publishDate: '2026-07-04',
-    viewsCount: 518,
-  },
-  {
-    id: 3,
-    title: 'New Artificial Intelligence & Islamic Ethics Lab Inaugurated',
-    slug: 'new-ai-ethics-lab-inaugurated',
-    summary: 'Supported by our Waqf endowment fund, the new computing center bridges modern AI development with Islamic moral philosophy.',
-    body: 'Full article content...',
-    publishDate: '2026-06-28',
-    viewsCount: 412,
-  },
-];
+export function NewsGridSection({ locale = 'en', data }: { locale?: string; data?: unknown }) {
+  void locale;
+  void data;
+  const t = useTranslations('newsSection');
+  const [swiper, setSwiper] = useState<SwiperClass | null>(null);
+  const [atStart, setAtStart] = useState(true);
+  const [atEnd, setAtEnd] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
 
-export function NewsGridSection({ data, initialArticles, locale = 'en' }: NewsGridProps) {
-  const [articles, setArticles] = useState<ArticleEntity[]>(initialArticles || FALLBACK_ARTICLES);
-  const [loading, setLoading] = useState(false);
-
-  const title = data?.title || 'Latest News & Campus Updates';
-  const subtitle = data?.subtitle || 'Stay informed on academic achievements, events, and school announcements';
-  const limit = data?.limit || 3;
-  const categoryFilter = data?.categoryFilter;
+  const NEWS = [
+    {
+      id: 1,
+      key: 'n1',
+      image: '/images/figma-home/02-about.jpeg',
+      link: '/news/expanding-horizons',
+    },
+    {
+      id: 2,
+      key: 'n2',
+      image: '/images/figma-home/09.png',
+      link: '/news/tech-summit',
+    },
+    {
+      id: 3,
+      key: 'n3',
+      image: '/images/figma-home/15-news.jpeg',
+      link: '/news/trustvibe-update',
+    },
+    {
+      id: 4,
+      key: 'n4',
+      image: '/images/figma-home/03-programs.jpeg',
+      link: '/news/global-standards',
+    },
+    {
+      id: 5,
+      key: 'n5',
+      image: '/images/figma-home/13.png',
+      link: '/news/bilingual-education',
+    },
+  ];
 
   useEffect(() => {
-    if (initialArticles && initialArticles.length > 0) return;
-    setLoading(true);
-    cmsService.getArticles(locale, 1, limit, categoryFilter).then((res) => {
-      if (res && res.data && res.data.length > 0) {
-        setArticles(res.data);
-      }
-      setLoading(false);
-    });
-  }, [locale, limit, categoryFilter, initialArticles]);
+    const mq = window.matchMedia('(min-width: 1024px)');
+    setIsDesktop(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
 
-  const getHref = (slug: string) => {
-    return locale === 'en' ? `/news/${slug}` : `/${locale}/news/${slug}`;
+  const headerVariants = {
+    hidden: {},
+    visible: { transition: { staggerChildren: 0.15 } }
   };
 
-  const formatDate = (dateStr?: string) => {
-    if (!dateStr) return 'July 2026';
-    try {
-      return new Date(dateStr).toLocaleDateString(locale, {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-      });
-    } catch {
-      return dateStr;
-    }
+  const itemVariants = {
+    hidden: { opacity: 0, y: 30 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } }
+  };
+
+  const sync = (sw: SwiperClass) => {
+    setAtStart(sw.isBeginning);
+    setAtEnd(sw.isEnd);
   };
 
   return (
-    <section className="bg-white py-20 sm:py-28 border-b border-gray-100">
-      <div className="max-w-7xl mx-auto px-4 sm:px-8">
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
-          <div>
-            <span className="inline-block px-3.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-amber-100 text-amber-900 mb-3 border border-amber-200">
-              School Chronicles
-            </span>
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-emerald-950 tracking-tight">
-              {title}
-            </h2>
-            <p className="text-gray-600 text-base sm:text-lg mt-2 max-w-2xl">
-              {subtitle}
-            </p>
-          </div>
+    <section className="w-full bg-white overflow-hidden pt-[clamp(2rem,6.1vw,7.4rem)] sm:pt-[clamp(3rem,6.1vw,7.4rem)] pb-[clamp(2rem,3.7vw,4rem)] sm:pb-[clamp(3.5rem,6.7vw,8rem)]">
+      <div key={isDesktop ? 'desktop' : 'mobile'} className="contents">
+        <div className="max-w-[1920px] mx-auto px-(--spacing-side)">
+          {/* ── Header, arrows flanking the centred text ────────────── */}
+          <div className="flex items-center justify-center gap-[clamp(1rem,3.6vw,4.4rem)]">
+            <div className="max-sm:hidden">
+              <NavButton dir="prev" onClick={() => swiper?.slidePrev()} disabled={atStart} />
+            </div>
 
-          <Link
-            href={locale === 'en' ? '/news' : `/${locale}/news`}
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm bg-emerald-900 text-white hover:bg-emerald-800 shadow-md transition-all self-start md:self-auto shrink-0"
-          >
-            <span>View All News & Articles</span>
-            <ArrowRight className="w-4 h-4 rtl:rotate-180" />
-          </Link>
-        </div>
-
-        {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 animate-pulse">
-            {[1, 2, 3].map((n) => (
-              <div key={n} className="bg-gray-100 h-96 rounded-3xl" />
-            ))}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {articles.map((art, idx) => (
-              <article
-                key={idx}
-                className="bg-white rounded-3xl border border-gray-200/80 shadow-xs hover:shadow-xl transition-all flex flex-col justify-between overflow-hidden group hover:-translate-y-1"
+            <motion.div
+              className="flex flex-col items-center text-center"
+              initial={isDesktop ? "hidden" : "visible"}
+              whileInView="visible"
+              viewport={{ once: true, amount: 0.3 }}
+              variants={isDesktop ? headerVariants : {}}
+            >
+              <motion.span
+                variants={isDesktop ? itemVariants : {}}
+                className="inline-flex items-center gap-2 h-10 px-4 rounded-full bg-[#E6F0FB] text-[#048ED6] font-semibold text-[15px]"
               >
-                {/* Image or Placeholder Banner */}
-                <div className="h-48 bg-gradient-to-tr from-emerald-900 via-emerald-800 to-emerald-950 flex items-center justify-center relative overflow-hidden">
-                  <Newspaper className="w-16 h-16 text-emerald-400/30 group-hover:scale-110 transition-transform" />
-                  {art.category && (
-                    <span className="absolute top-4 left-4 bg-amber-400 text-emerald-950 text-xs font-bold px-3 py-1 rounded-full shadow-md">
-                      {art.category.name}
-                    </span>
-                  )}
-                </div>
+                <GraduationCap className="w-5 h-5" />
+                {t('eyebrow')}
+              </motion.span>
+              <motion.h2
+                variants={isDesktop ? itemVariants : {}}
+                className="mt-[clamp(0.75rem,1.2vw,1.45rem)] font-bold text-[#1A1C1C] tracking-[-0.015em] leading-[1.1] text-[clamp(1.5rem,1.82vw,2.1875rem)]"
+              >
+                {t('heading')}
+              </motion.h2>
+              <motion.p
+                variants={isDesktop ? itemVariants : {}}
+                className="mt-[clamp(0.75rem,1.4vw,1.7rem)] max-w-[620px] text-[#3F4941] leading-[1.31] text-[1rem]"
+              >
+                {t('description')}
+              </motion.p>
+            </motion.div>
 
-                <div className="p-7 flex-1 flex flex-col justify-between">
-                  <div>
-                    <div className="flex items-center gap-4 text-xs text-gray-500 mb-3">
-                      <span className="flex items-center gap-1.5 font-medium">
-                        <Calendar className="w-3.5 h-3.5 text-amber-500" />
-                        {formatDate(art.publishDate)}
-                      </span>
-                      {art.viewsCount !== undefined && (
-                        <span className="flex items-center gap-1">
-                          <Eye className="w-3.5 h-3.5 text-gray-400" />
-                          {art.viewsCount}
-                        </span>
-                      )}
+            <div className="max-sm:hidden">
+              <NavButton dir="next" onClick={() => swiper?.slideNext()} disabled={atEnd} />
+            </div>
+          </div>
+
+          {/* ── Card carousel ───────────────────────────────────────── */}
+          <motion.div
+            initial={isDesktop ? "hidden" : "visible"}
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.1 }}
+            variants={isDesktop ? headerVariants : {}}
+          >
+            <Swiper
+              onSwiper={(sw) => {
+                setSwiper(sw);
+                sync(sw);
+              }}
+              onSlideChange={sync}
+              onResize={sync}
+              speed={600}
+              spaceBetween={23}
+              slidesPerView={1.15}
+              breakpoints={{
+                769: { slidesPerView: 2 },
+                1025: { slidesPerView: 3 },
+                1281: { slidesPerView: 4 },
+              }}
+              className="news-swiper mt-[clamp(2.5rem,4.7vw,5.7rem)]"
+            >
+              {NEWS.map((n) => (
+                <SwiperSlide key={n.id} className="h-auto">
+                  <motion.article
+                    variants={isDesktop ? itemVariants : {}}
+                    className="h-full flex flex-col rounded-xl overflow-hidden bg-white border border-black/[0.06] shadow-[0_2px_14px_rgba(16,24,40,0.06)]"
+                  >
+                    <div className="w-full aspect-[392/257] overflow-hidden">
+                      <img src={n.image} alt={t(`items.${n.key}.title`)} className="w-full h-full object-cover" />
                     </div>
 
-                    <h3 className="text-xl font-bold text-emerald-950 mb-3 leading-snug group-hover:text-emerald-800 transition-colors line-clamp-2">
-                      {art.title}
-                    </h3>
+                    <div className="flex flex-col flex-1 max-sm:p-[15px] sm:px-[25px] sm:pt-[29px] sm:pb-[clamp(2rem,2.8vw,3.3rem)]">
+                      <span className="self-start px-3 py-[3px] rounded-full border border-[#C9D8EA] text-[#048ED6] font-semibold uppercase tracking-[0.08em] text-[11px]">
+                        {t(`items.${n.key}.category`)}
+                      </span>
 
-                    <p className="text-gray-600 text-sm leading-relaxed line-clamp-3 mb-6">
-                      {art.summary}
-                    </p>
-                  </div>
+                      <h3 className="mt-[18px] font-medium text-[#1A1C1C] leading-[1.19] text-[clamp(1.0625rem,1.09vw,1.3125rem)]">
+                        {t(`items.${n.key}.title`)}
+                      </h3>
 
-                  <div className="pt-4 border-t border-gray-100 flex items-center justify-between">
-                    <Link
-                      href={getHref(art.slug)}
-                      className="inline-flex items-center gap-1.5 font-bold text-sm text-emerald-900 group-hover:text-amber-600 transition-colors"
-                    >
-                      <span>Read Full Story</span>
-                      <ArrowRight className="w-4 h-4 rtl:rotate-180" />
-                    </Link>
-                  </div>
-                </div>
-              </article>
-            ))}
+                      <p className="mt-[16px] text-[#545F73] leading-[1.33] text-[1rem]">
+                        {t(`items.${n.key}.excerpt`)}
+                      </p>
+
+                      <Link
+                        href={n.link}
+                        className="mt-auto pt-[15px] sm:pt-[34px] inline-flex items-center gap-2 self-start text-[#048ED6] text-[clamp(0.875rem,0.78vw,0.9375rem)] transition-colors hover:text-[#037ab8]"
+                      >
+                        <span>{t('readMore')}</span>
+                        <ArrowRight className="w-4 h-4 rtl:rotate-180" />
+                      </Link>
+                    </div>
+                  </motion.article>
+                </SwiperSlide>
+              ))}
+            </Swiper>
+          </motion.div>
+
+          {/* Arrows move below the cards on the narrowest screens */}
+          <div className="sm:hidden mt-8 flex items-center justify-center gap-4">
+            <NavButton dir="prev" onClick={() => swiper?.slidePrev()} disabled={atStart} />
+            <NavButton dir="next" onClick={() => swiper?.slideNext()} disabled={atEnd} />
           </div>
-        )}
+
+        </div>
       </div>
+
+      <style>{`
+        /* Swiper's stylesheet loads after Tailwind, so its bare .swiper-slide
+           height:100% beats utilities — cards need to stretch to the tallest. */
+        .news-swiper {
+          /* room for the card shadow inside Swiper's overflow:hidden.
+             margin-inline, NOT the margin shorthand — this rule loads after
+             Tailwind and a shorthand would silently wipe the mt-[...] utility. */
+          padding: 6px;
+          margin-inline: -6px;
+        }
+        .news-swiper .swiper-slide { height: auto; display: flex; }
+        .news-swiper .swiper-slide > * { width: 100%; }
+      `}</style>
     </section>
   );
 }

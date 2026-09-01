@@ -3,16 +3,16 @@
 import React from 'react';
 import type { DynamicZoneSection } from '../../types/cms.types';
 import { HeroSection } from './sections/HeroSection';
-import { StatsSection } from './sections/StatsSection';
-import { PrincipalWelcomeSection } from './sections/PrincipalWelcomeSection';
+import { HomeAboutSection } from './sections/HomeAboutSection';
+import { HomeActivitiesSection } from './sections/HomeActivitiesSection';
+import { HomeAnimationSection } from './sections/HomeAnimationSection';
 import { ProgramsGridSection } from './sections/ProgramsGridSection';
-import { DepartmentsGridSection } from './sections/DepartmentsGridSection';
-import { FeatureCardsSection } from './sections/FeatureCardsSection';
-import { NewsGridSection } from './sections/NewsGridSection';
-import { EventsGridSection } from './sections/EventsGridSection';
 import { TestimonialsSection } from './sections/TestimonialsSection';
-import { DonationBannerSection } from './sections/DonationBannerSection';
-import { CtaBannerSection } from './sections/CtaBannerSection';
+import { NewsGridSection } from './sections/NewsGridSection';
+import { StatsSection } from './sections/StatsSection';
+import { FeatureCardsSection } from './sections/FeatureCardsSection';
+import { DepartmentsGridSection } from './sections/DepartmentsGridSection';
+import { EventsGridSection } from './sections/EventsGridSection';
 
 interface HomepageBuilderProps {
   sections?: DynamicZoneSection[];
@@ -25,16 +25,13 @@ export function HomepageBuilder({ sections, locale = 'en' }: HomepageBuilderProp
     return (
       <main className="min-h-screen">
         <HeroSection locale={locale} />
-        <StatsSection />
-        <PrincipalWelcomeSection />
-        <FeatureCardsSection />
+        <HomeAboutSection />
         <ProgramsGridSection locale={locale} />
-        <DepartmentsGridSection locale={locale} />
-        <DonationBannerSection locale={locale} />
+        <HomeAnimationSection />
+        <HomeActivitiesSection />
+        <TestimonialsSection />
         <NewsGridSection locale={locale} />
-        <EventsGridSection locale={locale} />
-        <TestimonialsSection locale={locale} />
-        <CtaBannerSection locale={locale} />
+
       </main>
     );
   }
@@ -47,8 +44,6 @@ export function HomepageBuilder({ sections, locale = 'en' }: HomepageBuilderProp
             return <HeroSection key={idx} data={section} locale={locale} />;
           case 'sections.stats':
             return <StatsSection key={idx} data={section} />;
-          case 'sections.principal-welcome':
-            return <PrincipalWelcomeSection key={idx} data={section} />;
           case 'sections.feature-cards':
             return <FeatureCardsSection key={idx} data={section} />;
           case 'sections.programs-grid':
@@ -61,10 +56,6 @@ export function HomepageBuilder({ sections, locale = 'en' }: HomepageBuilderProp
             return <EventsGridSection key={idx} data={section} locale={locale} />;
           case 'sections.testimonials-slider':
             return <TestimonialsSection key={idx} data={section} locale={locale} />;
-          case 'sections.donation-banner':
-            return <DonationBannerSection key={idx} data={section} locale={locale} />;
-          case 'sections.cta-banner':
-            return <CtaBannerSection key={idx} data={section} locale={locale} />;
           default:
             return null;
         }

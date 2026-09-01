@@ -4,11 +4,11 @@
   "info": {
     "singularName": "navigation-menu",
     "pluralName": "navigation-menus",
-    "displayName": "Navigation Menu",
+    "displayName": "[F] Navigation Menu",
     "description": "Dynamic website menus supporting nested children and multi-language links"
   },
   "options": {
-    "draftAndPublish": false
+    "draftAndPublish": true
   },
   "pluginOptions": {
     "i18n": {
@@ -17,7 +17,11 @@
   },
   "attributes": {
     "name": {
-      "pluginOptions": { "i18n": { "localized": true } },
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      },
       "type": "string",
       "required": true
     },
@@ -28,8 +32,18 @@
     },
     "location": {
       "type": "enumeration",
-      "enum": ["header", "footer", "topbar"],
+      "enum": [
+        "header",
+        "footer",
+        "topbar"
+      ],
       "default": "header"
+    },
+    "ctaButtonTitle": {
+      "type": "string"
+    },
+    "ctaButtonUrl": {
+      "type": "string"
     },
     "items": {
       "type": "component",

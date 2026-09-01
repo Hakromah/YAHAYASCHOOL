@@ -4,7 +4,7 @@
   "info": {
     "singularName": "homepage",
     "pluralName": "homepages",
-    "displayName": "Homepage",
+    "displayName": "[F] Homepage",
     "description": "Dynamic homepage configuration and builder sections"
   },
   "options": {
@@ -17,7 +17,11 @@
   },
   "attributes": {
     "title": {
-      "pluginOptions": { "i18n": { "localized": true } },
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      },
       "type": "string",
       "default": "Welcome to YAHAYASCOOL"
     },

@@ -31,8 +31,10 @@
       "type": "boolean",
       "default": true
     },
-    "children": {
-      "type": "json"
+    "subItems": {
+      "type": "component",
+      "repeatable": true,
+      "component": "navigation.mega-menu-item"
     }
   }
 }

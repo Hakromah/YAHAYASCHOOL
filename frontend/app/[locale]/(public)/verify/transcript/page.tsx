@@ -80,7 +80,7 @@ function TranscriptVerifierContent() {
             <ShieldCheck className="w-8 h-8 text-emerald-500" />
           </div>
           <h1 className="text-xl md:text-2xl font-black tracking-tight text-white">Public Transcript Verification</h1>
-          <p className="text-xs text-slate-400 max-w-sm mx-auto">Verify the authenticity of Yahaya Enterprise Schools official academic transcripts in the registrar registry.</p>
+          <p className="text-base text-slate-400 max-w-sm mx-auto">Verify the authenticity of Yahaya Enterprise Schools official academic transcripts in the registrar registry.</p>
         </div>
 
         <div className="flex gap-2 p-2 bg-slate-900 border border-slate-850 rounded-2xl">
@@ -111,7 +111,7 @@ function TranscriptVerifierContent() {
                   </div>
                   <div>
                     <h3 className="text-sm font-black text-white">Authentic Transcript Record</h3>
-                    <p className="text-[10px] text-slate-450 uppercase font-bold tracking-wider">Status: {result.status}</p>
+                    <p className="text-[1rem] text-slate-450 uppercase font-bold tracking-wider">Status: {result.status}</p>
                   </div>
                 </div>
 
@@ -166,7 +166,7 @@ function TranscriptVerifierContent() {
                 </div>
                 <div>
                   <h3 className="text-sm font-black text-white">Verification Failed</h3>
-                  <p className="text-xs text-slate-400 mt-1">This document hash or transcript number is not registered in our ledger registry. It may be revoked, invalid, or forged. Please contact registrar support.</p>
+                  <p className="text-base text-slate-400 mt-1">This document hash or transcript number is not registered in our ledger registry. It may be revoked, invalid, or forged. Please contact registrar support.</p>
                 </div>
               </div>
             )}

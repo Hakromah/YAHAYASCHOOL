@@ -4,7 +4,7 @@
   "info": {
     "singularName": "page",
     "pluralName": "pages",
-    "displayName": "Page",
+    "displayName": "[F] Page",
     "description": "Custom public pages (e.g. About, Admissions, FAQ)"
   },
   "options": {
@@ -17,12 +17,20 @@
   },
   "attributes": {
     "title": {
-      "pluginOptions": { "i18n": { "localized": true } },
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      },
       "type": "string",
       "required": true
     },
     "slug": {
-      "pluginOptions": { "i18n": { "localized": true } },
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      },
       "type": "uid",
       "targetField": "title",
       "required": true
@@ -50,6 +58,23 @@
         "sections.newsletter-signup",
         "sections.cta-banner"
       ]
+    },
+    "bulletPoints": {
+      "type": "component",
+      "repeatable": true,
+      "component": "shared.bullet-point"
+    },
+    "coverImage": {
+      "type": "media",
+      "multiple": false,
+      "required": false,
+      "allowedTypes": ["images"]
+    },
+    "breadcrumbTitle": {
+      "type": "string"
+    },
+    "actionButtonText": {
+      "type": "string"
     }
   }
 }

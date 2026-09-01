@@ -1,5 +1,89 @@
 import type { Schema, Struct } from '@strapi/strapi';
 
+export interface ContactCampusInfo extends Struct.ComponentSchema {
+  collectionName: 'components_contact_campus_infos';
+  info: {
+    description: '';
+    displayName: 'Campus Info';
+    icon: 'pinMap';
+  };
+  attributes: {
+    address: Schema.Attribute.Text & Schema.Attribute.Required;
+    addressLabel: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'Main Campus'>;
+    campusTitle: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'Campus Information'>;
+    email: Schema.Attribute.Email & Schema.Attribute.Required;
+    emailLabel: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'Admissions Desk'>;
+    latitude: Schema.Attribute.Decimal & Schema.Attribute.DefaultTo<6.3005>;
+    longitude: Schema.Attribute.Decimal & Schema.Attribute.DefaultTo<-10.7969>;
+    mapUrl: Schema.Attribute.Text;
+    officeHours: Schema.Attribute.Text &
+      Schema.Attribute.DefaultTo<'Monday - Friday: 8:00 AM - 4:00 PM\nFriday Prayer Break: 12:00 PM - 2:00 PM'>;
+    officeHoursLabel: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'Office Hours'>;
+    phone: Schema.Attribute.String & Schema.Attribute.Required;
+    phoneLabel: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'Administration'>;
+    whatsapp: Schema.Attribute.String;
+    whatsappLabel: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'WhatsApp Us'>;
+  };
+}
+
+export interface ContactContactForm extends Struct.ComponentSchema {
+  collectionName: 'components_contact_contact_forms';
+  info: {
+    description: '';
+    displayName: 'Form Settings';
+    icon: 'envelop';
+  };
+  attributes: {
+    formEmailLabel: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'Email Address'>;
+    formEmailPlaceholder: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'musakamara@gmail.com'>;
+    formFirstNameLabel: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'First Name'>;
+    formFirstNamePlaceholder: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'e.g. Musa'>;
+    formLastNameLabel: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'Last Name'>;
+    formLastNamePlaceholder: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'e.g. Kamara'>;
+    formMessageLabel: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'Your Message'>;
+    formMessagePlaceholder: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'How can we assist you today?'>;
+    formPhoneLabel: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'Phone Number'>;
+    formSubjectLabel: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'Subject Area'>;
+    formSubmitButtonText: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'Send Message'>;
+    formTermsLinkText: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'Read the legal terms and service,'>;
+    formTermsSuffix: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'I have accept it'>;
+    formTitle: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'Send us a message'>;
+  };
+}
+
+export interface ContactSocialMedia extends Struct.ComponentSchema {
+  collectionName: 'components_contact_social_medias';
+  info: {
+    description: 'A single social media link';
+    displayName: 'Social Media Link';
+    icon: 'twitter';
+  };
+  attributes: {
+    title: Schema.Attribute.String & Schema.Attribute.Required;
+    url: Schema.Attribute.String & Schema.Attribute.Required;
+  };
+}
+
 export interface ErpBehaviorRecord extends Struct.ComponentSchema {
   collectionName: 'components_erp_behavior_records';
   info: {
@@ -124,6 +208,21 @@ export interface ErpTimelineItem extends Struct.ComponentSchema {
   };
 }
 
+export interface NavigationMegaMenuItem extends Struct.ComponentSchema {
+  collectionName: 'components_navigation_mega_menu_items';
+  info: {
+    description: 'A sub-link for mega menus with a title, badge, and image.';
+    displayName: 'Mega Menu Item';
+    icon: 'layer';
+  };
+  attributes: {
+    badge: Schema.Attribute.String;
+    media: Schema.Attribute.Media<'images'>;
+    title: Schema.Attribute.String & Schema.Attribute.Required;
+    url: Schema.Attribute.String & Schema.Attribute.Required;
+  };
+}
+
 export interface NavigationMenuItem extends Struct.ComponentSchema {
   collectionName: 'components_navigation_menu_items';
   info: {
@@ -132,10 +231,10 @@ export interface NavigationMenuItem extends Struct.ComponentSchema {
     icon: 'link';
   };
   attributes: {
-    children: Schema.Attribute.JSON;
     icon: Schema.Attribute.String;
     isVisible: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
     order: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<0>;
+    subItems: Schema.Attribute.Component<'navigation.mega-menu-item', true>;
     target: Schema.Attribute.Enumeration<['_self', '_blank']> &
       Schema.Attribute.DefaultTo<'_self'>;
     title: Schema.Attribute.String & Schema.Attribute.Required;
@@ -398,28 +497,11 @@ export interface SeoMeta extends Struct.ComponentSchema {
   attributes: {
     canonicalUrl: Schema.Attribute.String;
     keywords: Schema.Attribute.String;
-    metaDescription: Schema.Attribute.Text &
-      Schema.Attribute.Required &
-      Schema.Attribute.SetMinMaxLength<{
-        maxLength: 160;
-      }>;
-    metaTitle: Schema.Attribute.String &
-      Schema.Attribute.Required &
-      Schema.Attribute.SetMinMaxLength<{
-        maxLength: 60;
-      }>;
-    noFollow: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
-    noIndex: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
-    ogDescription: Schema.Attribute.Text &
-      Schema.Attribute.SetMinMaxLength<{
-        maxLength: 160;
-      }>;
+    metaDescription: Schema.Attribute.Text & Schema.Attribute.Required;
+    metaTitle: Schema.Attribute.String & Schema.Attribute.Required;
+    ogDescription: Schema.Attribute.Text;
     ogImage: Schema.Attribute.Media<'images'>;
-    ogTitle: Schema.Attribute.String &
-      Schema.Attribute.SetMinMaxLength<{
-        maxLength: 60;
-      }>;
-    schemaOrgJson: Schema.Attribute.JSON;
+    ogTitle: Schema.Attribute.String;
     twitterCardType: Schema.Attribute.Enumeration<
       ['summary', 'summary_large_image']
     > &
@@ -427,14 +509,194 @@ export interface SeoMeta extends Struct.ComponentSchema {
   };
 }
 
+export interface SharedBankAccount extends Struct.ComponentSchema {
+  collectionName: 'components_shared_bank_accounts';
+  info: {
+    displayName: 'Bank Account';
+    icon: 'briefcase';
+  };
+  attributes: {
+    icon: Schema.Attribute.Enumeration<['Globe', 'Building']> &
+      Schema.Attribute.DefaultTo<'Building'>;
+    rows: Schema.Attribute.Component<'shared.bank-account-row', true>;
+    title: Schema.Attribute.String & Schema.Attribute.Required;
+  };
+}
+
+export interface SharedBankAccountRow extends Struct.ComponentSchema {
+  collectionName: 'components_shared_bank_account_rows';
+  info: {
+    displayName: 'Bank Account Row';
+    icon: 'bulletList';
+  };
+  attributes: {
+    canCopy: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
+    label: Schema.Attribute.String & Schema.Attribute.Required;
+    value: Schema.Attribute.String & Schema.Attribute.Required;
+  };
+}
+
+export interface SharedBankTransferSettings extends Struct.ComponentSchema {
+  collectionName: 'components_shared_bank_transfer_settings';
+  info: {
+    displayName: 'Bank Transfer Settings';
+    icon: 'bank';
+  };
+  attributes: {
+    bankAccounts: Schema.Attribute.Component<'shared.bank-account', true>;
+    image: Schema.Attribute.Media<'images'>;
+    title: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'Prefer a bank transfer?'>;
+  };
+}
+
+export interface SharedBulletPoint extends Struct.ComponentSchema {
+  collectionName: 'components_shared_bullet_points';
+  info: {
+    description: 'A single bullet point text';
+    displayName: 'Bullet Point';
+    icon: 'bulletList';
+  };
+  attributes: {
+    text: Schema.Attribute.String & Schema.Attribute.Required;
+  };
+}
+
+export interface SharedFormLabels extends Struct.ComponentSchema {
+  collectionName: 'components_shared_form_labels';
+  info: {
+    displayName: 'Form Labels';
+    icon: 'align-justify';
+  };
+  attributes: {
+    amountLabel: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'Select Amount'>;
+    currencyLabel: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'Currency'>;
+    designationLabel: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'Designation'>;
+    donorInfoLabel: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'Donor Information'>;
+    emailLabel: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'Email Address'>;
+    emailPlaceholder: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'e.g. john@example.com'>;
+    formTitle: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'Make a Contribution'>;
+    frequencyLabel: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'Frequency'>;
+    fullNameLabel: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'Full Name'>;
+    fullNamePlaceholder: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'e.g. John Doe'>;
+    monthlyLabel: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'Monthly'>;
+    oneTimeLabel: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'One-time'>;
+    phoneLabel: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'Phone Number'>;
+    secureInfoText: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'Your donation is processed securely.'>;
+    submitButtonLabel: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'Pledge Donation'>;
+  };
+}
+
+export interface SharedPatron extends Struct.ComponentSchema {
+  collectionName: 'components_shared_patrons';
+  info: {
+    description: 'A patron for the Wall of Gratitude';
+    displayName: 'Patron';
+  };
+  attributes: {
+    name: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }>;
+    quote: Schema.Attribute.Text &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }>;
+  };
+}
+
+export interface SharedStringItem extends Struct.ComponentSchema {
+  collectionName: 'components_shared_string_items';
+  info: {
+    displayName: 'String Item';
+    icon: 'bold';
+  };
+  attributes: {
+    value: Schema.Attribute.String & Schema.Attribute.Required;
+  };
+}
+
+export interface SharedTargetedGivingSettings extends Struct.ComponentSchema {
+  collectionName: 'components_shared_targeted_giving_settings';
+  info: {
+    displayName: 'Targeted Giving Settings';
+    icon: 'bullseye';
+  };
+  attributes: {
+    goalLabel: Schema.Attribute.String & Schema.Attribute.DefaultTo<'goal'>;
+    raisedLabel: Schema.Attribute.String & Schema.Attribute.DefaultTo<'raised'>;
+    subtitle: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'Choose a specific area to support, and see exactly how your contribution builds the future.'>;
+    title1: Schema.Attribute.String & Schema.Attribute.DefaultTo<'Where Your'>;
+    title2: Schema.Attribute.String & Schema.Attribute.DefaultTo<'Gift Goes'>;
+  };
+}
+
+export interface SharedWallOfGratitude extends Struct.ComponentSchema {
+  collectionName: 'components_shared_wall_of_gratitudes';
+  info: {
+    description: 'Settings for the Wall of Gratitude section';
+    displayName: 'Wall of Gratitude Settings';
+  };
+  attributes: {
+    patrons: Schema.Attribute.Component<'shared.patron', true> &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }>;
+    subtitle: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'May Allah reward all those who support the pursuit of beneficial knowledge.'>;
+    title: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Wall of Gratitude'>;
+  };
+}
+
 declare module '@strapi/strapi' {
   export namespace Public {
     export interface ComponentSchemas {
+      'contact.campus-info': ContactCampusInfo;
+      'contact.contact-form': ContactContactForm;
+      'contact.social-media': ContactSocialMedia;
       'erp.behavior-record': ErpBehaviorRecord;
       'erp.enrollment-record': ErpEnrollmentRecord;
       'erp.medical-record': ErpMedicalRecord;
       'erp.staff-note': ErpStaffNote;
       'erp.timeline-item': ErpTimelineItem;
+      'navigation.mega-menu-item': NavigationMegaMenuItem;
       'navigation.menu-item': NavigationMenuItem;
       'sections.cta-banner': SectionsCtaBanner;
       'sections.departments-grid': SectionsDepartmentsGrid;
@@ -451,6 +713,15 @@ declare module '@strapi/strapi' {
       'sections.stats': SectionsStats;
       'sections.testimonials-slider': SectionsTestimonialsSlider;
       'seo.meta': SeoMeta;
+      'shared.bank-account': SharedBankAccount;
+      'shared.bank-account-row': SharedBankAccountRow;
+      'shared.bank-transfer-settings': SharedBankTransferSettings;
+      'shared.bullet-point': SharedBulletPoint;
+      'shared.form-labels': SharedFormLabels;
+      'shared.patron': SharedPatron;
+      'shared.string-item': SharedStringItem;
+      'shared.targeted-giving-settings': SharedTargetedGivingSettings;
+      'shared.wall-of-gratitude': SharedWallOfGratitude;
     }
   }
 }

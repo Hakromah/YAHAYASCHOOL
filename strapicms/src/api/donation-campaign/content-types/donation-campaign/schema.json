@@ -4,7 +4,7 @@
   "info": {
     "singularName": "donation-campaign",
     "pluralName": "donation-campaigns",
-    "displayName": "Donation Campaign",
+    "displayName": "[F] Donation Campaign",
     "description": "School development, waqf, laboratory, and scholarship fundraising campaigns"
   },
   "options": {
@@ -33,8 +33,7 @@
       "required": true
     },
     "targetAmount": {
-      "type": "decimal",
-      "required": true
+      "type": "decimal"
     },
     "raisedAmount": {
       "type": "decimal",
@@ -44,11 +43,21 @@
       "type": "string",
       "default": "USD"
     },
-    "bankInfo": {
-      "type": "json"
+    "categoryTag": {
+      "type": "string",
+      "pluginOptions": { "i18n": { "localized": true } }
     },
-    "donationMethods": {
-      "type": "json"
+    "buttonText": {
+      "type": "string",
+      "pluginOptions": { "i18n": { "localized": true } }
+    },
+    "raisedLabel": {
+      "type": "string",
+      "pluginOptions": { "i18n": { "localized": true } }
+    },
+    "goalLabel": {
+      "type": "string",
+      "pluginOptions": { "i18n": { "localized": true } }
     },
     "banner": {
       "type": "media",

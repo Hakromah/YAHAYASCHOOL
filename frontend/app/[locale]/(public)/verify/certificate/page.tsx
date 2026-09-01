@@ -76,7 +76,7 @@ function CertificateVerifierContent() {
             <Award className="w-8 h-8 text-amber-500" />
           </div>
           <h1 className="text-xl md:text-2xl font-black tracking-tight text-white">Public Certificate Verification</h1>
-          <p className="text-xs text-slate-400 max-w-sm mx-auto">Verify the authenticity of Yahaya Enterprise Schools achievement certificates, bonafide letters, and diplomas.</p>
+          <p className="text-base text-slate-400 max-w-sm mx-auto">Verify the authenticity of Yahaya Enterprise Schools achievement certificates, bonafide letters, and diplomas.</p>
         </div>
 
         <div className="flex gap-2 p-2 bg-slate-900 border border-slate-850 rounded-2xl">
@@ -107,7 +107,7 @@ function CertificateVerifierContent() {
                   </div>
                   <div>
                     <h3 className="text-sm font-black text-white">Authentic Certificate Record</h3>
-                    <p className="text-[10px] text-slate-450 uppercase font-bold tracking-wider">Status: {result.status}</p>
+                    <p className="text-[1rem] text-slate-450 uppercase font-bold tracking-wider">Status: {result.status}</p>
                   </div>
                 </div>
 
@@ -154,7 +154,7 @@ function CertificateVerifierContent() {
                 </div>
                 <div>
                   <h3 className="text-sm font-black text-white">Verification Failed</h3>
-                  <p className="text-xs text-slate-400 mt-1">This certificate serial number or verification hash is not registered in our certificate ledger. Please contact the Academic Admin department to check validity.</p>
+                  <p className="text-base text-slate-400 mt-1">This certificate serial number or verification hash is not registered in our certificate ledger. Please contact the Academic Admin department to check validity.</p>
                 </div>
               </div>
             )}

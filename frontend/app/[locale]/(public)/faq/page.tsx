@@ -1,8 +1,11 @@
-import React from 'react';
 import type { Metadata } from 'next';
+import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
+import { ChevronRight } from 'lucide-react';
 import { cmsService } from '@/services/cms.service';
 import { HomepageBuilder } from '@/components/public/HomepageBuilder';
-import { HelpCircle, ChevronDown, CheckCircle2 } from 'lucide-react';
+import { FaqAccordion } from '@/components/public/faq/FaqAccordion';
+import { InteractiveDotsBackground } from '@/components/public/shared/InteractiveDotsBackground';
 
 interface FaqPageProps {
   params: Promise<{ locale: string }>;
@@ -21,6 +24,8 @@ export async function generateMetadata({ params }: FaqPageProps): Promise<Metada
 export default async function FaqListingPage({ params }: FaqPageProps) {
   const { locale } = await params;
   const page = await cmsService.getPageBySlug('faq', locale);
+
+  const t = await getTranslations({ locale, namespace: 'publicNav' });
 
   if (page?.sections && page.sections.length > 0) {
     return <HomepageBuilder sections={page.sections} locale={locale} />;
@@ -58,43 +63,26 @@ export default async function FaqListingPage({ params }: FaqPageProps) {
   return (
     <main className="min-h-screen bg-gray-50/70 pb-24">
       {/* Hero Header */}
-      <section className="bg-gradient-to-br from-emerald-950 via-emerald-900 to-emerald-950 text-white py-20 sm:py-28 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10 pointer-events-none bg-[radial-gradient(#10b981_1px,transparent_1px)] [background-size:24px_24px]" />
+      <section className="bg-[#048ED6] text-white py-10 sm:py-28 relative overflow-hidden">
+        <InteractiveDotsBackground />
         <div className="max-w-7xl mx-auto px-4 sm:px-8 relative z-10 text-center">
-          <span className="inline-block px-4 py-1.5 rounded-full bg-emerald-800/80 border border-emerald-700 text-amber-300 text-xs sm:text-sm font-semibold mb-6">
-            Clear Answers & Guidance
-          </span>
+          <nav aria-label="Breadcrumb" className="flex items-center justify-center gap-2 mb-8 text-white/80 text-[clamp(0.8125rem,0.73vw,0.875rem)]">
+            <Link href={`/${locale}`} className="transition-colors hover:text-white">{t('home')}</Link>
+            <ChevronRight className="w-4 h-4 text-white/50 rtl:rotate-180" aria-hidden />
+            <span className="font-medium text-white">{locale === 'ar' ? 'الأسئلة الشائعة' : 'FAQ'}</span>
+          </nav>
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white mb-6">
-            Frequently Asked Questions
+            {page?.title || (locale === 'ar' ? 'الأسئلة الشائعة' : 'Frequently Asked Questions')}
           </h1>
-          <p className="text-lg sm:text-xl text-emerald-100 max-w-3xl mx-auto font-light leading-relaxed">
-            Everything you need to know about our dual curriculum, admission requirements, boarding facilities, and scholarship opportunities.
+          <p className="text-lg sm:text-xl text-gray-300 max-w-3xl mx-auto font-light leading-relaxed">
+            {page?.seo?.metaDescription || 'Everything you need to know about our dual curriculum, admission requirements, boarding facilities, and scholarship opportunities.'}
           </p>
         </div>
       </section>
 
       {/* FAQ Accordion List */}
-      <section className="max-w-4xl mx-auto px-4 sm:px-8 mt-16 space-y-6">
-        {fallbackFaqs.map((faq, idx) => (
-          <div key={idx} className="bg-white rounded-3xl p-8 border border-gray-200/80 shadow-xs hover:shadow-md transition-all">
-            <div className="flex items-start justify-between gap-4">
-              <h3 className="text-xl font-bold text-emerald-950 flex items-start gap-3">
-                <HelpCircle className="w-6 h-6 text-amber-500 shrink-0 mt-0.5" />
-                <span>{faq.question}</span>
-              </h3>
-            </div>
-            <div className="mt-4 pl-9 text-gray-700 text-base leading-relaxed">
-              {faq.answer}
-            </div>
-            {faq.category && (
-              <div className="mt-6 pl-9">
-                <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-100">
-                  {faq.category}
-                </span>
-              </div>
-            )}
-          </div>
-        ))}
+      <section className="max-w-4xl mx-auto px-4 sm:px-8 mt-16 max-sm:mt-6">
+        <FaqAccordion faqs={fallbackFaqs} />
       </section>
     </main>
   );

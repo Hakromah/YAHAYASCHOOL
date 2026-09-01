@@ -112,7 +112,7 @@ export default async function EventDetailPage({ params }: EventDetailProps) {
             <div className="bg-emerald-900 text-white rounded-2xl p-8 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-md mt-10">
               <div>
                 <h3 className="text-xl font-bold text-amber-400 mb-1">Attendance Registration Open</h3>
-                <p className="text-emerald-100 text-sm">
+                <p className="text-emerald-100 text-base">
                   Please reserve your seat in advance due to campus auditorium capacity limits.
                 </p>
               </div>
