@@ -7,14 +7,14 @@ import {
   HeartHandshake, CheckCircle2, AlertCircle, ArrowRight,
   Coins, ArrowUpRight, ArrowDownRight, Layers, FileText,
   CreditCard, Landmark, PiggyBank, Plus, Check, Clock,
-  ExternalLink, BarChart3, Filter, ShieldCheck, Search
+  ExternalLink, BarChart3, Filter, ShieldCheck, Search, Scale,
+  FolderOpen
 } from 'lucide-react';
 import { useLocale } from 'next-intl';
 import { t as i18nT } from '@/lib/i18n-dict';
 import { Link } from '@/i18n/routing';
 import { dashboardService, type AccountantDashboardData } from '@/services/dashboard.service';
 import { financeService } from '@/services/finance.service';
-import { apiClient } from '@/services/api.service';
 import type { MultiCurrencyRate, Invoice, PaymentReceipt, FeeStructure, ChartOfAccount } from '@/types/finance.types';
 import { PageContainer, PageHeader } from '@/components/shared/layout/PageContainer';
 import { ChartCard } from '@/components/ui/ChartCard';
@@ -28,6 +28,7 @@ const DEFAULT_WIDGETS: WidgetConfig[] = [
   { id: 'stat-treasury', title: 'Total Liquidity (Cash & Bank)', layer: 'summary', isVisible: true, isPinned: true, size: 'normal' },
   { id: 'stat-receivables', title: 'Outstanding Receivables', layer: 'summary', isVisible: true, isPinned: true, size: 'normal' },
   { id: 'stat-expenses', title: 'Operating Expenses & Payroll', layer: 'summary', isVisible: true, isPinned: false, size: 'normal' },
+  { id: 'stat-statement', title: 'Certified Financial Statement Summary', layer: 'summary', isVisible: true, isPinned: false, size: 'large' },
   { id: 'chart-cashflow', title: 'Monthly Cash Flow & Liquidity', layer: 'chart', isVisible: true, isPinned: false, size: 'large' },
   { id: 'chart-treasury', title: 'Treasury & Account Distribution', layer: 'chart', isVisible: true, isPinned: false, size: 'normal' },
   { id: 'table-invoices', title: 'Pending Invoices & Clearance Queue', layer: 'action', isVisible: true, isPinned: false, size: 'large' },
@@ -47,10 +48,12 @@ export default function AccountantDashboardPage() {
   // Live Data State
   const [dashboardData, setDashboardData] = useState<AccountantDashboardData | null>(null);
   const [executiveStats, setExecutiveStats] = useState<any>(null);
+  const [financialStatement, setFinancialStatement] = useState<any>(null);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [receipts, setReceipts] = useState<PaymentReceipt[]>([]);
   const [feeStructures, setFeeStructures] = useState<FeeStructure[]>([]);
   const [accounts, setAccounts] = useState<ChartOfAccount[]>([]);
+  const [expenses, setExpenses] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [widgets, setWidgets] = useState<WidgetConfig[]>(DEFAULT_WIDGETS);
   const [activeTab, setActiveTab] = useState<'invoices' | 'receipts' | 'structures'>('invoices');
@@ -58,14 +61,14 @@ export default function AccountantDashboardPage() {
 
   // ── Currency Converter Helper ──────────────────────────────────────────────
   const activeCurrencyRate = useMemo(() => {
-    if (selectedCurrency === baseCurrency) return 1;
+    if (selectedCurrency === 'USD') return 1;
     const found = currencies.find(c => c.currencyCode === selectedCurrency || (c as any).isoCode === selectedCurrency);
     return Number(found?.exchangeRateToUSD || (found as any)?.rate || 1);
-  }, [currencies, selectedCurrency, baseCurrency]);
+  }, [currencies, selectedCurrency]);
 
   const activeCurrencySymbol = useMemo(() => {
     const found = currencies.find(c => c.currencyCode === selectedCurrency || (c as any).isoCode === selectedCurrency);
-    return found?.symbol || (selectedCurrency === 'USD' ? '$' : selectedCurrency === 'EUR' ? '€' : selectedCurrency === 'NGN' ? '₦' : selectedCurrency === 'LRD' ? '$' : selectedCurrency);
+    return found?.symbol || (selectedCurrency === 'USD' ? '$' : selectedCurrency === 'EUR' ? '€' : selectedCurrency === 'TRY' ? '₺' : selectedCurrency === 'XOF' ? 'CFA' : selectedCurrency === 'GNF' ? 'FG' : selectedCurrency === 'GBP' ? '£' : selectedCurrency === 'SAR' ? '﷼' : selectedCurrency);
   }, [currencies, selectedCurrency]);
 
   const formatMoney = useCallback((amountUSD: number) => {
@@ -76,42 +79,56 @@ export default function AccountantDashboardPage() {
     })}`;
   }, [activeCurrencyRate, activeCurrencySymbol]);
 
-  // ── Load All Live Financial Data ───────────────────────────────────────────
+  // ── Load All Live Financial Reports & Data ─────────────────────────────────
   const loadData = useCallback(async () => {
     setIsLoading(true);
     try {
       const [
         dash,
         exec,
+        statement,
         currs,
         invs,
         rcpts,
         structs,
-        accts
+        accts,
+        exps,
+        settingsData
       ] = await Promise.all([
         dashboardService.getAccountantDashboard().catch(() => null),
         financeService.getExecutiveStats('2026-2027').catch(() => null),
+        financeService.generateFinancialStatement({ academicYear: '2026-2027' }).catch(() => null),
         financeService.getExchangeRates().catch(() => []),
         financeService.getInvoices().catch(() => []),
         financeService.getReceipts().catch(() => []),
         financeService.getFeeStructures().catch(() => []),
-        financeService.getChartOfAccounts().catch(() => [])
+        financeService.getChartOfAccounts().catch(() => []),
+        financeService.getExpenses().catch(() => []),
+        financeService.getSettings().catch(() => null)
       ]);
 
       setDashboardData(dash);
       setExecutiveStats(exec);
+      setFinancialStatement(statement);
       setCurrencies(currs || []);
       setInvoices(invs || []);
       setReceipts(rcpts || []);
       setFeeStructures(structs || []);
       setAccounts(accts || []);
+      setExpenses(exps || []);
 
-      if (currs && currs.length > 0) {
-        const base = (currs as any[]).find((c: any) => c.isBase || c.isBaseCurrency);
-        if (base) {
-          setBaseCurrency(base.currencyCode || base.isoCode || 'USD');
-        }
+      // Resolve base and active currency from settings / local storage
+      let activeCurr = 'USD';
+      if (typeof window !== 'undefined') {
+        const saved = localStorage.getItem('yahaya_selected_currency') || localStorage.getItem('selected_currency') || localStorage.getItem('yahaya_default_currency');
+        if (saved) activeCurr = saved;
+        else if (settingsData?.defaultCurrency) activeCurr = settingsData.defaultCurrency;
+      } else if (settingsData?.defaultCurrency) {
+        activeCurr = settingsData.defaultCurrency;
       }
+
+      setSelectedCurrency(activeCurr);
+      setBaseCurrency(settingsData?.defaultCurrency || 'USD');
     } catch {
       toast.error(t('Failed to load live accountant financial data.'));
     } finally {
@@ -121,80 +138,164 @@ export default function AccountantDashboardPage() {
 
   useEffect(() => {
     loadData();
+
+    // Listen for currency updates across settings & executive tabs
+    const onCurrencyChange = (e: any) => {
+      if (e.detail) setSelectedCurrency(e.detail);
+    };
+    const onSettingsUpdate = (e: any) => {
+      if (e.detail?.defaultCurrency) {
+        setSelectedCurrency(e.detail.defaultCurrency);
+        setBaseCurrency(e.detail.defaultCurrency);
+      }
+    };
+    window.addEventListener('yahaya_currency_changed', onCurrencyChange);
+    window.addEventListener('finance_settings_updated', onSettingsUpdate);
+    return () => {
+      window.removeEventListener('yahaya_currency_changed', onCurrencyChange);
+      window.removeEventListener('finance_settings_updated', onSettingsUpdate);
+    };
   }, [loadData]);
 
   const isVisible = (id: string) => widgets.find((w) => w.id === id)?.isVisible ?? true;
 
-  // ── Aggregated Financial Calculations ──────────────────────────────────────
+  // ── Pure Live Aggregated Calculations (Zero hardcoded numbers) ──────────────
   const totalInvoicedUSD = useMemo(() => {
-    if (executiveStats?.totalInvoiced) return Number(executiveStats.totalInvoiced);
-    return invoices.reduce((s, inv) => s + (Number(inv.totalAmount) || 0), 0) || 128500;
-  }, [executiveStats, invoices]);
+    const sumFromInvoices = invoices.reduce((s, inv) => s + (Number(inv.totalAmount) || 0), 0);
+    if (sumFromInvoices > 0) return sumFromInvoices;
+    if (executiveStats?.kpi?.totalRevenueYTD || executiveStats?.kpi?.outstandingFees) {
+      return Number(executiveStats.kpi.totalRevenueYTD || 0) + Number(executiveStats.kpi.outstandingFees || 0);
+    }
+    return Number(financialStatement?.balances?.['4010'] || 0) + Number(financialStatement?.balances?.['1100'] || 0);
+  }, [invoices, executiveStats, financialStatement]);
 
   const collectedRevenueUSD = useMemo(() => {
-    if (executiveStats?.collectedRevenueYTD) return Number(executiveStats.collectedRevenueYTD);
-    return invoices.reduce((s, inv) => s + (Number(inv.paidAmount) || 0), 0) || 104200;
-  }, [executiveStats, invoices]);
+    const sumReceipts = receipts.reduce((s, r) => s + Number(r.paymentAmount || r.amount || 0), 0);
+    if (sumReceipts > 0) return sumReceipts;
+    if (executiveStats?.kpi?.totalRevenueYTD) return Number(executiveStats.kpi.totalRevenueYTD);
+    return Number(financialStatement?.totalRevenue || 0);
+  }, [receipts, executiveStats, financialStatement]);
 
   const outstandingReceivablesUSD = useMemo(() => {
-    if (executiveStats?.outstandingFees) return Number(executiveStats.outstandingFees);
-    return invoices.reduce((s, inv) => s + (Number(inv.remainingBalance) || 0), 0) || 24300;
-  }, [executiveStats, invoices]);
+    const sumFromInvoices = invoices.reduce((s, inv) => {
+      const st = (inv.status || '').toLowerCase();
+      if (st !== 'paid' && st !== 'cancelled' && st !== 'voided') {
+        return s + Number(inv.remainingBalance ?? (Number(inv.totalAmount || 0) - Number(inv.paidAmount || 0)));
+      }
+      return s;
+    }, 0);
+    if (sumFromInvoices > 0) return sumFromInvoices;
+    if (executiveStats?.kpi?.outstandingFees) return Number(executiveStats.kpi.outstandingFees);
+    return Number(financialStatement?.balances?.['1100'] || 0);
+  }, [invoices, executiveStats, financialStatement]);
 
   const collectionRate = useMemo(() => {
-    if (totalInvoicedUSD <= 0) return 100;
-    return Math.round((collectedRevenueUSD / totalInvoicedUSD) * 1000) / 10;
-  }, [collectedRevenueUSD, totalInvoicedUSD]);
+    const total = totalInvoicedUSD > 0 ? totalInvoicedUSD : (collectedRevenueUSD + outstandingReceivablesUSD);
+    if (total <= 0) return 100;
+    return Number(((collectedRevenueUSD / total) * 100).toFixed(1));
+  }, [collectedRevenueUSD, totalInvoicedUSD, outstandingReceivablesUSD]);
 
   const totalTreasuryBalanceUSD = useMemo(() => {
-    if (accounts.length > 0) {
-      return accounts
-        .filter(a => a.accountType === 'Asset')
-        .reduce((s, a) => s + (Number(a.currentBalance) || 0), 0);
+    if (executiveStats?.treasuryInsights) {
+      const t = executiveStats.treasuryInsights;
+      return Number(t.totalBankBalance || 0) + Number(t.totalMobileMoney || 0) + Number(t.totalCashInDrawer || 0) + Number(t.totalChequeInClearing || 0);
     }
-    return 156400;
-  }, [accounts]);
+    if (financialStatement?.balances) {
+      const b = financialStatement.balances;
+      return Number(b['1010'] || 0) + Number(b['1020'] || 0) + Number(b['1030'] || 0) + Number(b['1040'] || 0);
+    }
+    return accounts
+      .filter(a => a.accountType === 'Asset' && (a.accountCode?.startsWith('10') || a.accountName?.toLowerCase().includes('cash') || a.accountName?.toLowerCase().includes('bank')))
+      .reduce((s, a) => s + (Number(a.currentBalance) || 0), 0);
+  }, [executiveStats, financialStatement, accounts]);
 
   const monthlyExpensesUSD = useMemo(() => {
-    if (executiveStats?.monthlyExpenses) return Number(executiveStats.monthlyExpenses);
-    return 32400;
-  }, [executiveStats]);
+    if (executiveStats?.kpi?.monthlyExpenses !== undefined || executiveStats?.kpi?.payrollThisMonth !== undefined) {
+      return Number(executiveStats.kpi.monthlyExpenses || 0) + Number(executiveStats.kpi.payrollThisMonth || 0);
+    }
+    if (financialStatement?.totalExpenses) return Number(financialStatement.totalExpenses);
+    return expenses.reduce((s, e) => s + Number(e.amount || 0), 0);
+  }, [executiveStats, financialStatement, expenses]);
 
-  // Cashflow Monthly Series in Active Currency
+  // ── Live Monthly Cashflow Series (Zero Hardcoding) ───────────────────────────
   const cashflowChartData = useMemo(() => {
-    const raw = [
-      { month: 'Nov', inflow: 38000, outflow: 24000 },
-      { month: 'Dec', inflow: 42000, outflow: 29000 },
-      { month: 'Jan', inflow: 51000, outflow: 31000 },
-      { month: 'Feb', inflow: 48000, outflow: 30000 },
-      { month: 'Mar', inflow: 56000, outflow: 33000 },
-      { month: 'Current', inflow: Math.round(collectedRevenueUSD * 0.4), outflow: monthlyExpensesUSD }
-    ];
-
-    return raw.map(item => ({
-      month: item.month,
-      inflow: Math.round(item.inflow * activeCurrencyRate),
-      outflow: Math.round(item.outflow * activeCurrencyRate)
-    }));
-  }, [activeCurrencyRate, collectedRevenueUSD, monthlyExpensesUSD]);
-
-  // Treasury Distribution by Account
-  const treasuryBreakdown = useMemo(() => {
-    if (accounts.length > 0) {
-      return accounts.slice(0, 4).map(a => ({
-        name: a.accountName,
-        code: a.accountCode,
-        balance: Number(a.currentBalance || 0),
-        category: a.accountType
+    if (executiveStats?.charts?.revenueVsExpenseMonthly && executiveStats.charts.revenueVsExpenseMonthly.length > 0) {
+      return executiveStats.charts.revenueVsExpenseMonthly.map((m: any) => ({
+        month: m.month,
+        inflow: Math.round(Number(m.revenue || 0) * activeCurrencyRate),
+        outflow: Math.round(Number(m.expense || 0) * activeCurrencyRate)
       }));
     }
-    return [
-      { name: 'Main Treasury Wire Account', code: 'ACC-1010', balance: 88400, category: 'Bank Treasury' },
-      { name: 'Tuition Fee Collection Safe', code: 'ACC-1020', balance: 42100, category: 'Operating Cash' },
-      { name: 'Mobile Money Gateway (Orange/MTN)', code: 'ACC-1030', balance: 18500, category: 'Digital MoMo' },
-      { name: 'Petty Cash & Campus POS Safe', code: 'ACC-1040', balance: 7400, category: 'Cashier Safe' },
-    ];
-  }, [accounts]);
+
+    const monthNames = ['Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+    const monthlyMap: Record<string, { inflow: number; outflow: number }> = {};
+    monthNames.forEach(m => { monthlyMap[m] = { inflow: 0, outflow: 0 }; });
+
+    receipts.forEach((r: any) => {
+      const dateStr = r.paymentDate || r.createdAt;
+      if (dateStr) {
+        try {
+          const d = new Date(dateStr);
+          const m = d.toLocaleString('en-US', { month: 'short' });
+          if (monthlyMap[m]) {
+            monthlyMap[m].inflow += Number(r.paymentAmount || r.amount || 0);
+          }
+        } catch {}
+      }
+    });
+
+    expenses.forEach((e: any) => {
+      const dateStr = e.createdAt || e.date;
+      if (dateStr) {
+        try {
+          const d = new Date(dateStr);
+          const m = d.toLocaleString('en-US', { month: 'short' });
+          if (monthlyMap[m]) {
+            monthlyMap[m].outflow += Number(e.amount || 0);
+          }
+        } catch {}
+      }
+    });
+
+    return monthNames.map(m => ({
+      month: m,
+      inflow: Math.round(monthlyMap[m].inflow * activeCurrencyRate),
+      outflow: Math.round(monthlyMap[m].outflow * activeCurrencyRate)
+    }));
+  }, [executiveStats, receipts, expenses, activeCurrencyRate]);
+
+  // ── Live Treasury Breakdown by Account (From General Ledger & Reports) ───────
+  const treasuryBreakdown = useMemo(() => {
+    if (accounts.length > 0) {
+      const liquidAccounts = accounts.filter(a =>
+        a.accountCode?.startsWith('10') ||
+        a.accountType === 'Asset' ||
+        a.accountName.toLowerCase().includes('bank') ||
+        a.accountName.toLowerCase().includes('cash') ||
+        a.accountName.toLowerCase().includes('money')
+      );
+      if (liquidAccounts.length > 0) {
+        return liquidAccounts.slice(0, 4).map(a => ({
+          name: a.accountName,
+          code: a.accountCode,
+          balance: Number(a.currentBalance || 0),
+          category: a.accountType || 'Asset Vault'
+        }));
+      }
+    }
+
+    if (executiveStats?.treasuryInsights) {
+      const t = executiveStats.treasuryInsights;
+      return [
+        { name: 'Commercial Operating Bank Accounts', code: 'ACC-1010', balance: Number(t.totalBankBalance || 0), category: 'Commercial Banking' },
+        { name: 'Mobile Money Gateway (Orange & MTN)', code: 'ACC-1020', balance: Number(t.totalMobileMoney || 0), category: 'Digital Wallets' },
+        { name: 'Campus Cash Drawer & Vault', code: 'ACC-1030', balance: Number(t.totalCashInDrawer || 0), category: 'Cashier Safe' },
+        { name: 'Undeposited Cheques in Clearing', code: 'ACC-1040', balance: Number(t.totalChequeInClearing || 0), category: 'Cheques Clearing' }
+      ];
+    }
+
+    return [];
+  }, [accounts, executiveStats]);
 
   // Filtered Tables
   const filteredInvoices = useMemo(() => {
@@ -213,6 +314,18 @@ export default function AccountantDashboardPage() {
     }).slice(0, 8);
   }, [receipts, searchTerm]);
 
+  const pendingInvoicesCount = useMemo(() => invoices.filter(i => (i.status || '').toLowerCase() !== 'paid').length, [invoices]);
+
+  const handleCurrencyChange = (newCurr: string) => {
+    setSelectedCurrency(newCurr);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('yahaya_selected_currency', newCurr);
+      localStorage.setItem('selected_currency', newCurr);
+      window.dispatchEvent(new CustomEvent('yahaya_currency_changed', { detail: newCurr }));
+    }
+    toast.info(`${t('Display currency switched to')} ${newCurr}`);
+  };
+
   return (
     <PageContainer>
       {/* ── Multi-Currency Command Bar & Page Header ── */}
@@ -227,8 +340,8 @@ export default function AccountantDashboardPage() {
             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">{t('Display Currency')}:</span>
             <select
               value={selectedCurrency}
-              onChange={(e) => setSelectedCurrency(e.target.value)}
-              className="bg-transparent text-xs font-black text-white focus:outline-none cursor-pointer pr-1"
+              onChange={(e) => handleCurrencyChange(e.target.value)}
+              className="bg-transparent text-xs font-black text-white focus:outline-none cursor-pointer pr-1 font-mono"
               aria-label="Select Active Display Currency"
             >
               {currencies.length > 0 ? (
@@ -240,11 +353,12 @@ export default function AccountantDashboardPage() {
               ) : (
                 <>
                   <option value="USD" className="bg-slate-900 text-white">USD ($) • US Dollar</option>
-                  <option value="LRD" className="bg-slate-900 text-white">LRD ($) • Liberian Dollar</option>
-                  <option value="NGN" className="bg-slate-900 text-white">NGN (₦) • Nigerian Naira</option>
                   <option value="EUR" className="bg-slate-900 text-white">EUR (€) • Euro</option>
-                  <option value="GBP" className="bg-slate-900 text-white">GBP (£) • British Pound</option>
                   <option value="TRY" className="bg-slate-900 text-white">TRY (₺) • Turkish Lira</option>
+                  <option value="XOF" className="bg-slate-900 text-white">XOF (CFA) • CFA Franc</option>
+                  <option value="GNF" className="bg-slate-900 text-white">GNF (FG) • Guinean Franc</option>
+                  <option value="GBP" className="bg-slate-900 text-white">GBP (£) • British Pound</option>
+                  <option value="SAR" className="bg-slate-900 text-white">SAR (﷼) • Saudi Riyal</option>
                 </>
               )}
             </select>
@@ -285,7 +399,7 @@ export default function AccountantDashboardPage() {
           })}
           {currencies.length === 0 && (
             <span className="text-slate-400 font-sans">
-              USD (1.00) • LRD (195.50) • NGN (1,480.00) • EUR (0.92) • GBP (0.78) • TRY (34.20)
+              USD (1.00) • EUR (0.92) • TRY (34.20) • XOF (605.50) • GNF (8,600.00) • GBP (0.78) • SAR (3.75)
             </span>
           )}
         </div>
@@ -297,7 +411,7 @@ export default function AccountantDashboardPage() {
         </div>
       </div>
 
-      {/* ── Layer 1: Financial Executive KPI Deck ── */}
+      {/* ── Layer 1: Financial Executive KPI Deck (Live Data) ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {isVisible('stat-invoiced') && (
           <div className="relative p-5 rounded-3xl bg-slate-900/90 border border-slate-800 hover:border-emerald-500/40 transition-all shadow-md group">
@@ -317,7 +431,6 @@ export default function AccountantDashboardPage() {
                 <span className="text-[11px] text-slate-400 font-mono">({formatMoney(collectedRevenueUSD)})</span>
               </div>
             </div>
-            {/* Progress bar */}
             <div className="w-full bg-slate-800 h-1.5 rounded-full mt-3 overflow-hidden">
               <div className="bg-gradient-to-r from-emerald-500 to-teal-400 h-full rounded-full transition-all duration-500" style={{ width: `${Math.min(collectionRate, 100)}%` }} />
             </div>
@@ -336,11 +449,11 @@ export default function AccountantDashboardPage() {
               <h3 className="text-2xl font-black text-white font-mono tracking-tight">{formatMoney(totalTreasuryBalanceUSD)}</h3>
               <p className="text-[11px] text-slate-400 flex items-center gap-1.5 pt-1">
                 <CheckCircle2 className="w-3.5 h-3.5 text-sky-400" />
-                <span>{accounts.length || 4} {t('Active Bank & Cash Vaults')}</span>
+                <span>{treasuryBreakdown.length} {t('Active Bank & Cash Vaults')}</span>
               </p>
             </div>
             <div className="w-full bg-slate-800 h-1.5 rounded-full mt-3 overflow-hidden">
-              <div className="bg-sky-500 h-full rounded-full" style={{ width: '85%' }} />
+              <div className="bg-sky-500 h-full rounded-full transition-all duration-500" style={{ width: `${Math.min(100, Math.round((totalTreasuryBalanceUSD / Math.max(monthlyExpensesUSD * 3, 1)) * 100))}%` }} />
             </div>
           </div>
         )}
@@ -357,11 +470,11 @@ export default function AccountantDashboardPage() {
               <h3 className="text-2xl font-black text-white font-mono tracking-tight">{formatMoney(outstandingReceivablesUSD)}</h3>
               <p className="text-[11px] text-amber-400 flex items-center gap-1.5 pt-1">
                 <Clock className="w-3.5 h-3.5" />
-                <span>{invoices.filter(i => i.status !== 'paid').length || 14} {t('Pending Clearance Invoices')}</span>
+                <span>{pendingInvoicesCount} {t('Pending Clearance Invoices')}</span>
               </p>
             </div>
             <div className="w-full bg-slate-800 h-1.5 rounded-full mt-3 overflow-hidden">
-              <div className="bg-amber-500 h-full rounded-full" style={{ width: `${Math.min((outstandingReceivablesUSD / (totalInvoicedUSD || 1)) * 100, 100)}%` }} />
+              <div className="bg-amber-500 h-full rounded-full transition-all duration-500" style={{ width: `${Math.min((outstandingReceivablesUSD / Math.max(totalInvoicedUSD, 1)) * 100, 100)}%` }} />
             </div>
           </div>
         )}
@@ -378,17 +491,59 @@ export default function AccountantDashboardPage() {
               <h3 className="text-2xl font-black text-white font-mono tracking-tight">{formatMoney(monthlyExpensesUSD)}</h3>
               <p className="text-[11px] text-slate-400 flex items-center gap-1.5 pt-1">
                 <ArrowDownRight className="w-3.5 h-3.5 text-rose-400" />
-                <span>{t('Payroll & Operational Vouchers')}</span>
+                <span>{expenses.length} {t('Operational & Payroll Vouchers')}</span>
               </p>
             </div>
             <div className="w-full bg-slate-800 h-1.5 rounded-full mt-3 overflow-hidden">
-              <div className="bg-rose-500 h-full rounded-full" style={{ width: '45%' }} />
+              <div className="bg-rose-500 h-full rounded-full transition-all duration-500" style={{ width: `${Math.min(100, Math.round((monthlyExpensesUSD / Math.max(collectedRevenueUSD, 1)) * 100))}%` }} />
             </div>
           </div>
         )}
       </div>
 
-      {/* ── Layer 2: Visualizations & Charts ── */}
+      {/* ── Certified Financial Statement Snapshot (From Live GL Engine) ── */}
+      {financialStatement && isVisible('stat-statement') && (
+        <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 mb-8 shadow-md">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+            <div className="flex items-center gap-2">
+              <Scale className="w-5 h-5 text-emerald-400" />
+              <h3 className="text-sm font-black text-white uppercase tracking-wider">
+                {t('Certified Financial Statement & General Ledger Snapshot')} ({financialStatement.academicYear || '2026-2027'})
+              </h3>
+            </div>
+            <Link href="/finance/reports/statements" className="text-xs text-emerald-400 hover:underline font-bold flex items-center gap-1">
+              <span>{t('Full P&L & Balance Sheet')}</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="bg-slate-950 p-3.5 rounded-2xl border border-slate-800">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">{t('Total Recognized Revenue')}</span>
+              <span className="text-base font-black font-mono text-emerald-400">{formatMoney(Number(financialStatement.totalRevenue || 0))}</span>
+              <span className="text-[10px] text-slate-500 block mt-0.5">{t('Tuition, Waqf, & Auxiliary')}</span>
+            </div>
+            <div className="bg-slate-950 p-3.5 rounded-2xl border border-slate-800">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">{t('Total Recognized Expenses')}</span>
+              <span className="text-base font-black font-mono text-rose-400">{formatMoney(Number(financialStatement.totalExpenses || 0))}</span>
+              <span className="text-[10px] text-slate-500 block mt-0.5">{t('Payroll & Operational Claims')}</span>
+            </div>
+            <div className="bg-slate-950 p-3.5 rounded-2xl border border-slate-800">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">{t('Net Operating Surplus (EBITDA)')}</span>
+              <span className={cn('text-base font-black font-mono', Number(financialStatement.netSurplus || 0) >= 0 ? 'text-emerald-400' : 'text-rose-400')}>
+                {formatMoney(Number(financialStatement.netSurplus || 0))}
+              </span>
+              <span className="text-[10px] text-slate-500 block mt-0.5">{t('Annual Fiscal Margin')}</span>
+            </div>
+            <div className="bg-slate-950 p-3.5 rounded-2xl border border-slate-800">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">{t('Total Certified Assets')}</span>
+              <span className="text-base font-black font-mono text-sky-400">{formatMoney(Number(financialStatement.totalAssets || 0))}</span>
+              <span className="text-[10px] text-slate-500 block mt-0.5">{t('Cash, Bank, AR, & Property')}</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Layer 2: Visualizations & Charts (Live Data) ── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         {isVisible('chart-cashflow') && (
           <ChartCard
@@ -413,25 +568,29 @@ export default function AccountantDashboardPage() {
                   <PiggyBank className="w-5 h-5 text-sky-400" />
                   <h3 className="text-sm font-black text-white">{t('Treasury Vault Distribution')}</h3>
                 </div>
-                <Link href="/finance/accounts" className="text-xs text-sky-400 hover:underline font-bold">
+                <Link href="/finance/accounting/accounts" className="text-xs text-sky-400 hover:underline font-bold">
                   {t('View All')} →
                 </Link>
               </div>
 
               <div className="space-y-3">
-                {treasuryBreakdown.map((acct, idx) => (
-                  <div key={idx} className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800/80 flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <p className="text-xs font-bold text-white leading-tight">{acct.name}</p>
-                      <p className="text-[10px] text-slate-400 font-mono">{acct.code} • {acct.category}</p>
+                {treasuryBreakdown.length > 0 ? (
+                  treasuryBreakdown.map((acct, idx) => (
+                    <div key={idx} className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800/80 flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <p className="text-xs font-bold text-white leading-tight">{acct.name}</p>
+                        <p className="text-[10px] text-slate-400 font-mono">{acct.code} • {acct.category}</p>
+                      </div>
+                      <div className="text-right">
+                        <span className="font-mono text-xs font-black text-emerald-400">
+                          {formatMoney(acct.balance)}
+                        </span>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <span className="font-mono text-xs font-black text-emerald-400">
-                        {formatMoney(acct.balance)}
-                      </span>
-                    </div>
-                  </div>
-                ))}
+                  ))
+                ) : (
+                  <p className="text-xs text-slate-500 text-center py-6">{t('No treasury vault accounts configured.')}</p>
+                )}
               </div>
             </div>
 
@@ -450,7 +609,7 @@ export default function AccountantDashboardPage() {
             <ShieldCheck className="w-4 h-4 text-emerald-400" />
             <span>{t('Accountant Quick Action Hub')}</span>
           </h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
             <Link
               href="/finance/billing/payments"
               className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 hover:border-emerald-500/50 hover:bg-slate-800/50 transition-all flex flex-col items-center text-center group"
@@ -496,14 +655,25 @@ export default function AccountantDashboardPage() {
             </Link>
 
             <Link
-              href="/finance/reconciliation"
+              href="/finance/accounting/ledger"
+              className="p-3.5 rounded-2xl bg-slate-950 border border-emerald-500/40 hover:border-emerald-500 hover:bg-slate-800/50 transition-all flex flex-col items-center text-center group shadow-sm"
+            >
+              <div className="p-2 rounded-xl bg-sky-500/10 text-sky-400 group-hover:scale-110 transition-transform mb-2">
+                <FolderOpen className="w-5 h-5" />
+              </div>
+              <span className="text-xs font-bold text-white">{t('General Ledger')}</span>
+              <span className="text-[10px] text-slate-400 mt-0.5">{t('Double-Entry Trail')}</span>
+            </Link>
+
+            <Link
+              href="/finance/accounting/journals"
               className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 hover:border-emerald-500/50 hover:bg-slate-800/50 transition-all flex flex-col items-center text-center group"
             >
               <div className="p-2 rounded-xl bg-violet-500/10 text-violet-400 group-hover:scale-110 transition-transform mb-2">
                 <Landmark className="w-5 h-5" />
               </div>
-              <span className="text-xs font-bold text-white">{t('Reconciliation')}</span>
-              <span className="text-[10px] text-slate-400 mt-0.5">{t('Bank Statements')}</span>
+              <span className="text-xs font-bold text-white">{t('Journals')}</span>
+              <span className="text-[10px] text-slate-400 mt-0.5">{t('Manual Vouchers')}</span>
             </Link>
 
             <Link
@@ -513,14 +683,14 @@ export default function AccountantDashboardPage() {
               <div className="p-2 rounded-xl bg-amber-500/10 text-amber-400 group-hover:scale-110 transition-transform mb-2">
                 <BarChart3 className="w-5 h-5" />
               </div>
-              <span className="text-xs font-bold text-white">{t('Balance Sheet')}</span>
-              <span className="text-[10px] text-slate-400 mt-0.5">{t('P&L Reports')}</span>
+              <span className="text-xs font-bold text-white">{t('Financial Reports')}</span>
+              <span className="text-[10px] text-slate-400 mt-0.5">{t('P&L / Balance Sheet')}</span>
             </Link>
           </div>
         </div>
       )}
 
-      {/* ── Layer 4: Interactive Clearance & Transaction Tables ── */}
+      {/* ── Layer 4: Interactive Clearance & Transaction Tables (Live Data) ── */}
       <div className="p-6 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-md space-y-5">
         {/* Navigation Tabs */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
@@ -535,7 +705,7 @@ export default function AccountantDashboardPage() {
               <FileText className="w-3.5 h-3.5" />
               <span>{t('Pending Invoices & Clearance Queue')}</span>
               <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-slate-800 text-slate-300 ml-1">
-                {invoices.filter(i => i.status !== 'paid').length}
+                {pendingInvoicesCount}
               </span>
             </button>
 
@@ -663,7 +833,7 @@ export default function AccountantDashboardPage() {
                           {rc.paymentMethod || 'Cash Desk'}
                         </span>
                       </td>
-                      <td className="py-3 px-3 font-mono font-black text-emerald-400">{formatMoney(Number(rc.amount || 0))}</td>
+                      <td className="py-3 px-3 font-mono font-black text-emerald-400">{formatMoney(Number(rc.amount || rc.paymentAmount || 0))}</td>
                       <td className="py-3 px-3 font-mono text-[11px] text-slate-400">
                         {rc.paymentDate || rc.createdAt ? new Date(rc.paymentDate || rc.createdAt).toLocaleDateString() : 'Today'}
                       </td>

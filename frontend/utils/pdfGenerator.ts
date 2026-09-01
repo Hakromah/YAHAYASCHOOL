@@ -19,7 +19,10 @@ export const generateInstitutionalPDF = async (
   preparedBy: string,
   preparedByEmail: string,
   hashId: string,
-  reportData: any
+  reportData: any,
+  currencyCode: string = 'USD',
+  currencySymbol: string = '$',
+  exchangeRate: number = 1.0
 ) => {
   const doc = new jsPDF('p', 'pt', 'a4');
   const nowStr = new Date().toLocaleString('en-GB');
@@ -57,42 +60,45 @@ export const generateInstitutionalPDF = async (
   doc.text('Address: 123 Education Ave, Campus Main', 370, 63);
   doc.text('Phone: +1 234 567 890', 370, 75);
   doc.text('Email: finance@yahayaschool.edu', 370, 87);
-  doc.text('Reporting Currency: USD ($)', 370, 99);
+  doc.text(`Reporting Currency: ${currencyCode} (${currencySymbol})`, 370, 99);
 
   let yPos = 140;
 
   const balances = reportData?.balances || {};
-  const totalDebits = reportData?.totalDebits || 0;
-  const totalCredits = reportData?.totalCredits || 0;
+  const totalDebits = (reportData?.totalDebits || 0) * exchangeRate;
+  const totalCredits = (reportData?.totalCredits || 0) * exchangeRate;
 
   const formatMoney = (val: number) => {
-    if (!val) return '$0.00';
-    return val < 0 
-      ? `-$${Math.abs(val).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` 
-      : `$${val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    const converted = (val || 0) * exchangeRate;
+    if (!converted) return `${currencySymbol}0.00`;
+    return converted < 0 
+      ? `-${currencySymbol}${Math.abs(converted).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` 
+      : `${currencySymbol}${converted.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
   // 4. Report Content Sections
   if (reportType === 'Income Statement' || reportType === 'All') {
     doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
-    doc.text('INCOME STATEMENT (PROFIT & LOSS)', 40, yPos);
+    doc.text(`INCOME STATEMENT (PROFIT & LOSS) [${currencyCode}]`, 40, yPos);
     yPos += 15;
 
     const tuitionRev = balances['4010'] || 0;
     const waqfDonations = balances['4020'] || 0;
     const auxRev = balances['4030'] || 0;
-    const totalRev = tuitionRev + waqfDonations + auxRev;
+    const hostelRev = balances['4040'] || 0;
+    const totalRev = tuitionRev + waqfDonations + auxRev + hostelRev;
 
     const revRows = [
       ['4010 - Academic Tuition Fees (Net of Discounts)', formatMoney(tuitionRev)],
       ['4020 - Waqf & Institutional Grant Contributions', formatMoney(waqfDonations)],
       ['4030 - Auxiliary Services & Cafeteria Income', formatMoney(auxRev)],
+      ['4040 - Hostel Room & Boarding Revenue', formatMoney(hostelRev)],
     ];
 
     autoTable(doc, {
       startY: yPos,
-      head: [['Operating & Tuition Revenue', 'Amount (USD)']],
+      head: [['Operating & Tuition Revenue', `Amount (${currencyCode})`]],
       body: [
         ...revRows,
         [{ content: 'TOTAL OPERATING REVENUE', styles: { fontStyle: 'bold' } }, { content: formatMoney(totalRev), styles: { fontStyle: 'bold' } }]
@@ -109,7 +115,8 @@ export const generateInstitutionalPDF = async (
     const itExp = balances['5030'] || 0;
     const suppliesExp = balances['5040'] || 0;
     const maintenanceExp = balances['5050'] || 0;
-    const totalExp = facultyExp + utilityExp + itExp + suppliesExp + maintenanceExp;
+    const hostelExp = balances['5060'] || 0;
+    const totalExp = facultyExp + utilityExp + itExp + suppliesExp + maintenanceExp + hostelExp;
 
     const expRows = [
       ['5010 - Faculty Salaries, Overtime & HR Benefits', formatMoney(facultyExp)],
@@ -117,11 +124,12 @@ export const generateInstitutionalPDF = async (
       ['5030 - IT Infrastructure & Lab Equipment', formatMoney(itExp)],
       ['5040 - Teaching Supplies & Academic Materials', formatMoney(suppliesExp)],
       ['5050 - Campus Maintenance & Repairs', formatMoney(maintenanceExp)],
+      ['5060 - Hostel Maintenance & Operations', formatMoney(hostelExp)],
     ];
 
     autoTable(doc, {
       startY: yPos,
-      head: [['Operating Expenditures', 'Amount (USD)']],
+      head: [['Operating Expenditures', `Amount (${currencyCode})`]],
       body: [
         ...expRows,
         [{ content: 'TOTAL OPERATING EXPENSES', styles: { fontStyle: 'bold' } }, { content: formatMoney(totalExp), styles: { fontStyle: 'bold' } }]
@@ -139,7 +147,7 @@ export const generateInstitutionalPDF = async (
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
-    doc.text('NET SURPLUS / (DEFICIT) BEFORE DEPRECIATION:', 50, yPos + 16);
+    doc.text(`NET SURPLUS / (DEFICIT) BEFORE DEPRECIATION (${currencyCode}):`, 50, yPos + 16);
     doc.text(formatMoney(netSurplus), 460, yPos + 16);
     doc.setTextColor(0, 0, 0);
 
@@ -154,7 +162,7 @@ export const generateInstitutionalPDF = async (
 
     doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
-    doc.text('INSTITUTIONAL BALANCE SHEET', 40, yPos);
+    doc.text(`INSTITUTIONAL BALANCE SHEET [${currencyCode}]`, 40, yPos);
     yPos += 15;
 
     const bank = balances['1010'] || 0;
@@ -176,7 +184,7 @@ export const generateInstitutionalPDF = async (
 
     autoTable(doc, {
       startY: yPos,
-      head: [['Institutional Assets', 'Amount (USD)']],
+      head: [['Institutional Assets', `Amount (${currencyCode})`]],
       body: [
         ...assetRows,
         [{ content: 'TOTAL INSTITUTIONAL ASSETS', styles: { fontStyle: 'bold' } }, { content: formatMoney(totalAssets), styles: { fontStyle: 'bold' } }]
@@ -193,13 +201,13 @@ export const generateInstitutionalPDF = async (
     const wallet = balances['2050'] || 0;
     const totalLiab = ap + unearned + wallet;
 
-    const netSurplusVal = ((balances['4010'] || 0) + (balances['4020'] || 0) + (balances['4030'] || 0)) - ((balances['5010'] || 0) + (balances['5020'] || 0) + (balances['5030'] || 0) + (balances['5040'] || 0) + (balances['5050'] || 0));
+    const netSurplusVal = ((balances['4010'] || 0) + (balances['4020'] || 0) + (balances['4030'] || 0) + (balances['4040'] || 0)) - ((balances['5010'] || 0) + (balances['5020'] || 0) + (balances['5030'] || 0) + (balances['5040'] || 0) + (balances['5050'] || 0) + (balances['5060'] || 0));
     const retainedEq = balances['3010'] || 0;
     const totalEq = retainedEq + netSurplusVal;
 
     autoTable(doc, {
       startY: yPos,
-      head: [['Liabilities & Institutional Equity', 'Amount (USD)']],
+      head: [['Liabilities & Institutional Equity', `Amount (${currencyCode})`]],
       body: [
         ['2010 - Accounts Payable & Vendor Liabilities', formatMoney(ap)],
         ['2020 - Unearned / Prepaid Student Tuition', formatMoney(unearned)],

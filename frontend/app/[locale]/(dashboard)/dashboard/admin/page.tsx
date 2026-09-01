@@ -5,8 +5,10 @@ import { motion } from 'framer-motion';
 import {
   Users, GraduationCap, BookOpen, DollarSign, UserCheck,
   Calendar, Layers, ShieldCheck, Bell, Activity, ArrowRight,
-  RefreshCw, CheckCircle2, AlertCircle, Clock, HeartHandshake
+  RefreshCw, CheckCircle2, AlertCircle, Clock, HeartHandshake,
+  FolderOpen, Scale, FileText, Landmark, BarChart3, Settings
 } from 'lucide-react';
+import { Link } from '@/i18n/routing';
 
 import { dashboardService, type AdminDashboardData } from '@/services/dashboard.service';
 import { PageContainer, PageHeader } from '@/components/shared/layout/PageContainer';
@@ -36,6 +38,7 @@ const DEFAULT_WIDGETS: WidgetConfig[] = [
   { id: 'chart-departments', title: 'Faculty & Student Distribution', layer: 'chart', isVisible: true, isPinned: false, size: 'large' },
 
   // Layer 3 — Action Lists & Activity
+  { id: 'action-quick', title: 'Institutional ERP Command Actions', layer: 'action', isVisible: true, isPinned: true, size: 'large' },
   { id: 'action-activity', title: 'System Audit Activity Feed', layer: 'action', isVisible: true, isPinned: false, size: 'large' },
   { id: 'action-announcements', title: 'System Announcements & Events', layer: 'action', isVisible: true, isPinned: false, size: 'normal' },
 ];
@@ -254,6 +257,110 @@ export default function SuperAdminDashboardPage() {
       )}
 
       {/* Layer 3 — Action Lists & Security Feed */}
+      {isVisible('action-quick') && (
+        <div className="p-5 rounded-2xl bg-card border border-border mb-8 shadow-xs">
+          <div className="flex items-center justify-between mb-4 pb-2 border-b border-border">
+            <h2 className="text-xs font-black text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-primary" />
+              <span>{t('Institutional ERP Command Actions')}</span>
+            </h2>
+            <Link href="/finance" className="text-xs font-semibold text-primary hover:underline flex items-center gap-1">
+              <span>{t('Finance ERP Console')}</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+            <Link
+              href="/finance/accounting/ledger"
+              className="p-3.5 rounded-xl bg-background border border-primary/40 hover:border-primary hover:bg-muted/40 transition-all flex flex-col items-center text-center group shadow-xs"
+            >
+              <div className="p-2 rounded-lg bg-primary/10 text-primary group-hover:scale-110 transition-transform mb-1.5">
+                <FolderOpen className="w-4 h-4" />
+              </div>
+              <span className="text-xs font-bold text-foreground">{t('General Ledger')}</span>
+              <span className="text-[10px] text-muted-foreground mt-0.5">{t('Drill-Down')}</span>
+            </Link>
+
+            <Link
+              href="/finance"
+              className="p-3.5 rounded-xl bg-background border border-border hover:border-emerald-500/50 hover:bg-muted/40 transition-all flex flex-col items-center text-center group"
+            >
+              <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-500 group-hover:scale-110 transition-transform mb-1.5">
+                <DollarSign className="w-4 h-4" />
+              </div>
+              <span className="text-xs font-bold text-foreground">{t('Executive ERP')}</span>
+              <span className="text-[10px] text-muted-foreground mt-0.5">{t('Treasury / P&L')}</span>
+            </Link>
+
+            <Link
+              href="/finance/billing/structures"
+              className="p-3.5 rounded-xl bg-background border border-border hover:border-teal-500/50 hover:bg-muted/40 transition-all flex flex-col items-center text-center group"
+            >
+              <div className="p-2 rounded-lg bg-teal-500/10 text-teal-500 group-hover:scale-110 transition-transform mb-1.5">
+                <Layers className="w-4 h-4" />
+              </div>
+              <span className="text-xs font-bold text-foreground">{t('Fee Schedules')}</span>
+              <span className="text-[10px] text-muted-foreground mt-0.5">{t('Tuition Rules')}</span>
+            </Link>
+
+            <Link
+              href="/finance/reports"
+              className="p-3.5 rounded-xl bg-background border border-border hover:border-amber-500/50 hover:bg-muted/40 transition-all flex flex-col items-center text-center group"
+            >
+              <div className="p-2 rounded-lg bg-amber-500/10 text-amber-500 group-hover:scale-110 transition-transform mb-1.5">
+                <BarChart3 className="w-4 h-4" />
+              </div>
+              <span className="text-xs font-bold text-foreground">{t('Statements')}</span>
+              <span className="text-[10px] text-muted-foreground mt-0.5">{t('Financial P&L')}</span>
+            </Link>
+
+            <Link
+              href="/students"
+              className="p-3.5 rounded-xl bg-background border border-border hover:border-sky-500/50 hover:bg-muted/40 transition-all flex flex-col items-center text-center group"
+            >
+              <div className="p-2 rounded-lg bg-sky-500/10 text-sky-500 group-hover:scale-110 transition-transform mb-1.5">
+                <GraduationCap className="w-4 h-4" />
+              </div>
+              <span className="text-xs font-bold text-foreground">{t('Students')}</span>
+              <span className="text-[10px] text-muted-foreground mt-0.5">{t('Enrollment')}</span>
+            </Link>
+
+            <Link
+              href="/teachers"
+              className="p-3.5 rounded-xl bg-background border border-border hover:border-indigo-500/50 hover:bg-muted/40 transition-all flex flex-col items-center text-center group"
+            >
+              <div className="p-2 rounded-lg bg-indigo-500/10 text-indigo-500 group-hover:scale-110 transition-transform mb-1.5">
+                <UserCheck className="w-4 h-4" />
+              </div>
+              <span className="text-xs font-bold text-foreground">{t('Faculty')}</span>
+              <span className="text-[10px] text-muted-foreground mt-0.5">{t('Instructors')}</span>
+            </Link>
+
+            <Link
+              href="/audit-logs"
+              className="p-3.5 rounded-xl bg-background border border-border hover:border-rose-500/50 hover:bg-muted/40 transition-all flex flex-col items-center text-center group"
+            >
+              <div className="p-2 rounded-lg bg-rose-500/10 text-rose-500 group-hover:scale-110 transition-transform mb-1.5">
+                <Activity className="w-4 h-4" />
+              </div>
+              <span className="text-xs font-bold text-foreground">{t('Audit Logs')}</span>
+              <span className="text-[10px] text-muted-foreground mt-0.5">{t('Security Trail')}</span>
+            </Link>
+
+            <Link
+              href="/settings/finance"
+              className="p-3.5 rounded-xl bg-background border border-border hover:border-slate-500/50 hover:bg-muted/40 transition-all flex flex-col items-center text-center group"
+            >
+              <div className="p-2 rounded-lg bg-muted text-muted-foreground group-hover:scale-110 transition-transform mb-1.5">
+                <Settings className="w-4 h-4" />
+              </div>
+              <span className="text-xs font-bold text-foreground">{t('Governance')}</span>
+              <span className="text-[10px] text-muted-foreground mt-0.5">{t('Settings & FX')}</span>
+            </Link>
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {isVisible('action-activity') && (
           <div className="lg:col-span-2 bg-card border border-border rounded-2xl overflow-hidden">

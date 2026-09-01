@@ -4,13 +4,14 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link } from '@/i18n/routing';
 import {
-  ShieldCheck, CheckCircle2, Clock, ArrowLeft, RefreshCw, Check,
-  AlertCircle, DollarSign, Coins, X
+  ShieldCheck, CheckCircle2, Clock, DollarSign, Building2,
+  AlertCircle, ArrowRight, Check, X, Eye, Filter, RefreshCw,
+  Coins, ArrowLeftRight, Layers, PieChart, FileText
 } from 'lucide-react';
 import { useLocale } from 'next-intl';
 import { t as i18nT } from '@/lib/i18n-dict';
 import { financeService } from '@/services/finance.service';
-import type { ExpenseRequest, MultiCurrencyRate } from '@/types/finance.types';
+import type { DepartmentBudget, MultiCurrencyRate } from '@/types/finance.types';
 import { EnterpriseModuleShell } from '@/components/erp/EnterpriseModuleShell';
 import { EnterpriseKPIDeck, type EnterpriseKPICard } from '@/components/erp/EnterpriseKPIDeck';
 import { EnterpriseDataGrid, type ColumnDef } from '@/components/erp/EnterpriseDataGrid';
@@ -18,7 +19,7 @@ import { StatusBadge } from '@/components/erp/StatusBadge';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 
-export default function ExpenseApprovalsPage() {
+export default function BudgetApprovalsPage() {
   const locale = useLocale();
   const t = useCallback((key: string) => i18nT(key, locale), [locale]);
   const { user, role } = useAuth();
@@ -28,8 +29,9 @@ export default function ExpenseApprovalsPage() {
   const [selectedCurrency, setSelectedCurrency] = useState<string>('USD');
   const [baseCurrency, setBaseCurrency] = useState<string>('USD');
 
-  const [expenses, setExpenses] = useState<ExpenseRequest[]>([]);
+  const [budgets, setBudgets] = useState<DepartmentBudget[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedBudget, setSelectedBudget] = useState<DepartmentBudget | null>(null);
 
   // Role-Based Authorization & Segregation of Duties
   const userRole = (role || user?.role?.type || '').toLowerCase();
@@ -63,18 +65,18 @@ export default function ExpenseApprovalsPage() {
       localStorage.setItem('selected_currency', newCurr);
       window.dispatchEvent(new CustomEvent('yahaya_currency_changed', { detail: newCurr }));
     }
-    toast.info(`${t('Expense queue converted to')} ${newCurr}`);
+    toast.info(`${t('Budget queue converted to')} ${newCurr}`);
   };
 
-  const fetchExpenses = useCallback(async () => {
+  const fetchBudgets = useCallback(async () => {
     setLoading(true);
     try {
-      const [data, currs, settings] = await Promise.all([
-        financeService.getExpenseRequests().catch(() => []),
+      const [budgetData, currs, settings] = await Promise.all([
+        financeService.getBudgets().catch(() => []),
         financeService.getExchangeRates().catch(() => []),
         financeService.getSettings().catch(() => null)
       ]);
-      setExpenses(data || []);
+      setBudgets(budgetData || []);
       setCurrencies(currs || []);
 
       let active = 'USD';
@@ -88,14 +90,14 @@ export default function ExpenseApprovalsPage() {
       setSelectedCurrency(active);
       setBaseCurrency(settings?.defaultCurrency || 'USD');
     } catch {
-      toast.error(t('Failed to load expense approvals queue.'));
+      toast.error(t('Failed to load budget approvals queue.'));
     } finally {
       setLoading(false);
     }
   }, [t]);
 
   useEffect(() => {
-    fetchExpenses();
+    fetchBudgets();
 
     const onCurrencyChange = (e: any) => {
       if (e.detail) setSelectedCurrency(e.detail);
@@ -104,171 +106,186 @@ export default function ExpenseApprovalsPage() {
     return () => {
       window.removeEventListener('yahaya_currency_changed', onCurrencyChange);
     };
-  }, [fetchExpenses]);
+  }, [fetchBudgets]);
 
-  const handleAction = async (e: ExpenseRequest, nextStatus: 'reviewed' | 'approved' | 'paid' | 'rejected') => {
-    if (!canApprove && nextStatus === 'approved') {
-      toast.error(t('Accountants cannot approve expenses. Approval requires Account Lead signature (Segregation of Duties).'));
+  const handleAction = async (b: DepartmentBudget, nextStatus: string) => {
+    if (!canApprove && (nextStatus === 'approved' || nextStatus === 'on_track')) {
+      toast.error(t('Accountants cannot approve budgets. Approval requires Account Lead signature (Segregation of Duties).'));
       return;
     }
 
-    const targetId = e.documentId || e.id;
+    const targetId = (b as any).documentId || b.id;
     try {
-      if (targetId) {
-        await financeService.updateExpenseStatus(String(targetId), nextStatus);
-      }
-      e.status = nextStatus as any;
-      setExpenses([...expenses]);
-      toast.success(`${t('Expense')} ${e.voucherNumber || 'Voucher'} ${t('status updated to')} [${nextStatus.toUpperCase()}].`);
-      fetchExpenses();
+      await financeService.updateDepartmentalBudget(targetId, { status: nextStatus as any });
+      toast.success(`${t('Budget for')} ${b.departmentName} ${t('status updated to')} [${nextStatus.toUpperCase()}].`);
+      fetchBudgets();
     } catch {
-      toast.error(t('Failed to update expense status'));
+      toast.error(t('Failed to update budget status'));
     }
   };
 
   const handleBatchApprove = async () => {
     if (!canApprove) {
-      toast.error(t('Accountants cannot approve expenses. Approval requires Account Lead signature (Segregation of Duties).'));
+      toast.error(t('Accountants cannot approve budgets. Approval requires Account Lead signature (Segregation of Duties).'));
       return;
     }
 
-    const pending = expenses.filter(e => e.status === 'submitted' || e.status === 'reviewed');
+    const pending = budgets.filter(b => b.status === 'draft' || b.status === 'submitted' || b.status === 'pending_approval');
     if (pending.length === 0) {
-      toast.info(t('No pending claims to approve.'));
+      toast.info(t('No pending budget allocations to approve.'));
       return;
     }
 
     try {
-      await Promise.all(pending.map(e => {
-        const targetId = e.documentId || e.id;
-        return targetId ? financeService.updateExpenseStatus(String(targetId), 'approved') : Promise.resolve(null);
-      }));
-      pending.forEach(e => { e.status = 'approved'; });
-      setExpenses([...expenses]);
-      toast.success(`${t('Batch approved')} ${pending.length} ${t('expense claims!')}`);
-      fetchExpenses();
+      await Promise.all(
+        pending.map(b => {
+          const targetId = (b as any).documentId || b.id;
+          return financeService.updateDepartmentalBudget(targetId, { status: 'on_track' as any });
+        })
+      );
+      toast.success(`${t('Batch approved')} ${pending.length} ${t('departmental budget allocations!')}`);
+      fetchBudgets();
     } catch {
-      toast.error(t('Failed to batch approve expenses'));
+      toast.error(t('Failed to batch approve budgets.'));
     }
   };
 
-  const pendingCount = expenses.filter(e => e.status === 'submitted' || e.status === 'reviewed').length;
-  const pendingAmount = expenses.filter(e => e.status === 'submitted' || e.status === 'reviewed').reduce((s, e) => s + (Number(e.amount) || 0), 0);
+  const pendingBudgets = useMemo(() =>
+    budgets.filter(b => b.status === 'draft' || b.status === 'submitted' || b.status === 'pending_approval'),
+    [budgets]
+  );
+  const pendingAmount = useMemo(() =>
+    pendingBudgets.reduce((s, b) => s + (Number(b.allocatedAmount) || 0), 0),
+    [pendingBudgets]
+  );
+  const totalAllocated = useMemo(() =>
+    budgets.reduce((s, b) => s + (Number(b.allocatedAmount) || 0), 0),
+    [budgets]
+  );
 
   const kpiCards: EnterpriseKPICard[] = [
     {
-      id: 'pending_claims',
-      title: t('Pending Expense Authorization'),
-      value: `${pendingCount} ${t('Vouchers')}`,
-      subtitle: `${t('Total Claim Queue')}: ${formatMoney(pendingAmount)}`,
+      id: 'pending_allocations',
+      title: t('Pending Budget Authorizations'),
+      value: `${pendingBudgets.length} ${t('Budgets')}`,
+      subtitle: `${t('Queued Allocation')}: ${formatMoney(pendingAmount)}`,
       trendDirection: 'neutral',
-      icon: <Clock className="w-5 h-5 text-amber-500" />
+      icon: <Clock className="w-5 h-5 text-amber-400" />
     },
     {
-      id: 'approved_ready',
-      title: t('Approved Claims for Payout'),
-      value: `${expenses.filter(e => e.status === 'approved').length} ${t('Ready')}`,
-      subtitle: t('Cleared by Account Lead & Director'),
+      id: 'approved_budgets',
+      title: t('Active Approved Cost Centers'),
+      value: `${budgets.filter(b => b.status === 'on_track' || b.status === 'approved').length} ${t('Approved')}`,
+      subtitle: `${t('Total Master Budget')}: ${formatMoney(totalAllocated)}`,
       trendDirection: 'up',
-      icon: <CheckCircle2 className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+      icon: <CheckCircle2 className="w-5 h-5 text-emerald-400" />
     },
     {
-      id: 'reimbursed',
-      title: t('Disbursed Vendor Payments'),
-      value: `${expenses.filter(e => e.status === 'paid' || e.status === 'closed').length} ${t('Disbursed')}`,
-      subtitle: t('Bank & mobile settlements complete'),
-      trendDirection: 'up',
-      icon: <ShieldCheck className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+      id: 'warning_centers',
+      title: t('High Utilization / Exceeded'),
+      value: `${budgets.filter(b => b.status === 'warning' || b.status === 'exceeded').length} ${t('Watchlist')}`,
+      subtitle: t('Requires reallocation or spending freeze'),
+      trendDirection: 'down',
+      icon: <AlertCircle className="w-5 h-5 text-rose-400" />
     }
   ];
 
-  const columns: ColumnDef<ExpenseRequest, any>[] = [
+  const columns: ColumnDef<DepartmentBudget, any>[] = [
     {
-      accessorKey: 'voucherNumber',
-      header: t('Voucher # & Title'),
+      accessorKey: 'code',
+      header: t('Cost Center & Title'),
       cell: ({ row }) => (
-        <div>
-          <span className="font-mono text-xs font-bold text-indigo-600 dark:text-indigo-400 block">{row.original.voucherNumber}</span>
-          <span className="font-bold text-slate-900 dark:text-white text-xs">{row.original.title}</span>
+        <div className="space-y-0.5">
+          <span className="font-mono text-xs font-black text-sky-400 block">{row.original.code}</span>
+          <span className="font-bold text-white text-xs block">{row.original.departmentName}</span>
+          <span className="text-[11px] text-slate-400 font-medium block">{row.original.budgetTitle}</span>
         </div>
       )
     },
     {
-      accessorKey: 'category',
-      header: t('Category & Department'),
+      accessorKey: 'headOfDepartment',
+      header: t('Head of Department'),
       cell: ({ row }) => (
         <div className="text-xs">
-          <span className="font-semibold text-slate-800 dark:text-slate-200 block">{t(row.original.category)}</span>
-          <span className="text-slate-500 text-[11px] block">{row.original.department}</span>
+          <span className="font-bold text-slate-200 block">
+            {typeof row.original.headOfDepartment === 'string' ? row.original.headOfDepartment : (row.original.headOfDepartment?.name || 'Department Lead')}
+          </span>
+          <span className="text-slate-500 text-[11px] font-mono">{row.original.academicYearCode || '2026-2027'}</span>
         </div>
       )
     },
     {
-      accessorKey: 'vendorName',
-      header: t('Payee & Requested By'),
+      accessorKey: 'allocatedAmount',
+      header: `${t('Allocated Limit')} (${selectedCurrency})`,
       cell: ({ row }) => (
-        <div className="text-xs">
-          <span className="font-bold text-slate-900 dark:text-white block">{row.original.vendorName}</span>
-          <span className="text-slate-500 text-[11px] block">{row.original.requestedBy}</span>
-        </div>
-      )
-    },
-    {
-      accessorKey: 'amount',
-      header: `${t('Claim Amount')} (${selectedCurrency})`,
-      cell: ({ row }) => (
-        <span className="font-mono text-xs font-bold text-rose-600 dark:text-rose-400 block">
-          {formatMoney(Number(row.original.amount) || 0)}
+        <span className="font-mono text-xs sm:text-sm font-black text-emerald-400 block">
+          {formatMoney(Number(row.original.allocatedAmount || 0))}
         </span>
       )
     },
     {
+      accessorKey: 'utilizationPercentage',
+      header: t('Current Utilization'),
+      cell: ({ row }) => {
+        const util = Number(row.original.utilizationPercentage || 0);
+        return (
+          <div className="space-y-1.5 min-w-[120px]">
+            <div className="flex items-center justify-between text-xs font-mono">
+              <span className="font-bold text-white">{util}%</span>
+              <span className="text-slate-400">{formatMoney(Number(row.original.spentAmount || 0))}</span>
+            </div>
+            <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+              <div
+                className={`h-full rounded-full ${util > 90 ? 'bg-rose-500' : util > 75 ? 'bg-amber-500' : 'bg-emerald-500'}`}
+                style={{ width: `${Math.min(util, 100)}%` }}
+              />
+            </div>
+          </div>
+        );
+      }
+    },
+    {
       accessorKey: 'status',
-      header: t('Current Stage'),
+      header: t('Authorization Stage'),
       cell: ({ row }) => <StatusBadge status={row.original.status || 'submitted'} size="sm" />
     },
     {
       id: 'actions',
       header: t('Workflow Actions'),
       cell: ({ row }) => {
-        const e = row.original;
-        const isPending = e.status === 'submitted' || e.status === 'reviewed';
+        const b = row.original;
+        const isPending = b.status === 'draft' || b.status === 'submitted' || b.status === 'pending_approval';
 
         return (
           <div className="flex items-center gap-1.5" onClick={evt => evt.stopPropagation()}>
-            {e.status === 'submitted' && (
-              <button
-                onClick={() => handleAction(e, 'reviewed')}
-                className="px-2.5 py-1 rounded-xl bg-sky-50 dark:bg-sky-950 text-sky-700 dark:text-sky-300 hover:bg-sky-100 text-xs font-bold border border-sky-200 dark:border-sky-800 transition-colors cursor-pointer"
-              >
-                {t('Mark Reviewed')}
-              </button>
-            )}
-
-            {/* Approval is restricted to Account Lead / Director / Admin */}
             {isPending && !canApprove && (
               <span className="px-2 py-1 rounded bg-amber-950/60 border border-amber-800/80 text-amber-300 text-[10px] font-bold">
                 {t('Awaiting Lead Sign-off')}
               </span>
             )}
             {isPending && canApprove && (
-              <button
-                onClick={() => handleAction(e, 'approved')}
-                className="flex items-center gap-1 px-3 py-1 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white text-xs font-black shadow-sm transition-all cursor-pointer"
-              >
-                <Check className="w-3.5 h-3.5" />
-                <span>{t('Approve Claim')}</span>
-              </button>
+              <>
+                <button
+                  onClick={() => handleAction(b, 'on_track')}
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white text-xs font-black shadow-sm transition-all cursor-pointer"
+                >
+                  <Check className="w-3 h-3" />
+                  <span>{t('Authorize Budget')}</span>
+                </button>
+                <button
+                  onClick={() => handleAction(b, 'rejected')}
+                  className="p-1.5 rounded-xl bg-slate-800 hover:bg-rose-950 text-slate-400 hover:text-rose-400 border border-slate-700 transition-all cursor-pointer"
+                  title={t('Reject Request')}
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </>
             )}
-
-            {e.status === 'approved' && (
-              <button
-                onClick={() => handleAction(e, 'paid')}
-                className="flex items-center gap-1 px-3 py-1 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white text-xs font-black shadow-sm transition-all cursor-pointer"
-              >
-                <DollarSign className="w-3.5 h-3.5" />
-                <span>{t('Disburse Payment')}</span>
-              </button>
+            {!isPending && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 text-xs font-medium">
+                <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                <span>{t('Authorized')}</span>
+              </span>
             )}
           </div>
         );
@@ -278,12 +295,12 @@ export default function ExpenseApprovalsPage() {
 
   return (
     <EnterpriseModuleShell
-      title={t('Multi-Stage Expense Authorization & Payment Queue')}
-      description={t('Executive authorization queue for operational expenses, utility disbursements, and procurement claims before treasury settlement.')}
-      breadcrumbs={[{ label: t('Finance ERP'), href: '/finance' }, { label: t('Operating Expenses'), href: '/finance/expenses' }, { label: t('Approvals') }]}
-      icon={<ShieldCheck className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />}
-      recordCount={expenses.length}
-      recordLabel={t('Claims')}
+      title={t('Executive Departmental Budget Authorization Queue')}
+      description={t('Executive supervision and certified sign-off on academic, operational, and facility cost center allocations and fund reallocations.')}
+      breadcrumbs={[{ label: t('Finance ERP'), href: '/finance' }, { label: t('Departmental Budgets'), href: '/finance/budget' }, { label: t('Approvals') }]}
+      icon={<ShieldCheck className="w-8 h-8 text-indigo-400" />}
+      recordCount={budgets.length}
+      recordLabel={t('Cost Centers')}
       headerActions={
         <div className="flex items-center gap-2 flex-wrap">
           {/* Multi-Currency Dropdown Selector */}
@@ -316,11 +333,10 @@ export default function ExpenseApprovalsPage() {
           </div>
 
           <Link
-            href="/finance/expenses"
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs font-bold transition-all shadow-sm"
+            href="/finance/budget"
+            className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs font-bold transition-all shadow-sm"
           >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span>{t('Back to Expenses')}</span>
+            ← {t('Back to Budget Allocations')}
           </Link>
 
           {canApprove && (
@@ -329,7 +345,7 @@ export default function ExpenseApprovalsPage() {
               className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-500 text-white font-black text-xs shadow-lg shadow-indigo-600/30 hover:scale-[1.02] transition-all cursor-pointer"
             >
               <Check className="w-4 h-4 stroke-[3]" />
-              <span>{t('Batch Approve All Pending')}</span>
+              <span>{t('Batch Authorize Pending')}</span>
             </button>
           )}
         </div>
@@ -343,23 +359,23 @@ export default function ExpenseApprovalsPage() {
           <div className="flex items-center gap-2">
             <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
             <span>
-              <strong>{t('Segregation of Duties Policy')}:</strong> {t('Accountants can review and disburse certified expense vouchers. Final claim approval requires Account Lead, Director, or Super Admin authorization signature.')}
+              <strong>{t('Segregation of Duties Policy')}:</strong> {t('Accountants can review and prepare budget allocations. Final authorization requires Account Lead, Director, or Super Admin digital signature.')}
             </span>
           </div>
           <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-900/60 text-amber-200 border border-amber-700 uppercase">
-            {t('Preparer Mode')}
+            {t('Read-Only Mode')}
           </span>
         </div>
       )}
 
       <EnterpriseDataGrid
-        data={expenses}
+        data={budgets}
         columns={columns}
         isLoading={loading}
         density="cozy"
         emptyStateProps={{
-          title: t('No Expenses Awaiting Approval'),
-          description: t('All operational expense requisitions have been processed and authorized.'),
+          title: t('No Budget Allocations Awaiting Approval'),
+          description: t('All departmental and section cost center limits are authorized and active.'),
           isFilterActive: false,
           onResetFilters: () => {}
         }}
