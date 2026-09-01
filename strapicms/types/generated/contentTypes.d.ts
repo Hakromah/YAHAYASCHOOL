@@ -7597,6 +7597,96 @@ export interface ApiSkillAssessmentSkillAssessment
   };
 }
 
+export interface ApiStaffMemberStaffMember extends Struct.CollectionTypeSchema {
+  collectionName: 'staff_members';
+  info: {
+    description: 'Faculty and staff members';
+    displayName: '[F] Staff Member';
+    pluralName: 'staff-members';
+    singularName: 'staff-member';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  pluginOptions: {
+    i18n: {
+      localized: true;
+    };
+  };
+  attributes: {
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    email: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false;
+        };
+      }>;
+    facebookUrl: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false;
+        };
+      }>;
+    image: Schema.Attribute.Media<'images'> &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false;
+        };
+      }>;
+    instagramUrl: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false;
+        };
+      }>;
+    linkedinUrl: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false;
+        };
+      }>;
+    locale: Schema.Attribute.String;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::staff-member.staff-member'
+    >;
+    name: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }>;
+    order: Schema.Attribute.Integer &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<0>;
+    publishedAt: Schema.Attribute.DateTime;
+    role: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    xUrl: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false;
+        };
+      }>;
+  };
+}
+
 export interface ApiStudentEnrollmentStudentEnrollment
   extends Struct.CollectionTypeSchema {
   collectionName: 'student_enrollments';
@@ -9343,6 +9433,7 @@ declare module '@strapi/strapi' {
       'api::school-profile.school-profile': ApiSchoolProfileSchoolProfile;
       'api::section.section': ApiSectionSection;
       'api::skill-assessment.skill-assessment': ApiSkillAssessmentSkillAssessment;
+      'api::staff-member.staff-member': ApiStaffMemberStaffMember;
       'api::student-enrollment.student-enrollment': ApiStudentEnrollmentStudentEnrollment;
       'api::student-grade.student-grade': ApiStudentGradeStudentGrade;
       'api::student-ranking.student-ranking': ApiStudentRankingStudentRanking;

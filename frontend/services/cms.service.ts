@@ -116,7 +116,7 @@ export const cmsService = {
   async getPrograms(locale = 'en', featuredOnly = false, limit = 20): Promise<ProgramEntity[]> {
     const query: any = {
       locale,
-      populate: ['coverImage', 'department'],
+      populate: ['images', 'department'],
       pagination: { limit }
     };
     if (featuredOnly) {
@@ -139,7 +139,7 @@ export const cmsService = {
   async getDepartments(locale = 'en', limit = 20): Promise<DepartmentEntity[]> {
     const query = {
       locale,
-      populate: ['coverImage'],
+      populate: ['gallery', 'programs'],
       pagination: { limit }
     };
     const data = await this.fetchStrapi<DepartmentEntity[]>('/departments', query);
@@ -159,7 +159,7 @@ export const cmsService = {
   async getArticles(locale = 'en', page = 1, pageSize = 6, categorySlug?: string): Promise<{ data: ArticleEntity[]; total: number }> {
     const query: any = {
       locale,
-      populate: ['coverImage', 'category', 'author'],
+      populate: ['featuredImage', 'category', 'gallery'],
       pagination: { page, pageSize }
     };
     if (categorySlug) {
@@ -190,7 +190,7 @@ export const cmsService = {
   async getEvents(locale = 'en', limit = 10): Promise<EventEntity[]> {
     const query = {
       locale,
-      populate: ['coverImage'],
+      populate: ['banner', 'gallery', 'department'],
       pagination: { limit },
       sort: ['startDate:asc']
     };
@@ -221,7 +221,7 @@ export const cmsService = {
   async getGalleryItems(locale = 'en', limit = 12): Promise<GalleryItemEntity[]> {
     const query = {
       locale,
-      populate: ['image'],
+      populate: ['mediaFile'],
       pagination: { limit }
     };
     const data = await this.fetchStrapi<GalleryItemEntity[]>('/gallery-items', query);
@@ -231,7 +231,7 @@ export const cmsService = {
   async getDownloadItems(locale = 'en'): Promise<DownloadItemEntity[]> {
     const query = {
       locale,
-      populate: ['file', 'category']
+      populate: ['file']
     };
     const data = await this.fetchStrapi<DownloadItemEntity[]>('/download-items', query);
     return data || [];
@@ -356,7 +356,7 @@ export const cmsService = {
    */
   async createEvent(payload: Partial<EventEntity>): Promise<EventEntity> {
     const res = await apiClient.post('/events', { data: payload });
-    return unwrapResponse<EventEntity>(res.data) || res.data;
+    return res.data?.data || res.data;
   },
 
   /**
@@ -364,7 +364,7 @@ export const cmsService = {
    */
   async createAnnouncement(payload: Partial<AnnouncementEntity>): Promise<AnnouncementEntity> {
     const res = await apiClient.post('/announcements', { data: payload });
-    return unwrapResponse<AnnouncementEntity>(res.data) || res.data;
+    return res.data?.data || res.data;
   },
 };
 
