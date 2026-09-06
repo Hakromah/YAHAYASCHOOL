@@ -976,3 +976,13 @@ export interface LoginPageEntity {
   seo?: SeoMetaComponent;
 }
 
+export interface PrivacyPageEntity {
+  id?: number;
+  documentId?: string;
+  title?: string;
+  breadcrumbTitle?: string;
+  lastUpdated?: string;
+  content?: string;
+  seo?: SeoMetaComponent;
+}
+

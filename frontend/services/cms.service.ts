@@ -30,7 +30,8 @@ import type {
   SchoolAcademicProgramsPageEntity,
   OnlineLearningPageEntity,
   OnlineCourseEntity,
-  LoginPageEntity
+  LoginPageEntity,
+  PrivacyPageEntity
 } from '../types/cms.types';
 
 export const cmsService = {
@@ -73,6 +74,17 @@ export const cmsService = {
       }
     };
     const data = await this.fetchStrapi<LoginPageEntity>('/login-page', query);
+    return data || null;
+  },
+
+  async getPrivacyPage(locale = 'en'): Promise<PrivacyPageEntity | null> {
+    const query = {
+      locale,
+      populate: {
+        seo: { populate: '*' },
+      }
+    };
+    const data = await this.fetchStrapi<PrivacyPageEntity>('/privacy-page', query);
     return data || null;
   },
 
