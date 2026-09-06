@@ -441,6 +441,70 @@ export interface AdminUser extends Struct.CollectionTypeSchema {
   };
 }
 
+export interface ApiAboutPageAboutPage extends Struct.SingleTypeSchema {
+  collectionName: 'about_pages';
+  info: {
+    description: 'The About Us page content';
+    displayName: '[F] About Page';
+    pluralName: 'about-pages';
+    singularName: 'about-page';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  pluginOptions: {
+    i18n: {
+      localized: true;
+    };
+  };
+  attributes: {
+    breadcrumbTitle: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'About Us'>;
+    certificatesSection: Schema.Attribute.Component<
+      'sections.about-certificates',
+      false
+    >;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    directorSection: Schema.Attribute.Component<
+      'sections.about-director',
+      false
+    >;
+    introSection: Schema.Attribute.Component<'sections.about-intro', false>;
+    locale: Schema.Attribute.String;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::about-page.about-page'
+    >;
+    missionVisionSection: Schema.Attribute.Component<
+      'sections.about-mission-vision',
+      false
+    >;
+    publishedAt: Schema.Attribute.DateTime;
+    seo: Schema.Attribute.Component<'seo.meta', false>;
+    timelineSection: Schema.Attribute.Component<
+      'sections.about-timeline',
+      false
+    >;
+    title: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'About Us'>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    valuesSection: Schema.Attribute.Component<'sections.about-values', false>;
+    whyChooseSection: Schema.Attribute.Component<
+      'sections.about-why-choose',
+      false
+    >;
+  };
+}
+
 export interface ApiAcademicAppealAcademicAppeal
   extends Struct.CollectionTypeSchema {
   collectionName: 'academic_appeals';
@@ -1117,86 +1181,6 @@ export interface ApiAnnouncementAnnouncement
   };
 }
 
-export interface ApiArticleArticle extends Struct.CollectionTypeSchema {
-  collectionName: 'articles';
-  info: {
-    description: 'School news, blog posts, and official publications';
-    displayName: '[F] News & Article';
-    pluralName: 'articles';
-    singularName: 'article';
-  };
-  options: {
-    draftAndPublish: true;
-  };
-  pluginOptions: {
-    i18n: {
-      localized: true;
-    };
-  };
-  attributes: {
-    author: Schema.Attribute.String &
-      Schema.Attribute.SetPluginOptions<{
-        i18n: {
-          localized: true;
-        };
-      }> &
-      Schema.Attribute.DefaultTo<'School Communications'>;
-    body: Schema.Attribute.RichText &
-      Schema.Attribute.Required &
-      Schema.Attribute.SetPluginOptions<{
-        i18n: {
-          localized: true;
-        };
-      }>;
-    category: Schema.Attribute.Relation<'manyToOne', 'api::category.category'>;
-    createdAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    featuredImage: Schema.Attribute.Media<'images'>;
-    gallery: Schema.Attribute.Media<'images', true>;
-    isFeatured: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
-    locale: Schema.Attribute.String;
-    localizations: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::article.article'
-    >;
-    publishDate: Schema.Attribute.DateTime;
-    publishedAt: Schema.Attribute.DateTime;
-    seo: Schema.Attribute.Component<'seo.meta', false>;
-    slug: Schema.Attribute.UID<'title'> &
-      Schema.Attribute.Required &
-      Schema.Attribute.SetPluginOptions<{
-        i18n: {
-          localized: true;
-        };
-      }>;
-    summary: Schema.Attribute.Text &
-      Schema.Attribute.Required &
-      Schema.Attribute.SetPluginOptions<{
-        i18n: {
-          localized: true;
-        };
-      }>;
-    tags: Schema.Attribute.JSON &
-      Schema.Attribute.SetPluginOptions<{
-        i18n: {
-          localized: true;
-        };
-      }>;
-    title: Schema.Attribute.String &
-      Schema.Attribute.Required &
-      Schema.Attribute.SetPluginOptions<{
-        i18n: {
-          localized: true;
-        };
-      }>;
-    updatedAt: Schema.Attribute.DateTime;
-    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    viewsCount: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<0>;
-  };
-}
-
 export interface ApiAssessmentBlueprintAssessmentBlueprint
   extends Struct.CollectionTypeSchema {
   collectionName: 'assessment_blueprints';
@@ -1629,59 +1613,6 @@ export interface ApiCareerSettingCareerSetting extends Struct.SingleTypeSchema {
       'api::career-setting.career-setting'
     >;
     publishedAt: Schema.Attribute.DateTime;
-    updatedAt: Schema.Attribute.DateTime;
-    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-  };
-}
-
-export interface ApiCategoryCategory extends Struct.CollectionTypeSchema {
-  collectionName: 'categories';
-  info: {
-    description: 'Content categories for news and articles';
-    displayName: '[F] Category';
-    pluralName: 'categories';
-    singularName: 'category';
-  };
-  options: {
-    draftAndPublish: false;
-  };
-  pluginOptions: {
-    i18n: {
-      localized: true;
-    };
-  };
-  attributes: {
-    articles: Schema.Attribute.Relation<'oneToMany', 'api::article.article'>;
-    createdAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    description: Schema.Attribute.Text &
-      Schema.Attribute.SetPluginOptions<{
-        i18n: {
-          localized: true;
-        };
-      }>;
-    locale: Schema.Attribute.String;
-    localizations: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::category.category'
-    >;
-    name: Schema.Attribute.String &
-      Schema.Attribute.Required &
-      Schema.Attribute.SetPluginOptions<{
-        i18n: {
-          localized: true;
-        };
-      }>;
-    publishedAt: Schema.Attribute.DateTime;
-    slug: Schema.Attribute.UID<'name'> &
-      Schema.Attribute.Required &
-      Schema.Attribute.SetPluginOptions<{
-        i18n: {
-          localized: true;
-        };
-      }>;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -4253,7 +4184,7 @@ export interface ApiHalaqahHalaqah extends Struct.CollectionTypeSchema {
 export interface ApiHomepageHomepage extends Struct.SingleTypeSchema {
   collectionName: 'homepages';
   info: {
-    description: 'Dynamic homepage configuration and builder sections';
+    description: 'Unified homepage content covering all 7 sections';
     displayName: '[F] Homepage';
     pluralName: 'homepages';
     singularName: 'homepage';
@@ -4267,34 +4198,238 @@ export interface ApiHomepageHomepage extends Struct.SingleTypeSchema {
     };
   };
   attributes: {
+    aboutBody: Schema.Attribute.Text &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }>;
+    aboutCaption: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }>;
+    aboutEyebrow: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'About Our Legacy'>;
+    aboutHeadingHighlight: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Faith and Science'>;
+    aboutHeadingLine1: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Fostering Excellence'>;
+    aboutHeadingLine2: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Through'>;
+    aboutImage: Schema.Attribute.Media<'images'>;
+    aboutStat1Label: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Students'>;
+    aboutStat1Number: Schema.Attribute.Integer &
+      Schema.Attribute.DefaultTo<250>;
+    aboutStat1Suffix: Schema.Attribute.String & Schema.Attribute.DefaultTo<'+'>;
+    aboutStat2Label: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Employees'>;
+    aboutStat2Number: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<25>;
+    aboutStat2Suffix: Schema.Attribute.String & Schema.Attribute.DefaultTo<'+'>;
+    aboutStat3Label: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Years'>;
+    aboutStat3Number: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<6>;
+    aboutStat3Suffix: Schema.Attribute.String & Schema.Attribute.DefaultTo<'+'>;
+    activitiesCards: Schema.Attribute.Component<'home.activity-card', true>;
+    activitiesCenterImage: Schema.Attribute.Media<'images'>;
+    activitiesCtaText: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Join us'>;
+    activitiesCtaUrl: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'/gallery'>;
+    activitiesHeading: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Seeking knowledge is a path to goodness.'>;
+    activitiesSubtitle: Schema.Attribute.Text &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<"Every action tells a story\u2014see what's been happening.">;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    heroEmail: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'info@yahayaschool.com'>;
+    heroEstablishedText: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'EST. 2020'>;
+    heroPhone: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'+23188368801'>;
+    heroPrimaryCtaText: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Start Application'>;
+    heroPrimaryCtaUrl: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'/contact'>;
+    heroSlides: Schema.Attribute.Component<'home.hero-slide', true>;
+    heroWhatsapp: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'23188368801'>;
     locale: Schema.Attribute.String;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
       'api::homepage.homepage'
     >;
+    newsDescription: Schema.Attribute.Text &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }>;
+    newsEyebrow: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'News & Events'>;
+    newsHeading: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Latest News & Updates'>;
+    newsReadMoreText: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Read More'>;
+    newsViewAllText: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'View All News'>;
+    newsViewAllUrl: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'/news'>;
+    programsDescription: Schema.Attribute.Text &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }>;
+    programsEyebrow: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Our Programs'>;
+    programsLearnMoreText: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Learn More'>;
+    programsTitle: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Explore Our Programs'>;
     publishedAt: Schema.Attribute.DateTime;
-    sections: Schema.Attribute.DynamicZone<
-      [
-        'sections.hero',
-        'sections.stats',
-        'sections.feature-cards',
-        'sections.principal-welcome',
-        'sections.programs-grid',
-        'sections.departments-grid',
-        'sections.news-grid',
-        'sections.events-grid',
-        'sections.testimonials-slider',
-        'sections.gallery-preview',
-        'sections.donation-banner',
-        'sections.sponsors-grid',
-        'sections.newsletter-signup',
-        'sections.cta-banner',
-      ]
-    >;
+    quoteAttribution: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'\u2014 Sahih al-Bukhari and Sahih Muslim'>;
+    quoteBookArabic: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'\u0625\u0650\u0646\u064E\u0651\u0645\u064E\u0627 \u0627\u0644\u0623\u064E\u0639\u0652\u0645\u064E\u0627\u0644\u064F \u0628\u0650\u0627\u0644\u0646\u0650\u0651\u064A\u064E\u0651\u0627\u062A\u0650'>;
+    quoteBookTranslation: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'and every man shall have only that which he intended'>;
+    quoteText: Schema.Attribute.Text &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Actions are judged by intentions, and every person will have only what they intended.'>;
     seo: Schema.Attribute.Component<'seo.meta', false>;
+    testimonials: Schema.Attribute.Component<'home.testimonial-item', true>;
+    testimonialsHeading: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Kind Words From Our Community'>;
+    testimonialsSubtitle: Schema.Attribute.Text &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }>;
     title: Schema.Attribute.String &
       Schema.Attribute.SetPluginOptions<{
         i18n: {
@@ -5967,6 +6102,148 @@ export interface ApiLibraryBorrowRecordLibraryBorrowRecord
   };
 }
 
+export interface ApiLoginPageLoginPage extends Struct.SingleTypeSchema {
+  collectionName: 'login_pages';
+  info: {
+    description: 'Portal login page branding, features, and form configuration';
+    displayName: '[F] Login Page';
+    pluralName: 'login-pages';
+    singularName: 'login-page';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  pluginOptions: {
+    i18n: {
+      localized: true;
+    };
+  };
+  attributes: {
+    backToHomeText: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Back to Website'>;
+    badgeLogo: Schema.Attribute.Media<'images'>;
+    copyrightText: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'\u00A9 2026 Yahaya International Islamic and English High School. All rights reserved.'>;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    features: Schema.Attribute.Component<'login.feature-item', true>;
+    forgotPasswordText: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Forgot password?'>;
+    identifierLabel: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Email Address'>;
+    identifierPlaceholder: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'admin@yahayascool.edu.ng'>;
+    locale: Schema.Attribute.String;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::login-page.login-page'
+    >;
+    loginButtonText: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Sign In'>;
+    passwordLabel: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Password'>;
+    passwordPlaceholder: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022'>;
+    publishedAt: Schema.Attribute.DateTime;
+    rememberMeText: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Remember me'>;
+    schoolName: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Yahaya International Islamic'>;
+    schoolNameHighlight: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'and English High School'>;
+    seo: Schema.Attribute.Component<'seo.meta', false>;
+    signInSubtitle: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Sign in to your YAHAYASCOOL account'>;
+    signInTitle: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Welcome Back'>;
+    tagline: Schema.Attribute.Text &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Empowering minds through Islamic values and modern education.'>;
+    title: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Portal Sign In - YAHAYASCOOL'>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    versionText: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'YAHAYASCOOL v1.0'>;
+  };
+}
+
 export interface ApiMarksEntryMarksEntry extends Struct.CollectionTypeSchema {
   collectionName: 'marks_entries';
   info: {
@@ -6169,6 +6446,97 @@ export interface ApiNavigationMenuNavigationMenu
   };
 }
 
+export interface ApiNewsPageNewsPage extends Struct.SingleTypeSchema {
+  collectionName: 'news_pages';
+  info: {
+    description: 'The News page content';
+    displayName: '[F] News Page';
+    pluralName: 'news-pages';
+    singularName: 'news-page';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  pluginOptions: {
+    i18n: {
+      localized: true;
+    };
+  };
+  attributes: {
+    breadcrumbTitle: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }>;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    featuredEvents: Schema.Attribute.Component<
+      'sections.news-featured-event',
+      true
+    >;
+    locale: Schema.Attribute.String;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::news-page.news-page'
+    >;
+    newsletterCard: Schema.Attribute.Component<
+      'sections.newsletter-signup',
+      false
+    > &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }>;
+    publishedAt: Schema.Attribute.DateTime;
+    seo: Schema.Attribute.Component<'seo.meta', false>;
+    title: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'News, Events & Community'>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
+export interface ApiNewsletterSubscriberNewsletterSubscriber
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'newsletter_subscribers';
+  info: {
+    description: 'Subscribers to school newsletter';
+    displayName: 'Newsletter Subscriber';
+    pluralName: 'newsletter-subscribers';
+    singularName: 'newsletter-subscriber';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    email: Schema.Attribute.Email & Schema.Attribute.Required;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::newsletter-subscriber.newsletter-subscriber'
+    > &
+      Schema.Attribute.Private;
+    publishedAt: Schema.Attribute.DateTime;
+    status: Schema.Attribute.Enumeration<['active', 'unsubscribed']> &
+      Schema.Attribute.DefaultTo<'active'>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
 export interface ApiNotificationNotification
   extends Struct.CollectionTypeSchema {
   collectionName: 'notifications';
@@ -6278,6 +6646,386 @@ export interface ApiObservationJournalObservationJournal
     > &
       Schema.Attribute.DefaultTo<'Teacher Only'>;
     weaknesses: Schema.Attribute.Text;
+  };
+}
+
+export interface ApiOnlineCourseOnlineCourse
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'online_courses';
+  info: {
+    description: 'Public online course offering for enrollment';
+    displayName: '[F] Online Course';
+    pluralName: 'online-courses';
+    singularName: 'online-course';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  pluginOptions: {
+    i18n: {
+      localized: true;
+    };
+  };
+  attributes: {
+    badge: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'New Release'>;
+    buttonText: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Join Enrollment'>;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    description: Schema.Attribute.Text &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }>;
+    enrollmentOpen: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
+    image: Schema.Attribute.Media<'images'>;
+    isFeatured: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
+    locale: Schema.Attribute.String;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::online-course.online-course'
+    >;
+    order: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<0>;
+    price: Schema.Attribute.Decimal & Schema.Attribute.DefaultTo<500>;
+    publishedAt: Schema.Attribute.DateTime;
+    slug: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }>;
+    tag: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Languages \u2022 Advanced'>;
+    title: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
+export interface ApiOnlineLearningPageOnlineLearningPage
+  extends Struct.SingleTypeSchema {
+  collectionName: 'online_learning_pages';
+  info: {
+    description: 'Online Learning page (/online-learning)';
+    displayName: '[F] Online Learning Page';
+    pluralName: 'online-learning-pages';
+    singularName: 'online-learning-page';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  pluginOptions: {
+    i18n: {
+      localized: true;
+    };
+  };
+  attributes: {
+    approachImage: Schema.Attribute.Media<'images'>;
+    approachItems: Schema.Attribute.Component<'academic.approach-item', true>;
+    approachStatDescription: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'UNIVERSITY PLACEMENT RATE FOR OUR GRADUATES'>;
+    approachStatValue: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'98%'>;
+    approachTagline: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'OUR APPROACH'>;
+    approachTitle: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'How Learning Comes to Life'>;
+    breadcrumbTitle: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Online Learning'>;
+    coursesSectionSubtitle: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Explore our live and recorded offerings'>;
+    coursesSectionTitle: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Online Courses'>;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    headlineLine1: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Knowledge at Your'>;
+    headlineLine2: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Fingertips'>;
+    heroImage: Schema.Attribute.Media<'images'>;
+    joinEnrollmentButtonText: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Join Enrollment'>;
+    lede: Schema.Attribute.Text &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Access world-class Islamic and academic education from anywhere in the world. Begin your journey of lifelong learning today.'>;
+    liveLessonButtonText: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Live Lesson'>;
+    liveLessonButtonUrl: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'#'>;
+    locale: Schema.Attribute.String;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::online-learning-page.online-learning-page'
+    >;
+    popupAlreadyPaidTitle: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Enroll Now'>;
+    popupCheckoutButtonText: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Checkout'>;
+    popupCountryPlaceholder: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Country'>;
+    popupCurrencies: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'USD,EUR,GBP,LRD'>;
+    popupDefaultAmount: Schema.Attribute.Decimal &
+      Schema.Attribute.DefaultTo<500>;
+    popupEmailLabel: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Email'>;
+    popupEmailPlaceholder: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'john@example.com'>;
+    popupMessagePlaceholder: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Your Message'>;
+    popupNameLabel: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'First Name & Last Name'>;
+    popupNamePlaceholder: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'John Doe'>;
+    popupNote: Schema.Attribute.Text &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Your payment is processed securely.'>;
+    popupPayOnlineTitle: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Pay Online'>;
+    popupPhoneLabel: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Phone Number'>;
+    popupReceiptHint: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Transfer slip, bank confirmation, or screenshot (PDF, PNG, JPG up to 10MB)'>;
+    popupReceiptLabel: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Payment Receipt'>;
+    popupSelectAmountLabel: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Select Amount'>;
+    popupSelectCourseLabel: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Select Course'>;
+    popupSelectCurrencyLabel: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Select Currency'>;
+    popupSendMessageButtonText: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Send Message'>;
+    popupTabAlreadyPaid: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Already Paid'>;
+    popupTabPayOnline: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Pay Online'>;
+    popupTermsLinkText: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Read the legal terms and service,'>;
+    popupTermsSuffix: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'I have accept it'>;
+    popupTitle: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Pay Online'>;
+    popupTopicPlaceholder: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Inquiry Topic'>;
+    publishedAt: Schema.Attribute.DateTime;
+    seo: Schema.Attribute.Component<'seo.meta', false>;
+    tagline: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'LEARNING WITH PURPOSE'>;
+    title: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Online Learning'>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
   };
 }
 
@@ -6725,6 +7473,88 @@ export interface ApiPurchaseOrderPurchaseOrder
       Schema.Attribute.Private;
     vendorId: Schema.Attribute.String;
     vendorName: Schema.Attribute.String & Schema.Attribute.Required;
+  };
+}
+
+export interface ApiPursuitCtaPursuitCta extends Struct.SingleTypeSchema {
+  collectionName: 'pursuit_ctas';
+  info: {
+    description: "Call to action banner ('In Pursuit of Exceptional Education') used on About and Staff pages";
+    displayName: '[F] Pursuit CTA Banner';
+    pluralName: 'pursuit-ctas';
+    singularName: 'pursuit-cta';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  pluginOptions: {
+    i18n: {
+      localized: true;
+    };
+  };
+  attributes: {
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    description: Schema.Attribute.Text &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Our faculty recruitment follows a rigorous selection process, ensuring every teacher embodies our values of excellence, integrity, and lifelong learning.'>;
+    isEnabled: Schema.Attribute.Boolean &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<true>;
+    locale: Schema.Attribute.String;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::pursuit-cta.pursuit-cta'
+    >;
+    primaryButtonText: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Join Our School'>;
+    primaryButtonUrl: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'/online-registration'>;
+    publishedAt: Schema.Attribute.DateTime;
+    secondaryButtonText: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'View Our Events'>;
+    secondaryButtonUrl: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'/events'>;
+    title: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'In Pursuit of Exceptional Education'>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
   };
 }
 
@@ -7264,6 +8094,231 @@ export interface ApiRubricRubric extends Struct.CollectionTypeSchema {
   };
 }
 
+export interface ApiSchoolAcademicProgramSchoolAcademicProgram
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'school_academic_programs';
+  info: {
+    description: "Public school academic program offering (English, Arabic, Qur'an Memorization, etc.)";
+    displayName: '[F] School Academic Program';
+    pluralName: 'school-academic-programs';
+    singularName: 'school-academic-program';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  pluginOptions: {
+    i18n: {
+      localized: true;
+    };
+  };
+  attributes: {
+    coverImage: Schema.Attribute.Media<'images'>;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    description: Schema.Attribute.Text &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }>;
+    downloadButtonText: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Download Prospectus'>;
+    downloadPdf: Schema.Attribute.Media<'files'>;
+    eyebrow: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Academic Excellence'>;
+    headlineLine1: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }>;
+    headlineLine2: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Excellence Built for Life.'>;
+    isFeatured: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
+    locale: Schema.Attribute.String;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::school-academic-program.school-academic-program'
+    >;
+    order: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<0>;
+    pathwayDescription: Schema.Attribute.Text &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }>;
+    pathwayImageBottom: Schema.Attribute.Media<'images'>;
+    pathwayImageLeft: Schema.Attribute.Media<'images'>;
+    pathwayImages: Schema.Attribute.Media<'images', true>;
+    pathwayImageTop: Schema.Attribute.Media<'images'>;
+    pathwaySteps: Schema.Attribute.Component<'academic.pathway-step', true>;
+    pathwayTitle: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'The Learning Pathway'>;
+    primaryButtonText: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Contact Us'>;
+    primaryButtonUrl: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'/contact'>;
+    publishedAt: Schema.Attribute.DateTime;
+    seo: Schema.Attribute.Component<'seo.meta', false>;
+    shortDescription: Schema.Attribute.Text &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }>;
+    slug: Schema.Attribute.UID<'title'> &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }>;
+    title: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
+export interface ApiSchoolAcademicProgramsPageSchoolAcademicProgramsPage
+  extends Struct.SingleTypeSchema {
+  collectionName: 'school_academic_programs_pages';
+  info: {
+    description: 'Main Academic Programs listing page (/programs)';
+    displayName: '[F] School Academic Programs Page';
+    pluralName: 'school-academic-programs-pages';
+    singularName: 'school-academic-programs-page';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  pluginOptions: {
+    i18n: {
+      localized: true;
+    };
+  };
+  attributes: {
+    approachImage: Schema.Attribute.Media<'images'>;
+    approachItems: Schema.Attribute.Component<'academic.approach-item', true>;
+    approachStatDescription: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'UNIVERSITY PLACEMENT RATE FOR OUR GRADUATES'>;
+    approachStatValue: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'98%'>;
+    approachTagline: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'OUR APPROACH'>;
+    approachTitle: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'How Learning Comes to Life'>;
+    breadcrumbTitle: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Academic programs'>;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    headlineLine1: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Knowledge Rooted in Faith.'>;
+    headlineLine2: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Excellence Built for Life.'>;
+    heroImage: Schema.Attribute.Media<'images'>;
+    lede: Schema.Attribute.Text &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Rigorous academics, Islamic character, and global readiness\u2014nurturing curious minds and compassionate hearts to lead with purpose and confidence.'>;
+    locale: Schema.Attribute.String;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::school-academic-programs-page.school-academic-programs-page'
+    >;
+    publishedAt: Schema.Attribute.DateTime;
+    seo: Schema.Attribute.Component<'seo.meta', false>;
+    tagline: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'LEARNING WITH PURPOSE'>;
+    title: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Academic Programs'>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
 export interface ApiSchoolIdSequenceSchoolIdSequence
   extends Struct.CollectionTypeSchema {
   collectionName: 'school_id_sequences';
@@ -7594,6 +8649,96 @@ export interface ApiSkillAssessmentSkillAssessment
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+  };
+}
+
+export interface ApiStaffMemberStaffMember extends Struct.CollectionTypeSchema {
+  collectionName: 'staff_members';
+  info: {
+    description: 'Faculty and staff members';
+    displayName: '[F] Staff Member';
+    pluralName: 'staff-members';
+    singularName: 'staff-member';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  pluginOptions: {
+    i18n: {
+      localized: true;
+    };
+  };
+  attributes: {
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    email: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false;
+        };
+      }>;
+    facebookUrl: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false;
+        };
+      }>;
+    image: Schema.Attribute.Media<'images'> &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false;
+        };
+      }>;
+    instagramUrl: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false;
+        };
+      }>;
+    linkedinUrl: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false;
+        };
+      }>;
+    locale: Schema.Attribute.String;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::staff-member.staff-member'
+    >;
+    name: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }>;
+    order: Schema.Attribute.Integer &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<0>;
+    publishedAt: Schema.Attribute.DateTime;
+    role: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    xUrl: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false;
+        };
+      }>;
   };
 }
 
@@ -9205,6 +10350,7 @@ declare module '@strapi/strapi' {
       'admin::transfer-token': AdminTransferToken;
       'admin::transfer-token-permission': AdminTransferTokenPermission;
       'admin::user': AdminUser;
+      'api::about-page.about-page': ApiAboutPageAboutPage;
       'api::academic-appeal.academic-appeal': ApiAcademicAppealAcademicAppeal;
       'api::academic-audit-log.academic-audit-log': ApiAcademicAuditLogAcademicAuditLog;
       'api::academic-calendar-event.academic-calendar-event': ApiAcademicCalendarEventAcademicCalendarEvent;
@@ -9219,7 +10365,6 @@ declare module '@strapi/strapi' {
       'api::academic-year.academic-year': ApiAcademicYearAcademicYear;
       'api::admission-application.admission-application': ApiAdmissionApplicationAdmissionApplication;
       'api::announcement.announcement': ApiAnnouncementAnnouncement;
-      'api::article.article': ApiArticleArticle;
       'api::assessment-blueprint.assessment-blueprint': ApiAssessmentBlueprintAssessmentBlueprint;
       'api::assessment-category.assessment-category': ApiAssessmentCategoryAssessmentCategory;
       'api::assessment-type.assessment-type': ApiAssessmentTypeAssessmentType;
@@ -9228,7 +10373,6 @@ declare module '@strapi/strapi' {
       'api::campus.campus': ApiCampusCampus;
       'api::career-position.career-position': ApiCareerPositionCareerPosition;
       'api::career-setting.career-setting': ApiCareerSettingCareerSetting;
-      'api::category.category': ApiCategoryCategory;
       'api::classroom.classroom': ApiClassroomClassroom;
       'api::contact-info.contact-info': ApiContactInfoContactInfo;
       'api::contact-submission.contact-submission': ApiContactSubmissionContactSubmission;
@@ -9314,12 +10458,17 @@ declare module '@strapi/strapi' {
       'api::lesson-plan.lesson-plan': ApiLessonPlanLessonPlan;
       'api::library-book.library-book': ApiLibraryBookLibraryBook;
       'api::library-borrow-record.library-borrow-record': ApiLibraryBorrowRecordLibraryBorrowRecord;
+      'api::login-page.login-page': ApiLoginPageLoginPage;
       'api::marks-entry.marks-entry': ApiMarksEntryMarksEntry;
       'api::memorization.memorization': ApiMemorizationMemorization;
       'api::murajaah.murajaah': ApiMurajaahMurajaah;
       'api::navigation-menu.navigation-menu': ApiNavigationMenuNavigationMenu;
+      'api::news-page.news-page': ApiNewsPageNewsPage;
+      'api::newsletter-subscriber.newsletter-subscriber': ApiNewsletterSubscriberNewsletterSubscriber;
       'api::notification.notification': ApiNotificationNotification;
       'api::observation-journal.observation-journal': ApiObservationJournalObservationJournal;
+      'api::online-course.online-course': ApiOnlineCourseOnlineCourse;
+      'api::online-learning-page.online-learning-page': ApiOnlineLearningPageOnlineLearningPage;
       'api::page.page': ApiPagePage;
       'api::parent.parent': ApiParentParent;
       'api::partner.partner': ApiPartnerPartner;
@@ -9327,6 +10476,7 @@ declare module '@strapi/strapi' {
       'api::program.program': ApiProgramProgram;
       'api::promotion-record.promotion-record': ApiPromotionRecordPromotionRecord;
       'api::purchase-order.purchase-order': ApiPurchaseOrderPurchaseOrder;
+      'api::pursuit-cta.pursuit-cta': ApiPursuitCtaPursuitCta;
       'api::question-pool.question-pool': ApiQuestionPoolQuestionPool;
       'api::question.question': ApiQuestionQuestion;
       'api::quran-achievement.quran-achievement': ApiQuranAchievementQuranAchievement;
@@ -9339,10 +10489,13 @@ declare module '@strapi/strapi' {
       'api::report-card.report-card': ApiReportCardReportCard;
       'api::report-template.report-template': ApiReportTemplateReportTemplate;
       'api::rubric.rubric': ApiRubricRubric;
+      'api::school-academic-program.school-academic-program': ApiSchoolAcademicProgramSchoolAcademicProgram;
+      'api::school-academic-programs-page.school-academic-programs-page': ApiSchoolAcademicProgramsPageSchoolAcademicProgramsPage;
       'api::school-id-sequence.school-id-sequence': ApiSchoolIdSequenceSchoolIdSequence;
       'api::school-profile.school-profile': ApiSchoolProfileSchoolProfile;
       'api::section.section': ApiSectionSection;
       'api::skill-assessment.skill-assessment': ApiSkillAssessmentSkillAssessment;
+      'api::staff-member.staff-member': ApiStaffMemberStaffMember;
       'api::student-enrollment.student-enrollment': ApiStudentEnrollmentStudentEnrollment;
       'api::student-grade.student-grade': ApiStudentGradeStudentGrade;
       'api::student-ranking.student-ranking': ApiStudentRankingStudentRanking;
