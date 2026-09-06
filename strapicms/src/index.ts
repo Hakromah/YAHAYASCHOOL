@@ -1892,6 +1892,262 @@ async function seedLoginPage(strapi: Core.Strapi) {
   }
 }
 
+async function seedPrivacyPage(strapi: Core.Strapi) {
+  try {
+    const LOCALES_DATA: Record<string, any> = {
+      en: {
+        title: 'Privacy Policy',
+        breadcrumbTitle: 'Privacy Policy',
+        lastUpdated: 'Last Updated: August 2026',
+        content: `<h3>1. Information We Collect</h3>
+<p>We collect personal information that you voluntarily provide to us when you register on the website, express an interest in obtaining information about us or our programs, or otherwise contact us. This includes:</p>
+<ul>
+  <li>Names and contact information (phone numbers, email addresses)</li>
+  <li>Educational history and transcripts</li>
+  <li>Billing and payment information</li>
+</ul>
+<hr/>
+<h3>2. How We Use Your Information</h3>
+<p>We use personal information collected via our website for a variety of business purposes, including:</p>
+<ol>
+  <li>Facilitating the enrollment process.</li>
+  <li>Sending administrative information to you.</li>
+  <li>Responding to your inquiries and support requests.</li>
+</ol>
+<hr/>
+<h3>3. Information Sharing</h3>
+<p>We only share information with your consent, to comply with laws, to provide you with services, to protect your rights, or to fulfill business obligations. We do not sell your personal data to third parties.</p>
+<hr/>
+<h3>4. Data Security</h3>
+<p>We have implemented appropriate technical and organizational security measures designed to protect the security of any personal information we process.</p>
+<hr/>
+<h3>5. Your Privacy Rights</h3>
+<p>You may review, change, or terminate your account at any time. If you have questions or comments about your privacy rights, you may email us at <strong>info@yahayaschool.com</strong>.</p>`,
+        seo: {
+          metaTitle: 'Privacy Policy | YAHAYASCHOOL',
+          metaDescription: 'Learn how Yahaya International Islamic and English High School collects, uses, and safeguards your personal information.',
+        },
+      },
+      ar: {
+        title: 'سياسة الخصوصية',
+        breadcrumbTitle: 'سياسة الخصوصية',
+        lastUpdated: 'آخر تحديث: أغسطس ٢٠٢٦',
+        content: `<h3>١. المعلومات التي نجمعها</h3>
+<p>نقوم بجمع المعلومات الشخصية التي تقدمها لنا طواعية عند التسجيل في الموقع، أو الإعراب عن اهتمامك بالحصول على معلومات عنا أو عن برامجنا، أو عند الاتصال بنا بأي شكل آخر. يشمل ذلك:</p>
+<ul>
+  <li>الأسماء ومعلومات الاتصال (أرقام الهواتف، عناوين البريد الإلكتروني)</li>
+  <li>التاريخ التعليمي والسجلات الأكاديمية</li>
+  <li>معلومات الفواتير والدفع</li>
+</ul>
+<hr/>
+<h3>٢. كيف نستخدم معلوماتك</h3>
+<p>نستخدم المعلومات الشخصية التي يتم جمعها عبر موقعنا لأغراض تجارية متنوعة، بما في ذلك:</p>
+<ol>
+  <li>تسهيل عملية التسجيل.</li>
+  <li>إرسال المعلومات الإدارية إليك.</li>
+  <li>الرد على استفساراتك وطلبات الدعم.</li>
+</ol>
+<hr/>
+<h3>٣. مشاركة المعلومات</h3>
+<p>نحن لا نشارك المعلومات إلا بموافقتك، أو للامتثال للقوانين، أو لتقديم الخدمات لك، أو لحماية حقوقك، أو للوفاء بالالتزامات التجارية. نحن لا نبيع بياناتك الشخصية لأطراف ثالثة.</p>
+<hr/>
+<h3>٤. أمن البيانات</h3>
+<p>لقد قمنا بتنفيذ تدابير أمنية فنية وتنظيمية مناسبة مصممة لحماية أمن أي معلومات شخصية نعالجها.</p>
+<hr/>
+<h3>٥. حقوق الخصوصية الخاصة بك</h3>
+<p>يمكنك مراجعة حسابك أو تغييره أو إنهائه في أي وقت. إذا كانت لديك أسئلة أو تعليقات حول حقوق الخصوصية الخاصة بك، يمكنك مراسلتنا عبر البريد الإلكتروني على <strong>info@yahayaschool.com</strong>.</p>`,
+        seo: {
+          metaTitle: 'سياسة الخصوصية | يهايا سكول',
+          metaDescription: 'تعرف على كيفية قيام مدرسة يحيى الدولية الإسلامية والإنجليزية بجمع معلوماتك الشخصية واستخدامها وحمايتها.',
+        },
+      },
+      tr: {
+        title: 'Gizlilik Politikası',
+        breadcrumbTitle: 'Gizlilik Politikası',
+        lastUpdated: 'Son Güncelleme: Ağustos 2026',
+        content: `<h3>1. Topladığımız Bilgiler</h3>
+<p>Web sitesine kayıt olduğunuzda, bizimle veya programlarımızla ilgili bilgi almak istediğinizi belirttiğinizde veya bizimle başka bir şekilde iletişime geçtiğinizde gönüllü olarak sağladığınız kişisel bilgileri topluyoruz. Bunlar şunları içerir:</p>
+<ul>
+  <li>İsimler ve iletişim bilgileri (telefon numaraları, e-posta adresleri)</li>
+  <li>Eğitim geçmişi ve transkriptler</li>
+  <li>Fatura ve ödeme bilgileri</li>
+</ul>
+<hr/>
+<h3>2. Bilgilerinizi Nasıl Kullanıyoruz</h3>
+<p>Web sitemiz aracılığıyla toplanan kişisel bilgileri çeşitli iş amaçları için kullanıyoruz, bunlara şunlar dahildir:</p>
+<ol>
+  <li>Kayıt sürecini kolaylaştırmak.</li>
+  <li>Size idari bilgiler göndermek.</li>
+  <li>Sorularınıza ve destek taleplerinize yanıt vermek.</li>
+</ol>
+<hr/>
+<h3>3. Bilgi Paylaşımı</h3>
+<p>Bilgileri yalnızca onayınızla, yasalara uymak, size hizmet sunmak, haklarınızı korumak veya ticari yükümlülükleri yerine getirmek için paylaşıyoruz. Kişisel verilerinizi üçüncü şahıslara satmıyoruz.</p>
+<hr/>
+<h3>4. Veri Güvenliği</h3>
+<p>İşlediğimiz tüm kişisel bilgilerin güvenliğini korumak için tasarlanmış uygun teknik ve kurumsal güvenlik önlemlerini uyguladık.</p>
+<hr/>
+<h3>5. Gizlilik Haklarınız</h3>
+<p>Hesabınızı istediğiniz zaman inceleyebilir, değiştirebilir veya sonlandırabilirsiniz. Gizlilik haklarınızla ilgili soru veya yorumlarınız varsa bize <strong>info@yahayaschool.com</strong> adresinden e-posta gönderebilirsiniz.</p>`,
+        seo: {
+          metaTitle: 'Gizlilik Politikası | YAHAYASCOOL',
+          metaDescription: 'Yahaya Uluslararası İslami ve İngiliz Lisesi olarak kişisel bilgilerinizi nasıl topladığımızı, kullandığımızı ve koruduğumuzu öğrenin.',
+        },
+      },
+      fr: {
+        title: 'Politique de Confidentialité',
+        breadcrumbTitle: 'Politique de Confidentialité',
+        lastUpdated: 'Dernière mise à jour : Août 2026',
+        content: `<h3>1. Informations que nous collectons</h3>
+<p>Nous collectons les informations personnelles que vous nous fournissez volontairement lorsque vous vous inscrivez sur le site Web, exprimez un intérêt à obtenir des informations sur nous ou nos programmes, ou nous contactez d'une autre manière. Cela inclut :</p>
+<ul>
+  <li>Noms et coordonnées (numéros de téléphone, adresses e-mail)</li>
+  <li>Antécédents scolaires et relevés de notes</li>
+  <li>Informations de facturation et de paiement</li>
+</ul>
+<hr/>
+<h3>2. Comment nous utilisons vos informations</h3>
+<p>Nous utilisons les informations personnelles collectées via notre site Web à diverses fins commerciales, notamment :</p>
+<ol>
+  <li>Faciliter le processus d'inscription.</li>
+  <li>Vous envoyer des informations administratives.</li>
+  <li>Répondre à vos demandes de renseignements et d'assistance.</li>
+</ol>
+<hr/>
+<h3>3. Partage d'informations</h3>
+<p>Nous ne partageons des informations qu'avec votre consentement, pour nous conformer aux lois, pour vous fournir des services, pour protéger vos droits ou pour remplir des obligations commerciales. Nous ne vendons pas vos données personnelles à des tiers.</p>
+<hr/>
+<h3>4. Sécurité des données</h3>
+<p>Nous avons mis en place des mesures de sécurité techniques et organisationnelles appropriées conçues pour protéger la sécurité de toute information personnelle que nous traitons.</p>
+<hr/>
+<h3>5. Vos droits à la confidentialité</h3>
+<p>Vous pouvez consulter, modifier ou résilier votre compte à tout moment. Si vous avez des questions ou des commentaires sur vos droits à la confidentialité, vous pouvez nous envoyer un e-mail à <strong>info@yahayaschool.com</strong>.</p>`,
+        seo: {
+          metaTitle: 'Politique de Confidentialité | YAHAYASCOOL',
+          metaDescription: 'Découvrez comment le Lycée International Islamique et Anglais Yahaya collecte, utilise et protège vos informations personnelles.',
+        },
+      },
+    };
+
+    let privacyDocId: string | null = null;
+    const docService = (strapi as any).documents ? (strapi as any).documents('api::privacy-page.privacy-page') : null;
+
+    if (docService) {
+      const existingEntries = await docService.findMany({ locale: '*' });
+      if (existingEntries && existingEntries.length > 0) {
+        privacyDocId = existingEntries[0].documentId;
+      }
+    }
+
+    const buildPayload = (loc: string) => {
+      const d = LOCALES_DATA[loc] || LOCALES_DATA.en;
+      return {
+        title: d.title,
+        breadcrumbTitle: d.breadcrumbTitle,
+        lastUpdated: d.lastUpdated,
+        content: d.content,
+        seo: d.seo,
+        publishedAt: new Date().toISOString(),
+      };
+    };
+
+    if (docService) {
+      if (!privacyDocId) {
+        strapi.log.info('[YAHAYASCOOL] Seeding Privacy Page (EN)...');
+        const enCreated = await docService.create({
+          locale: 'en',
+          data: buildPayload('en'),
+        });
+        privacyDocId = enCreated.documentId;
+        await docService.publish({
+          documentId: privacyDocId,
+          locale: 'en',
+        });
+        strapi.log.info('[YAHAYASCOOL] Privacy Page (EN) created and published!');
+      }
+
+      const otherLocales = ['ar', 'tr', 'fr'];
+      for (const loc of otherLocales) {
+        try {
+          const locExisting = await docService.findOne({
+            documentId: privacyDocId,
+            locale: loc,
+          });
+          if (!locExisting) {
+            strapi.log.info(`[YAHAYASCOOL] Seeding Privacy Page (${loc})...`);
+            await docService.update({
+              documentId: privacyDocId,
+              locale: loc,
+              data: buildPayload(loc),
+            });
+            await docService.publish({
+              documentId: privacyDocId,
+              locale: loc,
+            });
+            strapi.log.info(`[YAHAYASCOOL] Privacy Page (${loc}) created and published!`);
+          }
+        } catch (locErr: any) {
+          strapi.log.warn(`[YAHAYASCOOL] Error seeding Privacy Page (${loc}): ${locErr.message}`);
+        }
+      }
+    }
+
+    try {
+      const privacyConfigKey = 'plugin_content_manager_configuration_content_types::api::privacy-page.privacy-page';
+      const existingConfig = await strapi.db.query('strapi::core-store').findOne({ where: { key: privacyConfigKey } });
+      const privacyConfigValue = {
+        settings: {
+          bulkable: true,
+          filterable: true,
+          searchable: true,
+          pageSize: 10,
+          relationOpenMode: 'modal',
+          mainField: 'title',
+          defaultSortBy: 'title',
+          defaultSortOrder: 'ASC'
+        },
+        metadatas: {
+          id: { edit: {}, list: { label: 'id', searchable: true, sortable: true } },
+          title: { edit: { label: 'Page Heading', visible: true, editable: true }, list: { label: 'Title', searchable: true, sortable: true } },
+          breadcrumbTitle: { edit: { label: 'Breadcrumb Label', visible: true, editable: true } },
+          lastUpdated: { edit: { label: 'Last Updated Date / Subtitle', visible: true, editable: true } },
+          content: { edit: { label: 'Privacy Policy Document Body', visible: true, editable: true } },
+          seo: { edit: { label: 'SEO Metadata', visible: true, editable: true } }
+        },
+        layouts: {
+          list: ['id', 'title'],
+          edit: [
+            [{ name: 'title', size: 6 }, { name: 'breadcrumbTitle', size: 6 }],
+            [{ name: 'lastUpdated', size: 6 }, { name: 'seo', size: 6 }],
+            [{ name: 'content', size: 12 }]
+          ]
+        }
+      };
+      if (existingConfig) {
+        await strapi.db.query('strapi::core-store').update({
+          where: { key: privacyConfigKey },
+          data: { value: JSON.stringify(privacyConfigValue) }
+        });
+      } else {
+        await strapi.db.query('strapi::core-store').create({
+          data: {
+            key: privacyConfigKey,
+            value: JSON.stringify(privacyConfigValue),
+            type: 'plugin_content_manager_configuration',
+            environment: null,
+            tag: null
+          }
+        });
+      }
+      strapi.log.info('[YAHAYASCOOL] Content Manager layout for privacy-page configured!');
+    } catch (confErr: any) {
+      strapi.log.warn(`[YAHAYASCOOL] Failed to set Privacy Page content-manager layout: ${confErr.message}`);
+    }
+  } catch (err: any) {
+    strapi.log.warn(`[YAHAYASCOOL] seedPrivacyPage failed: ${err.message}`);
+  }
+}
+
 
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -2452,6 +2708,7 @@ async function seedPublicPermissions(strapi: Core.Strapi): Promise<void> {
     const publicControllers = [
       'api::homepage.homepage',
       'api::login-page.login-page',
+      'api::privacy-page.privacy-page',
       'api::page.page',
       'api::program.program',
       'api::department.department',
@@ -3027,6 +3284,7 @@ export default {
     await seedOnlineLearning(strapi);
     await seedHomepage(strapi);
     await seedLoginPage(strapi);
+    await seedPrivacyPage(strapi);
   },
 };
 
