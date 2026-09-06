@@ -1,38 +1,38 @@
 import React from 'react';
 import Link from 'next/link';
 import { ArrowRight, BookOpen, CheckCircle2, ChevronRight, Download } from 'lucide-react';
-import type { ProgramEntity } from '@/types/cms.types';
+import type { SchoolAcademicProgramEntity, ProgramEntity } from '@/types/cms.types';
+import { getStrapiMediaUrl } from '@/services/cms.service';
 import { useTranslations, useLocale } from 'next-intl';
 
-/**
- * Programme detail page. Implemented from Figma node 384-3088 (frame 1920x3262).
- *
- * Measured off the export:
- *   hero band   #FAFAFA, y 99->1006 (908 tall), text column at x142
- *   chip        30 tall, #E1EFF6 with brand-blue label
- *   headline    two lines, 48 pitch — line 1 dark, line 2 blue
- *   buttons     row 64 tall: filled #048ED6, then an outlined one
- *   hero image  x960->1779 (820 x 605) — a plain rounded panel, no mask here
- *   pathway     content x384->1538, text column left, 3-image collage right
- *
- * The approach panel below is the same component the listing page uses.
- */
-
-export function ProgramHero({ program }: { program: ProgramEntity }) {
+export function ProgramHero({ program }: { program: SchoolAcademicProgramEntity | ProgramEntity }) {
   const locale = useLocale();
   const t = useTranslations('academicDetail.hero');
   const tp = useTranslations('academicPage');
   const href = (url: string) => (locale === 'en' ? url : `/${locale}${url}`);
 
+  const p = program as SchoolAcademicProgramEntity;
+
   const getFallback = (key: string, defaultText: string) => {
     try {
-      // Use fallback if translation is missing (returns raw key)
-      const res = tp(`programsList.${program.slug}.${key}`);
+      const res = tp(`programsList.${p.slug}.${key}`);
       return res.includes('programsList.') ? defaultText : res;
     } catch {
       return defaultText;
     }
   };
+
+  const eyebrow = p.eyebrow || getFallback('eyebrow', 'Academic Excellence');
+  const headline1 = p.headlineLine1 || p.title || getFallback('title', p.slug);
+  const headline2 = p.headlineLine2 || t('headline_2');
+  const lede = p.description || p.shortDescription || getFallback('lede', 'Explore our comprehensive program designed to nurture academic excellence and moral character in a supportive environment.');
+  const heroImage = p.coverImage ? (getStrapiMediaUrl(p.coverImage) || '/images/figma-home/09.png') : '/images/figma-home/09.png';
+
+  const primaryBtnText = p.primaryButtonText || t('contactUs');
+  const primaryBtnUrl = p.primaryButtonUrl || href('/contact');
+
+  const downloadPdfUrl = p.downloadPdf ? getStrapiMediaUrl(p.downloadPdf) : null;
+  const downloadBtnText = p.downloadButtonText || t('downloadPdf');
 
   return (
     <section className="w-full bg-[#FAFAFA]">
@@ -43,51 +43,58 @@ export function ProgramHero({ program }: { program: ProgramEntity }) {
             <ChevronRight className="h-3.5 w-3.5 rtl:-scale-x-100" aria-hidden />
             <Link href={href('/programs')} className="text-[#048ED6] transition-opacity hover:opacity-80">{t('academics')}</Link>
             <ChevronRight className="h-3.5 w-3.5 rtl:-scale-x-100" aria-hidden />
-            <span className="text-[#048ED6]">{t('details')}</span>
+            <span className="text-[#048ED6]">{p.title || t('details')}</span>
           </nav>
 
-          {/* 30 tall in the design */}
           <span className="mt-[clamp(1.75rem,3.4vw,4.1rem)] inline-flex h-[clamp(1.5rem,1.56vw,1.875rem)] items-center gap-2 rounded-full bg-[#E1EFF6] px-3 font-semibold uppercase tracking-[0.14em] text-[#048ED6] text-[clamp(0.5625rem,0.57vw,0.6875rem)]">
             <BookOpen className="h-3 w-3" aria-hidden />
-            {getFallback('eyebrow', 'Academic Excellence')}
+            {eyebrow}
           </span>
 
           <h1 className="mt-[clamp(0.75rem,1.15vw,1.375rem)] font-serif leading-[1.09] max-sm:leading-tight text-[clamp(1.5rem,2.29vw,2.75rem)]">
-            <span className="block text-[#121C2A]">{program.title || getFallback('title', program.slug)}</span>
-            <span className="block text-[#048ED6]">{t('headline_2')}</span>
+            <span className="block text-[#121C2A]">{headline1}</span>
+            <span className="block text-[#048ED6]">{headline2}</span>
           </h1>
 
           <p className="mt-[clamp(1rem,1.5vw,1.75rem)] max-w-[32rem] leading-[1.6] text-[#5A636D] text-[1rem]">
-            {program.description || getFallback('lede', 'Explore our comprehensive program designed to nurture academic excellence and moral character in a supportive environment.')}
+            {lede}
           </p>
 
           <div className="mt-[clamp(1.5rem,2.5vw,3rem)] flex flex-wrap items-center gap-[clamp(0.75rem,1vw,1.25rem)]">
             <Link
-              href={href('/contact')}
+              href={primaryBtnUrl}
               className="inline-flex h-[clamp(2.75rem,3.33vw,4rem)] items-center gap-2 rounded-full bg-[#048ED6] px-[clamp(1.25rem,1.77vw,2.125rem)] font-semibold text-white transition-colors hover:bg-[#037ab8] text-[clamp(0.8125rem,0.94vw,1.125rem)]"
             >
-              {t('contactUs')}
+              {primaryBtnText}
               <ArrowRight className="h-4 w-4 rtl:-scale-x-100" />
             </Link>
 
-            {/* No prospectus file exists yet, so this points at contact rather
-                than a dead download. */}
-            <Link
-              href={href('/contact')}
-              className="inline-flex h-[clamp(2.75rem,3.33vw,4rem)] items-center gap-2 rounded-full border border-[#048ED6] bg-white px-[clamp(1.25rem,1.77vw,2.125rem)] font-semibold text-[#048ED6] transition-colors hover:bg-[#EAF5FD] text-[clamp(0.8125rem,0.94vw,1.125rem)]"
-            >
-              {t('downloadPdf')}
-              <Download className="h-4 w-4" />
-            </Link>
+            {downloadPdfUrl ? (
+              <a
+                href={downloadPdfUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex h-[clamp(2.75rem,3.33vw,4rem)] items-center gap-2 rounded-full border border-[#048ED6] bg-white px-[clamp(1.25rem,1.77vw,2.125rem)] font-semibold text-[#048ED6] transition-colors hover:bg-[#EAF5FD] text-[clamp(0.8125rem,0.94vw,1.125rem)]"
+              >
+                {downloadBtnText}
+                <Download className="h-4 w-4" />
+              </a>
+            ) : (
+              <Link
+                href={href('/contact')}
+                className="inline-flex h-[clamp(2.75rem,3.33vw,4rem)] items-center gap-2 rounded-full border border-[#048ED6] bg-white px-[clamp(1.25rem,1.77vw,2.125rem)] font-semibold text-[#048ED6] transition-colors hover:bg-[#EAF5FD] text-[clamp(0.8125rem,0.94vw,1.125rem)]"
+              >
+                {downloadBtnText}
+                <Download className="h-4 w-4" />
+              </Link>
+            )}
           </div>
         </div>
 
-        {/* 820 x 605 — a plain rounded panel; the leaf mask belongs to the
-            listing page's hero, not this one. */}
         <div className="w-full">
           <img
-            src={program.coverImage?.url || program.images?.[0]?.url || '/images/figma-home/09.png'}
-            alt={program.title || ''}
+            src={heroImage}
+            alt={p.title || ''}
             className="aspect-[820/605] w-full rounded-lg object-cover"
           />
         </div>
@@ -96,44 +103,70 @@ export function ProgramHero({ program }: { program: ProgramEntity }) {
   );
 }
 
-export function ProgramPathway({ program }: { program: ProgramEntity }) {
+export function ProgramPathway({ program }: { program: SchoolAcademicProgramEntity | ProgramEntity }) {
   const tp = useTranslations('academicPage');
+
+  const p = program as SchoolAcademicProgramEntity;
 
   const getFallback = (key: string, defaultText: string) => {
     try {
-      const res = tp(`programsList.${program.slug}.${key}`);
+      const res = tp(`programsList.${p.slug}.${key}`);
       return res.includes('programsList.') ? defaultText : res;
     } catch {
       return defaultText;
     }
   };
 
+  const pathwayTitle = p.pathwayTitle || getFallback('pathwayTitle', 'The Learning Pathway');
+  const pathwayDescription = p.pathwayDescription || getFallback('pathwayLede', 'Our curriculum is structured to guide students step-by-step towards mastery, ensuring deep understanding and practical application.');
+
+  const steps = (p.pathwaySteps && p.pathwaySteps.length > 0)
+    ? p.pathwaySteps.map((s, idx) => ({
+        title: s.title,
+        desc: s.description,
+      }))
+    : [0, 1, 2, 3].map((_, idx) => ({
+        title: getFallback(`steps.${idx}.title`, `Stage ${idx + 1} Progression`),
+        desc: getFallback(`steps.${idx}.desc`, 'Building foundational skills and advancing through structured, interactive learning modules tailored for success.'),
+      }));
+
+  const imageTall = p.pathwayImageLeft
+    ? (getStrapiMediaUrl(p.pathwayImageLeft) || '/images/figma-home/17.png')
+    : (p.pathwayImages?.[0] ? (getStrapiMediaUrl(p.pathwayImages[0]) || '/images/figma-home/17.png') : '/images/figma-home/17.png');
+
+  const imageTop = p.pathwayImageTop
+    ? (getStrapiMediaUrl(p.pathwayImageTop) || '/images/figma-home/09.png')
+    : (p.pathwayImages?.[1] ? (getStrapiMediaUrl(p.pathwayImages[1]) || '/images/figma-home/09.png') : '/images/figma-home/09.png');
+
+  const imageBottom = p.pathwayImageBottom
+    ? (getStrapiMediaUrl(p.pathwayImageBottom) || '/images/figma-home/13.png')
+    : (p.pathwayImages?.[2] ? (getStrapiMediaUrl(p.pathwayImages[2]) || '/images/figma-home/13.png') : '/images/figma-home/13.png');
+
   return (
     <section className="w-full bg-white">
       <div className="mx-auto max-w-[1920px] px-(--spacing-side) py-[clamp(1.5rem,4.7vw,5.6rem)]">
-        {/* content spans x384->1538 in the design: 1152 wide, centred */}
         <div className="mx-auto grid max-w-[72rem] grid-cols-1 gap-[clamp(2rem,3.6vw,4.4rem)] lg:grid-cols-2">
           <div className="min-w-0">
             <span className="block h-1 w-[clamp(2rem,2.6vw,3.125rem)] rounded bg-[#048ED6]" />
 
             <h2 className="mt-[clamp(0.75rem,1.15vw,1.375rem)] font-serif text-[#121C2A] text-[clamp(1.375rem,1.77vw,2.125rem)]">
-              {getFallback('pathwayTitle', 'The Learning Pathway')}
+              {pathwayTitle}
             </h2>
 
             <p className="mt-[clamp(0.75rem,1.15vw,1.375rem)] leading-[1.7] text-[#5A636D] text-[1rem]">
-              {getFallback('pathwayLede', 'Our curriculum is structured to guide students step-by-step towards mastery, ensuring deep understanding and practical application.')}
+              {pathwayDescription}
             </p>
 
             <ul className="mt-[clamp(1.25rem,2.08vw,2.5rem)] space-y-[clamp(1rem,1.35vw,1.625rem)]">
-              {[0, 1, 2, 3].map((_, idx) => (
+              {steps.map((step, idx) => (
                 <li key={idx} className="flex gap-3">
                   <CheckCircle2 className="mt-[0.2em] h-4 w-4 shrink-0 text-[#048ED6]" aria-hidden />
                   <span className="min-w-0">
                     <span className="block text-[#121C2A] text-[clamp(0.9375rem,1.04vw,1.25rem)]">
-                      {getFallback(`steps.${idx}.title`, `Stage ${idx + 1} Progression`)}
+                      {step.title}
                     </span>
                     <span className="mt-1 block leading-[1.6] text-[#5A636D] text-[clamp(0.6875rem,0.73vw,0.875rem)]">
-                      {getFallback(`steps.${idx}.desc`, 'Building foundational skills and advancing through structured, interactive learning modules tailored for success.')}
+                      {step.desc}
                     </span>
                   </span>
                 </li>
@@ -144,19 +177,19 @@ export function ProgramPathway({ program }: { program: ProgramEntity }) {
           {/* Collage: one tall panel beside two stacked ones */}
           <div className="grid grid-cols-2 gap-[clamp(0.75rem,1.04vw,1.25rem)]">
             <img
-              src="/images/figma-home/13.png"
-              alt="A student reading in the library"
+              src={imageTall}
+              alt="Program pathway overview"
               className="h-full w-full rounded-lg object-cover"
             />
             <div className="grid grid-rows-2 gap-[clamp(0.75rem,1.04vw,1.25rem)]">
               <img
-                src="/images/figma-home/09.png"
-                alt="A lesson in progress"
+                src={imageTop}
+                alt="Classroom in action"
                 className="h-full w-full rounded-lg object-cover"
               />
               <img
-                src="/images/figma-home/17.png"
-                alt="Group study in the library"
+                src={imageBottom}
+                alt="Students studying"
                 className="h-full w-full rounded-lg object-cover"
               />
             </div>

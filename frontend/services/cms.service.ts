@@ -5,7 +5,7 @@ import type {
   CustomPageEntity,
   ProgramEntity,
   DepartmentEntity,
-  ArticleEntity,
+
   EventEntity,
   AnnouncementEntity,
   TestimonialEntity,
@@ -22,7 +22,15 @@ import type {
   DonationSettingsEntity,
   CareerPositionEntity,
   CareerSettingEntity,
-  StaffMemberEntity
+  StaffMemberEntity,
+  PursuitCtaEntity,
+  AboutPageEntity,
+  NewsPageEntity,
+  SchoolAcademicProgramEntity,
+  SchoolAcademicProgramsPageEntity,
+  OnlineLearningPageEntity,
+  OnlineCourseEntity,
+  LoginPageEntity
 } from '../types/cms.types';
 
 export const cmsService = {
@@ -43,14 +51,139 @@ export const cmsService = {
     const query = {
       locale,
       populate: {
-        sections: {
-          populate: '*'
-        }
+        seo: { populate: '*' },
+        heroSlides: { populate: ['image'] },
+        aboutImage: { populate: '*' },
+        activitiesCenterImage: { populate: '*' },
+        activitiesCards: { populate: ['image'] },
+        testimonials: { populate: ['image'] },
       }
     };
     const data = await this.fetchStrapi<HomepageEntity>('/homepage', query);
-    // If not found, return empty fallback
-    return data || { id: 0, title: 'Home', sections: [] };
+    return data || null;
+  },
+
+  async getLoginPage(locale = 'en'): Promise<LoginPageEntity | null> {
+    const query = {
+      locale,
+      populate: {
+        seo: { populate: '*' },
+        badgeLogo: { populate: '*' },
+        features: { populate: '*' },
+      }
+    };
+    const data = await this.fetchStrapi<LoginPageEntity>('/login-page', query);
+    return data || null;
+  },
+
+
+  async getAboutPage(locale = 'en'): Promise<AboutPageEntity | null> {
+    const query = {
+      locale,
+      populate: {
+        seo: { populate: '*' },
+        introSection: { populate: '*' },
+        missionVisionSection: { populate: '*' },
+        valuesSection: { populate: '*' },
+        directorSection: { populate: '*' },
+        whyChooseSection: { populate: '*' },
+        timelineSection: {
+          populate: {
+            milestones: { populate: '*' }
+          }
+        },
+        certificatesSection: {
+          populate: {
+            certificates: { populate: '*' }
+          }
+        }
+      }
+    };
+    const data = await this.fetchStrapi<AboutPageEntity>('/about-page', query);
+    return data || null;
+  },
+
+  async getNewsPage(locale = 'en'): Promise<NewsPageEntity | null> {
+    const query = {
+      locale,
+      populate: {
+        seo: { populate: '*' },
+        featuredEvents: {
+          populate: ['image', 'gallery', 'tags']
+        },
+        newsletterCard: { populate: '*' }
+      }
+    };
+    const data = await this.fetchStrapi<NewsPageEntity>('/news-page', query);
+    return data || null;
+  },
+
+  async getSchoolAcademicProgramsPage(locale = 'en'): Promise<SchoolAcademicProgramsPageEntity | null> {
+    const query = {
+      locale,
+      populate: {
+        seo: { populate: '*' },
+        heroImage: { populate: '*' },
+        approachImage: { populate: '*' },
+        approachItems: { populate: '*' }
+      }
+    };
+    const data = await this.fetchStrapi<SchoolAcademicProgramsPageEntity>('/school-academic-programs-page', query);
+    return data || null;
+  },
+
+  async getSchoolAcademicPrograms(locale = 'en', limit = 50): Promise<SchoolAcademicProgramEntity[]> {
+    const query = {
+      locale,
+      populate: ['coverImage', 'downloadPdf', 'pathwaySteps', 'pathwayImages', 'seo'],
+      pagination: { limit },
+      sort: ['order:asc', 'createdAt:asc']
+    };
+    const data = await this.fetchStrapi<SchoolAcademicProgramEntity[]>('/school-academic-programs', query);
+    return data || [];
+  },
+
+  async getSchoolAcademicProgramBySlug(slug: string, locale = 'en'): Promise<SchoolAcademicProgramEntity | null> {
+    const query = {
+      locale,
+      filters: { slug: { $eq: slug } },
+      populate: ['coverImage', 'downloadPdf', 'pathwaySteps', 'pathwayImageLeft', 'pathwayImageTop', 'pathwayImageBottom', 'pathwayImages', 'seo']
+    };
+    const data = await this.fetchStrapi<SchoolAcademicProgramEntity[]>('/school-academic-programs', query);
+    return data && data.length > 0 ? data[0] : null;
+  },
+
+  async getOnlineLearningPage(locale = 'en'): Promise<OnlineLearningPageEntity | null> {
+    const query = {
+      locale,
+      populate: {
+        heroImage: { populate: '*' },
+        approachImage: { populate: '*' },
+        approachItems: { populate: '*' },
+        seo: { populate: '*' }
+      }
+    };
+    const data = await this.fetchStrapi<OnlineLearningPageEntity>('/online-learning-page', query);
+    if (!data && locale !== 'en') {
+      return this.getOnlineLearningPage('en');
+    }
+    return data;
+  },
+
+  async getOnlineCourses(locale = 'en'): Promise<OnlineCourseEntity[]> {
+    const query = {
+      locale,
+      sort: ['order:asc', 'createdAt:asc'],
+      filters: {
+        enrollmentOpen: { $eq: true }
+      },
+      populate: ['image']
+    };
+    const data = await this.fetchStrapi<OnlineCourseEntity[]>('/online-courses', query);
+    if ((!data || data.length === 0) && locale !== 'en') {
+      return this.getOnlineCourses('en');
+    }
+    return data || [];
   },
   
   async getPageBySlug(slug: string, locale = 'en'): Promise<CustomPageEntity | null> {
@@ -156,37 +289,8 @@ export const cmsService = {
     return data && data.length > 0 ? data[0] : null;
   },
   
-  async getArticles(locale = 'en', page = 1, pageSize = 6, categorySlug?: string): Promise<{ data: ArticleEntity[]; total: number }> {
-    const query: any = {
-      locale,
-      populate: ['coverImage', 'category', 'author'],
-      pagination: { page, pageSize }
-    };
-    if (categorySlug) {
-      query.filters = { category: { slug: { $eq: categorySlug } } };
-    }
-    try {
-      const queryString = qs.stringify(query, { encodeValuesOnly: true });
-      const { data } = await apiClient.get(`/articles?${queryString}`);
-      return {
-        data: data.data || [],
-        total: data.meta?.pagination?.total || 0
-      };
-    } catch (e) {
-      return { data: [], total: 0 };
-    }
-  },
   
-  async getArticleBySlug(slug: string, locale = 'en'): Promise<ArticleEntity | null> {
-    const query = {
-      locale,
-      filters: { slug: { $eq: slug } },
-      populate: '*'
-    };
-    const data = await this.fetchStrapi<ArticleEntity[]>('/articles', query);
-    return data && data.length > 0 ? data[0] : null;
-  },
-  
+
   async getEvents(locale = 'en', limit = 10): Promise<EventEntity[]> {
     const query = {
       locale,
@@ -246,10 +350,10 @@ export const cmsService = {
     return data || [];
   },
   
-  async getContactInfo(locale = 'en'): Promise<ContactInfo | null> {
+  async getContactInfo(locale = 'en'): Promise<ContactInfo> {
     const data = await this.fetchStrapi<ContactInfo>('/contact-info', { locale, populate: '*' });
     // Fallback if not configured in Strapi yet
-    return data || {
+    return data as ContactInfo || {
       id: 0,
       address: '123 School St',
       phone: '+1234567890',
@@ -257,9 +361,9 @@ export const cmsService = {
     };
   },
   
-  async getFooterConfig(locale = 'en'): Promise<FooterConfig | null> {
+  async getFooterConfig(locale = 'en'): Promise<FooterConfig> {
     const data = await this.fetchStrapi<FooterConfig>('/footer-config', { locale, populate: '*' });
-    return data || {
+    return data as FooterConfig || {
       id: 0,
       copyrightText: '© 2026 YAHAYASCOOL'
     };
@@ -275,17 +379,45 @@ export const cmsService = {
         }
       }
     };
+
+    const baseUrl = process.env.NEXT_PUBLIC_STRAPI_API_URL 
+      || (process.env.NEXT_PUBLIC_STRAPI_URL ? `${process.env.NEXT_PUBLIC_STRAPI_URL}/api` : 'http://localhost:1337/api');
     
     try {
-      const url = `${process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337/api'}/navigation-menus?${qs.stringify(query, { encodeValuesOnly: true })}`;
+      const url = `${baseUrl}/navigation-menus?${qs.stringify(query, { encodeValuesOnly: true })}`;
       const res = await fetch(url, { cache: 'no-store' });
       if (res.ok) {
         const json = await res.json();
         const data = json.data;
-        if (data && data.length > 0) return data[0];
+        if (data && data.length > 0 && data[0].items && data[0].items.length > 0) return data[0];
       }
     } catch (e) {
       console.error('Error fetching navigation menu:', e);
+    }
+
+    // If requested non-English locale returned no menu from Strapi, fallback to English Strapi menu
+    if (locale !== 'en') {
+      try {
+        const fallbackQuery = {
+          locale: 'en',
+          filters: { location: { $eq: location } },
+          populate: {
+            items: {
+              populate: ['subItems.media']
+            }
+          }
+        };
+        const fallbackUrl = `${baseUrl}/navigation-menus?${qs.stringify(fallbackQuery, { encodeValuesOnly: true })}`;
+        const fallbackRes = await fetch(fallbackUrl, { cache: 'no-store' });
+        if (fallbackRes.ok) {
+          const fbJson = await fallbackRes.json();
+          if (fbJson.data && fbJson.data.length > 0 && fbJson.data[0].items && fbJson.data[0].items.length > 0) {
+            return fbJson.data[0];
+          }
+        }
+      } catch (e) {
+        // ignore
+      }
     }
     
     // Fallback for header if Strapi returns nothing
@@ -295,11 +427,28 @@ export const cmsService = {
         name: 'Header',
         slug: 'header',
         location: 'header',
+        ctaButtonTitle: 'Donations',
+        ctaButtonUrl: '/donations',
         items: [
-          { title: 'Home', url: '/' },
-          { title: 'About', url: '/about' },
-          { title: 'Admissions', url: '/admissions' },
-          { title: 'Contact', url: '/contact' }
+          { id: 1, title: 'Home', url: '/' },
+          { id: 2, title: 'Academic Programs', url: '/programs' },
+          { id: 3, title: 'News and Events', url: '/news' },
+          { id: 4, title: 'About', url: '/about' },
+          { id: 5, title: 'Contact Us', url: '/contact' }
+        ]
+      };
+    }
+
+    if (location === 'topbar') {
+      return {
+        id: 2,
+        name: 'Topbar',
+        slug: 'topbar',
+        location: 'topbar',
+        ctaButtonTitle: 'Login Portal',
+        ctaButtonUrl: '/login',
+        items: [
+          { id: 10, title: 'Online Learning', url: '/online-learning' }
         ]
       };
     }
@@ -342,6 +491,24 @@ export const cmsService = {
     }
   },
 
+  async subscribeNewsletter(email: string, locale = 'en'): Promise<{ success: boolean; message?: string }> {
+    try {
+      await apiClient.post('/newsletter-subscribers', {
+        data: {
+          email,
+          locale,
+          status: 'active'
+        }
+      });
+      return { success: true };
+    } catch (e: any) {
+      return {
+        success: false,
+        message: e?.response?.data?.error?.message || 'Failed to subscribe'
+      };
+    }
+  },
+
   async getStaffMembers(locale = 'en'): Promise<StaffMemberEntity[]> {
     const data = await this.fetchStrapi<StaffMemberEntity[]>('/staff-members', {
       locale,
@@ -356,7 +523,7 @@ export const cmsService = {
    */
   async createEvent(payload: Partial<EventEntity>): Promise<EventEntity> {
     const res = await apiClient.post('/events', { data: payload });
-    return unwrapResponse<EventEntity>(res.data) || res.data;
+    return res.data?.data || res.data;
   },
 
   /**
@@ -364,8 +531,13 @@ export const cmsService = {
    */
   async createAnnouncement(payload: Partial<AnnouncementEntity>): Promise<AnnouncementEntity> {
     const res = await apiClient.post('/announcements', { data: payload });
-    return unwrapResponse<AnnouncementEntity>(res.data) || res.data;
+    return res.data?.data || res.data;
   },
+
+  async getPursuitCta(locale = 'en'): Promise<PursuitCtaEntity | null> {
+    const data = await this.fetchStrapi<PursuitCtaEntity>('/pursuit-cta', { locale });
+    return data || null;
+  }
 };
 
 export function getStrapiMediaUrl(media: any): string | null {

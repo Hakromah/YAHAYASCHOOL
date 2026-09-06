@@ -88,11 +88,66 @@ export function Navbar({ locale = 'en', menu, topbarMenu, contactInfo }: { local
     };
   }, [mobileMenuOpen, lenis]);
 
+  // Fallback defaults for left & right nav
+  const defaultLeftNav = [
+    { id: 'nav-home', title: t('home'), url: '/' },
+    { id: 'nav-programs', title: t('academicPrograms'), url: '/programs' },
+    { id: 'nav-news', title: t('newsAndEvents'), url: '/news' }
+  ];
+
+  const getSocialIconClass = (rawName?: string) => {
+    if (!rawName) return 'icon-link';
+    const name = rawName.toLowerCase().trim().replace(/^icon-/, '');
+    if (name === 'twitter' || name === 'x') return 'icon-x';
+    if (name === 'facebook' || name === 'fb') return 'icon-facebook';
+    if (name === 'instagram' || name === 'insta' || name === 'ig') return 'icon-instagram';
+    if (name === 'youtube' || name === 'yt') return 'icon-youtube';
+    if (name === 'linkedin') return 'icon-linkedin';
+    if (name === 'tiktok') return 'icon-tiktok';
+    if (name === 'whatsapp') return 'icon-whatsapp';
+    return `icon-${name}`;
+  };
+
+  const socialLinks = contactInfo?.socialMedia?.length > 0
+    ? contactInfo.socialMedia.map((s: any) => {
+        const iconName = s.icon || s.platform || s.title || s.name || '';
+        return {
+          title: s.title || s.name || s.platform || 'Social Media',
+          url: s.url,
+          icon: getSocialIconClass(iconName),
+        };
+      })
+    : [
+        { title: 'Facebook', url: 'https://facebook.com', icon: 'icon-facebook' },
+        { title: 'X', url: 'https://x.com', icon: 'icon-x' },
+        { title: 'YouTube', url: 'https://youtube.com', icon: 'icon-youtube' },
+        { title: 'Instagram', url: 'https://instagram.com', icon: 'icon-instagram' },
+      ];
+
+  const defaultRightNav = [
+    { id: 'nav-contact', title: t('contact'), url: '/contact' }
+  ];
+
+  const isOnlineLearning = (url?: string) => Boolean(url && url.includes('online-learning'));
+
+  const isAboutItem = (item: any) => {
+    if (!item) return false;
+    if (item.subItems && item.subItems.length > 0) return true;
+    const url = (item.url || '').toLowerCase();
+    if (url === '/about' || url === 'about' || url.includes('/about')) return true;
+    const title = (item.title || '').toLowerCase();
+    return title.includes('about') || title.includes('hakkımızda') || title.includes('propos') || title.includes('حول');
+  };
+
   // Try to find the "About" item to build the mega-menu dynamically
-  const aboutMenuItem = menu?.items?.find((item: any) => item.subItems && item.subItems.length > 0) || menu?.items?.find((item: any) => item.title.toLowerCase().includes('about'));
+  const rawItems: any[] = menu?.items && Array.isArray(menu.items) && menu.items.length > 0
+    ? menu.items
+    : [];
+
+  const aboutMenuItem = rawItems.find((item: any) => isAboutItem(item));
   
   const dynamicAboutOptions = aboutMenuItem?.subItems?.map((child: any) => ({
-    id: child.title.toLowerCase().replace(/\s+/g, '-'),
+    id: (child.title || 'item').toLowerCase().replace(/\s+/g, '-'),
     label: child.title,
     href: child.url,
     image: child.media?.url || '/images/figma-home/02-about.jpeg',
@@ -107,17 +162,40 @@ export function Navbar({ locale = 'en', menu, topbarMenu, contactInfo }: { local
         { id: 'career', label: t('career'), href: '/career', image: '/images/figma-home/15-news.jpeg', badge: t('joinUs') },
       ];
 
-  const isOnlineLearning = (url: string) => url.includes('online-learning');
+  const isMatchingAbout = (item: any) => {
+    if (!item) return false;
+    if (aboutMenuItem && item === aboutMenuItem) return true;
+    if (aboutMenuItem?.id && item.id && item.id === aboutMenuItem.id) return true;
+    if (aboutMenuItem?.url && item.url && item.url === aboutMenuItem.url) return true;
+    return isAboutItem(item);
+  };
 
-  const leftNavItems = menu?.items ? menu.items.filter((i: any) => i.id !== aboutMenuItem?.id && !isOnlineLearning(i.url)).slice(0, 3) : [
-    { title: t('home'), url: '/' },
-    { title: t('academicPrograms'), url: '/programs' },
-    { title: t('newsAndEvents'), url: '/news' }
-  ];
+  // Filter out About and Online Learning (which appears in the topbar)
+  const nonAboutItems = rawItems.filter((i: any) => !isMatchingAbout(i) && !isOnlineLearning(i.url));
 
-  const rightNavItems = menu?.items ? menu.items.filter((i: any) => i.id !== aboutMenuItem?.id && !isOnlineLearning(i.url)).slice(3) : [
-    { title: t('contact'), url: '/contact' }
-  ];
+  const leftNavItems = nonAboutItems.length > 0
+    ? nonAboutItems.slice(0, 3)
+    : defaultLeftNav;
+
+  const rightNavItems = nonAboutItems.length > 3
+    ? nonAboutItems.slice(3)
+    : defaultRightNav;
+
+  const getLocalizedTitle = (item: any) => {
+    if (!item) return '';
+    if (menu?.locale === locale && item.title) {
+      return item.title;
+    }
+    const url = (item.url || '').toLowerCase();
+    if (url === '/' || url === '') return t('home');
+    if (url.includes('/programs') || url === 'programs') return t('academicPrograms');
+    if (url.includes('/news') || url === 'news') return t('newsAndEvents');
+    if (url.includes('/online') || url === 'online-learning') return t('onlineLearning');
+    if (url.includes('/about') || url === 'about') return t('about');
+    if (url.includes('/contact') || url === 'contact') return t('contact');
+    if (url.includes('/gallery') || url === 'gallery') return t('gallery');
+    return item.title || '';
+  };
 
   // Basic link active check
   const isLinkActive = (url: string) => {
@@ -164,7 +242,7 @@ export function Navbar({ locale = 'en', menu, topbarMenu, contactInfo }: { local
                 </div>
               )}
               <div className='text-from-18 text-to-20'>
-                  {item.title}
+                  {getLocalizedTitle(item)}
               </div>
             </Link>
           )) : (
@@ -176,41 +254,32 @@ export function Navbar({ locale = 'en', menu, topbarMenu, contactInfo }: { local
                 </div>
               </div>
               <div className='text-from-18 text-to-20'>
-                  {'Online Learning'}
+                  {t('onlineLearning')}
               </div>
             </Link>
           )}
         </div>
         <div className="flex items-center gap-5">
-          {contactInfo?.socialMedia?.length > 0 ? (
-            <div className="flex items-center gap-4 text-white/90">
-              {contactInfo.socialMedia.map((s: any, i: number) => {
-                let iconClass = 'icon-link';
-                const iconName = s.icon || s.title;
-                if (iconName) {
-                  iconClass = iconName.startsWith('icon-') ? iconName.toLowerCase() : `icon-${iconName.toLowerCase()}`;
-                }
-                return (
-                  <a key={i} href={s.url} target="_blank" rel="noopener noreferrer" aria-label={s.title} className="lg:hover:text-white/80 transition-all lg:hover:-translate-y-[1px] block">
-                    <i className={`${iconClass} text-[15px] flex justify-center items-center`} />
-                  </a>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="flex items-center gap-4 text-white/90">
-              <a href="#" aria-label="Facebook" className="lg:hover:text-white/80 transition-all lg:hover:-translate-y-[1px] block"><FacebookIcon className="w-4 h-4" /></a>
-              <a href="#" aria-label="Twitter" className="lg:hover:text-white/80 transition-all lg:hover:-translate-y-[1px] block"><TwitterIcon className="w-4 h-4" /></a>
-              <a href="#" aria-label="Instagram" className="lg:hover:text-white/80 transition-all lg:hover:-translate-y-[1px] block"><InstagramIcon className="w-4 h-4" /></a>
-              <a href="#" aria-label="LinkedIn" className="lg:hover:text-white/80 transition-all lg:hover:-translate-y-[1px] block"><LinkedinIcon className="w-4 h-4" /></a>
-            </div>
-          )}
+          <div className="flex items-center gap-4 text-white/90">
+            {socialLinks.map((s: any, i: number) => (
+              <a
+                key={i}
+                href={s.url || '#'}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={s.title}
+                className="lg:hover:text-white/80 transition-all lg:hover:-translate-y-[1px] flex items-center justify-center text-white"
+              >
+                <i className={`${s.icon} text-[15px] flex justify-center items-center`} aria-hidden />
+              </a>
+            ))}
+          </div>
           
           <div className="w-[1px] h-4 bg-white/40"></div>
           
           <a href={getHref(topbarMenu?.ctaButtonUrl || '/login')} target="_blank" rel="noopener noreferrer" className="bg-transparent border border-white text-white hover:bg-white/10 px-5 py-1.5 rounded-full transition-all flex items-center gap-2 font-medium text-[13px]">
             <User className="w-4 h-4" />
-            {topbarMenu?.ctaButtonTitle || t('loginPortal')}
+            {(topbarMenu?.locale === locale && topbarMenu?.ctaButtonTitle) || t('loginPortal')}
           </a>
         </div>
       </div>
@@ -232,7 +301,7 @@ export function Navbar({ locale = 'en', menu, topbarMenu, contactInfo }: { local
           <nav className='w-full h-24.75 bg-white flex justify-between items-center lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,auto)_minmax(0,1fr)]'>
             <div className="hidden lg:flex items-center gap-2 xl:gap-(--spacing-gap)  lg:[&_*]:text-[18px] [&_*]:text-[16px]">
               {leftNavItems.map((item: any, idx: number) => (
-                <NavLink key={idx} href={item.url}>{item.title}</NavLink>
+                <NavLink key={idx} href={item.url}>{getLocalizedTitle(item)}</NavLink>
               ))}
             </div>
 
@@ -258,7 +327,7 @@ export function Navbar({ locale = 'en', menu, topbarMenu, contactInfo }: { local
                   className="group relative h-full flex items-center outline-none cursor-pointer"
                   onClick={() => setAboutDropdownOpen(!aboutDropdownOpen)}
                 >
-                  <NavLink href="/about" hasDropdown isOpen={aboutDropdownOpen} className="w-full h-full relative cursor-pointer">{aboutMenuItem?.title || t('about')}</NavLink>
+                  <NavLink href="/about" hasDropdown isOpen={aboutDropdownOpen} className="w-full h-full relative cursor-pointer">{aboutMenuItem ? getLocalizedTitle(aboutMenuItem) : t('about')}</NavLink>
                   
                   <div
                     // Clicks inside the panel must not reach the wrapper's toggle above:
@@ -339,7 +408,7 @@ export function Navbar({ locale = 'en', menu, topbarMenu, contactInfo }: { local
                 </div>
 
                 {rightNavItems.map((item: any, idx: number) => (
-                  <NavLink key={idx} href={item.url}>{item.title}</NavLink>
+                  <NavLink key={idx} href={item.url}>{getLocalizedTitle(item)}</NavLink>
                 ))}
               </nav>
 
@@ -350,7 +419,7 @@ export function Navbar({ locale = 'en', menu, topbarMenu, contactInfo }: { local
                   className="flex items-center gap-2 px-[32px] py-[13px] rounded-full text-sm font-bold text-white bg-[#048ED6] hover:bg-sky-500 shadow-md transition-all"
                 >
                   <HandHeart className="w-5 h-5" />
-                  <span>{menu?.ctaButtonTitle || t('donations')}</span>
+                  <span>{(menu?.locale === locale && menu?.ctaButtonTitle) || t('donations')}</span>
                   <ArrowRight className="w-4 h-4 rtl:rotate-180" />
                 </Link>
               </div>
@@ -385,7 +454,7 @@ export function Navbar({ locale = 'en', menu, topbarMenu, contactInfo }: { local
       {mobileMenuOpen && (
         <div className="lg:hidden bg-white border-t border-gray-100 pt-4 pb-6 shadow-xl absolute w-full left-0 z-550 overflow-hidden transition-all duration-300 origin-top animate-in fade-in slide-in-from-top-2">
           <div className="flex flex-col">
-            {(menu?.items || [
+            {(rawItems.length > 0 ? rawItems : [
               { id: 'home', title: t('home'), url: '/' },
               { id: 'about-fallback', title: t('about'), url: '/about', subItems: aboutMenuOptions },
               { id: 'programs', title: t('academicPrograms'), url: '/programs' },
@@ -394,7 +463,7 @@ export function Navbar({ locale = 'en', menu, topbarMenu, contactInfo }: { local
               { id: 'gallery', title: t('gallery'), url: '/gallery' },
               { id: 'contact', title: t('contact'), url: '/contact' }
             ]).map((item: any, idx: number) => {
-              const isAbout = item.id === aboutMenuItem?.id || item.id === 'about-fallback';
+              const isAbout = isMatchingAbout(item) || item.id === 'about-fallback';
               
               if (isAbout) {
                 return (
@@ -403,7 +472,7 @@ export function Navbar({ locale = 'en', menu, topbarMenu, contactInfo }: { local
                       onClick={() => setMobileAboutOpen(!mobileAboutOpen)}
                       className={`flex justify-between items-center px-[var(--spacing-side)] py-3 text-[18px] font-semibold text-gray-800 transition-colors ${mobileAboutOpen ? 'bg-primary/5' : 'bg-white'}`}
                     >
-                      {item.title}
+                      {getLocalizedTitle(item)}
                       <ChevronDown className={`w-5 h-5 transition-transform duration-300 ${mobileAboutOpen ? 'rotate-180' : ''}`} />
                     </button>
                     <div className={`grid transition-all duration-300 ease-in-out ${mobileAboutOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
@@ -423,7 +492,7 @@ export function Navbar({ locale = 'en', menu, topbarMenu, contactInfo }: { local
 
               return (
                 <Link key={idx} href={getHref(item.url)} onClick={() => setMobileMenuOpen(false)} className="px-[var(--spacing-side)] py-3 rounded-lg text-[18px] font-semibold text-gray-800">
-                  {item.title}
+                  {getLocalizedTitle(item)}
                 </Link>
               );
             })}
@@ -433,7 +502,7 @@ export function Navbar({ locale = 'en', menu, topbarMenu, contactInfo }: { local
                 className="flex-1 py-3 px-2 rounded-full text-center font-bold text-white bg-[#048ED6] hover:bg-sky-500 transition-colors flex items-center justify-center gap-1.5 text-[13px] sm:text-sm"
               >
                 <HandHeart className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
-                <span className="truncate">{menu?.ctaButtonTitle || t('donations')}</span>
+                <span className="truncate">{(menu?.locale === locale && menu?.ctaButtonTitle) || t('donations')}</span>
               </Link>
               <a
                 href="/login"
@@ -442,8 +511,24 @@ export function Navbar({ locale = 'en', menu, topbarMenu, contactInfo }: { local
                 className="flex-1 py-3 px-2 rounded-full text-center font-bold text-[#048ED6] bg-blue-50 border border-[#048ED6]/20 hover:bg-blue-100 transition-colors flex items-center justify-center gap-1.5 text-[13px] sm:text-sm"
               >
                 <User className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
-                <span className="truncate">{t('loginPortal')}</span>
+                <span className="truncate">{(topbarMenu?.locale === locale && topbarMenu?.ctaButtonTitle) || t('loginPortal')}</span>
               </a>
+            </div>
+
+            {/* Mobile Social Links */}
+            <div className="pt-4 px-[var(--spacing-side)] flex items-center justify-center gap-4 text-gray-500">
+              {socialLinks.map((s: any, i: number) => (
+                <a
+                  key={i}
+                  href={s.url || '#'}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={s.title}
+                  className="w-9 h-9 rounded-full bg-[#E6F0FB] text-[#048ED6] flex items-center justify-center hover:bg-[#048ED6] hover:text-white transition-colors"
+                >
+                  <i className={`${s.icon} text-[15px] flex justify-center items-center`} aria-hidden />
+                </a>
+              ))}
             </div>
           </div>
         </div>

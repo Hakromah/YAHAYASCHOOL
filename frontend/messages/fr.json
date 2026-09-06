@@ -799,7 +799,9 @@
       "desc": "Recevez les dernières nouvelles de l'école et les rappels d'événements directement dans votre boîte de réception.",
       "placeholder": "Adresse Email",
       "subscribe": "S'abonner",
-      "success": "Merci — nous vous contacterons à {email}."
+      "subscribed": "Abonné !",
+      "success": "Merci — nous vous contacterons à {email}.",
+      "error": "Une erreur s'est produite. Veuillez réessayer."
     },
     "breadcrumbHome": "Accueil",
     "body": {
@@ -1070,5 +1072,162 @@
     "title": "Nos Certificats",
     "view": "Voir",
     "download": "Télécharger"
+  },
+  "academicPage": {
+    "hero": {
+      "breadcrumbHome": "Accueil",
+      "breadcrumbAcademic": "Programmes académiques",
+      "tagline": "Apprendre avec un but",
+      "headline_1": "Le savoir enraciné dans la foi.",
+      "headline_2": "L'excellence bâtie pour la vie.",
+      "lede": "Excellence académique rigoureuse, caractère islamique et préparation mondiale — pour nourrir des esprits curieux et des cœurs compatissants prêts à diriger avec assurance et détermination."
+    },
+    "programs": {
+      "explore": "Explorer le programme",
+      "readMore": "En savoir plus"
+    },
+    "approach": {
+      "title": "Comment l'apprentissage prend vie",
+      "items": [
+        {
+          "title": "Rigueur académique",
+          "desc": "Un programme stimulant et des exigences élevées qui inspirent une compréhension profonde et l'excellence dans chaque matière."
+        },
+        {
+          "title": "Foi et caractère",
+          "desc": "Les valeurs islamiques sont intégrées dans l'apprentissage quotidien pour cultiver l'intégrité, la compassion et le sens du devoir."
+        },
+        {
+          "title": "Mentorat",
+          "desc": "Des enseignants dévoués guident chaque élève grâce à un soutien personnalisé et des relations bienveillantes au-delà des cours."
+        },
+        {
+          "title": "Découverte du monde réel",
+          "desc": "Des projets pratiques, des sorties sur le terrain et la technologie relient l'apprentissage en classe au monde qui nous entoure."
+        }
+      ],
+      "alt": "Un enseignant animant une discussion de classe",
+      "statValue": "98%",
+      "statDesc": "Taux d'admission à l'université pour nos diplômés",
+      "tagline": "Notre approche"
+    },
+    "programsList": {
+      "quran-memorization": {
+        "title": "Mémorisation du Coran",
+        "eyebrow": "Excellence académique",
+        "desc": "Programme de Hifz guidé avec tajweed, compréhension et formation morale — enraciné dans l'amour du Coran.",
+        "lede": "Le programme de mémorisation du Coran et de Hifz de Yahaya International offre un cadre d'étude où la dévotion spirituelle rencontre la rigueur académique.",
+        "pathwayTitle": "Le parcours Hifz",
+        "pathwayLede": "Notre programme de mémorisation du Coran combine les méthodes traditionnelles ottomanes et africaines avec les approches pédagogiques modernes.",
+        "steps": [
+          { "title": "Mémorisation intensive", "desc": "Séances quotidiennes structurées axées sur les nouveaux versets et la révision continue." },
+          { "title": "Tafsir et compréhension", "desc": "Séances hebdomadaires explorant le contexte et le sens des versets mémorisés." },
+          { "title": "Maîtrise du Tajweed", "desc": "Précision de l'articulation et des règles de récitation avec des enseignants qualifiés." },
+          { "title": "Parcours Ijazah", "desc": "Voie vers l'accréditation pour les étudiants qui achèvent le programme avec excellence." }
+        ]
+      }
+    }
+  },
+  "academicDetail": {
+    "hero": {
+      "home": "Accueil",
+      "academics": "Programmes académiques",
+      "details": "Détails académiques",
+      "headline_1": "Le savoir enraciné dans la foi.",
+      "headline_2": "L'excellence bâtie pour la vie.",
+      "contactUs": "Contactez-nous",
+      "downloadPdf": "Télécharger le PDF"
+    }
+  },
+  "onlineLearningPage": {
+    "breadcrumbHome": "Accueil",
+    "breadcrumbOnline": "Apprentissage en ligne",
+    "tagline": "Apprendre avec un but",
+    "headline_1": "Le savoir au bout de",
+    "headline_2": "Vos doigts",
+    "lede": "Accédez à une éducation islamique et académique de renommée mondiale depuis n'importe où dans le monde. Commencez votre parcours dès aujourd'hui.",
+    "joinEnrollment": "S'inscrire",
+    "coursesList": {
+      "0": {
+        "title": "Grammaire arabe avancée",
+        "tag": "Langues • Avancé",
+        "badge": "Nouvelle version",
+        "desc": "Une étude approfondie du Nahw et du Sarf pour une compréhension textuelle rigoureuse."
+      },
+      "1": {
+        "title": "Fondations du Tajweed",
+        "tag": "Coran • Débutant",
+        "badge": "Nouvelle version",
+        "desc": "Articulation et rythme enseignés depuis les premiers principes, corrigés individuellement."
+      },
+      "2": {
+        "title": "Histoire islamique",
+        "tag": "Humanités • Intermédiaire",
+        "badge": "Nouvelle version",
+        "desc": "Les grandes périodes et figures clés, étudiées à travers des sources primaires."
+      },
+      "3": {
+        "title": "Anglais académique",
+        "tag": "Langues • Intermédiaire",
+        "badge": "Nouvelle version",
+        "desc": "Expression orale, écrite et compréhension adaptées aux exigences des études supérieures."
+      },
+      "4": {
+        "title": "Arabe coranique",
+        "tag": "Coran • Intermédiaire",
+        "badge": "Nouvelle version",
+        "desc": "Vocabulaire et syntaxe tirés directement du texte, enseignés verset par verset."
+      },
+      "5": {
+        "title": "Essentiels du Fiqh",
+        "tag": "Études islamiques • Débutant",
+        "badge": "Nouvelle version",
+        "desc": "Jurisprudence pratique pour la vie quotidienne, avec preuves à l'appui pour chaque règle."
+      }
+    },
+    "liveLesson": "Cours en direct"
+  },
+  "enrollmentModal": {
+    "payOnline": "Payer en ligne",
+    "alreadyPaid": "Déjà payé",
+    "firstName": "Prénom",
+    "lastName": "Nom",
+    "email": "Adresse e-mail",
+    "phone": "Numéro de téléphone",
+    "country": "Pays",
+    "uploadInvoice": "Téléverser la facture",
+    "selectAmount": "Sélectionner le montant",
+    "selectCurrency": "Sélectionner la devise",
+    "selectCourse": "Sélectionner le cours",
+    "checkout": "Payer",
+    "submit": "Confirmer l'inscription",
+    "successTitle": "Soumis avec succès",
+    "successDesc": "Votre inscription a été soumise et est en cours d'examen. Vous recevrez bientôt un e-mail de confirmation.",
+    "enrollNow": "S'inscrire maintenant",
+    "fullName": "Nom complet",
+    "inquiryTopic": "Objet de la demande",
+    "message": "Votre message",
+    "sendMessage": "Envoyer le message",
+    "uploadReceipt": "Reçu de paiement",
+    "optional": "Facultatif",
+    "uploadReceiptClick": "Cliquez pour téléverser le reçu",
+    "orDragDrop": "ou glissez-déposez ici",
+    "uploadReceiptHint": "Bordereau de virement bancaire ou capture (PDF, PNG, JPG jusqu'à 10 Mo)",
+    "removeFile": "Supprimer",
+    "readyToSend": "Prêt à envoyer",
+    "successThanks": "Merci — nous avons bien reçu vos coordonnées et nous vous contacterons sous peu.",
+    "successThanksWithReceipt": "Merci ! Vos informations d'inscription et votre reçu de paiement ont été bien reçus. Notre équipe vérifiera votre paiement et vous contactera sous peu.",
+    "securePayment": "Votre paiement est traité en toute sécurité.",
+    "currencies": {
+      "usd": "USD - Dollar américain",
+      "eur": "EUR - Euro",
+      "gbp": "GBP - Livre sterling",
+      "lrd": "LRD - Dollar libérien"
+    },
+    "amountDefault": "500",
+    "placeholders": {
+      "name": "Jean Dupont",
+      "email": "jean@exemple.com"
+    }
   }
 }

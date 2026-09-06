@@ -33,14 +33,42 @@ export async function generateMetadata({ params }: HomepageProps): Promise<Metad
 
 export default async function PublicHomepage({ params }: HomepageProps) {
   const { locale } = await params;
+
   let homepage = null;
+  let academicPrograms: any[] = [];
+  let newsPage = null;
+
   try {
-    homepage = await cmsService.getHomepage(locale);
+    const results = await Promise.all([
+      cmsService.getHomepage(locale).catch(() => null),
+      cmsService.getSchoolAcademicPrograms(locale).catch(() => []),
+      cmsService.getNewsPage(locale).catch(() => null),
+    ]);
+    homepage = results[0];
+    academicPrograms = results[1] || [];
+    newsPage = results[2];
+
+    // Fallback to 'en' if homepage or newsPage missing in non-en locale
+    if (!homepage && locale !== 'en') {
+      homepage = await cmsService.getHomepage('en').catch(() => null);
+    }
+    if ((!academicPrograms || academicPrograms.length === 0) && locale !== 'en') {
+      academicPrograms = await cmsService.getSchoolAcademicPrograms('en').catch(() => []);
+    }
+    if (!newsPage && locale !== 'en') {
+      newsPage = await cmsService.getNewsPage('en').catch(() => null);
+    }
   } catch (error) {
     console.warn('Failed to fetch homepage data (Strapi might be down). Rendering static UI.', error);
   }
 
-  // Temporarily forcing sections to undefined to render the static mock UI built from designs
-  // until Strapi CMS is fully configured and connected.
-  return <HomepageBuilder sections={undefined} locale={locale} />;
+  return (
+    <HomepageBuilder
+      homepage={homepage}
+      academicPrograms={academicPrograms}
+      newsPage={newsPage}
+      sections={homepage?.sections}
+      locale={locale}
+    />
+  );
 }

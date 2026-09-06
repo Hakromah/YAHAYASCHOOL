@@ -799,7 +799,9 @@
       "desc": "Get the latest school news and event reminders straight to your inbox.",
       "placeholder": "Email Address",
       "subscribe": "Subscribe",
-      "success": "Thanks — we'll be in touch at {email}."
+      "subscribed": "Subscribed!",
+      "success": "Thanks — we'll be in touch at {email}.",
+      "error": "Something went wrong. Please try again."
     },
     "breadcrumbHome": "Home",
     "body": {
@@ -1270,23 +1272,6 @@
     "headline_2": "Fingertips",
     "lede": "Access world-class Islamic and academic education from anywhere in the world. Begin your journey of lifelong learning today.",
     "joinEnrollment": "Join Enrollment",
-    "features": [
-      {
-        "title": "Recorded Lessons",
-        "cta": "Browse Library",
-        "desc": "A comprehensive library of high-definition video lectures across all academic and Islamic subjects."
-      },
-      {
-        "title": "Digital Library",
-        "cta": "Enter Library",
-        "desc": "Access curated PDF books, Qur’an resources, and exclusive scholarly articles."
-      },
-      {
-        "title": "Live Classes",
-        "cta": "View Schedule",
-        "desc": "Engage in real-time interactive sessions with our global expert faculty members."
-      }
-    ],
     "coursesList": {
       "0": {
         "title": "Advanced Arabic Grammar",
@@ -1348,7 +1333,15 @@
     "inquiryTopic": "Inquiry Topic",
     "message": "Your Message",
     "sendMessage": "Send Message",
+    "uploadReceipt": "Payment Receipt",
+    "optional": "Optional",
+    "uploadReceiptClick": "Click to upload receipt",
+    "orDragDrop": "or drag and drop",
+    "uploadReceiptHint": "Transfer slip, bank confirmation, or screenshot (PDF, PNG, JPG up to 10MB)",
+    "removeFile": "Remove",
+    "readyToSend": "Ready to send",
     "successThanks": "Thanks — we have your details and will be in touch shortly.",
+    "successThanksWithReceipt": "Thank you! Your enrollment details and payment receipt have been received. We will verify your payment and contact you shortly.",
     "securePayment": "Your payment is processed securely.",
     "currencies": {
       "usd": "USD - US Dollar",

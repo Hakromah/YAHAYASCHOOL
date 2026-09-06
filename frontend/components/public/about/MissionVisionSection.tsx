@@ -2,6 +2,8 @@
 
 import React, { useId, useRef, useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
+import type { AboutMissionVisionSectionComponent } from '@/types/cms.types';
+import { getStrapiMediaUrl } from '@/services/cms.service';
 
 /**
  * About — Mission / Vision panel.
@@ -19,17 +21,6 @@ import { useTranslations } from 'next-intl';
 // Path from /public/images/mask1.svg (viewBox 0 0 447 534)
 const MASK_PATH =
   'M447 0C366.625 38.9874 317.792 38.0739 224.523 0C152.17 33.5976 104.763 37.4041 0 0V369.81C59.9418 469.129 108.09 506.034 224.523 534C359.175 492.021 409.772 456.981 447 369.81V0Z';
-
-const TABS = [
-  {
-    id: 'mission',
-    image: '/images/vission.png',
-  },
-  {
-    id: 'vision',
-    image: '/images/figma-home/02-about.jpeg',
-  },
-] as const;
 
 function MissionIcon({ className }: { className?: string }) {
   return (
@@ -55,10 +46,33 @@ function VisionIcon({ className }: { className?: string }) {
   );
 }
 
-export function MissionVisionSection() {
+export function MissionVisionSection({ data }: { data?: AboutMissionVisionSectionComponent }) {
   const [active, setActive] = useState(0);
   const clipId = useId();
   const t = useTranslations('aboutPage.missionVision');
+
+  const missionLabel = data?.missionLabel || t('mission.label');
+  const missionBody = data?.missionBody || t('mission.body');
+  const missionImage = data?.missionImage ? getStrapiMediaUrl(data.missionImage) : (data?.missionImageUrl || '/images/vission.png');
+
+  const visionLabel = data?.visionLabel || t('vision.label');
+  const visionBody = data?.visionBody || t('vision.body');
+  const visionImage = data?.visionImage ? getStrapiMediaUrl(data.visionImage) : (data?.visionImageUrl || '/images/figma-home/02-about.jpeg');
+
+  const tabsData = [
+    {
+      id: 'mission',
+      label: missionLabel,
+      body: missionBody,
+      image: missionImage || '',
+    },
+    {
+      id: 'vision',
+      label: visionLabel,
+      body: visionBody,
+      image: visionImage || '',
+    },
+  ];
 
   // Right slider height measurement
   const rightInnerRef = useRef<HTMLDivElement>(null);
@@ -67,7 +81,7 @@ export function MissionVisionSection() {
   useEffect(() => {
     const measure = () => {
       if (rightInnerRef.current) {
-        setRightH(rightInnerRef.current.scrollHeight / TABS.length);
+        setRightH(rightInnerRef.current.scrollHeight / tabsData.length);
       }
     };
     const t = setTimeout(measure, 50);
@@ -76,7 +90,7 @@ export function MissionVisionSection() {
       clearTimeout(t);
       window.removeEventListener('resize', measure);
     };
-  }, []);
+  }, [tabsData.length]);
 
   const tabIcons = [MissionIcon, VisionIcon];
 
@@ -88,7 +102,7 @@ export function MissionVisionSection() {
 
             {/* ── LEFT: static tab buttons — opacity only, no sliding ── */}
             <div className="flex md:flex-col max-sm:justify-center flex-wrap gap-[clamp(1.25rem,2.2vw,2.6rem)] lg:self-start lg:mt-[clamp(0.5rem,2.5vw,3rem)] lg:pl-[clamp(0.5rem,2vw,2.5rem)]">
-              {TABS.map((tItem, i) => {
+              {tabsData.map((tItem, i) => {
                 const Icon = tabIcons[i];
                 return (
                   <button
@@ -101,7 +115,7 @@ export function MissionVisionSection() {
                   >
                     <Icon className="w-[clamp(1.1rem,1.15vw,1.375rem)] h-[clamp(1.1rem,1.15vw,1.375rem)]" />
                     <span className="font-semibold tracking-[0.04em] whitespace-nowrap text-[clamp(0.75rem,0.73vw,0.875rem)]">
-                      {t(`${tItem.id}.label`)}
+                      {tItem.label}
                     </span>
                   </button>
                 );
@@ -122,7 +136,7 @@ export function MissionVisionSection() {
                   </clipPath>
                 </defs>
                 <g clipPath={`url(#${clipId})`}>
-                  {TABS.map((t, i) => (
+                  {tabsData.map((t, i) => (
                     <image
                       key={t.id}
                       href={t.image}
@@ -146,7 +160,7 @@ export function MissionVisionSection() {
 
               {/* Mobile */}
               <p className="lg:hidden text-white leading-[1.71] text-[clamp(1rem,1.25vw,1.5rem)]">
-                {t(`${TABS[active].id}.body`)}
+                {tabsData[active].body}
               </p>
 
               {/* Desktop — vertical slider */}
@@ -161,7 +175,7 @@ export function MissionVisionSection() {
                     transform: `translateY(calc(-${active * rightH}px - ${active} * 1.5rem))`,
                   }}
                 >
-                  {TABS.map((tItem, i) => (
+                  {tabsData.map((tItem, i) => (
                     <div
                       key={tItem.id}
                       className="lg:flex lg:flex-col lg:justify-center"
@@ -169,10 +183,10 @@ export function MissionVisionSection() {
                       aria-hidden={i !== active}
                     >
                       <h3 className="font-serif text-white/90 leading-[1.25] text-[clamp(1.5rem,2.1vw,2.5rem)]">
-                        {t(`${tItem.id}.label`)}
+                        {tItem.label}
                       </h3>
                       <p className="mt-[clamp(1rem,1.25vw,1.5rem)] text-white/80 leading-[1.78] text-[clamp(0.875rem,0.94vw,1.125rem)]">
-                        {t(`${tItem.id}.body`)}
+                        {tItem.body}
                       </p>
                     </div>
                   ))}

@@ -43,11 +43,11 @@ const LINK_COLUMNS = [
     key: 'academics',
     icon: 'icon-education',
     links: [
-      { key: 'Quran Department', href: '/programs' },
-      { key: 'Arabic Language', href: '/programs' },
-      { key: 'English Department', href: '/programs' },
-      { key: 'Online Learning', href: '/online-learning' },
-      { key: 'Student Life', href: '/gallery' },
+      { key: 'quranDepartment', href: '/programs' },
+      { key: 'arabicLanguage', href: '/programs' },
+      { key: 'englishDepartment', href: '/programs' },
+      { key: 'onlineLearning', href: '/online-learning' },
+      { key: 'studentLife', href: '/gallery' },
     ],
   },
   {
@@ -72,6 +72,14 @@ type ColType = { key: string; title?: string; links: LinkItem[] };
 function FooterAccordion({ col, open, onToggle }: { col: ColType; open: boolean; onToggle: () => void }) {
   const t = useTranslations('footer.links');
 
+  const getLinkLabel = (l: LinkItem) => {
+    if (l.label) return l.label;
+    const fullKey = `${col.key}.${l.key}`;
+    return t.has(fullKey) ? t(fullKey) : l.key;
+  };
+
+  const colTitle = col.title || (t.has(`${col.key}.title`) ? t(`${col.key}.title`) : col.key);
+
   return (
     <div className="sm:contents">
       {/* Mobile: accordion trigger (hidden on sm+) */}
@@ -82,7 +90,7 @@ function FooterAccordion({ col, open, onToggle }: { col: ColType; open: boolean;
         className="sm:hidden w-full flex items-center justify-between py-4 text-left"
       >
         <span className="flex items-center gap-2 font-semibold text-[#111C2D] text-[0.9375rem]">
-          {col.title || t(`${col.key}.title`)}
+          {colTitle}
         </span>
         <ChevronDown
           className={`w-5 h-5 text-[#048ED6] transition-transform duration-300 ${open ? 'rotate-180' : ''}`}
@@ -102,7 +110,7 @@ function FooterAccordion({ col, open, onToggle }: { col: ColType; open: boolean;
                 href={l.href}
                 className="text-[#545F73] text-[0.9375rem] transition-colors md:hover:text-[#048ED6]"
               >
-                {l.label || t(`${col.key}.${l.key}`)}
+                {getLinkLabel(l)}
               </Link>
             </li>
           ))}
@@ -112,7 +120,7 @@ function FooterAccordion({ col, open, onToggle }: { col: ColType; open: boolean;
       {/* Desktop: plain visible block (hidden on max-sm) */}
       <div className="hidden sm:block">
         <h3 className="flex items-center gap-2 font-semibold text-[#111C2D] text-[clamp(0.9375rem,0.83vw,1rem)]">
-          {col.title || t(`${col.key}.title`)}
+          {colTitle}
         </h3>
         <ul className="mt-[clamp(1.25rem,1.6vw,1.9rem)] flex flex-col gap-[clamp(0.9rem,1.16vw,1rem)]">
           {col.links.map((l) => (
@@ -121,7 +129,7 @@ function FooterAccordion({ col, open, onToggle }: { col: ColType; open: boolean;
                 href={l.href}
                 className="text-[#545F73] text-[clamp(0.875rem,0.78vw,0.9375rem)] transition-colors md:hover:text-[#048ED6]"
               >
-                {l.label || t(`${col.key}.${l.key}`)}
+                {getLinkLabel(l)}
               </Link>
             </li>
           ))}

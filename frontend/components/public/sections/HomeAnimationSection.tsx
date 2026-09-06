@@ -27,12 +27,16 @@ import { useTranslations } from 'next-intl';
  */
 
 // Moved into the component to use translations
-// const QUOTE = 'Actions are judged by intentions, and every person will have only what they intended.';
-// const WORDS = QUOTE.split(' ');
+import type { HomepageEntity } from '@/types/cms.types';
 
-export function HomeAnimationSection() {
+export function HomeAnimationSection({ data }: { data?: HomepageEntity | null; locale?: string }) {
   const t = useTranslations('homeAnimation');
-  const WORDS = useMemo(() => t('quote').split(' '), [t]);
+  const attribution = data?.quoteAttribution || t('attribution');
+  const quote = data?.quoteText || t('quote');
+  const bookAr = data?.quoteBookArabic || t('bookAr');
+  const bookTranslation = data?.quoteBookTranslation || t('bookTranslation');
+
+  const WORDS = useMemo(() => quote.split(' '), [quote]);
   const sectionRef = useRef<HTMLElement>(null);
 
   const apply = useCallback((el: HTMLElement, p: number) => {
@@ -60,7 +64,7 @@ export function HomeAnimationSection() {
 
         <div className="w-full max-w-[1320px] text-center">
           <p className="font-bold text-black text-[clamp(1rem,0.89vw,1.0625rem)]">
-            {t('attribution')}
+            {attribution}
           </p>
 
           <h2
@@ -82,12 +86,13 @@ export function HomeAnimationSection() {
             <div className="bk-back" />
             <div className="bk-pages">
               <div className="bk-leaf">
-                <p className="bk-ar">{t('bookAr')}</p>
+                <p className="bk-ar">{bookAr}</p>
                 <span className="bk-rule" />
-                <p className="bk-en">{t('bookTranslation')}</p>
+                <p className="bk-en">{bookTranslation}</p>
               </div>
             </div>
             <div className="bk-cover">
+
               <div className="bk-face bk-front" />
               <div className="bk-face bk-inside">
                 <div className="bk-endpaper">

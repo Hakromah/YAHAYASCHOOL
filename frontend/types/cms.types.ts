@@ -225,11 +225,104 @@ export interface SponsorsGridSectionComponent {
   partnersList?: Array<{ name: string; logoUrl?: string; websiteUrl?: string }>;
 }
 
+export interface AboutIntroSectionComponent {
+  __component: 'sections.about-intro';
+  badge?: string;
+  title1: string;
+  title2: string;
+  description?: string;
+  image?: StrapiMediaFile;
+  imageUrl?: string;
+}
+
+export interface AboutMissionVisionSectionComponent {
+  __component: 'sections.about-mission-vision';
+  missionLabel: string;
+  missionBody: string;
+  missionImage?: StrapiMediaFile;
+  missionImageUrl?: string;
+  visionLabel: string;
+  visionBody: string;
+  visionImage?: StrapiMediaFile;
+  visionImageUrl?: string;
+}
+
+export interface AboutValueItem {
+  id: number;
+  key: string;
+  label: string;
+  iconName?: string;
+}
+
+export interface AboutValuesSectionComponent {
+  __component: 'sections.about-values';
+  title: string;
+  description?: string;
+  values?: AboutValueItem[];
+}
+
+export interface AboutDirectorSectionComponent {
+  __component: 'sections.about-director';
+  name: string;
+  role: string;
+  portrait?: StrapiMediaFile;
+  portraitUrl?: string;
+  quoteTitle: string;
+  quoteP1?: string;
+  quoteP2?: string;
+  quoteP3?: string;
+  signature?: string;
+}
+
+export interface AboutWhyChooseItem {
+  id: number;
+  key: string;
+  title: string;
+  body: string;
+  iconName?: string;
+}
+
+export interface AboutWhyChooseSectionComponent {
+  __component: 'sections.about-why-choose';
+  title: string;
+  description?: string;
+  reasons?: AboutWhyChooseItem[];
+}
+
+export interface TimelineMilestone {
+  id: number;
+  year: string;
+  title: string;
+  body: string;
+  image?: StrapiMediaFile;
+  imageUrl?: string;
+}
+
+export interface AboutTimelineSectionComponent {
+  __component: 'sections.about-timeline';
+  title: string;
+  milestones?: TimelineMilestone[];
+}
+
+export interface CertificateItem {
+  id: number;
+  title: string;
+  image?: StrapiMediaFile;
+  imageUrl?: string;
+  file?: StrapiMediaFile;
+  url?: string;
+}
+
+export interface AboutCertificatesSectionComponent {
+  __component: 'sections.about-certificates';
+  title: string;
+  certificates?: CertificateItem[];
+}
+
 export type DynamicZoneSection =
   | HeroSectionComponent
   | StatsSectionComponent
   | FeatureCardsSectionComponent
-
   | ProgramsGridSectionComponent
   | DepartmentsGridSectionComponent
   | NewsGridSectionComponent
@@ -237,19 +330,164 @@ export type DynamicZoneSection =
   | TestimonialsSectionComponent
   | GalleryPreviewSectionComponent
   | DonationBannerSectionComponent
-
   | NewsletterSignupSectionComponent
-  | SponsorsGridSectionComponent;
+  | SponsorsGridSectionComponent
+  | AboutIntroSectionComponent
+  | AboutMissionVisionSectionComponent
+  | AboutValuesSectionComponent
+  | AboutDirectorSectionComponent
+  | AboutWhyChooseSectionComponent
+  | AboutTimelineSectionComponent
+  | AboutCertificatesSectionComponent;
 
 // ── Main Content Type Entities ────────────────────────────────────────────────
+
+export interface NewsFeaturedEventComponent {
+  id: number;
+  eyebrow: string;
+  headlineLine1: string;
+  headlineLine2?: string;
+  lede: string;
+  image: StrapiMediaFile;
+  month?: string;
+  day?: string;
+  date?: string;
+  publishDate?: string;
+  createdAt?: string;
+  publishedAt?: string;
+  category?: string;
+  title?: string;
+  time?: string;
+  place?: string;
+  blurb?: string;
+  href?: string;
+  buttonText?: string;
+  body?: any[] | string | null;
+  gallery?: StrapiMediaFile[];
+  author?: string;
+  tags?: Array<{ id?: number; name?: string }> | string[] | string;
+}
+
+export interface NewsPageEntity {
+  id: number;
+  documentId?: string;
+  title: string;
+  breadcrumbTitle?: string;
+  seo?: SeoMetaComponent;
+  featuredEvents?: NewsFeaturedEventComponent[];
+  newsletterCard?: NewsletterSignupSectionComponent;
+  createdAt?: string;
+  publishedAt?: string;
+  updatedAt?: string;
+}
+
+export interface NewsletterSubscriberPayload {
+  email: string;
+  locale?: string;
+  status?: 'active' | 'unsubscribed';
+}
+
+export interface AboutPageEntity {
+  id: number;
+  documentId?: string;
+  title: string;
+  breadcrumbTitle?: string;
+  seo?: SeoMetaComponent;
+  introSection?: AboutIntroSectionComponent;
+  missionVisionSection?: AboutMissionVisionSectionComponent;
+  valuesSection?: AboutValuesSectionComponent;
+  directorSection?: AboutDirectorSectionComponent;
+  whyChooseSection?: AboutWhyChooseSectionComponent;
+  timelineSection?: AboutTimelineSectionComponent;
+  certificatesSection?: AboutCertificatesSectionComponent;
+}
+
+export interface HomeHeroSlideComponent {
+  id: number;
+  titlePart1?: string;
+  titlePart2?: string;
+  description?: string;
+  image?: StrapiMediaFile;
+}
+
+export interface HomeActivityCardComponent {
+  id: number;
+  title?: string;
+  image?: StrapiMediaFile;
+}
+
+export interface HomeTestimonialItemComponent {
+  id: number;
+  name?: string;
+  role?: string;
+  title?: string;
+  quote?: string;
+  image?: StrapiMediaFile;
+  rating?: number;
+}
 
 export interface HomepageEntity {
   id: number;
   documentId?: string;
   title: string;
   seo?: SeoMetaComponent;
+  // Section 1: Hero
+  heroSlides?: HomeHeroSlideComponent[];
+  heroEstablishedText?: string;
+  heroPrimaryCtaText?: string;
+  heroPrimaryCtaUrl?: string;
+  heroPhone?: string;
+  heroEmail?: string;
+  heroWhatsapp?: string;
+  // Section 2: About
+  aboutEyebrow?: string;
+  aboutHeadingLine1?: string;
+  aboutHeadingLine2?: string;
+  aboutHeadingHighlight?: string;
+  aboutBody?: string;
+  aboutImage?: StrapiMediaFile;
+  aboutCaption?: string;
+  aboutStat1Number?: number;
+  aboutStat1Suffix?: string;
+  aboutStat1Label?: string;
+  aboutStat2Number?: number;
+  aboutStat2Suffix?: string;
+  aboutStat2Label?: string;
+  aboutStat3Number?: number;
+  aboutStat3Suffix?: string;
+  aboutStat3Label?: string;
+  // Section 3: Programs Header
+  programsEyebrow?: string;
+  programsTitle?: string;
+  programsDescription?: string;
+  programsLearnMoreText?: string;
+  // Section 4: Hadith / Animation
+  quoteAttribution?: string;
+  quoteText?: string;
+  quoteBookArabic?: string;
+  quoteBookTranslation?: string;
+  // Section 5: Activities
+  activitiesHeading?: string;
+  activitiesSubtitle?: string;
+  activitiesCenterImage?: StrapiMediaFile;
+  activitiesCtaText?: string;
+  activitiesCtaUrl?: string;
+  activitiesCards?: HomeActivityCardComponent[];
+  // Section 6: Testimonials
+  testimonialsHeading?: string;
+  testimonialsSubtitle?: string;
+  testimonials?: HomeTestimonialItemComponent[];
+  // Section 7: News Header
+  newsEyebrow?: string;
+  newsHeading?: string;
+  newsDescription?: string;
+  newsReadMoreText?: string;
+  newsViewAllText?: string;
+  newsViewAllUrl?: string;
+  // Legacy fallback
   sections?: DynamicZoneSection[];
 }
+
 
 export interface BulletPointComponent {
   id: number;
@@ -272,8 +510,6 @@ export interface CustomPageEntity {
 export type Page = CustomPageEntity;
 export type Program = ProgramEntity;
 export type Department = DepartmentEntity;
-export type Category = CategoryEntity;
-export type Article = ArticleEntity;
 export type Event = EventEntity;
 export type Announcement = AnnouncementEntity;
 export type Testimonial = TestimonialEntity;
@@ -332,31 +568,6 @@ export interface DepartmentEntity {
   seo?: SeoMetaComponent;
 }
 
-export interface CategoryEntity {
-  id: number;
-  documentId?: string;
-  name: string;
-  slug: string;
-  description?: string;
-}
-
-export interface ArticleEntity {
-  id: number;
-  documentId?: string;
-  title: string;
-  slug: string;
-  summary: string;
-  body: string;
-  featuredImage?: StrapiMediaFile;
-  gallery?: StrapiMediaFile[];
-  author?: string;
-  tags?: string[];
-  publishDate?: string;
-  isFeatured?: boolean;
-  viewsCount?: number;
-  category?: CategoryEntity;
-  seo?: SeoMetaComponent;
-}
 
 export interface EventEntity {
   id: number;
@@ -457,6 +668,20 @@ export interface BankAccountComponent {
 }
 
 export interface StringItemComponent {
+  id: number;
+  value: string;
+}
+
+export interface BankAccountEntity {
+  id: number;
+  bankName?: string;
+  accountName?: string;
+  accountNumber?: string;
+  swiftCode?: string;
+  iban?: string;
+}
+
+export interface StringItemEntity {
   id: number;
   value: string;
 }
@@ -583,3 +808,171 @@ export interface StaffMemberEntity {
   instagramUrl?: string;
   xUrl?: string;
 }
+
+export interface PursuitCtaEntity {
+  id: number;
+  documentId?: string;
+  title: string;
+  description?: string;
+  primaryButtonText?: string;
+  primaryButtonUrl?: string;
+  secondaryButtonText?: string;
+  secondaryButtonUrl?: string;
+  isEnabled?: boolean;
+}
+
+export interface PathwayStepComponent {
+  id?: number;
+  title: string;
+  description: string;
+  stageNumber?: number;
+}
+
+export interface ApproachItemComponent {
+  id?: number;
+  icon?: string;
+  title: string;
+  description: string;
+}
+
+export interface SchoolAcademicProgramEntity {
+  id: number;
+  documentId?: string;
+  title: string;
+  slug: string;
+  eyebrow?: string;
+  headlineLine1?: string;
+  headlineLine2?: string;
+  shortDescription?: string;
+  description?: string;
+  coverImage?: StrapiMediaFile;
+  primaryButtonText?: string;
+  primaryButtonUrl?: string;
+  downloadPdf?: StrapiMediaFile;
+  downloadButtonText?: string;
+  pathwayTitle?: string;
+  pathwayDescription?: string;
+  pathwaySteps?: PathwayStepComponent[];
+  pathwayImageLeft?: StrapiMediaFile;
+  pathwayImageTop?: StrapiMediaFile;
+  pathwayImageBottom?: StrapiMediaFile;
+  pathwayImages?: StrapiMediaFile[];
+  order?: number;
+  isFeatured?: boolean;
+  seo?: SeoMetaComponent;
+}
+
+export interface SchoolAcademicProgramsPageEntity {
+  id: number;
+  documentId?: string;
+  title?: string;
+  breadcrumbTitle?: string;
+  tagline?: string;
+  headlineLine1?: string;
+  headlineLine2?: string;
+  lede?: string;
+  heroImage?: StrapiMediaFile;
+  approachTagline?: string;
+  approachTitle?: string;
+  approachImage?: StrapiMediaFile;
+  approachStatValue?: string;
+  approachStatDescription?: string;
+  approachItems?: ApproachItemComponent[];
+  seo?: SeoMetaComponent;
+}
+
+export interface OnlineCourseEntity {
+  id: number;
+  documentId?: string;
+  title: string;
+  slug?: string;
+  tag?: string;
+  badge?: string;
+  description?: string;
+  image?: StrapiMediaFile;
+  price?: number;
+  buttonText?: string;
+  order?: number;
+  isFeatured?: boolean;
+  enrollmentOpen?: boolean;
+}
+
+export interface OnlineLearningPageEntity {
+  id: number;
+  documentId?: string;
+  title?: string;
+  breadcrumbTitle?: string;
+  tagline?: string;
+  headlineLine1?: string;
+  headlineLine2?: string;
+  lede?: string;
+  heroImage?: StrapiMediaFile;
+  liveLessonButtonText?: string;
+  liveLessonButtonUrl?: string;
+  coursesSectionTitle?: string;
+  coursesSectionSubtitle?: string;
+  joinEnrollmentButtonText?: string;
+  approachTagline?: string;
+  approachTitle?: string;
+  approachImage?: StrapiMediaFile;
+  approachStatValue?: string;
+  approachStatDescription?: string;
+  approachItems?: ApproachItemComponent[];
+  popupTitle?: string;
+  popupTabPayOnline?: string;
+  popupTabAlreadyPaid?: string;
+  popupPayOnlineTitle?: string;
+  popupAlreadyPaidTitle?: string;
+  popupNameLabel?: string;
+  popupNamePlaceholder?: string;
+  popupEmailLabel?: string;
+  popupEmailPlaceholder?: string;
+  popupPhoneLabel?: string;
+  popupSelectCourseLabel?: string;
+  popupSelectAmountLabel?: string;
+  popupDefaultAmount?: number;
+  popupSelectCurrencyLabel?: string;
+  popupCurrencies?: string;
+  popupCheckoutButtonText?: string;
+  popupNote?: string;
+  popupCountryPlaceholder?: string;
+  popupTopicPlaceholder?: string;
+  popupMessagePlaceholder?: string;
+  popupReceiptLabel?: string;
+  popupReceiptHint?: string;
+  popupTermsLinkText?: string;
+  popupTermsSuffix?: string;
+  popupSendMessageButtonText?: string;
+  seo?: SeoMetaComponent;
+}
+
+export interface LoginFeatureItemComponent {
+  id?: number;
+  icon?: string;
+  text: string;
+}
+
+export interface LoginPageEntity {
+  id?: number;
+  documentId?: string;
+  title?: string;
+  badgeLogo?: StrapiMediaFile;
+  schoolName?: string;
+  schoolNameHighlight?: string;
+  tagline?: string;
+  features?: LoginFeatureItemComponent[];
+  signInTitle?: string;
+  signInSubtitle?: string;
+  identifierLabel?: string;
+  identifierPlaceholder?: string;
+  passwordLabel?: string;
+  passwordPlaceholder?: string;
+  rememberMeText?: string;
+  forgotPasswordText?: string;
+  loginButtonText?: string;
+  versionText?: string;
+  copyrightText?: string;
+  backToHomeText?: string;
+  seo?: SeoMetaComponent;
+}
+

@@ -3,23 +3,27 @@
 import React from 'react';
 import Link from 'next/link';
 import { ArrowRight, Phone, Mail, X, Container } from 'lucide-react';
-import type { HeroSectionComponent } from '../../../types/cms.types';
+import type { HeroSectionComponent, HomepageEntity } from '../../../types/cms.types';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Pagination, Autoplay, EffectFade } from 'swiper/modules';
 import { useTranslations } from 'next-intl';
+import { getStrapiMediaUrl } from '@/services/cms.service';
 
 import 'swiper/css';
 import 'swiper/css/pagination';
 import 'swiper/css/effect-fade';
 
 interface HeroProps {
-  data?: HeroSectionComponent;
+  data?: HeroSectionComponent | HomepageEntity | any;
   locale?: string;
 }
 
 export function HeroSection({ data, locale = 'en' }: HeroProps) {
   const t = useTranslations('hero');
   const [isOpen, setIsOpen] = React.useState(false);
+
+  const homepage = data as HomepageEntity | undefined;
+  const legacyHero = data as HeroSectionComponent | undefined;
 
   // Escape closes the contact menu — the backdrop handles pointer dismissal,
   // this covers keyboard users.
@@ -33,8 +37,13 @@ export function HeroSection({ data, locale = 'en' }: HeroProps) {
   }, [isOpen]);
   const [paginationEl, setPaginationEl] = React.useState<HTMLElement | null>(null);
   const [swiperInstance, setSwiperInstance] = React.useState<any>(null);
-  const ctaText = data?.primaryCtaText || t('startApplication');
-  const ctaUrl = data?.primaryCtaUrl || "/contact";
+  const ctaText = homepage?.heroPrimaryCtaText || legacyHero?.primaryCtaText || t('startApplication');
+  const ctaUrl = homepage?.heroPrimaryCtaUrl || legacyHero?.primaryCtaUrl || "/contact";
+  const establishedText = homepage?.heroEstablishedText || t('established');
+  const heroPhone = homepage?.heroPhone || "+23188368801";
+  const heroEmail = homepage?.heroEmail || "info@yahayaschool.com";
+  const heroWhatsapp = homepage?.heroWhatsapp || "23188368801";
+
   React.useEffect(() => {
     if (swiperInstance && paginationEl && swiperInstance.params.pagination) {
       // @ts-ignore - params.pagination can be typed as boolean in swiper's types
@@ -67,14 +76,13 @@ export function HeroSection({ data, locale = 'en' }: HeroProps) {
     }
   };
 
-  // Demo slides with varied content and different images for the fade effect
-  const slides = [
+  const defaultSlides = [
     {
       id: 1,
       image: '/images/figma-home/19.png',
       titlePart1: t('slide1Title1'),
       titlePart2: t('slide1Title2'),
-      description: data?.subtitle || t('slide1Desc'),
+      description: legacyHero?.subtitle || t('slide1Desc'),
     },
     {
       id: 2,
@@ -89,15 +97,19 @@ export function HeroSection({ data, locale = 'en' }: HeroProps) {
       titlePart1: t('slide3Title1'),
       titlePart2: t('slide3Title2'),
       description: t('slide3Desc'),
-    },
-    {
-      id: 4,
-      image: '/images/figma-home/17.png',
-      titlePart1: t('slide3Title1'),
-      titlePart2: t('slide3Title2'),
-      description: t('slide3Desc'),
     }
   ];
+
+  const slides = (homepage?.heroSlides && homepage.heroSlides.length > 0)
+    ? homepage.heroSlides.map((slide, i) => ({
+        id: slide.id || i + 1,
+        image: getStrapiMediaUrl(slide.image?.url) || defaultSlides[i % defaultSlides.length].image,
+        titlePart1: slide.titlePart1 || defaultSlides[i % defaultSlides.length].titlePart1,
+        titlePart2: slide.titlePart2 || defaultSlides[i % defaultSlides.length].titlePart2,
+        description: slide.description || defaultSlides[i % defaultSlides.length].description,
+      }))
+    : defaultSlides;
+
 
   return (
     <>
@@ -188,8 +200,9 @@ export function HeroSection({ data, locale = 'en' }: HeroProps) {
                           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
-                          <span className="tracking-widest uppercase">{t('established')}</span>
+                          <span className="tracking-widest uppercase">{establishedText}</span>
                         </div>
+
 
                         <h1 className="text-4xl line-clamp-3 md:text-5xl lg:text-[3.5rem] font-bold leading-[1.03] tracking-tight text-white drop-shadow-md opacity-0 group-[&.swiper-slide-active]/slide:opacity-100 duration-500 group-[&.swiper-slide-active]/slide:delay-500 translate-y-5 group-[&.swiper-slide-active]/slide:translate-y-0 overflow-hidden">
                           {slide.titlePart1} <br className="max-md:hidden" />
@@ -243,7 +256,7 @@ export function HeroSection({ data, locale = 'en' }: HeroProps) {
             >
               <div className="ml-[20px]">
                 <a
-                  href="tel:+23188368801"
+                  href={`tel:${heroPhone.replace(/\s+/g, '')}`}
                   className="w-12 h-12 rounded-full bg-[#0ea5e9] text-white flex items-center justify-center shadow-lg hover:scale-110 transition-transform"
                   title="Call Us"
                 >
@@ -252,7 +265,7 @@ export function HeroSection({ data, locale = 'en' }: HeroProps) {
               </div>
               <div className="">
                 <a
-                  href="mailto:info@yahayaschool.com"
+                  href={`mailto:${heroEmail}`}
                   className="w-12 h-12 rounded-full bg-[#0ea5e9] text-white flex items-center justify-center shadow-lg hover:scale-110 transition-transform"
                   title="Email Us"
                 >
@@ -261,7 +274,7 @@ export function HeroSection({ data, locale = 'en' }: HeroProps) {
               </div>
               <div className="ml-[20px]">
                 <a
-                  href="https://wa.me/23188368801"
+                  href={`https://wa.me/${heroWhatsapp.replace(/[^0-9]/g, '')}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-12 h-12 rounded-full bg-[#0ea5e9] text-white flex items-center justify-center shadow-lg hover:scale-110 transition-transform"
@@ -274,6 +287,7 @@ export function HeroSection({ data, locale = 'en' }: HeroProps) {
                   </div>
                 </a>
               </div>
+
             </div>
 
             {/* Toggle Button */}

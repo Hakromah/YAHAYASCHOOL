@@ -1,6 +1,8 @@
 import React from 'react';
-import { BookOpen, Heart, Megaphone, Sparkles } from 'lucide-react';
+import { BookOpen, Heart, Megaphone, Sparkles, LucideIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import type { AboutValuesSectionComponent, AboutDirectorSectionComponent } from '@/types/cms.types';
+import { getStrapiMediaUrl } from '@/services/cms.service';
 
 /**
  * About — Core Values bar and the Founding Director quote.
@@ -14,15 +16,38 @@ import { useTranslations } from 'next-intl';
  *   ink #121C2A · body #3F4941
  */
 
-const VALUES = [
+const FALLBACK_VALUES = [
   { key: 'knowledge', Icon: BookOpen },
   { key: 'action', Icon: Sparkles },
   { key: 'advocacy', Icon: Megaphone },
   { key: 'empathy', Icon: Heart },
 ];
 
-export function CoreValuesBar() {
+function getIconForName(name?: string): LucideIcon {
+  switch (name?.toLowerCase()) {
+    case 'knowledge': return BookOpen;
+    case 'action': return Sparkles;
+    case 'advocacy': return Megaphone;
+    case 'empathy': return Heart;
+    default: return Sparkles;
+  }
+}
+
+export function CoreValuesBar({ data }: { data?: AboutValuesSectionComponent }) {
   const t = useTranslations('aboutPage.coreValues');
+
+  const title = data?.title || t('title');
+  const description = data?.description || t('description');
+  
+  const values = data?.values?.length ? data.values.map(v => ({
+    key: v.key,
+    label: v.label,
+    Icon: getIconForName(v.iconName || v.key)
+  })) : FALLBACK_VALUES.map(v => ({
+    key: v.key,
+    label: t(`values.${v.key}`),
+    Icon: v.Icon
+  }));
 
   return (
     <section className="w-full bg-white">
@@ -32,19 +57,19 @@ export function CoreValuesBar() {
 
             <div className="md:w-[192px] shrink-0">
               <h2 className="font-serif text-[#121C2A] leading-tight text-[clamp(1.25rem,1.56vw,1.875rem)]">
-                {t('title')}
+                {title}
               </h2>
               <p className="mt-2 text-[#3F4941] leading-[1.45] text-[1rem]">
-                {t('description')}
+                {description}
               </p>
             </div>
 
             <div className="flex-1 grid grid-cols-2 lg:grid-cols-4 gap-y-6 gap-x-4">
-              {VALUES.map((v) => (
+              {values.map((v) => (
                 <div key={v.key} className="flex flex-col items-center text-center gap-3">
                   <v.Icon className="w-[clamp(1.1rem,1.15vw,1.375rem)] h-[clamp(1.1rem,1.15vw,1.375rem)] text-[#048ED6]" />
                   <span className="text-[#3F4941] whitespace-nowrap text-[clamp(0.75rem,0.73vw,0.875rem)]">
-                    {t(`values.${v.key}`)}
+                    {v.label}
                   </span>
                 </div>
               ))}
@@ -56,8 +81,17 @@ export function CoreValuesBar() {
   );
 }
 
-export function FoundingDirectorSection() {
+export function FoundingDirectorSection({ data }: { data?: AboutDirectorSectionComponent }) {
   const t = useTranslations('aboutPage.director');
+
+  const name = data?.name || t('name');
+  const role = data?.role || t('role');
+  const portraitUrl = data?.portrait ? getStrapiMediaUrl(data.portrait) : (data?.portraitUrl || "/images/figma-home/08-activity.jpeg");
+  const quoteTitle = data?.quoteTitle || t('quoteTitle');
+  const quoteP1 = data?.quoteP1 || t('quoteP1');
+  const quoteP2 = data?.quoteP2 || t('quoteP2');
+  const quoteP3 = data?.quoteP3 || t('quoteP3');
+  const signature = data?.signature || t('signature');
 
   return (
     <section className="w-full bg-white">
@@ -69,23 +103,18 @@ export function FoundingDirectorSection() {
               {/* Portrait */}
               <div className="flex flex-col items-center text-center">
                 <div className="w-[clamp(9rem,13.3vw,16rem)] aspect-square rounded-full overflow-hidden">
-                  {/*
-                    PLACEHOLDER PORTRAIT — this is stock photography, not Dr. Kromah.
-                    It sits under a named person's byline, so it must be replaced with
-                    his real photograph before this page goes live.
-                  */}
                   <img
-                    src="/images/figma-home/08-activity.jpeg"
-                    alt=""
+                    src={portraitUrl || ''}
+                    alt={name}
                     aria-hidden
                     className="w-full h-full object-cover"
                   />
                 </div>
                 <p className="mt-[clamp(1.25rem,1.9vw,2.25rem)] font-serif text-[#121C2A] text-[clamp(1.125rem,1.15vw,1.375rem)]">
-                  {t('name')}
+                  {name}
                 </p>
                 <p className="mt-1 text-[#3F4941] text-[1rem]">
-                  {t('role')}
+                  {role}
                 </p>
               </div>
 
@@ -96,17 +125,17 @@ export function FoundingDirectorSection() {
                 </svg>
 
                 <h3 className="mt-[clamp(1rem,1.5vw,1.8rem)] font-serif text-[#121C2A] leading-[1.25] text-[clamp(1.25rem,1.56vw,1.875rem)]">
-                  {t('quoteTitle')}
+                  {quoteTitle}
                 </h3>
 
                 <div className="mt-[clamp(1rem,1.6vw,1.9rem)] flex flex-col gap-[clamp(1rem,1.5vw,1.8rem)] text-[#3F4941] leading-[1.86] text-[clamp(0.8125rem,0.73vw,0.875rem)]">
-                  <p>{t('quoteP1')}</p>
-                  <p>{t('quoteP2')}</p>
-                  <p>{t('quoteP3')}</p>
+                  {quoteP1 && <p>{quoteP1}</p>}
+                  {quoteP2 && <p>{quoteP2}</p>}
+                  {quoteP3 && <p>{quoteP3}</p>}
                 </div>
 
                 <p className="mt-[clamp(1.5rem,2.3vw,2.75rem)] font-serif italic text-[#9AA3AE] text-[1rem]">
-                  {t('signature')}
+                  {signature}
                 </p>
               </div>
             </div>
