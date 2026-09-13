@@ -303,7 +303,7 @@ export function Footer({
               <div className="flex flex-col gap-[14px]">
                 <span className="text-[13px] text-[#6B7280]">{socialsLabel}</span>
                 <div className="flex items-center gap-[20px]">
-                  {socialLinks.map((s) => (
+                  {socialLinks.map((s: any) => (
                     <a
                       key={s.name}
                       href={s.href}

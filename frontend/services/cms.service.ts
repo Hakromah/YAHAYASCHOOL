@@ -5,7 +5,8 @@ import type {
   CustomPageEntity,
   ProgramEntity,
   DepartmentEntity,
-
+  ArticleEntity,
+  CategoryEntity,
   EventEntity,
   AnnouncementEntity,
   TestimonialEntity,

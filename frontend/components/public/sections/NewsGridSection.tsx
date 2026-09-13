@@ -66,7 +66,7 @@ import { getStrapiMediaUrl } from '@/services/cms.service';
 
 interface NewsGridSectionProps {
   locale?: string;
-  data?: HomepageEntity | null;
+  data?: HomepageEntity | any | null;
   newsEvents?: NewsFeaturedEventComponent[];
 }
 

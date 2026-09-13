@@ -255,7 +255,7 @@ export function Navbar({
         }`}
       >
         {/* ── Top Bar (desktop only) ── */}
-        <div className="hidden h-[50px] lg:flex w-full bg-[#0D3B2E] text-white py-2 px-[var(--spacing-side)] justify-between items-center text-sm font-medium z-20 relative border-b border-white/10">
+        <div className="hidden h-[50px] lg:flex w-full bg-linear-to-r from-primary via-white to-primary text-white py-2 px-[var(--spacing-side)] justify-between items-center text-sm font-medium z-20 relative border-b border-white/10">
           {/* Left: topbar nav links */}
           <div className="flex items-center gap-6">
             {topbarMenu?.items ? (
@@ -385,7 +385,7 @@ export function Navbar({
                       e.stopPropagation();
                       setAboutDropdownOpen(false);
                     }}
-                    className={`lg:absolute lg:top-full z-50 lg:left-[-120px] rtl:lg:left-auto rtl:lg:right-[-120px] w-[clamp(580px,48vw,680px)] bg-white rounded-2xl shadow-2xl border border-gray-100 p-4 transition-all duration-300 origin-top ${
+                    className={`lg:absolute lg:top-full z-50 lg:left-[-120px] rtl:lg:left-auto rtl:lg:right-[-120px] w-[clamp(400px,48vw,580px)] 3xl:w-[clamp(580px,48vw,680px)] bg-white rounded-2xl shadow-2xl border border-gray-100 p-4 transition-all duration-300 origin-top ${
                       aboutDropdownOpen
                         ? 'opacity-100 visible scale-100 pointer-events-auto'
                         : 'opacity-0 invisible scale-95 pointer-events-none lg:group-hover:opacity-100 lg:group-hover:visible lg:group-hover:scale-100 lg:group-hover:pointer-events-auto'

@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --webpack",
+    "dev:turbo": "next dev",
     "dev:webpack": "next dev --webpack",
     "dev:clean": "powershell -Command \"Remove-Item -Recurse -Force .next -ErrorAction SilentlyContinue\" && next dev",
     "dev:warm": "node warmup.js",

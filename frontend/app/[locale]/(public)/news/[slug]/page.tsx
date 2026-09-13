@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation';
 import { cmsService } from '@/services/cms.service';
 import { NewsArticleHero, NewsArticleBody } from '@/components/public/news/NewsDetail';
 import type { NewsFeaturedEventComponent } from '@/types/cms.types';
-import { slugifyEvent } from '../page';
+import { slugifyEvent } from '@/utils/news';
 
 import { resolveEventDate } from '@/lib/format';
 

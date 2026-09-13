@@ -19,7 +19,6 @@ import type { CareerPositionEntity, CustomPageEntity, CareerSettingEntity } from
  * Unlike Contact, this form's inputs are outlined rather than filled.
  */
 
-import type { CareerPositionEntity, CustomPageEntity } from '../../types/cms.types';
 
 export function CareerHero({ pageData, hasPositions = true }: { pageData?: CustomPageEntity | null, hasPositions?: boolean }) {
   const t = useTranslations('careerPage.hero');

@@ -207,7 +207,7 @@ export function GiveSection({ settings }: { settings?: DonationSettingsEntity | 
   const [copied, setCopied] = useState<string | null>(null);
   const [phoneValue, setPhoneValue] = useState('');
 
-  const accountsToUse = settings?.bankAccounts?.length ? settings.bankAccounts : BANK_ACCOUNTS;
+  const accountsToUse = settings?.bankTransfer?.bankAccounts?.length ? settings.bankTransfer.bankAccounts : BANK_ACCOUNTS;
   const amountsToUse = settings?.amounts?.length ? settings.amounts.map(a => a.value) : AMOUNTS;
   const currenciesToUse = settings?.currencies?.length ? settings.currencies.map(c => c.value) : CURRENCIES;
   const designationsToUse = settings?.designations?.length ? settings.designations.map(d => d.value) : DESIGNATIONS;
@@ -358,7 +358,7 @@ export function GiveSection({ settings }: { settings?: DonationSettingsEntity | 
               </h2>
 
               <div className="mt-[clamp(1.25rem,1.66vw,2rem)] space-y-[clamp(0.75rem,1.04vw,1.25rem)]">
-                {accountsToUse.map((account, idx) => {
+                {accountsToUse.map((account: any, idx: number) => {
                   const id = account.id.toString();
                   const Icon = account.icon === 'Globe' ? Globe : Building2;
                   const on = openAccount === id;
@@ -607,7 +607,7 @@ export function TargetedGiving({ campaigns = [], settings }: { campaigns?: Donat
                 <SwiperSlide key={c.slug || idx} className="!h-auto py-1">
                   <article className="group flex h-full flex-col cursor-pointer overflow-hidden rounded-lg bg-white shadow-[0_6px_24px_rgba(4,45,80,0.10)]">
                     <div className="relative overflow-hidden">
-                      <img src={c.banner?.url ? getStrapiMediaUrl(c.banner.url) : '/images/figma-home/13.png'} alt={c.title} className="aspect-[4/3] w-full object-cover transition-transform duration-500 ease-in-out lg:group-hover:scale-110 rtl:-scale-x-100" />
+                      <img src={(c.banner?.url ? getStrapiMediaUrl(c.banner.url) : null) || '/images/figma-home/13.png'} alt={c.title} className="aspect-[4/3] w-full object-cover transition-transform duration-500 ease-in-out lg:group-hover:scale-110 rtl:-scale-x-100" />
                       <span className="absolute left-3 top-3 rounded bg-[#048ED6] px-2 py-1 font-semibold uppercase tracking-[0.08em] text-white text-[clamp(0.5rem,0.52vw,0.625rem)]">
                         {c.categoryTag || t(`causes.${Math.min(idx, 4)}.tag`)}
                       </span>

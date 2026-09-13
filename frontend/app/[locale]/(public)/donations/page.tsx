@@ -29,9 +29,9 @@ export default async function DonationsPage({ params }: { params: Promise<{ loca
         coverImage={page?.coverImage}
         breadcrumbTitle={page?.breadcrumbTitle}
       />
-      <GiveSection settings={settings} />
-      <TargetedGiving campaigns={campaigns} settings={settings} />
-      <WallOfGratitude settings={settings} />
+      <GiveSection settings={settings || undefined} />
+      <TargetedGiving campaigns={campaigns} settings={settings || undefined} />
+      <WallOfGratitude settings={settings || undefined} />
     </main>
   );
 }

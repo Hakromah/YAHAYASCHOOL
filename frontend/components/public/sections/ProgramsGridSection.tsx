@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
+import { motion, type Variants } from 'framer-motion';
 import { ArrowRight, BookOpen, BookOpenText, GraduationCap, Laptop } from 'lucide-react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Pagination } from 'swiper/modules';
@@ -139,12 +139,12 @@ export function ProgramsGridSection({ locale = 'en', data, programs }: ProgramsG
     return () => mq.removeEventListener('change', handler);
   }, []);
 
-  const headerVariants = {
+  const headerVariants: Variants = {
     hidden: {},
     visible: { transition: { staggerChildren: 0.15 } }
   };
 
-  const itemVariants = {
+  const itemVariants: Variants = {
     hidden: { opacity: 0, y: 30 },
     visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } }
   };
@@ -160,23 +160,23 @@ export function ProgramsGridSection({ locale = 'en', data, programs }: ProgramsG
           initial={isDesktop ? "hidden" : "visible"}
           whileInView="visible"
           viewport={{ once: true, amount: 0.3 }}
-          variants={isDesktop ? headerVariants : {}}
+          variants={isDesktop ? headerVariants : undefined}
         >
           <motion.span 
-            variants={isDesktop ? itemVariants : {}}
+            variants={isDesktop ? itemVariants : undefined}
             className="inline-flex items-center gap-2 h-10 px-4 rounded-full bg-[#E6F0FB] text-[#048ED6] font-semibold text-[15px]"
           >
             <GraduationCap className="w-5 h-5" />
             {eyebrow}
           </motion.span>
           <motion.h2 
-            variants={isDesktop ? itemVariants : {}}
+            variants={isDesktop ? itemVariants : undefined}
             className="mt-[clamp(0.75rem,1.1vw,1.3rem)] font-bold text-black tracking-[-0.015em] leading-[1.09] text-[clamp(1.5rem,2.29vw,2.75rem)]"
           >
             {heading}
           </motion.h2>
           <motion.p 
-            variants={isDesktop ? itemVariants : {}}
+            variants={isDesktop ? itemVariants : undefined}
             className={`mt-[clamp(0.75rem,1.1vw,1.3rem)] max-w-[620px] ${BODY_CLS}`}
           >
             {description}
@@ -193,7 +193,7 @@ export function ProgramsGridSection({ locale = 'en', data, programs }: ProgramsG
           variants={isDesktop ? {
             hidden: {},
             visible: { transition: { staggerChildren: 0.15 } }
-          } : {}}
+          } : undefined}
         >
           {displayPrograms.map((p, i) => {
             const open = active === i;
@@ -203,7 +203,7 @@ export function ProgramsGridSection({ locale = 'en', data, programs }: ProgramsG
             return (
               <motion.div
                 key={p.id}
-                variants={isDesktop ? itemVariants : {}}
+                variants={isDesktop ? itemVariants : undefined}
                 onMouseEnter={() => setActive(i)}
                 onFocus={() => setActive(i)}
                 className={`flex items-center gap-x-8 py-[14px] transition-colors ${rule ? 'border-t border-[#EBEBEB]' : 'border-t border-transparent'

@@ -70,7 +70,7 @@ const DELAY = [
 const INITIAL = 1;
 
 interface TestimonialsProps {
-  data?: HomepageEntity | null;
+  data?: HomepageEntity | any | null;
   locale?: string;
 }
 
@@ -124,7 +124,7 @@ export function TestimonialsSection({ locale = 'en', data }: TestimonialsProps) 
   ];
 
   const items = (data?.testimonials && data.testimonials.length > 0)
-    ? data.testimonials.map((item, idx) => ({
+    ? data.testimonials.map((item: any, idx: number) => ({
         id: item.id || idx + 1,
         name: item.name || '',
         role: item.role || 'PARENT',
@@ -175,7 +175,7 @@ export function TestimonialsSection({ locale = 'en', data }: TestimonialsProps) 
             speed={800}
             className="thumbs-swiper mt-[clamp(1.5rem,2.1vw,2.6rem)]"
           >
-            {items.map((item, i) => {
+            {items.map((item: any, i: number) => {
               const on = i === active;
               return (
                 <SwiperSlide key={item.id}>
@@ -230,7 +230,7 @@ export function TestimonialsSection({ locale = 'en', data }: TestimonialsProps) 
             speed={800}
             className="panel-swiper"
           >
-            {items.map((tItem) => (
+            {items.map((tItem: any) => (
               <SwiperSlide key={tItem.id} className="group/slide">
                 <div className="flex flex-col sm:flex-row gap-[34px] max-md:gap-[20px]">
                   <div

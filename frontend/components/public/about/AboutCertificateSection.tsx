@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { motion } from 'framer-motion';
+import { motion, type Variants } from 'framer-motion';
 import { ArrowRight, ChevronLeft, ChevronRight, Eye, Download } from 'lucide-react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import type { Swiper as SwiperType } from 'swiper';
@@ -18,12 +18,12 @@ const FALLBACK_CERTIFICATES = [
   { id: 5, title: 'Innovation in Islamic Studies', image: '/images/about/sample-certificate.jpg', url: '/images/about/sample-certificate.jpg' },
 ];
 
-const headerVariants = {
+const headerVariants: Variants = {
   hidden: { opacity: 0, y: -20 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: 'easeOut' } },
 };
 
-const itemVariants = {
+const itemVariants: Variants = {
   hidden: { opacity: 0, y: 30 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: 'easeOut' } },
 };
@@ -137,7 +137,7 @@ export function AboutCertificateSection({ locale = 'en', data }: { locale?: stri
                       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors z-10 flex items-center justify-center">
                         <Eye className="text-white opacity-0 group-hover:opacity-100 w-8 h-8 transition-opacity duration-300" />
                       </div>
-                      <img src={cert.image} alt={cert.title} className="w-full h-full object-contain drop-shadow-sm group-hover:scale-105 transition-transform duration-500" />
+                      <img src={cert.image || ''} alt={cert.title} className="w-full h-full object-contain drop-shadow-sm group-hover:scale-105 transition-transform duration-500" />
                     </div>
 
                     <div className="flex flex-col flex-1 p-6">

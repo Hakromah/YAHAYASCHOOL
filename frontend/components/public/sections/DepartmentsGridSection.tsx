@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
+import { motion, type Variants } from 'framer-motion';
 import { Briefcase, ArrowRight, BookOpen, Users, Building2 } from 'lucide-react';
 import type { DepartmentsGridSectionComponent, DepartmentEntity } from '../../../types/cms.types';
 import { cmsService } from '../../../services/cms.service';
@@ -58,7 +58,7 @@ export function DepartmentsGridSection({ data, initialDepartments, locale = 'en'
     return () => mq.removeEventListener('change', handler);
   }, []);
 
-  const containerVariants = {
+  const containerVariants: Variants = {
     hidden: {},
     visible: {
       transition: {
@@ -67,7 +67,7 @@ export function DepartmentsGridSection({ data, initialDepartments, locale = 'en'
     },
   };
 
-  const itemVariants = {
+  const itemVariants: Variants = {
     hidden: { opacity: 0, y: 40 },
     visible: { 
       opacity: 1, 
@@ -102,7 +102,7 @@ export function DepartmentsGridSection({ data, initialDepartments, locale = 'en'
           <motion.div 
             initial={isDesktop ? "hidden" : "visible"}
             whileInView="visible"
-            variants={isDesktop ? { hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } } } : {}}
+            variants={isDesktop ? { hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } } } : undefined}
             viewport={{ once: true, amount: 0.3 }}
             className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6"
           >
@@ -138,13 +138,13 @@ export function DepartmentsGridSection({ data, initialDepartments, locale = 'en'
             className="grid grid-cols-1 md:grid-cols-2 gap-8"
             initial={isDesktop ? "hidden" : "visible"}
             whileInView="visible"
-            variants={isDesktop ? containerVariants : {}}
+            variants={isDesktop ? containerVariants : undefined}
             viewport={{ once: true, amount: 0.1 }}
           >
             {departments.map((dept, idx) => (
               <motion.div
                 key={idx}
-                variants={isDesktop ? itemVariants : {}}
+                variants={isDesktop ? itemVariants : undefined}
                 className="bg-white rounded-3xl p-8 sm:p-10 border border-gray-200/80 shadow-xs hover:shadow-xl transition-all flex flex-col justify-between group"
               >
                 <div>

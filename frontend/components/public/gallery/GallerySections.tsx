@@ -422,7 +422,7 @@ export function VideoHighlights() {
                   {/* No video sources exist yet — posters with a play affordance. */}
                   <button
                     type="button"
-                    aria-label={`Play: ${clip.title}`}
+                    aria-label={`Play: ${t(`videoHighlights.clips.${clip.key}`)}`}
                     onClick={() => setPlaying(i)}
                     className="group relative block w-full cursor-pointer aspect-[970/560]"
                   >

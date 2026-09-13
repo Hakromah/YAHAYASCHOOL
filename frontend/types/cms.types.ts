@@ -510,12 +510,40 @@ export interface CustomPageEntity {
 export type Page = CustomPageEntity;
 export type Program = ProgramEntity;
 export type Department = DepartmentEntity;
+export type Category = CategoryEntity;
+export type Article = ArticleEntity;
 export type Event = EventEntity;
 export type Announcement = AnnouncementEntity;
 export type Testimonial = TestimonialEntity;
 export type GalleryItem = GalleryItemEntity;
 export type DownloadItem = DownloadItemEntity;
 export type StaffMember = StaffMemberEntity;
+
+export interface CategoryEntity {
+  id: number;
+  documentId?: string;
+  name: string;
+  slug: string;
+  description?: string;
+}
+
+export interface ArticleEntity {
+  id: number;
+  documentId?: string;
+  title: string;
+  slug: string;
+  summary?: string;
+  body?: string;
+  featuredImage?: StrapiMediaFile;
+  gallery?: StrapiMediaFile[];
+  author?: string;
+  tags?: string[];
+  publishDate?: string;
+  isFeatured?: boolean;
+  viewsCount?: number;
+  category?: CategoryEntity;
+  seo?: SeoMetaComponent;
+}
 
 export interface CareerSettingEntity {
   id: number;

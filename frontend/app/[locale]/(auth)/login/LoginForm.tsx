@@ -217,7 +217,7 @@ export default function LoginForm({ data, locale = 'en' }: LoginFormProps) {
               const Icon = getFeatureIcon(item.icon);
               return (
                 <div
-                  key={item.id ?? idx}
+                  key={'id' in item && item.id != null ? item.id : idx}
                   className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/15"
                 >
                   <div className="w-8 h-8 rounded-lg bg-brand-gold/20 flex items-center justify-center flex-shrink-0">
