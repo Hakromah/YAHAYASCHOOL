@@ -1,26 +1,13 @@
 'use client';
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { CreditCard, X } from 'lucide-react';
+import { CreditCard, X, UploadCloud, FileCheck, Receipt } from 'lucide-react';
 import { useLenis } from 'lenis/react';
 import PhoneInput from 'react-phone-input-2';
 import 'react-phone-input-2/lib/style.css';
 import { useTranslations, useLocale } from 'next-intl';
 import Link from 'next/link';
-
-/**
- * Enrollment modal. Implemented from the Figma popup frames (789 x 780).
- *
- * One dialog with two tabs, as the two exports show:
- *   Pay Online   — amount, currency, course, then a checkout button
- *   Already Paid — an enrollment enquiry form
- *
- * Measured: card inset 105 from the modal edge (579 inner), header bar 44
- * tall, primary button 60 tall, 1px #048ED6 border on the card.
- *
- * No card details are collected here and none should be: the checkout button
- * is the hand-off point to a payment provider, which is not yet connected.
- */
+import type { OnlineCourseEntity, OnlineLearningPageEntity } from '@/types/cms.types';
 
 // We only define length here; actual titles come from onlineLearningPage namespace
 const COURSES = Array.from({ length: 6 });
@@ -33,15 +20,31 @@ export function EnrollmentModal({
   onClose,
   initialTab = 'pay',
   selectedCourse = '',
+  courses = [],
+  defaultAmount = 500,
+  currencies,
+  note,
+  pageData,
 }: {
   open: boolean;
   onClose: () => void;
   initialTab?: Tab;
   selectedCourse?: string;
+  courses?: OnlineCourseEntity[];
+  defaultAmount?: number;
+  currencies?: string[];
+  note?: string;
+  pageData?: OnlineLearningPageEntity | null;
 }) {
   const [tab, setTab] = useState<Tab>(initialTab);
   const [sent, setSent] = useState(false);
   const [phoneValue, setPhoneValue] = useState('');
+  const [currentCourse, setCurrentCourse] = useState(selectedCourse);
+  const [topicValue, setTopicValue] = useState('');
+  const [amountValue, setAmountValue] = useState(String(defaultAmount));
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
   const restoreTo = useRef<HTMLElement | null>(null);
   const lenis = useLenis();
@@ -53,6 +56,32 @@ export function EnrollmentModal({
 
   const [accepted, setAccepted] = useState(false);
   const [acceptedPay, setAcceptedPay] = useState(false);
+
+  // Dynamic variables with fallback to i18n translations
+  const tabPayOnline = pageData?.popupTabPayOnline || t('payOnline');
+  const tabAlreadyPaid = pageData?.popupTabAlreadyPaid || t('alreadyPaid');
+  const payOnlineTitle = pageData?.popupPayOnlineTitle || pageData?.popupTitle || t('payOnline');
+  const alreadyPaidTitle = pageData?.popupAlreadyPaidTitle || t('enrollNow');
+
+  const nameLabel = pageData?.popupNameLabel || `${t('firstName')} & ${t('lastName')}`;
+  const namePlaceholder = pageData?.popupNamePlaceholder || t('placeholders.name');
+  const emailLabel = pageData?.popupEmailLabel || t('email');
+  const emailPlaceholder = pageData?.popupEmailPlaceholder || t('placeholders.email');
+  const phoneLabel = pageData?.popupPhoneLabel || t('phone');
+  const selectCourseLabel = pageData?.popupSelectCourseLabel || t('selectCourse');
+  const selectAmountLabel = pageData?.popupSelectAmountLabel || t('selectAmount');
+  const selectCurrencyLabel = pageData?.popupSelectCurrencyLabel || t('selectCurrency');
+  const checkoutButtonText = pageData?.popupCheckoutButtonText || t('checkout');
+  const securePaymentNote = pageData?.popupNote || note || t('securePayment');
+
+  const countryPlaceholder = pageData?.popupCountryPlaceholder || t('country');
+  const topicPlaceholder = pageData?.popupTopicPlaceholder || t('inquiryTopic');
+  const messagePlaceholder = pageData?.popupMessagePlaceholder || t('message');
+  const receiptLabel = pageData?.popupReceiptLabel || t('uploadReceipt');
+  const receiptHint = pageData?.popupReceiptHint || t('uploadReceiptHint');
+  const termsLinkText = pageData?.popupTermsLinkText || tContact('form.terms1');
+  const termsSuffix = pageData?.popupTermsSuffix || tContact('form.terms2');
+  const sendMessageButtonText = pageData?.popupSendMessageButtonText || t('sendMessage');
 
   // Same scroll lock the mobile menu and the media lightbox use; Lenis owns
   // scrolling, so overflow:hidden alone would not hold, but we need both.
@@ -74,8 +103,27 @@ export function EnrollmentModal({
     if (open) {
       setTab(initialTab);
       setSent(false);
+      setReceiptFile(null);
+      setIsDragging(false);
+      const chosen = selectedCourse || (courses && courses.length > 0 ? courses[0].title : '');
+      setCurrentCourse(chosen);
+      setTopicValue(chosen);
+      const matched = courses?.find(c => c.title === chosen);
+      if (matched && matched.price) {
+        setAmountValue(String(matched.price));
+      } else if (defaultAmount) {
+        setAmountValue(String(defaultAmount));
+      }
     }
-  }, [open, initialTab]);
+  }, [open, initialTab, selectedCourse, courses, defaultAmount]);
+
+  const handleCourseChange = (courseTitle: string) => {
+    setCurrentCourse(courseTitle);
+    const matched = courses?.find(c => c.title === courseTitle);
+    if (matched && matched.price) {
+      setAmountValue(String(matched.price));
+    }
+  };
 
   const handleClose = useCallback(() => onClose(), [onClose]);
 
@@ -271,7 +319,10 @@ export function EnrollmentModal({
 
         {/* Tabs */}
         <div role="tablist" aria-label="Enrollment options" className="flex items-center justify-center gap-3">
-          {([['pay', t('payOnline')], ['paid', t('alreadyPaid')]] as const).map(([id, text]) => {
+          {[
+            { id: 'pay' as const, text: tabPayOnline },
+            { id: 'paid' as const, text: tabAlreadyPaid },
+          ].map(({ id, text }) => {
             const on = tab === id;
             return (
               <button
@@ -304,22 +355,22 @@ export function EnrollmentModal({
               }}
             >
               <p className="grid h-[clamp(2.5rem,2.3vw,2.75rem)] place-items-center rounded-lg bg-[#048ED6] font-semibold text-white text-[1rem]">
-                {t('payOnline')}
+                {payOnlineTitle}
               </p>
 
               <div className="mt-[clamp(1rem,1.66vw,2rem)] grid grid-cols-1 gap-[clamp(1rem,1.5vw,1.75rem)] sm:grid-cols-2">
                 <div className="sm:col-span-2">
-                  <label htmlFor="enr-name" className={label}>{t('firstName')} & {t('lastName')}</label>
-                  <input id="enr-name" name="name" required placeholder={t('placeholders.name')} className={`${field} mt-2`} />
+                  <label htmlFor="enr-name" className={label}>{nameLabel}</label>
+                  <input id="enr-name" name="name" required placeholder={namePlaceholder} className={`${field} mt-2`} />
                 </div>
                 
                 <div>
-                  <label htmlFor="enr-email" className={label}>{t('email')}</label>
-                  <input id="enr-email" name="email" type="email" required placeholder={t('placeholders.email')} dir="ltr" style={{ textAlign: isRtl ? 'right' : 'left' }} className={`${field} mt-2`} />
+                  <label htmlFor="enr-email" className={label}>{emailLabel}</label>
+                  <input id="enr-email" name="email" type="email" required placeholder={emailPlaceholder} dir="ltr" style={{ textAlign: isRtl ? 'right' : 'left' }} className={`${field} mt-2`} />
                 </div>
 
                 <div>
-                  <label htmlFor="enr-phone" className={label}>{t('phone')}</label>
+                  <label htmlFor="enr-phone" className={label}>{phoneLabel}</label>
                   <PhoneInput
                     country={'lr'}
                     enableSearch={true}
@@ -336,27 +387,48 @@ export function EnrollmentModal({
               </div>
 
               <div className="mt-[clamp(1rem,1.66vw,2rem)]">
-                <label htmlFor="enr-course" className={label}>{t('selectCourse')}</label>
-                <select id="enr-course" name="course" className={`${selectField} mt-2`} defaultValue={selectedCourse || tOnline('coursesList.0.title')}>
-                  {COURSES.map((_, i) => <option key={i} value={tOnline(`coursesList.${i}.title`)}>{tOnline(`coursesList.${i}.title`)}</option>)}
+                <label htmlFor="enr-course" className={label}>{selectCourseLabel}</label>
+                <select
+                  id="enr-course"
+                  name="course"
+                  className={`${selectField} mt-2`}
+                  value={currentCourse}
+                  onChange={(e) => handleCourseChange(e.target.value)}
+                >
+                  {courses && courses.length > 0
+                    ? courses.map((c) => (
+                        <option key={c.id || c.title} value={c.title}>
+                          {c.title}
+                        </option>
+                      ))
+                    : COURSES.map((_, i) => (
+                        <option key={i} value={tOnline(`coursesList.${i}.title`)}>
+                          {tOnline(`coursesList.${i}.title`)}
+                        </option>
+                      ))}
                 </select>
               </div>
 
               <div className="mt-[clamp(1rem,1.66vw,2rem)] grid grid-cols-2 gap-[clamp(0.75rem,1.04vw,1.25rem)]">
                 <div>
-                  <label htmlFor="enr-amount" className={label}>{t('selectAmount')}</label>
+                  <label htmlFor="enr-amount" className={label}>{selectAmountLabel}</label>
                   <input
                     id="enr-amount"
                     name="amount"
-                    defaultValue={t('amountDefault')}
+                    value={amountValue}
+                    onChange={(e) => setAmountValue(e.target.value)}
                     inputMode="decimal"
                     className={`${field} mt-2`}
                   />
                 </div>
                 <div>
-                  <label htmlFor="enr-currency" className={label}>{t('selectCurrency')}</label>
+                  <label htmlFor="enr-currency" className={label}>{selectCurrencyLabel}</label>
                   <select id="enr-currency" name="currency" className={`${selectField} mt-2`}>
-                    {CURRENCIES.map((c) => <option key={c}>{t(`currencies.${c}`)}</option>)}
+                    {(currencies && currencies.length > 0 ? currencies : CURRENCIES).map((c) => (
+                      <option key={c} value={c.toUpperCase()}>
+                        {c.toUpperCase()} - {t(`currencies.${c.toLowerCase()}`) || c.toUpperCase()}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -370,8 +442,8 @@ export function EnrollmentModal({
                   required
                 />
                 <span className="leading-[1.5] text-[clamp(0.6875rem,0.68vw,0.8125rem)] text-start">
-                  <Link href="?policy=terms" scroll={false} onClick={(e) => e.stopPropagation()} className="font-semibold text-[#121C2A] hover:underline hover:text-[#048ED6] transition-colors">{tContact('form.terms1')}</Link>{' '}
-                  <span className="text-[#7A828C]">{tContact('form.terms2')}</span>
+                  <Link href="?policy=terms" scroll={false} onClick={(e) => e.stopPropagation()} className="font-semibold text-[#121C2A] hover:underline hover:text-[#048ED6] transition-colors">{termsLinkText}</Link>{' '}
+                  <span className="text-[#7A828C]">{termsSuffix}</span>
                 </span>
               </label>
 
@@ -381,14 +453,11 @@ export function EnrollmentModal({
                 className="mt-[clamp(1.25rem,2vw,2.4rem)] cursor-pointer flex h-[clamp(2.75rem,3.1vw,3.75rem)] w-full items-center justify-center gap-2 rounded-lg bg-[#048ED6] font-semibold text-white transition-colors hover:bg-[#037ab8] disabled:opacity-40 disabled:hover:bg-[#048ED6] disabled:cursor-not-allowed text-[clamp(0.875rem,0.94vw,1.125rem)]"
               >
                 <CreditCard className="h-4 w-4" />
-                {t('checkout')}
+                {checkoutButtonText}
               </button>
 
-              {/* The design's caption reads "safe, secure and tax-deductible".
-                  Tax-deductibility is a claim about the payer's jurisdiction
-                  and is not true of a course fee, so it is not repeated here. */}
               <p className="mt-3 text-center text-[#8A939C] text-[1rem]">
-                {t('securePayment')}
+                {securePaymentNote}
               </p>
             </form>
           ) : (
@@ -398,17 +467,23 @@ export function EnrollmentModal({
                 setSent(true);
               }}
             >
-              <h2 className="font-serif text-[#121C2A] text-[clamp(1.5rem,2.08vw,2.5rem)]">{t('enrollNow')}</h2>
+              <h2 className="font-serif text-[#121C2A] text-[clamp(1.5rem,2.08vw,2.5rem)]">{alreadyPaidTitle}</h2>
 
               {sent ? (
-                <p role="status" className="mt-6 rounded-lg bg-[#EAF5FD] px-4 py-3 text-[#036CA3] text-[1rem]">
-                  {t('successThanks')}
-                </p>
+                <div role="status" className="mt-6 rounded-lg bg-[#EAF5FD] p-4 text-[#036CA3] border border-[#B8D7ED]">
+                  <div className="flex items-center gap-2 font-semibold text-[#036CA3] text-[clamp(0.875rem,0.94vw,1rem)] mb-1">
+                    <FileCheck className="h-5 w-5 text-[#048ED6]" />
+                    {t('successTitle')}
+                  </div>
+                  <p className="text-[clamp(0.8125rem,0.83vw,0.875rem)] text-[#121C2A]/80 leading-relaxed">
+                    {receiptFile ? t('successThanksWithReceipt') : t('successThanks')}
+                  </p>
+                </div>
               ) : (
                 <>
                   <div className="mt-[clamp(1rem,1.66vw,2rem)] grid grid-cols-1 gap-[clamp(0.75rem,1.04vw,1.25rem)] sm:grid-cols-2">
-                    <input name="name" required placeholder={t('placeholders.name')} aria-label={t('fullName')} className={field} />
-                    <input name="email" type="email" required placeholder={t('placeholders.email')} aria-label={t('email')} dir="ltr" style={{ textAlign: isRtl ? 'right' : 'left' }} className={field} />
+                    <input name="name" required placeholder={namePlaceholder} aria-label={nameLabel} className={field} />
+                    <input name="email" type="email" required placeholder={emailPlaceholder} aria-label={emailLabel} dir="ltr" style={{ textAlign: isRtl ? 'right' : 'left' }} className={field} />
                     <div className="sm:col-span-2 md:col-span-1">
                       <PhoneInput
                         country={'lr'}
@@ -417,24 +492,129 @@ export function EnrollmentModal({
                         onChange={setPhoneValue}
                         inputProps={{
                           name: 'phone',
-                          'aria-label': 'Phone',
+                          'aria-label': phoneLabel,
                           dir: 'ltr'
                         }}
                         containerClass="w-full"
                       />
                     </div>
-                    <input name="country" placeholder={t('country')} aria-label={t('country')} className={field} />
+                    <input name="country" placeholder={countryPlaceholder} aria-label={countryPlaceholder} className={field} />
                   </div>
 
-                  <input name="topic" placeholder={t('inquiryTopic')} aria-label={t('inquiryTopic')} className={`${field} mt-[clamp(0.75rem,1.04vw,1.25rem)]`} />
+                  <input
+                    name="topic"
+                    value={topicValue}
+                    onChange={(e) => setTopicValue(e.target.value)}
+                    placeholder={topicPlaceholder}
+                    aria-label={topicPlaceholder}
+                    className={`${field} mt-[clamp(0.75rem,1.04vw,1.25rem)]`}
+                  />
 
                   <textarea
                     name="message"
-                    rows={5}
-                    placeholder={t('message')}
-                    aria-label={t('message')}
+                    rows={4}
+                    placeholder={messagePlaceholder}
+                    aria-label={messagePlaceholder}
                     className="mt-[clamp(0.75rem,1.04vw,1.25rem)] w-full rounded-lg border border-[#D6E9F6] bg-[#F7FBFE] p-4 text-[#121C2A] outline-none transition-colors placeholder:text-[#8A939C] focus-visible:border-[#048ED6] text-[clamp(0.8125rem,0.83vw,1rem)]"
                   />
+
+                  {/* Non-required receipt / proof of payment upload field */}
+                  <div className="mt-[clamp(0.75rem,1.04vw,1.25rem)]">
+                    <div className="mb-2 flex items-center justify-between">
+                      <label htmlFor="enr-receipt" className="flex items-center gap-1.5 font-semibold text-[#121C2A] text-[clamp(0.75rem,0.78vw,0.9375rem)] cursor-pointer">
+                        <Receipt className="h-4 w-4 text-[#048ED6]" aria-hidden />
+                        <span>{receiptLabel}</span>
+                        <span className="font-normal text-[#8A939C] text-xs">({t('optional')})</span>
+                      </label>
+                      {receiptFile && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setReceiptFile(null);
+                            if (fileInputRef.current) fileInputRef.current.value = '';
+                          }}
+                          className="flex items-center gap-1 text-xs font-medium text-[#E03137] hover:underline cursor-pointer"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                          {t('removeFile')}
+                        </button>
+                      )}
+                    </div>
+
+                    {!receiptFile ? (
+                      <div
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          setIsDragging(true);
+                        }}
+                        onDragLeave={() => setIsDragging(false)}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          setIsDragging(false);
+                          if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                            setReceiptFile(e.dataTransfer.files[0]);
+                          }
+                        }}
+                        onClick={() => fileInputRef.current?.click()}
+                        className={`group relative flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed ${
+                          isDragging
+                            ? 'border-[#048ED6] bg-[#EAF5FD]'
+                            : 'border-[#D6E9F6] bg-[#F7FBFE] hover:border-[#048ED6] hover:bg-[#F2F9FD]'
+                        } p-4 text-center transition-all duration-200`}
+                      >
+                        <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-[#EAF5FD] text-[#048ED6] transition-colors duration-200 group-hover:bg-[#048ED6] group-hover:text-white">
+                          <UploadCloud className="h-5 w-5" aria-hidden />
+                        </div>
+                        <p className="font-medium text-[#121C2A] text-[clamp(0.75rem,0.78vw,0.875rem)]">
+                          <span className="text-[#048ED6] underline underline-offset-2">{t('uploadReceiptClick')}</span>{' '}
+                          {t('orDragDrop')}
+                        </p>
+                        <p className="mt-1 text-[#8A939C] text-[clamp(0.65rem,0.68vw,0.75rem)]">
+                          {receiptHint}
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between rounded-lg border border-[#B8D7ED] bg-[#F0F7FD] p-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-md bg-[#048ED6] text-white">
+                            <FileCheck className="h-5 w-5" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="truncate text-xs font-semibold text-[#121C2A]">{receiptFile.name}</p>
+                            <p className="text-[11px] text-[#5A636D]">
+                              {(receiptFile.size / 1024).toFixed(1)} KB •{' '}
+                              <span className="font-medium text-[#036CA3]">{t('readyToSend')}</span>
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setReceiptFile(null);
+                            if (fileInputRef.current) fileInputRef.current.value = '';
+                          }}
+                          className="grid h-7 w-7 place-items-center rounded-full text-[#8A939C] hover:bg-white hover:text-[#E03137] transition-colors cursor-pointer"
+                          aria-label={t('removeFile')}
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    )}
+
+                    <input
+                      ref={fileInputRef}
+                      id="enr-receipt"
+                      name="receipt"
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png,.webp"
+                      className="sr-only"
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files[0]) {
+                          setReceiptFile(e.target.files[0]);
+                        }
+                      }}
+                    />
+                  </div>
 
                   <label className="mt-[clamp(1rem,1.25vw,1.5rem)] flex items-start gap-3 cursor-pointer">
                     <input
@@ -445,8 +625,8 @@ export function EnrollmentModal({
                       required
                     />
                     <span className="leading-[1.5] text-[clamp(0.6875rem,0.68vw,0.8125rem)] text-start">
-                      <Link href="?policy=terms" scroll={false} onClick={(e) => e.stopPropagation()} className="font-semibold text-[#121C2A] hover:underline hover:text-[#048ED6] transition-colors">{tContact('form.terms1')}</Link>{' '}
-                      <span className="text-[#7A828C]">{tContact('form.terms2')}</span>
+                      <Link href="?policy=terms" scroll={false} onClick={(e) => e.stopPropagation()} className="font-semibold text-[#121C2A] hover:underline hover:text-[#048ED6] transition-colors">{termsLinkText}</Link>{' '}
+                      <span className="text-[#7A828C]">{termsSuffix}</span>
                     </span>
                   </label>
 
@@ -455,7 +635,7 @@ export function EnrollmentModal({
                     disabled={!accepted}
                     className="mt-[clamp(1rem,1.66vw,2rem)] cursor-pointer h-[clamp(2.75rem,3.1vw,3.75rem)] w-full rounded-lg bg-[#048ED6] font-semibold text-white transition-colors hover:bg-[#037ab8] disabled:opacity-40 disabled:hover:bg-[#048ED6] disabled:cursor-not-allowed text-[clamp(0.875rem,0.94vw,1.125rem)]"
                   >
-                    {t('sendMessage')}
+                    {sendMessageButtonText}
                   </button>
                 </>
               )}

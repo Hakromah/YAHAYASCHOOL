@@ -4,7 +4,11 @@ import { ArrowRight, CalendarDays, CheckCircle2, ChevronRight } from 'lucide-rea
 import { useTranslations, useLocale } from 'next-intl';
 import { NewsletterCard } from '@/components/public/news/NewsletterCard';
 import { ParallaxImage } from '@/components/public/shared/ParallaxImage';
-import type { ArticleEntity } from '@/types/cms.types';
+import { StrapiBlocksRenderer } from '@/components/public/shared/StrapiBlocksRenderer';
+import type { NewsFeaturedEventComponent, NewsletterSignupSectionComponent } from '@/types/cms.types';
+
+import { getStrapiMediaUrl } from '@/services/cms.service';
+import { formatCardDate } from '@/lib/format';
 
 /**
  * News article. Implemented from Figma node 384-4389 (frame 1920x3799).
@@ -24,37 +28,41 @@ const BODY_MAX = 'max-w-[47.375rem]'; // 758px — the design's text measure
 export function NewsArticleHero({
   article,
 }: {
-  article: ArticleEntity;
+  article: NewsFeaturedEventComponent & {
+    id: number;
+    title: string;
+    slug?: string;
+    summary?: string;
+    body?: any[] | string | null;
+    content?: string;
+    featuredImage?: any;
+    category?: { id: number; name: string; title: string; slug: string };
+    createdAt?: string;
+    publishedAt?: string;
+    publishDate?: string;
+    coverImage?: { url: string };
+  };
 }) {
   const locale = useLocale();
   const href = (url: string) => (locale === 'en' ? url : `/${locale}${url}`);
   const t = useTranslations('newsDetailPage');
-  const tFeatured = useTranslations('newsPage.featured');
-  const tArticles = useTranslations('newsPage.articles');
 
   const localizedTitle = article.title;
-  let localizedDate = new Date(article.publishedAt || Date.now()).toLocaleDateString(locale);
+  const localizedDate = formatCardDate(article.createdAt || article.publishDate || article.publishedAt, locale);
 
-  let nextEventDay = tFeatured('0.day');
-  let nextEventTime = tFeatured('0.time');
-
-  if (locale === 'ar') {
-    localizedDate = localizedDate.replace(/\d/g, (d) => '٠١٢٣٤٥٦٧٨٩'[parseInt(d, 10)]);
-    nextEventDay = nextEventDay.replace(/\d/g, (d) => '٠١٢٣٤٥٦٧٨٩'[parseInt(d, 10)]);
-    nextEventTime = nextEventTime.replace(/\d/g, (d) => '٠١٢٣٤٥٦٧٨٩'[parseInt(d, 10)]);
-  }
+  const coverUrl = (article.featuredImage ? getStrapiMediaUrl(article.featuredImage) : null) || article.coverImage?.url || '/images/figma-home/13.png';
 
   return (
     <section className="relative w-full">
       <div className="nd-hero relative w-full overflow-hidden bg-[#121C2A]">
-        <img src={article.coverImage?.url || '/images/figma-home/13.png'} alt={article.title || ''} className="h-full w-full object-cover" />
+        <img src={coverUrl} alt={article.title || ''} className="h-full w-full object-cover" />
         {/* The overlay copy sits on photography, so it needs its own contrast
             rather than relying on whatever the image happens to be. */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent" />
 
         <div className="absolute inset-x-0 bottom-0">
-          <div className="mx-auto flex max-w-[1920px] flex-wrap items-end justify-between gap-8 px-(--spacing-side)  pb-[clamp(1.5rem,3.1vw,3.75rem)]">
-            <div className="min-w-0">
+          <div className="mx-auto max-w-[1920px] px-(--spacing-side) pb-[clamp(1.5rem,3.1vw,3.75rem)]">
+            <div className="max-w-[56rem]">
               <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-white/70 text-[clamp(0.6875rem,0.68vw,0.8125rem)]">
                 <Link href={href('/')} className="transition-colors hover:text-white">{t('breadcrumbHome')}</Link>
                 <ChevronRight className="h-3.5 w-3.5 rtl:-scale-x-100" aria-hidden />
@@ -68,33 +76,10 @@ export function NewsArticleHero({
                 {localizedDate}
               </p>
 
-              <h1 className="mt-[clamp(0.5rem,0.9vw,1.1rem)] max-w-[46rem] font-serif leading-[1.5] text-white text-[clamp(1.5rem,2.08vw,2.5rem)]">
+              <h1 className="mt-[clamp(0.5rem,0.9vw,1.1rem)] font-serif leading-[1.3] text-white text-[clamp(1.75rem,2.8vw,3.25rem)]">
                 {localizedTitle}
               </h1>
             </div>
-
-            {/* Next-event card: 352 x 247 in the design */}
-            <aside className="w-[clamp(16rem,18.33vw,22rem)] shrink-0 rounded-xl bg-[#048ED6] p-[clamp(1rem,1.15vw,1.375rem)] text-white shadow-xl max-md:hidden">
-              <p className="font-serif text-[clamp(1rem,1.04vw,1.25rem)]">{t('nextEvent')}</p>
-
-              <div className="mt-3 flex items-center gap-3 rounded-lg bg-white/15 p-3">
-                <span className="shrink-0 rounded-md bg-white px-2.5 py-1.5 text-center">
-                  <span className="block font-semibold uppercase leading-none text-[#6F757D] text-[0.5625rem]">{tFeatured('0.month')}</span>
-                  <span className="mt-0.5 block font-serif leading-none text-[#048ED6] text-[1.125rem]">{nextEventDay}</span>
-                </span>
-                <span className="min-w-0">
-                  <span className="block font-semibold text-[clamp(0.75rem,0.78vw,0.9375rem)]">{tFeatured('0.title')}</span>
-                  <span className="mt-0.5 block text-white/80 text-[clamp(0.625rem,0.63vw,0.75rem)]">{nextEventTime}</span>
-                </span>
-              </div>
-
-              <Link
-                href={href('/contact')}
-                className="mt-3 flex h-[clamp(2.25rem,2.19vw,2.625rem)] items-center justify-center gap-2 rounded-full bg-white font-semibold text-[#048ED6] transition-opacity hover:opacity-90 text-[clamp(0.6875rem,0.68vw,0.8125rem)]"
-              >
-                {t('applyNow')} <ArrowRight className="h-3.5 w-3.5 rtl:-scale-x-100" />
-              </Link>
-            </aside>
           </div>
         </div>
       </div>
@@ -107,7 +92,15 @@ export function NewsArticleHero({
   );
 }
 
-export function NewsArticleBody({ locale = 'en', article }: { locale?: string; article: ArticleEntity }) {
+export function NewsArticleBody({
+  locale = 'en',
+  article,
+  newsletterCard,
+}: {
+  locale?: string;
+  article: any;
+  newsletterCard?: NewsletterSignupSectionComponent | null;
+}) {
   const href = (url: string) => (locale === 'en' ? url : `/${locale}${url}`);
   const t = useTranslations('newsDetailPage');
 
@@ -118,11 +111,11 @@ export function NewsArticleBody({ locale = 'en', article }: { locale?: string; a
             readable on wider screens. */}
         <div className="mx-auto max-w-[88.75rem]">
           <div className="grid grid-cols-1 gap-[clamp(2rem,12.9vw,15.5rem)] lg:grid-cols-[minmax(0,758fr)_minmax(0,412fr)]">
-            <div className={`${BODY_MAX} text-[#5A636D] text-[clamp(0.8125rem,0.83vw,1rem)] leading-[1.75]`}>
-              {article.content ? (
-                <div className="prose prose-blue max-w-none" dangerouslySetInnerHTML={{ __html: article.content }} />
+            <div className={`${BODY_MAX} text-[#5A636D] text-[clamp(0.8125rem,0.83vw,1rem)] leading-[1.55] [&_:is(h1,h2,h3,h4,h5,h6)]:mb-4 [&_:is(h1,h2,h3,h4,h5,h6)]:leading-[1.5] [&_:is(h1,h2,h3,h4,h5,h6)]:text-[clamp(1.0625rem,1.25vw,2rem)]`}>
+              {article.body || article.content ? (
+                <StrapiBlocksRenderer content={article.body || article.content} />
               ) : (
-                <p>No content available.</p>
+                <p>{article.summary}</p>
               )}
             </div>
 
@@ -149,38 +142,55 @@ export function NewsArticleBody({ locale = 'en', article }: { locale?: string; a
                 </div>
               </div>
 
-              <NewsletterCard />
+              <NewsletterCard data={newsletterCard} locale={locale} />
             </aside>
           </div>
 
-          {/* Breaks both columns, as in the design: 1418 x 685. The image is
-              20% taller than the frame and drifts against the scroll. */}
-          <figure className="mt-[clamp(2rem,3.1vw,3.75rem)]">
-            <ParallaxImage
-              src="/images/figma-home/17.png"
-              alt="Students presenting their projects at the fair"
-              ratio="1418/685"
-              className="w-full rounded-lg"
-            />
-          </figure>
+          {/* In-article photo from Strapi gallery or fallback */}
+          {(() => {
+            const bottomPhotoUrl = (article.gallery && article.gallery.length > 0 ? getStrapiMediaUrl(article.gallery[0]) : null) || '/images/figma-home/17.png';
+            return (
+              <figure className="mt-[clamp(2rem,3.1vw,3.75rem)]">
+                <ParallaxImage
+                  src={bottomPhotoUrl}
+                  alt={article.title || 'Article image'}
+                  ratio="1418/685"
+                  className="w-full rounded-lg"
+                />
+              </figure>
+            );
+          })()}
 
           <div className={`${BODY_MAX} mt-[clamp(1.5rem,2.1vw,2.5rem)] text-[#5A636D] text-[clamp(0.8125rem,0.83vw,1rem)] leading-[1.75]`}>
-            <p>
-              {t('body.p4')}
-            </p>
+            {article.summary && (
+              <p className="font-medium text-[#121C2A]">
+                {article.summary}
+              </p>
+            )}
 
             <hr className="mt-[clamp(1.5rem,2.1vw,2.5rem)] border-t border-[#E5E7EB]" />
 
-            <ul className="mt-[clamp(1rem,1.35vw,1.625rem)] flex flex-wrap gap-2">
-              {[0, 1, 2, 3].map((idx) => (
-                <li
-                  key={idx}
-                  className="rounded bg-[#F1F2F4] px-3 py-1.5 text-[#5A636D] text-[clamp(0.625rem,0.63vw,0.75rem)]"
-                >
-                  {t(`body.tags.${idx}`)}
-                </li>
-              ))}
-            </ul>
+            {/* Dynamic hashtags from Strapi tags */}
+            {(() => {
+              const rawTags = article.tags;
+              const tagsList: string[] = Array.isArray(rawTags)
+                ? (rawTags as any[]).map((t: any) => typeof t === 'string' ? t : t?.name || t?.value || '').filter(Boolean)
+                : typeof rawTags === 'string'
+                  ? (rawTags as string).split(',').map((t: string) => t.trim()).filter(Boolean)
+                  : [article.category?.name || 'News', 'YahayaSchool', 'Campus', 'Community'];
+              return (
+                <ul className="mt-[clamp(1rem,1.35vw,1.625rem)] flex flex-wrap gap-2">
+                  {tagsList.map((tag: string, idx: number) => (
+                    <li
+                      key={idx}
+                      className="rounded bg-[#F1F2F4] px-3 py-1.5 text-[#5A636D] text-[clamp(0.625rem,0.63vw,0.75rem)] font-medium"
+                    >
+                      {tag.startsWith('#') ? tag : `#${tag}`}
+                    </li>
+                  ))}
+                </ul>
+              );
+            })()}
           </div>
         </div>
       </div>

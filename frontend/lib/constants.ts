@@ -4,7 +4,7 @@
 
 /** Strapi API base URL */
 export const STRAPI_URL =
-  process.env.NEXT_PUBLIC_STRAPI_URL ?? 'http://localhost:1339';
+  process.env.NEXT_PUBLIC_STRAPI_URL ?? 'http://localhost:1337';
 
 /** Strapi API endpoint */
 export const API_URL = `${STRAPI_URL}/api`;

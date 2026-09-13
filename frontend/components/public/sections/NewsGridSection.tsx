@@ -61,47 +61,104 @@ function NavButton({
   );
 }
 
-export function NewsGridSection({ locale = 'en', data }: { locale?: string; data?: unknown }) {
-  void locale;
-  void data;
+import type { HomepageEntity, NewsFeaturedEventComponent } from '@/types/cms.types';
+import { getStrapiMediaUrl } from '@/services/cms.service';
+
+interface NewsGridSectionProps {
+  locale?: string;
+  data?: HomepageEntity | null;
+  newsEvents?: NewsFeaturedEventComponent[];
+}
+
+export function NewsGridSection({ locale = 'en', data, newsEvents }: NewsGridSectionProps) {
   const t = useTranslations('newsSection');
   const [swiper, setSwiper] = useState<SwiperClass | null>(null);
   const [atStart, setAtStart] = useState(true);
   const [atEnd, setAtEnd] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
 
-  const NEWS = [
+  const eyebrow = data?.newsEyebrow || t('eyebrow');
+  const heading = data?.newsHeading || t('heading');
+  const description = data?.newsDescription || t('description');
+  const readMoreText = data?.newsReadMoreText || t('readMore');
+
+  const defaultNews = [
     {
       id: 1,
-      key: 'n1',
+      title: t('items.n1.title'),
+      excerpt: t('items.n1.excerpt'),
+      category: t('items.n1.category'),
       image: '/images/figma-home/02-about.jpeg',
       link: '/news/expanding-horizons',
     },
     {
       id: 2,
-      key: 'n2',
+      title: t('items.n2.title'),
+      excerpt: t('items.n2.excerpt'),
+      category: t('items.n2.category'),
       image: '/images/figma-home/09.png',
       link: '/news/tech-summit',
     },
     {
       id: 3,
-      key: 'n3',
+      title: t('items.n3.title'),
+      excerpt: t('items.n3.excerpt'),
+      category: t('items.n3.category'),
       image: '/images/figma-home/15-news.jpeg',
       link: '/news/trustvibe-update',
     },
     {
       id: 4,
-      key: 'n4',
+      title: t('items.n4.title'),
+      excerpt: t('items.n4.excerpt'),
+      category: t('items.n4.category'),
       image: '/images/figma-home/03-programs.jpeg',
       link: '/news/global-standards',
     },
     {
       id: 5,
-      key: 'n5',
+      title: t('items.n5.title'),
+      excerpt: t('items.n5.excerpt'),
+      category: t('items.n5.category'),
       image: '/images/figma-home/13.png',
       link: '/news/bilingual-education',
     },
   ];
+
+  const formatHref = (url: string) => {
+    if (url.startsWith('http') || url.startsWith('#')) return url;
+    if (locale === 'en' || !locale) return url;
+    return `/${locale}${url.startsWith('/') ? url : `/${url}`}`;
+  };
+
+  const NEWS = (newsEvents && newsEvents.length > 0)
+    ? newsEvents.map((fe, idx) => {
+        const rawHref = fe.href?.trim();
+        let link = '/news';
+        if (rawHref) {
+          link = rawHref;
+        } else {
+          const rawSlug = (fe.title || [fe.headlineLine1, fe.headlineLine2].filter(Boolean).join(' ') || `story-${idx}`)
+            .toLowerCase()
+            .trim()
+            .replace(/\s+/g, '-')
+            .replace(/&/g, '-and-')
+            .replace(/[^\w\-]+/g, '')
+            .replace(/\-\-+/g, '-')
+            .replace(/^-+/, '')
+            .replace(/-+$/, '');
+          link = `/news/${rawSlug}`;
+        }
+        return {
+          id: fe.id || idx + 1,
+          title: fe.title || [fe.headlineLine1, fe.headlineLine2].filter(Boolean).join(' ') || '',
+          excerpt: fe.lede || fe.blurb || '',
+          category: fe.category || fe.eyebrow || 'NEWS',
+          image: getStrapiMediaUrl(fe.image?.url) || defaultNews[idx % defaultNews.length].image,
+          link: formatHref(link),
+        };
+      })
+    : defaultNews.map((n) => ({ ...n, link: formatHref(n.link) }));
 
   useEffect(() => {
     const mq = window.matchMedia('(min-width: 1024px)');
@@ -111,12 +168,12 @@ export function NewsGridSection({ locale = 'en', data }: { locale?: string; data
     return () => mq.removeEventListener('change', handler);
   }, []);
 
-  const headerVariants = {
+  const headerVariants: any = {
     hidden: {},
     visible: { transition: { staggerChildren: 0.15 } }
   };
 
-  const itemVariants = {
+  const itemVariants: any = {
     hidden: { opacity: 0, y: 30 },
     visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } }
   };
@@ -148,19 +205,19 @@ export function NewsGridSection({ locale = 'en', data }: { locale?: string; data
                 className="inline-flex items-center gap-2 h-10 px-4 rounded-full bg-[#E6F0FB] text-[#048ED6] font-semibold text-[15px]"
               >
                 <GraduationCap className="w-5 h-5" />
-                {t('eyebrow')}
+                {eyebrow}
               </motion.span>
               <motion.h2
                 variants={isDesktop ? itemVariants : {}}
                 className="mt-[clamp(0.75rem,1.2vw,1.45rem)] font-bold text-[#1A1C1C] tracking-[-0.015em] leading-[1.1] text-[clamp(1.5rem,1.82vw,2.1875rem)]"
               >
-                {t('heading')}
+                {heading}
               </motion.h2>
               <motion.p
                 variants={isDesktop ? itemVariants : {}}
                 className="mt-[clamp(0.75rem,1.4vw,1.7rem)] max-w-[620px] text-[#3F4941] leading-[1.31] text-[1rem]"
               >
-                {t('description')}
+                {description}
               </motion.p>
             </motion.div>
 
@@ -200,27 +257,27 @@ export function NewsGridSection({ locale = 'en', data }: { locale?: string; data
                     className="h-full flex flex-col rounded-xl overflow-hidden bg-white border border-black/[0.06] shadow-[0_2px_14px_rgba(16,24,40,0.06)]"
                   >
                     <div className="w-full aspect-[392/257] overflow-hidden">
-                      <img src={n.image} alt={t(`items.${n.key}.title`)} className="w-full h-full object-cover" />
+                      <img src={n.image} alt={n.title} className="w-full h-full object-cover" />
                     </div>
 
                     <div className="flex flex-col flex-1 max-sm:p-[15px] sm:px-[25px] sm:pt-[29px] sm:pb-[clamp(2rem,2.8vw,3.3rem)]">
                       <span className="self-start px-3 py-[3px] rounded-full border border-[#C9D8EA] text-[#048ED6] font-semibold uppercase tracking-[0.08em] text-[11px]">
-                        {t(`items.${n.key}.category`)}
+                        {n.category}
                       </span>
 
                       <h3 className="mt-[18px] font-medium text-[#1A1C1C] leading-[1.19] text-[clamp(1.0625rem,1.09vw,1.3125rem)]">
-                        {t(`items.${n.key}.title`)}
+                        {n.title}
                       </h3>
 
                       <p className="mt-[16px] text-[#545F73] leading-[1.33] text-[1rem]">
-                        {t(`items.${n.key}.excerpt`)}
+                        {n.excerpt}
                       </p>
 
                       <Link
                         href={n.link}
                         className="mt-auto pt-[15px] sm:pt-[34px] inline-flex items-center gap-2 self-start text-[#048ED6] text-[clamp(0.875rem,0.78vw,0.9375rem)] transition-colors hover:text-[#037ab8]"
                       >
-                        <span>{t('readMore')}</span>
+                        <span>{readMoreText}</span>
                         <ArrowRight className="w-4 h-4 rtl:rotate-180" />
                       </Link>
                     </div>

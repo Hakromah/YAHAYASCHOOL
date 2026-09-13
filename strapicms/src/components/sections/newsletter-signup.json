@@ -9,19 +9,23 @@
   "attributes": {
     "title": {
       "type": "string",
-      "default": "Subscribe to Our Newsletter"
+      "default": "Stay Updated",
+      "pluginOptions": { "i18n": { "localized": true } }
     },
     "subtitle": {
-      "type": "string",
-      "default": "Receive academic updates, Islamic reminders, and school news directly in your inbox."
+      "type": "text",
+      "default": "Get the latest school news and event reminders straight to your inbox.",
+      "pluginOptions": { "i18n": { "localized": true } }
     },
     "placeholderText": {
       "type": "string",
-      "default": "Enter your email address..."
+      "default": "Email Address",
+      "pluginOptions": { "i18n": { "localized": true } }
     },
     "buttonText": {
       "type": "string",
-      "default": "Subscribe"
+      "default": "Subscribe",
+      "pluginOptions": { "i18n": { "localized": true } }
     }
   }
 }

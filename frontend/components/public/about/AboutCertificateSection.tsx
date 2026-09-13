@@ -6,9 +6,11 @@ import { motion } from 'framer-motion';
 import { ArrowRight, ChevronLeft, ChevronRight, Eye, Download } from 'lucide-react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import type { Swiper as SwiperType } from 'swiper';
+import type { AboutCertificatesSectionComponent } from '@/types/cms.types';
+import { getStrapiMediaUrl } from '@/services/cms.service';
 import 'swiper/css';
 
-const CERTIFICATES = [
+const FALLBACK_CERTIFICATES = [
   { id: 1, title: 'Outstanding Academic Performance', image: '/images/about/cert-1.jpg', url: '/images/about/cert-1.jpg' },
   { id: 2, title: 'Global Educational Accreditation', image: '/images/about/cert-2.jpg', url: '/images/about/cert-2.jpg' },
   { id: 3, title: 'Diploma of Highest Achievement', image: '/images/about/cert-3.jpg', url: '/images/about/cert-3.jpg' },
@@ -55,7 +57,7 @@ function NavButton({
   );
 }
 
-export function AboutCertificateSection({ locale = 'en' }: { locale?: string }) {
+export function AboutCertificateSection({ locale = 'en', data }: { locale?: string; data?: AboutCertificatesSectionComponent }) {
   const t = useTranslations('certificateSection');
   const [swiper, setSwiper] = useState<SwiperType | null>(null);
   const [atStart, setAtStart] = useState(true);
@@ -66,6 +68,14 @@ export function AboutCertificateSection({ locale = 'en' }: { locale?: string }) 
     setAtStart(s.isBeginning);
     setAtEnd(s.isEnd);
   };
+
+  const title = data?.title || t('title');
+  const certificates = data?.certificates?.length ? data.certificates.map(c => ({
+    id: c.id,
+    title: c.title,
+    image: c.image ? getStrapiMediaUrl(c.image) : (c.imageUrl || ''),
+    url: c.file ? getStrapiMediaUrl(c.file) : (c.url || '')
+  })) : FALLBACK_CERTIFICATES;
 
   return (
     <section className="w-full bg-[#F9FAFB] py-[clamp(2rem,6vw,8rem)] overflow-hidden">
@@ -81,7 +91,7 @@ export function AboutCertificateSection({ locale = 'en' }: { locale?: string }) 
               className="max-w-[36rem]"
             >
               <h2 className="font-serif text-[clamp(2rem,3.1vw,3.75rem)] leading-[1.1] text-[#121C2A]">
-                {t('title')}
+                {title}
               </h2>
             </motion.div>
 
@@ -114,7 +124,7 @@ export function AboutCertificateSection({ locale = 'en' }: { locale?: string }) 
               }}
               className="cert-swiper mt-[clamp(2.5rem,4.7vw,5.7rem)]"
             >
-              {CERTIFICATES.map((cert) => (
+              {certificates.map((cert) => (
                 <SwiperSlide key={cert.id} className="h-auto">
                   <motion.article
                     variants={itemVariants}
@@ -144,14 +154,16 @@ export function AboutCertificateSection({ locale = 'en' }: { locale?: string }) 
                           <Eye className="w-4 h-4" />
                           <span>{t('view')}</span>
                         </button>
-                        <a
-                          href={cert.url}
-                          download
-                          className="flex-1 inline-flex justify-center items-center gap-2 py-2.5 rounded-lg bg-[#048ED6] text-white hover:bg-[#037ab8] transition-colors text-sm font-semibold"
-                        >
-                          <Download className="w-4 h-4" />
-                          <span>{t('download')}</span>
-                        </a>
+                        {cert.url && (
+                          <a
+                            href={cert.url}
+                            download
+                            className="flex-1 inline-flex justify-center items-center gap-2 py-2.5 rounded-lg bg-[#048ED6] text-white hover:bg-[#037ab8] transition-colors text-sm font-semibold"
+                          >
+                            <Download className="w-4 h-4" />
+                            <span>{t('download')}</span>
+                          </a>
+                        )}
                       </div>
                     </div>
                   </motion.article>

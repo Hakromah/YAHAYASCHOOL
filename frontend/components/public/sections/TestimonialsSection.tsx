@@ -43,6 +43,9 @@ import 'swiper/css/effect-fade';
 //   ...
 // ];
 
+import type { HomepageEntity } from '@/types/cms.types';
+import { getStrapiMediaUrl } from '@/services/cms.service';
+
 /**
  * Enter animation for the panel: each block starts pushed down and faded out and
  * settles once Swiper marks its slide active, staggered by DELAY. Same pattern
@@ -66,40 +69,71 @@ const DELAY = [
 
 const INITIAL = 1;
 
-export function TestimonialsSection({ locale = 'en', data }: { locale?: string; data?: unknown }) {
+interface TestimonialsProps {
+  data?: HomepageEntity | null;
+  locale?: string;
+}
+
+export function TestimonialsSection({ locale = 'en', data }: TestimonialsProps) {
   void locale;
-  void data;
   const t = useTranslations('testimonialsSection');
   const [thumbs, setThumbs] = useState<SwiperClass | null>(null);
   const [main, setMain] = useState<SwiperClass | null>(null);
   const [active, setActive] = useState(INITIAL);
 
-  const TESTIMONIALS = [
+  const heading = data?.testimonialsHeading || t('heading');
+  const subtitle = data?.testimonialsSubtitle || t('subtitle');
+
+  const defaultTestimonials = [
     {
       id: 1,
-      key: 't1',
+      name: t('items.t1.name'),
+      role: t('items.t1.role'),
+      title: t('items.t1.title'),
+      quote: t('items.t1.quote'),
       image: '/images/figma-home/01-hero.jpeg',
       rating: 5,
     },
     {
       id: 2,
-      key: 't2',
+      name: t('items.t2.name'),
+      role: t('items.t2.role'),
+      title: t('items.t2.title'),
+      quote: t('items.t2.quote'),
       image: '/images/figma-home/20-news.jpeg',
       rating: 5,
     },
     {
       id: 3,
-      key: 't3',
+      name: t('items.t3.name'),
+      role: t('items.t3.role'),
+      title: t('items.t3.title'),
+      quote: t('items.t3.quote'),
       image: '/images/figma-home/04-programs.jpeg',
       rating: 5,
     },
     {
       id: 4,
-      key: 't4',
+      name: t('items.t4.name'),
+      role: t('items.t4.role'),
+      title: t('items.t4.title'),
+      quote: t('items.t4.quote'),
       image: '/images/figma-home/08-activity.jpeg',
       rating: 5,
     },
   ];
+
+  const items = (data?.testimonials && data.testimonials.length > 0)
+    ? data.testimonials.map((item, idx) => ({
+        id: item.id || idx + 1,
+        name: item.name || '',
+        role: item.role || 'PARENT',
+        title: item.title || '',
+        quote: item.quote || '',
+        image: getStrapiMediaUrl(item.image?.url) || defaultTestimonials[idx % defaultTestimonials.length].image,
+        rating: item.rating ?? 5,
+      }))
+    : defaultTestimonials;
 
   // Both sliders are driven directly rather than through Swiper's Thumbs module:
   // that module repositions the strip on its own (it only keeps the active thumb
@@ -117,10 +151,10 @@ export function TestimonialsSection({ locale = 'en', data }: { locale?: string; 
       <div className="relative bg-[#048ED6] pt-[clamp(1.5rem,5.5vw,6.6rem)]">
         <div className="max-w-[1920px] mx-auto px-(--spacing-side)">
           <h2 className="text-center font-bold text-white tracking-[-0.015em] leading-[1.08] text-[clamp(1.5rem,2.6vw,3.125rem)]">
-            {t('heading')}
+            {heading}
           </h2>
           <p className="mt-[clamp(1rem,1.5vw,1.8rem)] mx-auto max-w-165 text-center text-white/85 leading-[1.61] max-sm:leading-relaxed text-[clamp(1rem,0.94vw,1.125rem)]">
-            {t('subtitle')}
+            {subtitle}
           </p>
 
           {/*
@@ -141,7 +175,7 @@ export function TestimonialsSection({ locale = 'en', data }: { locale?: string; 
             speed={800}
             className="thumbs-swiper mt-[clamp(1.5rem,2.1vw,2.6rem)]"
           >
-            {TESTIMONIALS.map((item, i) => {
+            {items.map((item, i) => {
               const on = i === active;
               return (
                 <SwiperSlide key={item.id}>
@@ -156,7 +190,7 @@ export function TestimonialsSection({ locale = 'en', data }: { locale?: string; 
                         on ? 'ring-white/90 opacity-100' : 'ring-transparent opacity-60 group-hover:opacity-85'
                       }`}
                     >
-                      <img src={item.image} alt={t(`items.${item.key}.name`)} className="w-full h-full object-cover" />
+                      <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
                       <span className="absolute inset-0 bg-[#048ED6]/40 opacity-0 transition-opacity" />
                     </span>
                     <span
@@ -164,7 +198,7 @@ export function TestimonialsSection({ locale = 'en', data }: { locale?: string; 
                         on ? 'text-white' : 'text-[#A1D4EF] group-hover:text-white/90'
                       }`}
                     >
-                      {t(`items.${item.key}.name`)}
+                      {item.name}
                     </span>
                     {/* Notch joining the active thumb to the panel below. Both widths
                         live here so only one width utility is ever emitted. */}
@@ -196,13 +230,13 @@ export function TestimonialsSection({ locale = 'en', data }: { locale?: string; 
             speed={800}
             className="panel-swiper"
           >
-            {TESTIMONIALS.map((tItem) => (
+            {items.map((tItem) => (
               <SwiperSlide key={tItem.id} className="group/slide">
                 <div className="flex flex-col sm:flex-row gap-[34px] max-md:gap-[20px]">
                   <div
                     className={`w-[256px] h-[256px] max-sm:w-full max-sm:h-[280px] shrink-0 overflow-hidden ${RISE} ${DELAY[0]}`}
                   >
-                    <img src={tItem.image} alt={t(`items.${tItem.key}.name`)} className="w-full h-full object-cover" />
+                    <img src={tItem.image} alt={tItem.name} className="w-full h-full object-cover" />
                   </div>
 
                   <div className="min-w-0 pt-[30px] max-sm:pt-0">
@@ -214,20 +248,22 @@ export function TestimonialsSection({ locale = 'en', data }: { locale?: string; 
                       <path d="M0 30V17.6C0 12.9 1 9 3 5.9 5.1 2.8 8.2.9 12.4 0l2 4.4c-2.6.9-4.5 2.2-5.6 3.9-1.1 1.7-1.7 4-1.7 6.8h6.6V30H0Zm24.5 0V17.6c0-4.7 1-8.6 3-11.7C29.6 2.8 32.7.9 36.9 0l2 4.4c-2.6.9-4.5 2.2-5.6 3.9-1.1 1.7-1.7 4-1.7 6.8h6.6V30H24.5Z" />
                     </svg>
 
-                    <h3
-                      className={`mt-[clamp(0.75rem,1vw,1.2rem)] max-w-[560px] font-bold text-[#121C2A] tracking-[-0.015em] leading-[1.15] text-[clamp(1.5rem,1.77vw,2.125rem)] ${RISE} ${DELAY[2]}`}
-                    >
-                      {t(`items.${tItem.key}.title`)}
-                    </h3>
+                    {tItem.title ? (
+                      <h3
+                        className={`mt-[clamp(0.75rem,1vw,1.2rem)] max-w-[560px] font-bold text-[#121C2A] tracking-[-0.015em] leading-[1.15] text-[clamp(1.5rem,1.77vw,2.125rem)] ${RISE} ${DELAY[2]}`}
+                      >
+                        {tItem.title}
+                      </h3>
+                    ) : null}
                     <p
                       className={`mt-[clamp(0.5rem,0.7vw,0.85rem)] font-semibold text-[#121C2A] text-[clamp(1rem,1.15vw,1.375rem)] ${RISE} ${DELAY[3]}`}
                     >
-                      {t(`items.${tItem.key}.name`)}
+                      {tItem.name}
                     </p>
                     <p
                       className={`mt-[7px] max-sm:mt-[5px] font-bold uppercase tracking-[0.04em] text-[#02019B] text-[1rem] ${RISE} ${DELAY[3]}`}
                     >
-                      {t(`items.${tItem.key}.role`)}
+                      {tItem.role}
                     </p>
                   </div>
                 </div>
@@ -235,7 +271,7 @@ export function TestimonialsSection({ locale = 'en', data }: { locale?: string; 
                 <p
                   className={`mt-[clamp(1rem,3.1vw,3.7rem)] italic text-[#121C2A] leading-[1.61] text-[clamp(1rem,0.94vw,1.125rem)] ${RISE} ${DELAY[4]}`}
                 >
-                  {t(`items.${tItem.key}.quote`)}
+                  {tItem.quote}
                 </p>
 
                 <div

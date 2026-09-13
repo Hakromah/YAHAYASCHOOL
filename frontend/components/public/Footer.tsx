@@ -104,19 +104,13 @@ function getSafeTranslation(t: any, key: string, fallback: string): string {
 function FooterAccordion({ col, open, onToggle }: { col: ColType; open: boolean; onToggle: () => void }) {
   const t = useTranslations('footer.links');
 
-  const getColTitle = () => {
-    if (col.title) return col.title;
-    const lookupKey = `${col.key}.title`;
-    const defaultTitle = col.key === 'quickLinks' ? 'Quick Links' : col.key === 'academics' ? 'Academics' : col.key === 'support' ? 'Support' : col.key;
-    return getSafeTranslation(t, lookupKey, defaultTitle);
-  };
-
   const getLinkLabel = (l: LinkItem) => {
     if (l.label) return l.label;
-    const lookupKey = `${col.key}.${l.key}`;
-    const defaultLabel = DEFAULT_LINK_LABELS[l.key] || l.key;
-    return getSafeTranslation(t, lookupKey, defaultLabel);
+    const fullKey = `${col.key}.${l.key}`;
+    return t.has(fullKey) ? t(fullKey) : l.key;
   };
+
+  const colTitle = col.title || (t.has(`${col.key}.title`) ? t(`${col.key}.title`) : col.key);
 
   return (
     <div className="sm:contents">
@@ -128,7 +122,7 @@ function FooterAccordion({ col, open, onToggle }: { col: ColType; open: boolean;
         className="sm:hidden w-full flex items-center justify-between py-4 text-left"
       >
         <span className="flex items-center gap-2 font-semibold text-[#111C2D] text-[0.9375rem]">
-          {getColTitle()}
+          {colTitle}
         </span>
         <ChevronDown
           className={`w-5 h-5 text-[#048ED6] transition-transform duration-300 ${open ? 'rotate-180' : ''}`}
@@ -159,7 +153,7 @@ function FooterAccordion({ col, open, onToggle }: { col: ColType; open: boolean;
       {/* Desktop: plain visible block (hidden on max-sm) */}
       <div className="hidden sm:block">
         <h3 className="flex items-center gap-2 font-semibold text-[#111C2D] text-[clamp(0.9375rem,0.83vw,1rem)]">
-          {getColTitle()}
+          {colTitle}
         </h3>
         <ul className="mt-[clamp(1.25rem,1.6vw,1.9rem)] flex flex-col gap-[clamp(0.9rem,1.16vw,1rem)]">
           {col.links.map((l) => (

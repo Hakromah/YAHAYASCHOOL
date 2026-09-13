@@ -1,7 +1,12 @@
 'use client';
 
 import React from 'react';
-import type { DynamicZoneSection } from '../../types/cms.types';
+import type {
+  DynamicZoneSection,
+  HomepageEntity,
+  SchoolAcademicProgramEntity,
+  NewsPageEntity,
+} from '../../types/cms.types';
 import { HeroSection } from './sections/HeroSection';
 import { HomeAboutSection } from './sections/HomeAboutSection';
 import { HomeActivitiesSection } from './sections/HomeActivitiesSection';
@@ -15,23 +20,31 @@ import { DepartmentsGridSection } from './sections/DepartmentsGridSection';
 import { EventsGridSection } from './sections/EventsGridSection';
 
 interface HomepageBuilderProps {
+  homepage?: HomepageEntity | null;
+  academicPrograms?: SchoolAcademicProgramEntity[];
+  newsPage?: NewsPageEntity | null;
   sections?: DynamicZoneSection[];
   locale?: string;
 }
 
-export function HomepageBuilder({ sections, locale = 'en' }: HomepageBuilderProps) {
+export function HomepageBuilder({
+  homepage,
+  academicPrograms,
+  newsPage,
+  sections,
+  locale = 'en',
+}: HomepageBuilderProps) {
   // If no dynamic sections provided from CMS, render default enterprise layout
   if (!sections || sections.length === 0) {
     return (
       <main className="min-h-screen">
-        <HeroSection locale={locale} />
-        <HomeAboutSection />
-        <ProgramsGridSection locale={locale} />
-        <HomeAnimationSection />
-        <HomeActivitiesSection />
-        <TestimonialsSection />
-        <NewsGridSection locale={locale} />
-
+        <HeroSection data={homepage} locale={locale} />
+        <HomeAboutSection data={homepage} locale={locale} />
+        <ProgramsGridSection data={homepage} programs={academicPrograms} locale={locale} />
+        <HomeAnimationSection data={homepage} locale={locale} />
+        <HomeActivitiesSection data={homepage} locale={locale} />
+        <TestimonialsSection data={homepage} locale={locale} />
+        <NewsGridSection data={homepage} newsEvents={newsPage?.featuredEvents} locale={locale} />
       </main>
     );
   }

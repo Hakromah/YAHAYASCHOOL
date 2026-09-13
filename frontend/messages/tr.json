@@ -799,7 +799,9 @@
       "desc": "En son okul haberlerini ve etkinlik hatırlatıcılarını doğrudan gelen kutunuza alın.",
       "placeholder": "E-posta Adresi",
       "subscribe": "Abone Ol",
-      "success": "Teşekkürler — {email} adresinden sizinle iletişime geçeceğiz."
+      "subscribed": "Abone Olundu!",
+      "success": "Teşekkürler — {email} adresinden sizinle iletişime geçeceğiz.",
+      "error": "Bir sorun oluştu. Lütfen tekrar deneyin."
     },
     "breadcrumbHome": "Ana Sayfa",
     "body": {
@@ -1270,23 +1272,6 @@
     "headline_2": "Fingertips",
     "lede": "Access world-class Islamic and academic education from anywhere in the world. Begin your journey of lifelong learning today.",
     "joinEnrollment": "Join Enrollment",
-    "features": [
-      {
-        "title": "Recorded Lessons",
-        "cta": "Browse Library",
-        "desc": "A comprehensive library of high-definition video lectures across all academic and Islamic subjects."
-      },
-      {
-        "title": "Digital Library",
-        "cta": "Enter Library",
-        "desc": "Access curated PDF books, Qur’an resources, and exclusive scholarly articles."
-      },
-      {
-        "title": "Live Classes",
-        "cta": "View Schedule",
-        "desc": "Engage in real-time interactive sessions with our global expert faculty members."
-      }
-    ],
     "coursesList": {
       "0": {
         "title": "Advanced Arabic Grammar",
@@ -1328,38 +1313,46 @@
     "liveLesson": "Canlı Ders"
   },
   "enrollmentModal": {
-    "payOnline": "Pay Online",
-    "alreadyPaid": "Already Paid",
-    "firstName": "First Name",
-    "lastName": "Last Name",
-    "email": "Email",
-    "phone": "Phone Number",
-    "country": "Country",
-    "uploadInvoice": "Upload Invoice",
-    "selectAmount": "Select Amount",
-    "selectCurrency": "Select Currency",
-    "selectCourse": "Select Course",
-    "checkout": "Checkout",
-    "submit": "Submit Enrollment",
-    "successTitle": "Submitted Successfully",
-    "successDesc": "Your enrollment has been submitted and is under review. You will receive a confirmation email shortly.",
-    "enrollNow": "Enroll Now",
-    "fullName": "Full Name",
-    "inquiryTopic": "Inquiry Topic",
-    "message": "Your Message",
-    "sendMessage": "Send Message",
-    "successThanks": "Thanks — we have your details and will be in touch shortly.",
-    "securePayment": "Your payment is processed securely.",
+    "payOnline": "Online Öde",
+    "alreadyPaid": "Zaten Ödendi",
+    "firstName": "Ad",
+    "lastName": "Soyad",
+    "email": "E-posta",
+    "phone": "Telefon Numarası",
+    "country": "Ülke",
+    "uploadInvoice": "Fatura / Makbuz Yükle",
+    "selectAmount": "Miktar Seçin",
+    "selectCurrency": "Para Birimi Seçin",
+    "selectCourse": "Ders Seçin",
+    "checkout": "Ödeme Yap",
+    "submit": "Kaydı Gönder",
+    "successTitle": "Başarıyla Gönderildi",
+    "successDesc": "Kaydınız gönderildi ve inceleniyor. Kısa süre içinde onay e-postası alacaksınız.",
+    "enrollNow": "Şimdi Kaydolun",
+    "fullName": "Tam Adınız",
+    "inquiryTopic": "Başvuru Konusu",
+    "message": "Mesajınız",
+    "sendMessage": "Mesaj Gönder",
+    "uploadReceipt": "Ödeme Makbuzu",
+    "optional": "İsteğe Bağlı",
+    "uploadReceiptClick": "Makbuzu yüklemek için tıklayın",
+    "orDragDrop": "veya sürükleyip bırakın",
+    "uploadReceiptHint": "Havale dekontu, banka onayı veya ekran görüntüsü (PDF, PNG, JPG maks. 10MB)",
+    "removeFile": "Kaldır",
+    "readyToSend": "Gönderilmeye hazır",
+    "successThanks": "Teşekkürler — bilgilerinizi aldık ve kısa süre içinde sizinle iletişime geçeceğiz.",
+    "successThanksWithReceipt": "Teşekkürler! Kayıt bilgileriniz ve ödeme makbuzunuz alındı. Ekibimiz ödemenizi doğrulayıp kısa süre içinde sizinle iletişime geçecektir.",
+    "securePayment": "Ödemeniz güvenli bir şekilde işlenir.",
     "currencies": {
-      "usd": "USD - US Dollar",
+      "usd": "USD - Amerikan Doları",
       "eur": "EUR - Euro",
-      "gbp": "GBP - British Pound",
-      "lrd": "LRD - Liberian Dollar"
+      "gbp": "GBP - İngiliz Sterlini",
+      "lrd": "LRD - Liberya Doları"
     },
     "amountDefault": "500",
     "placeholders": {
-      "name": "John Doe",
-      "email": "john@example.com"
+      "name": "Ahmet Yılmaz",
+      "email": "ahmet@ornek.com"
     }
   },
   "policyModal": {

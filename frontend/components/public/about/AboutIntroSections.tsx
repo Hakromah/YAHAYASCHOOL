@@ -2,6 +2,8 @@
 
 import React, { useEffect, useRef } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
+import type { AboutIntroSectionComponent } from '@/types/cms.types';
+import { getStrapiMediaUrl } from '@/services/cms.service';
 
 /**
  * About — page header and the "Education, Practice and Advocacy" intro.
@@ -19,13 +21,19 @@ import { useTranslations, useLocale } from 'next-intl';
  * standard hero-width wrapper rather than filling it.
  */
 
-export function AboutIntroSection() {
+export function AboutIntroSection({ data }: { data?: AboutIntroSectionComponent }) {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const imgRef     = useRef<HTMLImageElement>(null);
   const t = useTranslations('aboutPage.intro');
   const locale = useLocale();
   const yearFormatter = new Intl.NumberFormat(locale === 'ar' ? 'ar-EG' : locale, { useGrouping: false });
   const yearStr = yearFormatter.format(2020);
+
+  const badge = data?.badge || t('badge', { year: yearStr });
+  const title1 = data?.title1 || t('title1');
+  const title2 = data?.title2 || t('title2');
+  const description = data?.description || t('description');
+  const imageUrl = data?.image ? getStrapiMediaUrl(data.image) : (data?.imageUrl || "/images/figma-home/03-programs.jpeg");
 
   useEffect(() => {
     const onScroll = () => {
@@ -59,17 +67,17 @@ export function AboutIntroSection() {
 
           <div>
             <span className="inline-flex items-center h-[30px] px-4 rounded-full bg-[#048ED6] text-white font-semibold tracking-[0.06em] text-[clamp(0.6875rem,0.63vw,0.75rem)]">
-              {t('badge', { year: yearStr })}
+              {badge}
             </span>
 
             <h2 className="mt-[clamp(1.25rem,1.7vw,2rem)] font-bold text-[#121C2A] tracking-[-0.015em] leading-[1.1] text-[clamp(1.5rem,2.5vw,3rem)]">
-              {t('title1')}
+              {title1}
               <br  className='max-md:hidden'/>
-              <span className="italic text-(--color-primary) max-md:pl-[1px]"> {t('title2')}</span>
+              <span className="italic text-(--color-primary) max-md:pl-[1px]"> {title2}</span>
             </h2>
 
             <p className="mt-[clamp(1.25rem,1.5vw,1.8rem)] max-w-[600px] text-[#3F4941] leading-[1.81] text-[1rem]">
-              {t('description')}
+              {description}
             </p>
           </div>
 
@@ -77,7 +85,7 @@ export function AboutIntroSection() {
             <div className='aboutImage w-full h-full relative'>
               <img
                 ref={imgRef}
-                src="/images/figma-home/03-programs.jpeg"
+                src={imageUrl || ''}
                 alt="The Yahaya International campus"
                 className="w-full h-full object-cover transition-transform duration-75 ease-linear"
                 style={{ willChange: 'transform' }}

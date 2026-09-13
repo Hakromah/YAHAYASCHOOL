@@ -17,13 +17,15 @@ import { Thumbs, Controller, EffectFade, Autoplay, A11y, Parallax } from 'swiper
 import type { Swiper as SwiperType } from 'swiper';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
+import type { AboutTimelineSectionComponent } from '@/types/cms.types';
+import { getStrapiMediaUrl } from '@/services/cms.service';
 
 import 'swiper/css';
 import 'swiper/css/thumbs';
 import 'swiper/css/effect-fade';
 
 /* ─── Data ──────────────────────────────────────────────────────────────────── */
-const ENTRIES = [
+const FALLBACK_ENTRIES = [
   {
     year: '2020',
     image: '/images/figma-home/09.png',
@@ -79,7 +81,7 @@ function NavBtn({ dir, onClick, disabled }: { dir: 'prev' | 'next'; onClick(): v
 }
 
 /* ─── Section ────────────────────────────────────────────────────────────────  */
-export function AboutTimelineSection() {
+export function AboutTimelineSection({ data }: { data?: AboutTimelineSectionComponent }) {
   // Swiper instance refs — wired via controller
   const [thumbSwiper, setThumbSwiper] = useState<SwiperType | null>(null);
   const [imageSwiper, setImageSwiper] = useState<SwiperType | null>(null);
@@ -89,6 +91,19 @@ export function AboutTimelineSection() {
   const locale = useLocale();
   const yearFormatter = new Intl.NumberFormat(locale === 'ar' ? 'ar-EG' : locale, { useGrouping: false });
 
+  const title = data?.title || t('title');
+  const entries = data?.milestones?.length ? data.milestones.map(m => ({
+    year: m.year,
+    title: m.title,
+    body: m.body,
+    image: m.image ? getStrapiMediaUrl(m.image) : (m.imageUrl || '')
+  })) : FALLBACK_ENTRIES.map(e => ({
+    year: e.year,
+    title: t(`entries.${e.year}.title`),
+    body: t(`entries.${e.year}.body`),
+    image: e.image
+  }));
+
   const goTo = useCallback((i: number) => {
     imageSwiper?.slideTo(i);
     textSwiper?.slideTo(i);
@@ -96,7 +111,7 @@ export function AboutTimelineSection() {
   }, [imageSwiper, textSwiper, thumbSwiper]);
 
   const prev = useCallback(() => goTo(Math.max(0, activeIdx - 1)), [activeIdx, goTo]);
-  const next = useCallback(() => goTo(Math.min(ENTRIES.length - 1, activeIdx + 1)), [activeIdx, goTo]);
+  const next = useCallback(() => goTo(Math.min(entries.length - 1, activeIdx + 1)), [activeIdx, entries.length, goTo]);
 
   const modules = [Thumbs, Controller, EffectFade, Parallax, A11y,
     ...(AUTOPLAY_DELAY > 0 ? [Autoplay] : [])];
@@ -106,7 +121,7 @@ export function AboutTimelineSection() {
       <div className="max-w-[1920px] mx-auto px-(--spacing-side) py-[clamp(1.5rem,4.2vw,5rem)]">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 sm:px-(--spacing-side)">
           <h2 className="font-serif text-[#121C2A] text-[clamp(1.75rem,2.6vw,3.125rem)]">
-            {t('title')}
+            {title}
           </h2>
         </div>
 
@@ -154,7 +169,7 @@ export function AboutTimelineSection() {
               
                 className="timeline-thumb-swiper w-full overflow-hidden lg:h-[540px]"
               >
-                {ENTRIES.map((e, i) => (
+                {entries.map((e, i) => (
                   <SwiperSlide key={e.year} className="!flex !items-center">
                     {({ isActive }: { isActive: boolean }) => (
                       <button
@@ -185,7 +200,7 @@ export function AboutTimelineSection() {
               {...(AUTOPLAY_DELAY > 0 ? { autoplay: { delay: AUTOPLAY_DELAY, disableOnInteraction: false } } : {})}
               className="w-full h-full"
             >
-              {ENTRIES.map((e) => (
+              {entries.map((e) => (
                 <SwiperSlide key={e.year} className="overflow-hidden relative">
                   {/*
                     Swiper background-image parallax pattern.
@@ -227,16 +242,16 @@ export function AboutTimelineSection() {
               {...(AUTOPLAY_DELAY > 0 ? { autoplay: { delay: AUTOPLAY_DELAY, disableOnInteraction: false } } : {})}
               className="w-full flex-1 !overflow-visible timeline-text-swiper"
             >
-              {ENTRIES.map((e) => (
+              {entries.map((e) => (
                 <SwiperSlide key={e.year} className="!h-auto group/slide">
                   <p className="font-serif opacity-0 group-[&.swiper-slide-active]/slide:opacity-100 group-[&.swiper-slide-active]/slide:translate-y-0 translate-y-5 overflow-hidden duration-500 text-[#121C2A] text-[clamp(1.125rem,1.25vw,1.5rem)]">
                     {yearFormatter.format(Number(e.year))}
                   </p>
                   <h3 className="mt-[clamp(0.75rem,1vw,1.2rem)] font-serif opacity-0 group-[&.swiper-slide-active]/slide:opacity-100 group-[&.swiper-slide-active]/slide:translate-y-0 translate-y-5 overflow-hidden duration-500 text-[#048ED6] leading-[1.3] text-[clamp(1.25rem,1.56vw,1.875rem)]">
-                    {t(`entries.${e.year}.title`)}
+                    {e.title}
                   </h3>
                   <p className="mt-[clamp(1rem,1.4vw,1.7rem)] text-[#3F4941] leading-[1.85] text-[1rem] opacity-0 group-[&.swiper-slide-active]/slide:opacity-100 group-[&.swiper-slide-active]/slide:translate-y-0 translate-y-5 overflow-hidden duration-500">
-                    {t(`entries.${e.year}.body`)}
+                    {e.body}
                   </p>
                 </SwiperSlide>
               ))}
@@ -245,7 +260,7 @@ export function AboutTimelineSection() {
             {/* Nav buttons */}
             <div className="pt-[clamp(1.5rem,2.1vw,2.5rem)] flex items-center gap-3">
               <NavBtn dir="prev" onClick={prev} disabled={activeIdx === 0} />
-              <NavBtn dir="next" onClick={next} disabled={activeIdx === ENTRIES.length - 1} />
+              <NavBtn dir="next" onClick={next} disabled={activeIdx === entries.length - 1} />
             </div>
           </div>
 

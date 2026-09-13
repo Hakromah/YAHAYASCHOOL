@@ -33,28 +33,59 @@ import { ArrowRight } from 'lucide-react';
 //   { key: 'rb', title: 'Arts & Creativity', image: '/images/figma-home/13.png' },
 // ] as const;
 
+import type { HomepageEntity } from '@/types/cms.types';
+import { getStrapiMediaUrl } from '@/services/cms.service';
+
 function Card({ card }: { card: { key: string; title: string; image: string } }) {
   return (
     <div className={`act-card act-${card.key} relative w-full aspect-[490/345] rounded-lg overflow-hidden`}>
       <img src={card.image} alt={card.title} className="w-full h-full object-cover" />
-      <span className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/55 to-transparent" />
-      <span className="absolute left-5 bottom-4 text-white text-[clamp(0.9375rem,0.94vw,1.125rem)] drop-shadow">
+      <span className="absolute inset-0 bg-black/25 pointer-events-none" />
+      <span className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/65 to-transparent" />
+      <span className="absolute left-5 bottom-4 right-5 text-white font-semibold text-[clamp(0.9375rem,0.94vw,1.125rem)] drop-shadow">
         {card.title}
       </span>
     </div>
   );
 }
 
-export function HomeActivitiesSection() {
+interface HomeActivitiesSectionProps {
+  data?: HomepageEntity | null;
+  locale?: string;
+}
+
+export function HomeActivitiesSection({ data, locale = 'en' }: HomeActivitiesSectionProps) {
   const t = useTranslations('homeActivities');
   const sectionRef = useRef<HTMLElement>(null);
 
-  const CARDS = [
+  const heading = data?.activitiesHeading || t('heading');
+  const subtitle = data?.activitiesSubtitle || t('subtitle');
+  const ctaText = data?.activitiesCtaText || t('joinUs');
+  const ctaUrl = data?.activitiesCtaUrl || '/gallery';
+  const centerImage = getStrapiMediaUrl(data?.activitiesCenterImage?.url) || '/images/figma-home/19.png';
+
+  const defaultCards = [
     { key: 'lt', title: t('mosqueActivities'), image: '/images/figma-home/09.png' },
     { key: 'lb', title: t('publicSpeaking'), image: '/images/figma-home/17.png' },
     { key: 'rt', title: t('artsCreativity'), image: '/images/figma-home/07-activity.png' },
     { key: 'rb', title: t('artsCreativity'), image: '/images/figma-home/13.png' },
   ];
+
+  const keys = ['lt', 'lb', 'rt', 'rb'] as const;
+  const CARDS = keys.map((key, idx) => {
+    const cmsCard = data?.activitiesCards?.[idx];
+    return {
+      key,
+      title: cmsCard?.title || defaultCards[idx].title,
+      image: getStrapiMediaUrl(cmsCard?.image?.url) || defaultCards[idx].image,
+    };
+  });
+
+  const getHref = (url: string) => {
+    if (url.startsWith('http') || url.startsWith('#')) return url;
+    if (locale === 'en' || !locale) return url;
+    return `/${locale}${url.startsWith('/') ? url : `/${url}`}`;
+  };
 
   // Gate on the same breakpoint the CSS uses; below it --p stays 0 and every
   // transform resolves to identity.
@@ -88,26 +119,26 @@ export function HomeActivitiesSection() {
             {/* Centre column */}
             <div className="flex flex-col items-center text-center max-lg:order-1">
               <h2 className="act-text font-normal text-black leading-[1.17] text-[clamp(1.1rem,1.87vw,2.25rem)] max-w-[460px]">
-                {t('heading')}
+                {heading}
               </h2>
 
               <div className="act-hero relative w-full aspect-[616/355] rounded-lg overflow-hidden mt-[clamp(1.5rem,2vw,2.45rem)]">
                 <img
-                  src="/images/figma-home/19.png"
+                  src={centerImage}
                   alt="Yahaya students on campus"
                   className="w-full h-full object-cover"
                 />
               </div>
 
               <p className="act-text mt-[clamp(1.25rem,1.7vw,2.05rem)] max-w-[420px] text-black leading-[1.33] text-[clamp(1rem,0.94vw,1.125rem)]">
-                {t('subtitle')}
+                {subtitle}
               </p>
 
               <Link
-                href="/gallery"
+                href={getHref(ctaUrl)}
                 className="act-text mt-[clamp(1.25rem,1.3vw,1.6rem)] inline-flex items-center justify-center gap-3 h-[43px] px-6 rounded-full bg-[#048ED6] text-white font-medium text-[15px] transition-colors hover:bg-[#037ab8]"
               >
-                <span>{t('joinUs')}</span>
+                <span>{ctaText}</span>
                 <ArrowRight className="w-4 h-4 rtl:rotate-180" />
               </Link>
             </div>

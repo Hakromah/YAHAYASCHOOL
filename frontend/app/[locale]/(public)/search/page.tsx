@@ -4,7 +4,8 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Search, ArrowRight, BookOpen, GraduationCap, Newspaper, Calendar, Building2 } from 'lucide-react';
 import { cmsService } from '@/services/cms.service';
-import type { Article, Program, Department, Event } from '@/types/cms.types';
+import type { NewsFeaturedEventComponent, Program, Department, Event } from '@/types/cms.types';
+
 
 interface SearchPageProps {
   params?: Promise<{ locale?: string }>;
@@ -14,7 +15,7 @@ export default function SearchPage({ params }: SearchPageProps) {
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<{
-    articles: Article[];
+    articles: NewsFeaturedEventComponent[];
     programs: Program[];
     departments: Department[];
     events: Event[];
@@ -33,18 +34,22 @@ export default function SearchPage({ params }: SearchPageProps) {
     setSearched(true);
 
     // Fetch across collections and filter by query
-    const [articlesRes, programs, departments, events] = await Promise.all([
-      cmsService.getArticles('en', 1, 50),
+    // News: search featuredEvents from the News Page single type
+    const [newsPageData, programs, departments, events] = await Promise.all([
+      cmsService.getNewsPage('en'),
       cmsService.getPrograms('en', false, 50),
       cmsService.getDepartments('en', 50),
       cmsService.getEvents('en', 50),
     ]);
 
     const q = query.toLowerCase();
+    const featuredEvents = newsPageData?.featuredEvents || [];
 
     setResults({
-      articles: (articlesRes?.data || []).filter(
-        (a) => a.title?.toLowerCase().includes(q) || a.summary?.toLowerCase().includes(q)
+      articles: featuredEvents.filter(
+        (fe) =>
+          (fe.title || fe.headlineLine1 || '')?.toLowerCase().includes(q) ||
+          (fe.blurb || fe.lede || '')?.toLowerCase().includes(q)
       ),
       programs: (programs || []).filter(
         (p) => p.title?.toLowerCase().includes(q) || p.description?.toLowerCase().includes(q)
@@ -182,21 +187,29 @@ export default function SearchPage({ params }: SearchPageProps) {
                 <span>News & Articles ({results.articles.length})</span>
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                {results.articles.map((a, idx) => (
+              {results.articles.map((a, idx) => {
+                  const title = a.title || a.headlineLine1 || 'School Story';
+                  const summary = a.blurb || a.lede || '';
+                  const slug = a.href
+                    ? a.href.replace(/^\/[a-z]{2}\/news\//, '').replace(/^\/news\//, '').replace(/^\//, '')
+                    : title.toLowerCase().replace(/\s+/g, '-').replace(/[^\w\-]+/g, '').replace(/^-+|-+$/g, '');
+                  return (
                   <div key={idx} className="bg-white rounded-2xl p-6 border border-gray-200 shadow-xs flex flex-col justify-between">
                     <div>
-                      <h4 className="font-bold text-emerald-950 mb-2">{a.title}</h4>
-                      <p className="text-base text-gray-600 line-clamp-2 mb-4">{a.summary}</p>
+                      <h4 className="font-bold text-emerald-950 mb-2">{title}</h4>
+                      <p className="text-base text-gray-600 line-clamp-2 mb-4">{summary}</p>
                     </div>
                     <Link
-                      href={`/news/${a.slug}`}
+                      href={`/news/${slug}`}
                       className="text-xs font-bold text-emerald-800 hover:text-amber-600 flex items-center gap-1 self-start"
                     >
                       <span>Read Article</span>
                       <ArrowRight className="w-3.5 h-3.5 rtl:rotate-180" />
                     </Link>
                   </div>
-                ))}
+                  );
+                })}
+
               </div>
             </div>
           )}

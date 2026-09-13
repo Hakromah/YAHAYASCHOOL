@@ -7,23 +7,11 @@ import { ArrowRight, BookOpen, BookOpenText, GraduationCap, Laptop } from 'lucid
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Pagination } from 'swiper/modules';
 import { useTranslations } from 'next-intl';
+import type { HomepageEntity, SchoolAcademicProgramEntity } from '@/types/cms.types';
+import { getStrapiMediaUrl } from '@/services/cms.service';
 
 import 'swiper/css';
 import 'swiper/css/pagination';
-
-/**
- * Home — "Explore Our Programs" section.
- * Implemented from Figma node 537-452 (frame 1920×1080).
- *
- * Design reference values (measured at the 1920 frame):
- *   brand #048ED6 · ink #000000 · body #576059 · wells #E6F0FB · rule #EBEBEB
- *   heading 44 · row title 50 · body 16/21 · wells 50 · CTA 175×52 pill
- *   image column 557 wide (34.6% of content) — 255 tall open, 101 tall closed
- *
- * md and up  → accordion; hovering a row opens it (first row open at rest).
- * below md   → the same rows become a swipeable slider.
- * Note `--breakpoint-md` is 1025px in globals.css, not Tailwind's default.
- */
 
 /** The Figma uses a mosque glyph here; lucide has no equivalent. */
 function MosqueIcon({ className }: { className?: string }) {
@@ -38,37 +26,10 @@ function MosqueIcon({ className }: { className?: string }) {
   );
 }
 
-const PROGRAMS = [
-  {
-    id: 'arabic',
-    iconImg: '/images/figma-home/11.png',
-    image: '/images/figma-home/19.png',
-    link: '/programs/arabic',
-  },
-  {
-    id: 'english',
-    Icon: BookOpen,
-    image: '/images/figma-home/03-programs.jpeg',
-    link: '/programs/english',
-  },
-  {
-    id: 'dawah',
-    Icon: MosqueIcon,
-    image: '/images/figma-home/17.png',
-    link: '/programs/dawah',
-  },
-  {
-    id: 'online',
-    Icon: Laptop,
-    image: '/images/figma-home/03-programs.jpeg',
-    link: '/online-learning',
-  },
-] as const;
-
 /** Rows carry either a lucide component or an exported illustration. */
 function RowIcon({ p, className }: { p: { Icon?: React.ElementType; iconImg?: string }; className?: string }) {
   if (p.iconImg) return <img src={p.iconImg} alt="" aria-hidden className={className} />;
-  const I = p.Icon!;
+  const I = p.Icon || BookOpen;
   return <I className={className} />;
 }
 
@@ -88,12 +49,87 @@ function LearnMore({ href, text }: { href: string; text: string }) {
   );
 }
 
-export function ProgramsGridSection({ locale = 'en', data }: { locale?: string; data?: unknown }) {
-  void locale;
-  void data;
+interface ProgramsGridSectionProps {
+  locale?: string;
+  data?: HomepageEntity | any;
+  programs?: SchoolAcademicProgramEntity[];
+}
+
+export function ProgramsGridSection({ locale = 'en', data, programs }: ProgramsGridSectionProps) {
   const t = useTranslations('programsSection');
   const [active, setActive] = useState(0);
   const [isDesktop, setIsDesktop] = useState(false);
+
+  const homepage = data as HomepageEntity | undefined;
+  const eyebrow = homepage?.programsEyebrow || t('eyebrow');
+  const heading = homepage?.programsTitle || t('heading');
+  const description = homepage?.programsDescription || t('description');
+  const learnMoreText = homepage?.programsLearnMoreText || t('learnMore');
+
+  const defaultPrograms = [
+    {
+      id: 'arabic',
+      title: t('programs.arabic.title'),
+      desc: t('programs.arabic.desc'),
+      iconImg: '/images/figma-home/11.png',
+      image: '/images/figma-home/19.png',
+      link: `/${locale}/programs/arabic`,
+    },
+    {
+      id: 'english',
+      title: t('programs.english.title'),
+      desc: t('programs.english.desc'),
+      Icon: BookOpen,
+      image: '/images/figma-home/03-programs.jpeg',
+      link: `/${locale}/programs/english`,
+    },
+    {
+      id: 'dawah',
+      title: t('programs.dawah.title'),
+      desc: t('programs.dawah.desc'),
+      Icon: MosqueIcon,
+      image: '/images/figma-home/17.png',
+      link: `/${locale}/programs/dawah`,
+    },
+    {
+      id: 'online',
+      title: t('programs.online.title'),
+      desc: t('programs.online.desc'),
+      Icon: Laptop,
+      image: '/images/figma-home/03-programs.jpeg',
+      link: `/${locale}/online-learning`,
+    },
+  ];
+
+  const displayPrograms = (programs && programs.length > 0)
+    ? programs.map((p, idx) => {
+        let Icon: React.ElementType | undefined = undefined;
+        let iconImg: string | undefined = undefined;
+        const slug = (p.slug || '').toLowerCase();
+        if (slug.includes('arabic') || slug.includes('arab')) {
+          iconImg = '/images/figma-home/11.png';
+        } else if (slug.includes('english')) {
+          Icon = BookOpen;
+        } else if (slug.includes('dawah') || slug.includes('quran') || slug.includes('islamic')) {
+          Icon = MosqueIcon;
+        } else if (slug.includes('online')) {
+          Icon = Laptop;
+        } else {
+          Icon = BookOpenText;
+        }
+
+        const fallback = defaultPrograms[idx % defaultPrograms.length];
+        return {
+          id: p.slug || String(p.id),
+          title: p.title || fallback.title,
+          desc: p.shortDescription || p.description || fallback.desc,
+          Icon: iconImg ? undefined : Icon,
+          iconImg,
+          image: getStrapiMediaUrl(p.coverImage?.url) || fallback.image,
+          link: slug.includes('online') ? `/${locale}/online-learning` : `/${locale}/programs/${p.slug}`,
+        };
+      })
+    : defaultPrograms;
 
   useEffect(() => {
     const mq = window.matchMedia('(min-width: 1024px)');
@@ -131,21 +167,22 @@ export function ProgramsGridSection({ locale = 'en', data }: { locale?: string; 
             className="inline-flex items-center gap-2 h-10 px-4 rounded-full bg-[#E6F0FB] text-[#048ED6] font-semibold text-[15px]"
           >
             <GraduationCap className="w-5 h-5" />
-            {t('eyebrow')}
+            {eyebrow}
           </motion.span>
           <motion.h2 
             variants={isDesktop ? itemVariants : {}}
             className="mt-[clamp(0.75rem,1.1vw,1.3rem)] font-bold text-black tracking-[-0.015em] leading-[1.09] text-[clamp(1.5rem,2.29vw,2.75rem)]"
           >
-            {t('heading')}
+            {heading}
           </motion.h2>
           <motion.p 
             variants={isDesktop ? itemVariants : {}}
             className={`mt-[clamp(0.75rem,1.1vw,1.3rem)] max-w-[620px] ${BODY_CLS}`}
           >
-            {t('description')}
+            {description}
           </motion.p>
         </motion.div>
+
 
         {/* ── md+ : hover-driven accordion ────────────────────────── */}
         <motion.div 
@@ -158,7 +195,7 @@ export function ProgramsGridSection({ locale = 'en', data }: { locale?: string; 
             visible: { transition: { staggerChildren: 0.15 } }
           } : {}}
         >
-          {PROGRAMS.map((p, i) => {
+          {displayPrograms.map((p, i) => {
             const open = active === i;
             // The Figma drops the rule above the first row and above the row
             // that follows the open one; every other row keeps its divider.
@@ -178,7 +215,7 @@ export function ProgramsGridSection({ locale = 'en', data }: { locale?: string; 
                     <RowIcon p={p} className="w-6 h-6 object-contain" />
                   </span>
                   <div className="min-w-0">
-                    <h3 className={TITLE_CLS}>{t(`programs.${p.id}.title`)}</h3>
+                    <h3 className={TITLE_CLS}>{p.title}</h3>
                     {/* Collapsed rows keep the copy in the DOM but at zero height. */}
                     <div
                       className={`grid transition-[grid-template-rows,opacity] duration-500 ease-out ${open ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
@@ -186,10 +223,10 @@ export function ProgramsGridSection({ locale = 'en', data }: { locale?: string; 
                     >
                       <div className="overflow-hidden">
                         <p className={`mt-[clamp(1.1rem,2vw,2.4rem)] max-w-[620px] ${BODY_CLS}`}>
-                          {t(`programs.${p.id}.desc`)}
+                          {p.desc}
                         </p>
                         <div className="mt-[clamp(1.1rem,1.9vw,2.3rem)] pb-1">
-                          <LearnMore href={p.link} text={t('learnMore')} />
+                          <LearnMore href={p.link} text={learnMoreText} />
                         </div>
                       </div>
                     </div>
@@ -201,7 +238,7 @@ export function ProgramsGridSection({ locale = 'en', data }: { locale?: string; 
                   className={`shrink-0 w-[34.6%] rounded-lg overflow-hidden transition-[height] duration-500 ease-out ${open ? 'h-[255px]' : 'h-[101px]'
                     }`}
                 >
-                  <img src={p.image} alt={t(`programs.${p.id}.title`)} className="w-full h-full object-cover" />
+                  <img src={p.image} alt={p.title} className="w-full h-full object-cover" />
                 </div>
               </motion.div>
             );
@@ -230,21 +267,21 @@ export function ProgramsGridSection({ locale = 'en', data }: { locale?: string; 
   }}
      className="programs-swiper !pb-12"
 >
-            {PROGRAMS.map((p) => (
+            {displayPrograms.map((p) => (
               <SwiperSlide key={p.id}>
                 <div className="flex flex-col">
                   <div className="w-full h-[210px] rounded-lg overflow-hidden">
-                    <img src={p.image} alt={t(`programs.${p.id}.title`)} className="w-full h-full object-cover" />
+                    <img src={p.image} alt={p.title} className="w-full h-full object-cover" />
                   </div>
                   <div className="flex items-center gap-4 mt-5">
                     <span className="w-[50px] h-[50px] shrink-0 grid place-items-center rounded-full bg-[#E6F0FB] text-[#048ED6]">
                       <RowIcon p={p} className="w-6 h-6 object-contain" />
                     </span>
-                    <h3 className={TITLE_CLS}>{t(`programs.${p.id}.title`)}</h3>
+                    <h3 className={TITLE_CLS}>{p.title}</h3>
                   </div>
-                  <p className={`mt-4 ${BODY_CLS}`}>{t(`programs.${p.id}.desc`)}</p>
+                  <p className={`mt-4 ${BODY_CLS}`}>{p.desc}</p>
                   <div className="mt-6">
-                    <LearnMore href={p.link} text={t('learnMore')} />
+                    <LearnMore href={p.link} text={learnMoreText} />
                   </div>
                 </div>
               </SwiperSlide>

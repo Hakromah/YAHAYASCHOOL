@@ -5,6 +5,8 @@ import { motion } from 'framer-motion';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useTranslations, useLocale } from 'next-intl';
+import type { HomepageEntity } from '@/types/cms.types';
+import { getStrapiMediaUrl } from '@/services/cms.service';
 
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger);
@@ -13,23 +15,7 @@ if (typeof window !== 'undefined') {
 /**
  * Home — "About Our Legacy" section.
  * Implemented from Figma node 533-415 (frame 1920×897).
- *
- * Design reference values (measured at the 1920 frame):
- *   brand blue #048ED6 · ink #111C2D · body #414751
- *   icon wells #E6F0FB · eyebrow rule #8080CD · wave edge #28289D
- *   heading 44/48 · body 18/29 · stat 28 · label 16 · card 20/30
- *
- * The wrapper matches HeroSection (max-w-[1920px] + --spacing-side) so the copy
- * aligns with the hero above it; the Figma frame insets content ~160px, which is
- * why the columns are expressed as ratios rather than the frame's fixed widths.
  */
-
-// Moved to component scope to use translations
-// const STATS = [
-//   { icon: '/home/graduate.png', w: 33, h: 27, value: '250+', label: 'Students' },
-//   { icon: '/home/people.png', w: 20, h: 20, value: '25+', label: 'Employees' },
-//   { icon: '/home/approve.png', w: 20, h: 19, value: '6+', label: 'Years' },
-// ] as const;
 
 // Sampled from the Figma wave every 20px, normalised to a 660×126 box.
 const WAVE_EDGE =
@@ -37,17 +23,48 @@ const WAVE_EDGE =
 const WAVE_FILL =
   'M0,7 L20,12 L40,17 L60,20 L80,22 L100,24 L120,28 L140,32 L160,37 L180,43 L200,49 L220,56 L240,62 L260,70 L280,77 L300,84 L320,89 L340,94 L360,99 L380,102 L400,106 L420,109 L440,112 L460,114 L480,117 L500,119 L520,121 L540,123 L560,124 L580,126 L660,126 L0,126 Z';
 
-export function HomeAboutSection() {
+export function HomeAboutSection({ data, locale: localeProp }: { data?: HomepageEntity | null; locale?: string }) {
   const t = useTranslations('homeAbout');
-  const locale = useLocale();
+  const activeLocale = useLocale();
+  const locale = localeProp || activeLocale;
   const [isDesktop, setIsDesktop] = useState(false);
   const sectionRef = useRef<HTMLElement>(null);
 
+  const eyebrow = data?.aboutEyebrow || t('eyebrow');
+  const headingLine1 = data?.aboutHeadingLine1 || t('headingLine1');
+  const headingLine2 = data?.aboutHeadingLine2 || t('headingLine2');
+  const headingHighlight = data?.aboutHeadingHighlight || t('headingHighlight');
+  const body = data?.aboutBody || t('body');
+  const caption = data?.aboutCaption || t('caption');
+  const imageSrc = getStrapiMediaUrl(data?.aboutImage?.url) || '/home/aboutImage.png';
+
   const STATS = [
-    { icon: '/home/graduate.png', w: 33, h: 27, num: 250, suffix: '+', label: t('students') },
-    { icon: '/home/people.png', w: 20, h: 20, num: 25, suffix: '+', label: t('employees') },
-    { icon: '/home/approve.png', w: 20, h: 19, num: 6, suffix: '+', label: t('years') },
+    {
+      icon: '/home/graduate.png',
+      w: 33,
+      h: 27,
+      num: data?.aboutStat1Number ?? 250,
+      suffix: data?.aboutStat1Suffix || '+',
+      label: data?.aboutStat1Label || t('students')
+    },
+    {
+      icon: '/home/people.png',
+      w: 20,
+      h: 20,
+      num: data?.aboutStat2Number ?? 25,
+      suffix: data?.aboutStat2Suffix || '+',
+      label: data?.aboutStat2Label || t('employees')
+    },
+    {
+      icon: '/home/approve.png',
+      w: 20,
+      h: 19,
+      num: data?.aboutStat3Number ?? 6,
+      suffix: data?.aboutStat3Suffix || '+',
+      label: data?.aboutStat3Label || t('years')
+    },
   ] as const;
+
 
   useEffect(() => {
     // 1280px is Tailwind's xl breakpoint
@@ -139,7 +156,7 @@ export function HomeAboutSection() {
               </span>
               <span className="relative inline-block pb-[11px]">
                 <span className="text-xs sm:text-[clamp(0.875rem,0.94vw,1.125rem)] tracking-[0.02em] uppercase text-[#048ED6]">
-                  {t('eyebrow')}
+                  {eyebrow}
                 </span>
                 <span className="absolute bottom-0 left-0 w-[56%] h-[3px] rounded-full bg-(--color-primary)" />
               </span>
@@ -153,8 +170,8 @@ export function HomeAboutSection() {
               transition={{ duration: 0.7, delay: 0.1, ease: "easeOut" }}
               className="mt-[clamp(2rem,3.1vw,3.7rem)] font-bold text-[#111C2D] text-[clamp(1.5rem,2.29vw,2.75rem)] leading-[1.09] tracking-[-0.01em]"
             >
-              {t('headingLine1')} <br className="max-sm:hidden" />
-              {t('headingLine2')} <span className="text-[#048ED6]">{t('headingHighlight')}</span>
+              {headingLine1} <br className="max-sm:hidden" />
+              {headingLine2} <span className="text-[#048ED6]">{headingHighlight}</span>
             </motion.h2>
 
             {/* Body */}
@@ -165,7 +182,7 @@ export function HomeAboutSection() {
               transition={{ duration: 0.7, delay: 0.2, ease: "easeOut" }}
               className="mt-[clamp(1.25rem,1.5vw,1.8rem)] max-w-[38rem] text-[#414751] text-[clamp(1rem,0.94vw,1.125rem)] leading-[1.61]"
             >
-              {t('body')}
+              {body}
             </motion.p>
 
             {/* Stats */}
@@ -207,7 +224,7 @@ export function HomeAboutSection() {
           >
             <div className="aboutImageWrapper relative w-full aspect-[855/570] rounded-2xl overflow-hidden">
               <img
-                src="/home/aboutImage.png"
+                src={imageSrc}
                 alt="Yahaya students studying together in class"
                 className="aboutImage w-full h-full object-cover"
               />
@@ -224,7 +241,7 @@ export function HomeAboutSection() {
               </span>
               <span className="w-px self-stretch shrink-0 bg-white/40" />
               <p className="text-white text-[clamp(1rem,1.04vw,1.25rem)] leading-[1.5]">
-                {t('caption')}
+                {caption}
               </p>
             </div>
           </motion.div>

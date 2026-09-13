@@ -11,8 +11,9 @@ import type { Swiper as SwiperClass } from 'swiper';
 import 'swiper/css';
 import 'swiper/css/effect-fade';
 
-import { type NewsCategory } from '@/components/public/news/articles';
-import type { ArticleEntity } from '@/types/cms.types';
+import type { NewsFeaturedEventComponent } from '@/types/cms.types';
+import { formatCardDate, resolveEventDate, formatMonthAndDay } from '@/lib/format';
+
 
 /**
  * News hero. Implemented from Figma node 384-3987 (frame 1920x3930).
@@ -44,6 +45,7 @@ export type FeaturedEvent = {
   month: string; day: string; category: string;
   title: string; time: string; place: string; blurb: string;
   href: string;
+  buttonText?: string;
 };
 
 // Slide one carries the design's exact copy; the rest are the same shape.
@@ -57,6 +59,7 @@ const FEATURED: FeaturedEvent[] = [
     time: '10:00 AM - 1:00 PM', place: 'Main Auditorium',
     blurb: 'Join us as we celebrate the achievements of our graduating class.',
     href: '/news/science-tech-fair-2024',
+    buttonText: 'Read More',
   },
   {
     eyebrow: 'Campus Life',
@@ -67,6 +70,7 @@ const FEATURED: FeaturedEvent[] = [
     time: '9:00 AM - 11:00 AM', place: 'Hifz Centre',
     blurb: 'The doors open on our dedicated Hifz learning centre.',
     href: '/news/new-memorization-hub',
+    buttonText: 'Read More',
   },
   {
     eyebrow: "D'awah",
@@ -77,6 +81,7 @@ const FEATURED: FeaturedEvent[] = [
     time: '2:00 PM - 5:00 PM', place: 'City Centre',
     blurb: 'Senior students lead an outreach programme across three neighbourhoods.',
     href: '/news/community-dawah',
+    buttonText: 'Read More',
   },
   {
     eyebrow: 'Achievement',
@@ -87,6 +92,7 @@ const FEATURED: FeaturedEvent[] = [
     time: '11:00 AM - 1:00 PM', place: 'Main Hall',
     blurb: 'Recognising outstanding academic and character achievement.',
     href: '/news/excellence-awards',
+    buttonText: 'Read More',
   },
   {
     eyebrow: 'Events',
@@ -97,15 +103,72 @@ const FEATURED: FeaturedEvent[] = [
     time: '10:00 AM - 4:00 PM', place: 'Library Annex',
     blurb: 'A day of talks bringing together the brightest minds in the field.',
     href: '/news/innovation-summit',
+    buttonText: 'Read More',
   },
 ];
 
-export function NewsHero() {
+import { getStrapiMediaUrl } from '@/services/cms.service';
+
+function slugify(text: string): string {
+  return text
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/&/g, '-and-')
+    .replace(/[^\w\-]+/g, '')
+    .replace(/\-\-+/g, '-')
+    .replace(/^-+/, '')
+    .replace(/-+$/, '');
+}
+
+function resolveEventHref(item: { href?: string; title?: string; headlineLine1?: string; headlineLine2?: string }): string {
+  if (item.href && item.href.trim()) {
+    const raw = item.href.trim();
+    if (raw.startsWith('http://') || raw.startsWith('https://') || raw.startsWith('/')) {
+      return raw;
+    }
+    return `/news/${raw}`;
+  }
+  const candidate = item.title || `${item.headlineLine1 || ''} ${item.headlineLine2 || ''}`.trim() || 'story';
+  return `/news/${slugify(candidate)}`;
+}
+
+export function NewsHero({
+  data,
+  breadcrumbTitle,
+  pageDate,
+  locale: propLocale,
+}: {
+  data?: NewsFeaturedEventComponent[];
+  breadcrumbTitle?: string;
+  pageDate?: string;
+  locale?: string;
+}) {
   const [media, setMedia] = useState<SwiperClass | null>(null);
   const [text, setText] = useState<SwiperClass | null>(null);
   const [active, setActive] = useState(0);
   const t = useTranslations('newsPage');
-  const locale = useLocale();
+  const hookLocale = useLocale();
+  const locale = propLocale || hookLocale || 'en';
+
+  const featured = data && data.length > 0 ? data.map(d => ({
+    eyebrow: d.eyebrow,
+    headline: [d.headlineLine1, d.headlineLine2 || ''] as [string, string],
+    lede: d.lede,
+    image: (d.image ? getStrapiMediaUrl(d.image) : null) || '/images/figma-home/09.png',
+    alt: d.image?.alternativeText || d.title,
+    date: d.date || d.publishDate || d.publishedAt || d.createdAt,
+    month: d.month,
+    day: d.day,
+    category: d.category,
+    title: d.title,
+    time: d.time,
+    place: d.place,
+    blurb: d.blurb,
+    href: resolveEventHref(d),
+    buttonText: d.buttonText,
+  })) : FEATURED;
 
   // The media slider is the single source of truth — the arrows drive it and
   // the text follows. Two sliders steering each other invites a feedback loop.
@@ -115,10 +178,11 @@ export function NewsHero() {
 
   const go = (delta: number) => media?.[delta > 0 ? 'slideNext' : 'slidePrev']();
 
+  const item = featured[active];
+  const progress = ((active + 1) / featured.length) * 100;
+  const eventDate = resolveEventDate(item, pageDate);
+  const { month: localizedMonth, day: localizedDay } = formatMonthAndDay(eventDate, locale);
   const href = (url: string) => (locale === 'en' ? url : `/${locale}${url}`);
-  const item = FEATURED[active];
-  const progress = ((active + 1) / FEATURED.length) * 100;
-
   const toArabicNums = (str: string) => {
     return locale === 'ar' ? str.replace(/\d/g, (d) => '٠١٢٣٤٥٦٧٨٩'[parseInt(d, 10)]) : str;
   };
@@ -134,7 +198,7 @@ export function NewsHero() {
           <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-[#6F757D] text-[clamp(0.75rem,0.68vw,0.8125rem)]">
             <Link href={href('/')} className="transition-colors hover:text-[#048ED6]">{t('breadcrumbHome', { fallback: 'Home' })}</Link>
             <ChevronRight className="h-3.5 w-3.5 rtl:-scale-x-100" aria-hidden />
-            <span className="text-[#048ED6]">{t('breadcrumbNews', { fallback: 'News' })}</span>
+            <span className="text-[#048ED6]">{breadcrumbTitle || t('breadcrumbNews', { fallback: 'News' })}</span>
           </nav>
 
           {/* Left slider — the copy changes with the photograph beside it. */}
@@ -147,22 +211,24 @@ export function NewsHero() {
             autoHeight={true}
             speed={800}
             allowTouchMove={false}
+            observer={true}
+            observeParents={true}
             className="nh-text mt-[clamp(1rem,1.5vw,1.75rem)] w-full"
           >
-            {FEATURED.map((f, i) => (
+            {featured.map((f, i) => (
               <SwiperSlide key={i} className='h-auto w-full'>
                 <p className="font-semibold uppercase tracking-[0.18em] text-(--color-primary) text-[1rem] opacity-0 [.swiper-slide-active_&]:opacity-100 translate-y-[15px] overflow-hidden [.swiper-slide-active_&]:translate-y-0 transition-all duration-500 [.swiper-slide-active_&]:delay-[400ms]">
-                  {t(`featured.${i}.eyebrow`)}
+                  {f.eyebrow}
                 </p>
 
                 <h1 className="mt-[clamp(0.5rem,0.8vw,1rem)] font-serif leading-[1.05] text-[#121C2A] text-[clamp(1.5rem,2.76vw,3.3125rem)] opacity-0 [.swiper-slide-active_&]:opacity-100 translate-y-[15px] overflow-hidden [.swiper-slide-active_&]:translate-y-0 transition-all duration-500 [.swiper-slide-active_&]:delay-[500ms]">
-                  {t(`featured.${i}.headline.0`)}
+                  {f.headline[0]}
                   <br />
-                  {t(`featured.${i}.headline.1`)}
+                  {f.headline[1]}
                 </h1>
 
                 <p className="mt-[clamp(1rem,1.5vw,1.75rem)] sm:max-w-[24rem] leading-[1.6] text-[#5A636D] text-[clamp(1rem,0.94vw,1.125rem)] opacity-0 [.swiper-slide-active_&]:opacity-100 translate-y-[15px] overflow-hidden [.swiper-slide-active_&]:translate-y-0 transition-all duration-500 [.swiper-slide-active_&]:delay-[600ms]">
-                  {t(`featured.${i}.lede`)}
+                  {f.lede}
                 </p>
 
                 <Link
@@ -170,7 +236,7 @@ export function NewsHero() {
                   tabIndex={i === active ? 0 : -1}
                   className="mt-[clamp(1.5rem,2.4vw,2.9rem)] inline-flex h-[clamp(2.75rem,2.8vw,3.375rem)] items-center gap-2 rounded-full bg-[#048ED6] px-[clamp(1.75rem,2.66vw,3.1875rem)] font-semibold text-white transition-all hover:bg-[#037ab8] text-[clamp(0.8125rem,0.83vw,1rem)] opacity-0 [.swiper-slide-active_&]:opacity-100 translate-y-[15px] overflow-hidden [.swiper-slide-active_&]:translate-y-0 duration-500 [.swiper-slide-active_&]:delay-[800ms]"
                 >
-                  {t('readMore') || 'Read More'}
+                  {f.buttonText || t('readMore') || 'Read More'}
                   <ArrowRight className="h-4 w-4 rtl:-scale-x-100" />
                 </Link>
               </SwiperSlide>
@@ -191,7 +257,7 @@ export function NewsHero() {
               type="button"
               aria-label="Next featured event"
               onClick={() => go(1)}
-              disabled={active === FEATURED.length - 1}
+              disabled={active === featured.length - 1}
               className="grid h-[clamp(2.25rem,2.34vw,2.8125rem)] cursor-pointer w-[clamp(2.25rem,2.34vw,2.8125rem)] shrink-0 place-items-center rounded-full bg-[#048ED6] text-white transition-opacity hover:opacity-90 disabled:opacity-40"
             >
               <ArrowRight className="h-4 w-4 rtl:-scale-x-100" />
@@ -203,7 +269,7 @@ export function NewsHero() {
               role="progressbar"
               aria-valuenow={active + 1}
               aria-valuemin={1}
-              aria-valuemax={FEATURED.length}
+              aria-valuemax={featured.length}
               aria-label="Featured event"
             >
               <div
@@ -224,9 +290,11 @@ export function NewsHero() {
             onSlideChange={(sw) => setActive(sw.activeIndex)}
             slidesPerView={1}
             speed={800}
+            observer={true}
+            observeParents={true}
             className="h-full w-full"
           >
-            {FEATURED.map((f, i) => (
+            {featured.map((f, i) => (
               <SwiperSlide key={i}>
                 <img src={f.image} alt={f.alt} className="h-full w-full object-cover" />
               </SwiperSlide>
@@ -237,50 +305,56 @@ export function NewsHero() {
 
       {/* Event card. It overhangs the band, so it sits outside the clipped
           photo rather than inside it. */}
-      <div className="nh-card relative mx-auto max-md:w-full max-w-[1920px] px-(--spacing-side) lg:px-0">
-        <article className="nh-card-inner max-md:max-w-full! rounded-lg bg-white p-[clamp(1.25rem,1.6vw,1.9rem)] max-md:w-full md:shadow-[0_18px_50px_rgba(4,45,80,0.12)]">
-          <div className="flex items-start gap-[clamp(0.75rem,1vw,1.25rem)] w-full">
-            <div className="shrink-0 rounded-md bg-[#EAF5FD] px-[clamp(0.5rem,0.7vw,0.85rem)] py-[clamp(0.35rem,0.5vw,0.6rem)] text-center">
-              <span className="block font-semibold uppercase leading-none text-[#6F757D] text-[clamp(0.5625rem,0.57vw,0.6875rem)]">
-                {t(`featured.${active}.month`)}
-              </span>
-              <span className="mt-1 block font-serif leading-none text-[#048ED6] text-[clamp(1.125rem,1.35vw,1.625rem)]">
-                {toArabicNums(t(`featured.${active}.day`))}
-              </span>
-            </div>
-            <div className="min-w-0">
-              <span className="inline-block rounded-full bg-[#EAF5FD] px-2.5 py-1 font-semibold uppercase tracking-[0.1em] text-[#048ED6] text-[clamp(0.5rem,0.52vw,0.625rem)]">
-                {t(`featured.${active}.category`)}
-              </span>
-              <h2 className="mt-2 font-serif leading-tight text-[#121C2A] text-[clamp(1.0625rem,1.25vw,1.5rem)]">
-                {t(`featured.${active}.title`)}
-              </h2>
-              <p className="mt-2 flex items-center gap-1.5 text-[#5A636D] text-[1rem]">
-                <Clock className="h-3.5 w-3.5 shrink-0" aria-hidden /> {toArabicNums(t(`featured.${active}.time`))}
-              </p>
-              <p className="mt-1 flex items-center gap-1.5 text-[#5A636D] text-[1rem]">
-                <MapPin className="h-3.5 w-3.5 shrink-0" aria-hidden /> {t(`featured.${active}.place`)}
-              </p>
+      {(item.title || item.month || item.day || item.place || item.blurb || item.lede) && (
+        <div className="nh-card relative mx-auto max-md:w-full max-w-[1920px] px-(--spacing-side) lg:px-0">
+          <article className="nh-card-inner max-md:max-w-full! rounded-lg bg-white p-[clamp(1.25rem,1.6vw,1.9rem)] max-md:w-full md:shadow-[0_18px_50px_rgba(4,45,80,0.12)]">
+            <div className="flex items-start gap-[clamp(0.75rem,1vw,1.25rem)] w-full">
+              <div className="shrink-0 rounded-md bg-[#EAF5FD] px-[clamp(0.5rem,0.7vw,0.85rem)] py-[clamp(0.35rem,0.5vw,0.6rem)] text-center">
+                <span className="block font-semibold uppercase leading-none text-[#6F757D] text-[clamp(0.5625rem,0.57vw,0.6875rem)]">
+                  {localizedMonth}
+                </span>
+                <span className="mt-1 block font-serif leading-none text-[#048ED6] text-[clamp(1.125rem,1.35vw,1.625rem)]">
+                  {localizedDay}
+                </span>
+              </div>
+              <div className="min-w-0 flex-1">
+                <span className="inline-block rounded-full bg-[#EAF5FD] px-2.5 py-1 font-semibold uppercase tracking-[0.1em] text-[#048ED6] text-[clamp(0.5rem,0.52vw,0.625rem)]">
+                  {item.category || item.eyebrow || 'NEWS'}
+                </span>
+                <h2 className="mt-2 font-serif leading-tight text-[#121C2A] text-[clamp(1.0625rem,1.25vw,1.5rem)]">
+                  {item.title || item.headline[0]}
+                </h2>
+                {item.time && (
+                  <p className="mt-2 flex items-center gap-1.5 text-[#5A636D] text-[1rem]">
+                    <Clock className="h-3.5 w-3.5 shrink-0" aria-hidden /> {toArabicNums(item.time || '')}
+                  </p>
+                )}
+                {item.place && (
+                  <p className="mt-1 flex items-center gap-1.5 text-[#5A636D] text-[1rem]">
+                    <MapPin className="h-3.5 w-3.5 shrink-0" aria-hidden /> {item.place}
+                  </p>
+                )}
 
-              {/* Blurb and link sit in this column, indented past the date
-                  badge, as they do in the design. */}
-              <p className="mt-[clamp(0.75rem,1vw,1.25rem)] leading-[1.6] text-[#5A636D] text-[1rem]">
-                {t(`featured.${active}.blurb`)}
-              </p>
+                {/* Blurb and link sit in this column, indented past the date
+                    badge, as they do in the design. */}
+                <p className="mt-[clamp(0.75rem,1vw,1.25rem)] leading-[1.6] text-[#5A636D] text-[1rem]">
+                  {item.blurb || item.lede}
+                </p>
 
-              <Link
-                href={href(item.href)}
-                className="mt-[clamp(0.75rem,1vw,1.25rem)] inline-flex items-center gap-1.5 font-medium text-[#048ED6] transition-opacity hover:opacity-80 text-[clamp(0.6875rem,0.68vw,0.8125rem)]"
-              >
-                {t('readMore') || 'Read More'} <ArrowRight className="h-3.5 w-3.5 rtl:-scale-x-100" />
-              </Link>
+                <Link
+                  href={href(item.href)}
+                  className="mt-[clamp(0.75rem,1vw,1.25rem)] inline-flex items-center gap-1.5 font-medium text-[#048ED6] transition-opacity hover:opacity-80 text-[clamp(0.6875rem,0.68vw,0.8125rem)]"
+                >
+                  {item.buttonText || t('readMore') || 'Read More'} <ArrowRight className="h-3.5 w-3.5 rtl:-scale-x-100" />
+                </Link>
+              </div>
             </div>
-          </div>
-        </article>
-      </div>
+          </article>
+        </div>
+      )}
 
       <style>{`
-        .nh { --band-h: clamp(30rem, 45.83vw, 55rem); }
+        .nh { --band-h: clamp(30rem, 45.83vw, 55rem); min-height: calc(var(--band-h) + clamp(3rem, 6vw, 8rem)); }
         /* Below lg the hero stacks and runs taller than the design's band, so
            the tint covers the whole section rather than stopping mid-photo. */
         .nh-band { top: 0; bottom: 0; height: auto; }
@@ -369,63 +443,71 @@ export function NewsHero() {
 
 /* ------------------------------------------------------------------------ */
 
+
 /**
- * Filter chips plus the article grid.
+ * Filter chips plus the events grid.
  *
- * A client component because the chips need state — as a server component they
- * were inert buttons with the first one hard-coded active, and the cards showed
- * a grey box reading "Article Image" instead of a photograph.
+ * Data comes exclusively from [F] News Page → featuredEvents.
+ * A client component because the filter chips need React state.
  */
-export function NewsGrid({ locale, articles = [] }: { locale: string; articles?: ArticleEntity[] }) {
-  const [category, setCategory] = useState<NewsCategory | 'All'>('All');
+export function NewsGrid({
+  locale: propLocale,
+  events = [],
+  pageDate,
+}: {
+  locale?: string;
+  events?: NewsFeaturedEventComponent[];
+  pageDate?: string;
+}) {
+  const [activeCategory, setActiveCategory] = useState<string>('All');
   const t = useTranslations('newsPage');
+  const hookLocale = useLocale();
+  const locale = hookLocale || propLocale || 'en';
   const href = (url: string) => (locale === 'en' ? url : `/${locale}${url}`);
 
-  const fallbackArticles = [
-    {
-      slug: 'science-tech-fair-2024',
-      title: 'Science and Technology Fair 2024',
-      summary: 'Students showcase their innovative projects in robotics, AI, and green energy solutions at our annual science fair.',
-      category: { title: 'Events', slug: 'events' },
-      publishedAt: '2024-03-15T10:00:00.000Z',
-      coverImage: { url: '/images/figma-home/09.png' }
-    },
-    {
-      slug: 'quran-competition-winners',
-      title: 'Annual Quran Recitation Competition Winners',
-      summary: 'Celebrating the achievements of our outstanding students in the district-wide Quran recitation and memorization contest.',
-      category: { title: 'Achievements', slug: 'achievements' },
-      publishedAt: '2024-02-28T14:30:00.000Z',
-      coverImage: { url: '/images/figma-home/17.png' }
-    },
-    {
-      slug: 'new-library-opening',
-      title: 'Grand Opening of the New Central Library',
-      summary: 'Our state-of-the-art library facility is now open to all students, featuring over 50,000 volumes and digital workstations.',
-      category: { title: 'Campus News', slug: 'campus-news' },
-      publishedAt: '2024-01-10T09:00:00.000Z',
-      coverImage: { url: '/images/figma-home/13.png' }
+  // Derive slug the same way the detail page does
+  function slugifyEvent(fe: NewsFeaturedEventComponent, idx: number): string {
+    if (fe.href) {
+      const raw = fe.href.trim();
+      return raw
+        .replace(/^\/[a-z]{2}\/news\//, '')
+        .replace(/^\/news\//, '')
+        .replace(/^\//, '')
+        || `story-${idx}`;
     }
-  ];
+    const title = fe.title || `${fe.headlineLine1 || ''} ${fe.headlineLine2 || ''}`.trim() || `story-${idx}`;
+    return title
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, '-')
+      .replace(/&/g, '-and-')
+      .replace(/[^\w\-]+/g, '')
+      .replace(/\-\-+/g, '-')
+      .replace(/^-+/, '')
+      .replace(/-+$/, '');
+  }
 
-  const displayArticles = articles && articles.length > 0 ? articles : fallbackArticles as any[];
+  // Unique categories from all events
+  const categories = ['All', ...Array.from(
+    new Set(events.map(fe => fe.category || fe.eyebrow || 'News').filter(Boolean))
+  ) as string[]];
 
-  const visible = category === 'All' ? displayArticles : displayArticles.filter((a: any) => a.category?.slug === category || a.category?.title === category);
-  
-  // Extract unique categories from articles
-  const categories = ['All', ...Array.from(new Set(displayArticles.map((a: any) => a.category?.title || 'Uncategorized').filter(Boolean))) as string[]];
+  const visible = activeCategory === 'All'
+    ? events
+    : events.filter(fe => (fe.category || fe.eyebrow || 'News') === activeCategory);
 
   return (
     <section className="w-full bg-white">
       <div className="mx-auto max-w-[1920px] px-(--spacing-side) pb-[clamp(3rem,5vw,6rem)] pt-[clamp(2.5rem,4vw,5rem)]">
+        {/* Category filter chips */}
         <div className="flex flex-wrap items-center gap-3">
-          {categories.map((cat, i) => {
-            const on = cat === category;
+          {categories.map((cat) => {
+            const on = cat === activeCategory;
             return (
               <button
                 key={cat}
                 type="button"
-                onClick={() => setCategory(cat as NewsCategory | 'All')}
+                onClick={() => setActiveCategory(cat)}
                 aria-pressed={on}
                 className={`rounded-full border px-6 py-2 text-sm font-bold transition-colors cursor-pointer ${
                   on
@@ -433,24 +515,31 @@ export function NewsGrid({ locale, articles = [] }: { locale: string; articles?:
                     : 'border-gray-200 bg-white text-gray-600 hover:border-[#048ED6] hover:text-[#048ED6]'
                 }`}
               >
-                {cat === 'All' ? t('categories.0') : cat}
+                {cat === 'All' ? (t('categories.0') || 'All') : cat}
               </button>
             );
           })}
         </div>
 
         <div className="mt-[clamp(1.5rem,2.5vw,2.5rem)] grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
-          {visible.map((a, idx) => {
-            const imageUrl = a.coverImage?.url || '/images/figma-home/09.png';
+          {visible.map((fe, idx) => {
+            const slug = slugifyEvent(fe, idx);
+            const imageUrl = (fe.image ? getStrapiMediaUrl(fe.image) : null) || '/images/figma-home/09.png';
+            const catLabel = fe.category || fe.eyebrow || 'News';
+            const title = fe.title || fe.headlineLine1 || 'School Story';
+            const summary = fe.blurb || fe.lede || '';
+            const eventDate = resolveEventDate(fe, pageDate);
+            const displayDate = formatCardDate(eventDate, locale);
+
             return (
               <article
-                key={a.slug || idx}
+                key={fe.id || idx}
                 className="group relative flex flex-col overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm transition-all duration-300 hover:shadow-xl"
               >
                 <div className="aspect-[16/10] overflow-hidden bg-gray-100">
                   <img
                     src={imageUrl}
-                    alt={a.title || ''}
+                    alt={title}
                     className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
                 </div>
@@ -458,19 +547,21 @@ export function NewsGrid({ locale, articles = [] }: { locale: string; articles?:
                 <div className="flex flex-1 flex-col p-8">
                   <div className="mb-4 flex items-center justify-between">
                     <span className="rounded border border-[#048ED6] bg-white px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[#048ED6]">
-                      {a.category?.title || 'News'}
+                      {catLabel}
                     </span>
-                    <span className="text-xs font-medium text-gray-500">{new Date(a.publishedAt || Date.now()).toLocaleDateString(locale)}</span>
+                    <span className="text-xs font-medium text-gray-500">
+                      {displayDate}
+                    </span>
                   </div>
 
                   <h3 className="mb-3 font-serif text-xl font-bold text-gray-900 transition-colors group-hover:text-[#048ED6]">
-                    <Link href={href(`/news/${a.slug}`)} className="focus:outline-none">
+                    <Link href={href(`/news/${slug}`)} className="focus:outline-none">
                       <span className="absolute inset-0" aria-hidden />
-                      {a.title}
+                      {title}
                     </Link>
                   </h3>
 
-                  <p className="flex-1 text-base leading-relaxed text-gray-600">{a.summary || a.content?.substring(0, 100) + '...'}</p>
+                  <p className="flex-1 text-base leading-relaxed text-gray-600">{summary}</p>
 
                   <span className="mt-6 flex items-center gap-1 text-sm font-bold text-[#048ED6] transition-all group-hover:gap-2">
                     {t('readMore') || 'Read More'} <ArrowRight className="h-4 w-4 rtl:-scale-x-100" />
@@ -481,10 +572,11 @@ export function NewsGrid({ locale, articles = [] }: { locale: string; articles?:
           })}
         </div>
 
-        {visible.length === 0 ? (
-          <p className="mt-10 text-gray-500">{t('emptyState', { category })}</p>
-        ) : null}
+        {visible.length === 0 && (
+          <p className="mt-10 text-gray-500">{t('emptyState', { category: activeCategory })}</p>
+        )}
       </div>
     </section>
   );
 }
+

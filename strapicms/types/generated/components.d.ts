@@ -1,5 +1,94 @@
 import type { Schema, Struct } from '@strapi/strapi';
 
+export interface AboutCertificateItem extends Struct.ComponentSchema {
+  collectionName: 'components_about_certificate_items';
+  info: {
+    description: 'Accreditation or certificate with title, image preview, download file or URL';
+    displayName: 'Certificate Item';
+    icon: 'award';
+  };
+  attributes: {
+    file: Schema.Attribute.Media<'files' | 'images'>;
+    image: Schema.Attribute.Media<'images'>;
+    imageUrl: Schema.Attribute.String;
+    title: Schema.Attribute.String & Schema.Attribute.Required;
+    url: Schema.Attribute.String;
+  };
+}
+
+export interface AboutTimelineMilestone extends Struct.ComponentSchema {
+  collectionName: 'components_about_timeline_milestones';
+  info: {
+    description: 'Historical milestone entry with year, title, body, and image';
+    displayName: 'Timeline Milestone';
+    icon: 'clock';
+  };
+  attributes: {
+    body: Schema.Attribute.Text & Schema.Attribute.Required;
+    image: Schema.Attribute.Media<'images'>;
+    imageUrl: Schema.Attribute.String;
+    title: Schema.Attribute.String & Schema.Attribute.Required;
+    year: Schema.Attribute.String & Schema.Attribute.Required;
+  };
+}
+
+export interface AboutValueItem extends Struct.ComponentSchema {
+  collectionName: 'components_about_value_items';
+  info: {
+    description: 'Core value item with key, label, and icon identifier';
+    displayName: 'Core Value Item';
+    icon: 'sparkles';
+  };
+  attributes: {
+    iconName: Schema.Attribute.String;
+    key: Schema.Attribute.String & Schema.Attribute.Required;
+    label: Schema.Attribute.String & Schema.Attribute.Required;
+  };
+}
+
+export interface AboutWhyChooseItem extends Struct.ComponentSchema {
+  collectionName: 'components_about_why_choose_items';
+  info: {
+    description: 'Individual reason card with key, title, body, and icon';
+    displayName: 'Why Choose Item';
+    icon: 'check-circle';
+  };
+  attributes: {
+    body: Schema.Attribute.Text & Schema.Attribute.Required;
+    iconName: Schema.Attribute.String;
+    key: Schema.Attribute.String & Schema.Attribute.Required;
+    title: Schema.Attribute.String & Schema.Attribute.Required;
+  };
+}
+
+export interface AcademicApproachItem extends Struct.ComponentSchema {
+  collectionName: 'components_academic_approach_items';
+  info: {
+    description: 'Item in the How Learning Comes to Life section';
+    displayName: 'Approach Item';
+    icon: 'bulletList';
+  };
+  attributes: {
+    description: Schema.Attribute.Text & Schema.Attribute.Required;
+    icon: Schema.Attribute.String & Schema.Attribute.DefaultTo<'Zap'>;
+    title: Schema.Attribute.String & Schema.Attribute.Required;
+  };
+}
+
+export interface AcademicPathwayStep extends Struct.ComponentSchema {
+  collectionName: 'components_academic_pathway_steps';
+  info: {
+    description: 'A single curriculum or learning progression step in an academic program';
+    displayName: 'Pathway Step';
+    icon: 'check';
+  };
+  attributes: {
+    description: Schema.Attribute.Text & Schema.Attribute.Required;
+    stageNumber: Schema.Attribute.Integer;
+    title: Schema.Attribute.String & Schema.Attribute.Required;
+  };
+}
+
 export interface ContactCampusInfo extends Struct.ComponentSchema {
   collectionName: 'components_contact_campus_infos';
   info: {
@@ -208,6 +297,67 @@ export interface ErpTimelineItem extends Struct.ComponentSchema {
   };
 }
 
+export interface HomeActivityCard extends Struct.ComponentSchema {
+  collectionName: 'components_home_activity_cards';
+  info: {
+    description: 'Activity card for student life section on homepage';
+    displayName: 'Activity Card';
+  };
+  attributes: {
+    image: Schema.Attribute.Media<'images'>;
+    title: Schema.Attribute.String;
+  };
+}
+
+export interface HomeHeroSlide extends Struct.ComponentSchema {
+  collectionName: 'components_home_hero_slides';
+  info: {
+    description: 'Slide item for the homepage hero carousel';
+    displayName: 'Hero Slide';
+  };
+  attributes: {
+    description: Schema.Attribute.Text;
+    image: Schema.Attribute.Media<'images'>;
+    titlePart1: Schema.Attribute.String;
+    titlePart2: Schema.Attribute.String;
+  };
+}
+
+export interface HomeTestimonialItem extends Struct.ComponentSchema {
+  collectionName: 'components_home_testimonial_items';
+  info: {
+    description: 'Community testimonial item for homepage';
+    displayName: 'Testimonial Item';
+  };
+  attributes: {
+    image: Schema.Attribute.Media<'images'>;
+    name: Schema.Attribute.String;
+    quote: Schema.Attribute.Text;
+    rating: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<5>;
+    role: Schema.Attribute.String;
+    title: Schema.Attribute.String;
+  };
+}
+
+export interface LoginFeatureItem extends Struct.ComponentSchema {
+  collectionName: 'components_login_feature_items';
+  info: {
+    description: 'Highlight feature bullet for the login branding panel';
+    displayName: 'Feature Item';
+    icon: 'shield';
+  };
+  attributes: {
+    icon: Schema.Attribute.String & Schema.Attribute.DefaultTo<'Shield'>;
+    text: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }>;
+  };
+}
+
 export interface NavigationMegaMenuItem extends Struct.ComponentSchema {
   collectionName: 'components_navigation_mega_menu_items';
   info: {
@@ -239,6 +389,153 @@ export interface NavigationMenuItem extends Struct.ComponentSchema {
       Schema.Attribute.DefaultTo<'_self'>;
     title: Schema.Attribute.String & Schema.Attribute.Required;
     url: Schema.Attribute.String & Schema.Attribute.Required;
+  };
+}
+
+export interface SectionsAboutCertificates extends Struct.ComponentSchema {
+  collectionName: 'components_sections_about_certificates';
+  info: {
+    description: 'Certificates and accreditations slider with preview images and download links';
+    displayName: 'About Certificates & Accreditations';
+    icon: 'medal';
+  };
+  attributes: {
+    certificates: Schema.Attribute.Component<'about.certificate-item', true>;
+    title: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'Accreditations & Certificates'>;
+  };
+}
+
+export interface SectionsAboutDirector extends Struct.ComponentSchema {
+  collectionName: 'components_sections_about_directors';
+  info: {
+    description: 'Founding director quote and bio panel with portrait, title, 3 quote paragraphs, and signature';
+    displayName: 'About Founding Director';
+    icon: 'user-check';
+  };
+  attributes: {
+    name: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'Dr. Yahaya Kromah'>;
+    portrait: Schema.Attribute.Media<'images'>;
+    portraitUrl: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'/images/figma-home/08-activity.jpeg'>;
+    quoteP1: Schema.Attribute.Text &
+      Schema.Attribute.DefaultTo<'When we laid the cornerstone of Yahaya International, our aspiration was clear: to create an institution that neither compromises on academic excellence nor dilutes our sacred Islamic identity. Knowledge without moral purpose is adrift, and devotion without intellectual rigor is incomplete.'>;
+    quoteP2: Schema.Attribute.Text &
+      Schema.Attribute.DefaultTo<"Today, seeing our students master British curriculum mathematics while memorising the Qur'an with profound understanding confirms that this vision is not only possible \u2014 it is the future of Muslim education.">;
+    quoteP3: Schema.Attribute.Text &
+      Schema.Attribute.DefaultTo<'We welcome every family that shares our belief that education should cultivate both the mind and the soul.'>;
+    quoteTitle: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'A word from our founding director'>;
+    role: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'Founding Director'>;
+    signature: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'Dr. Yahaya Kromah, Ph.D. \u2014 Founding Director'>;
+  };
+}
+
+export interface SectionsAboutIntro extends Struct.ComponentSchema {
+  collectionName: 'components_sections_about_intros';
+  info: {
+    description: 'About page intro with badge, two-line heading, description, and hero campus image';
+    displayName: 'About Intro Section';
+    icon: 'book-open';
+  };
+  attributes: {
+    badge: Schema.Attribute.String & Schema.Attribute.DefaultTo<'EST. 2020'>;
+    description: Schema.Attribute.Text &
+      Schema.Attribute.DefaultTo<'Founded on principles of holistic human development, Yahaya International blends rigorous British academic standards with grounded Islamic values. We prepare young minds to excel in higher education, lead with moral clarity, and contribute meaningfully to a global society.'>;
+    image: Schema.Attribute.Media<'images'>;
+    imageUrl: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'/images/figma-home/03-programs.jpeg'>;
+    title1: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'Education, Practice'>;
+    title2: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'and Advocacy'>;
+  };
+}
+
+export interface SectionsAboutMissionVision extends Struct.ComponentSchema {
+  collectionName: 'components_sections_about_mission_visions';
+  info: {
+    description: 'Interactive Mission and Vision panel with crest mask, tab labels, copy, and images';
+    displayName: 'About Mission & Vision';
+    icon: 'compass';
+  };
+  attributes: {
+    missionBody: Schema.Attribute.Text &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'To provide an exemplary dual-curriculum education that cultivates intellectual curiosity, Islamic character, and global leadership skills in every learner.'>;
+    missionImage: Schema.Attribute.Media<'images'>;
+    missionImageUrl: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'/images/vission.png'>;
+    missionLabel: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'Our Mission'>;
+    visionBody: Schema.Attribute.Text &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'To be recognized globally as the benchmark institution for modern Islamic excellence, where academic brilliance and spiritual depth converge.'>;
+    visionImage: Schema.Attribute.Media<'images'>;
+    visionImageUrl: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'/images/figma-home/02-about.jpeg'>;
+    visionLabel: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'Our Vision'>;
+  };
+}
+
+export interface SectionsAboutTimeline extends Struct.ComponentSchema {
+  collectionName: 'components_sections_about_timelines';
+  info: {
+    description: 'School history timeline slider with year navigation, parallax photos, and milestone narratives';
+    displayName: 'About Timeline Section';
+    icon: 'calendar';
+  };
+  attributes: {
+    milestones: Schema.Attribute.Component<'about.timeline-milestone', true>;
+    title: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'Our Timeline'>;
+  };
+}
+
+export interface SectionsAboutValues extends Struct.ComponentSchema {
+  collectionName: 'components_sections_about_values';
+  info: {
+    description: 'Core values bar with title, description, and repeatable value items';
+    displayName: 'About Core Values Bar';
+    icon: 'shield-check';
+  };
+  attributes: {
+    description: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'Principles guiding every action'>;
+    title: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'Our Core Values'>;
+    values: Schema.Attribute.Component<'about.value-item', true>;
+  };
+}
+
+export interface SectionsAboutWhyChoose extends Struct.ComponentSchema {
+  collectionName: 'components_sections_about_why_chooses';
+  info: {
+    description: 'Why choose Yahaya International section with title, description, and reason cards';
+    displayName: 'About Why Choose Section';
+    icon: 'thumbs-up';
+  };
+  attributes: {
+    description: Schema.Attribute.Text &
+      Schema.Attribute.DefaultTo<'We bring together two rich educational traditions \u2014 the academic depth of the British National Curriculum and the spiritual and intellectual heritage of Classical Islamic scholarship.'>;
+    reasons: Schema.Attribute.Component<'about.why-choose-item', true>;
+    title: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'Why Choose Yahaya International?'>;
   };
 }
 
@@ -366,6 +663,37 @@ export interface SectionsHero extends Struct.ComponentSchema {
   };
 }
 
+export interface SectionsNewsFeaturedEvent extends Struct.ComponentSchema {
+  collectionName: 'components_sections_news_featured_events';
+  info: {
+    description: 'Featured event slider item for the news page';
+    displayName: 'News Featured Event';
+  };
+  attributes: {
+    author: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'School Communications'>;
+    blurb: Schema.Attribute.Text;
+    body: Schema.Attribute.RichText;
+    buttonText: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'Read More'>;
+    category: Schema.Attribute.String;
+    date: Schema.Attribute.Date;
+    day: Schema.Attribute.String;
+    eyebrow: Schema.Attribute.String;
+    gallery: Schema.Attribute.Media<'images', true>;
+    headlineLine1: Schema.Attribute.String;
+    headlineLine2: Schema.Attribute.String;
+    href: Schema.Attribute.String;
+    image: Schema.Attribute.Media<'images'>;
+    lede: Schema.Attribute.Text;
+    month: Schema.Attribute.String;
+    place: Schema.Attribute.String;
+    tags: Schema.Attribute.Component<'shared.tag', true>;
+    time: Schema.Attribute.String;
+    title: Schema.Attribute.String;
+  };
+}
+
 export interface SectionsNewsGrid extends Struct.ComponentSchema {
   collectionName: 'components_sections_news_grids';
   info: {
@@ -392,13 +720,33 @@ export interface SectionsNewsletterSignup extends Struct.ComponentSchema {
   };
   attributes: {
     buttonText: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
       Schema.Attribute.DefaultTo<'Subscribe'>;
     placeholderText: Schema.Attribute.String &
-      Schema.Attribute.DefaultTo<'Enter your email address...'>;
-    subtitle: Schema.Attribute.String &
-      Schema.Attribute.DefaultTo<'Receive academic updates, Islamic reminders, and school news directly in your inbox.'>;
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Email Address'>;
+    subtitle: Schema.Attribute.Text &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Get the latest school news and event reminders straight to your inbox.'>;
     title: Schema.Attribute.String &
-      Schema.Attribute.DefaultTo<'Subscribe to Our Newsletter'>;
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<'Stay Updated'>;
   };
 }
 
@@ -637,6 +985,18 @@ export interface SharedStringItem extends Struct.ComponentSchema {
   };
 }
 
+export interface SharedTag extends Struct.ComponentSchema {
+  collectionName: 'components_shared_tags';
+  info: {
+    description: 'Article hashtag or topic tag';
+    displayName: 'Tag';
+    icon: 'price-tag';
+  };
+  attributes: {
+    name: Schema.Attribute.String & Schema.Attribute.Required;
+  };
+}
+
 export interface SharedTargetedGivingSettings extends Struct.ComponentSchema {
   collectionName: 'components_shared_targeted_giving_settings';
   info: {
@@ -688,6 +1048,12 @@ export interface SharedWallOfGratitude extends Struct.ComponentSchema {
 declare module '@strapi/strapi' {
   export namespace Public {
     export interface ComponentSchemas {
+      'about.certificate-item': AboutCertificateItem;
+      'about.timeline-milestone': AboutTimelineMilestone;
+      'about.value-item': AboutValueItem;
+      'about.why-choose-item': AboutWhyChooseItem;
+      'academic.approach-item': AcademicApproachItem;
+      'academic.pathway-step': AcademicPathwayStep;
       'contact.campus-info': ContactCampusInfo;
       'contact.contact-form': ContactContactForm;
       'contact.social-media': ContactSocialMedia;
@@ -696,8 +1062,19 @@ declare module '@strapi/strapi' {
       'erp.medical-record': ErpMedicalRecord;
       'erp.staff-note': ErpStaffNote;
       'erp.timeline-item': ErpTimelineItem;
+      'home.activity-card': HomeActivityCard;
+      'home.hero-slide': HomeHeroSlide;
+      'home.testimonial-item': HomeTestimonialItem;
+      'login.feature-item': LoginFeatureItem;
       'navigation.mega-menu-item': NavigationMegaMenuItem;
       'navigation.menu-item': NavigationMenuItem;
+      'sections.about-certificates': SectionsAboutCertificates;
+      'sections.about-director': SectionsAboutDirector;
+      'sections.about-intro': SectionsAboutIntro;
+      'sections.about-mission-vision': SectionsAboutMissionVision;
+      'sections.about-timeline': SectionsAboutTimeline;
+      'sections.about-values': SectionsAboutValues;
+      'sections.about-why-choose': SectionsAboutWhyChoose;
       'sections.cta-banner': SectionsCtaBanner;
       'sections.departments-grid': SectionsDepartmentsGrid;
       'sections.donation-banner': SectionsDonationBanner;
@@ -705,6 +1082,7 @@ declare module '@strapi/strapi' {
       'sections.feature-cards': SectionsFeatureCards;
       'sections.gallery-preview': SectionsGalleryPreview;
       'sections.hero': SectionsHero;
+      'sections.news-featured-event': SectionsNewsFeaturedEvent;
       'sections.news-grid': SectionsNewsGrid;
       'sections.newsletter-signup': SectionsNewsletterSignup;
       'sections.principal-welcome': SectionsPrincipalWelcome;
@@ -720,6 +1098,7 @@ declare module '@strapi/strapi' {
       'shared.form-labels': SharedFormLabels;
       'shared.patron': SharedPatron;
       'shared.string-item': SharedStringItem;
+      'shared.tag': SharedTag;
       'shared.targeted-giving-settings': SharedTargetedGivingSettings;
       'shared.wall-of-gratitude': SharedWallOfGratitude;
     }
