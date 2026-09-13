@@ -63,8 +63,19 @@ function getJWT(request: NextRequest): string | null {
   return request.cookies.get('jwt')?.value ?? null;
 }
 
-export default function proxy(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // ── Bypass static assets, API routes, and system files ──
+  if (
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/api') ||
+    pathname.startsWith('/favicon') ||
+    pathname.includes('.')
+  ) {
+    return NextResponse.next();
+  }
+
   const jwt = getJWT(request);
   const isAuthenticated = !!jwt;
 

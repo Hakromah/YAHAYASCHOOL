@@ -5,6 +5,8 @@ import { Footer } from '@/components/public/Footer';
 import { PolicyModal } from '@/components/public/shared/PolicyModal';
 import { cmsService } from '@/services/cms.service';
 
+import { routing } from '@/i18n/routing';
+
 interface PublicLayoutProps {
   children: React.ReactNode;
   params: Promise<{ locale: string }>;
@@ -12,6 +14,11 @@ interface PublicLayoutProps {
 
 export default async function PublicLayout({ children, params }: PublicLayoutProps) {
   const { locale } = await params;
+
+  // If locale is not valid (e.g. static assets leaking through), render children directly
+  if (!routing.locales.includes(locale as any)) {
+    return <>{children}</>;
+  }
 
   // Fetch dynamic header menu, topbar menu, and footer configuration from Strapi CMS
   const [headerMenu, topbarMenu, footerConfig, contactInfo] = await Promise.all([

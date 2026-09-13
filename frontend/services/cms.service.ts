@@ -251,9 +251,11 @@ export const cmsService = {
     // Fallback if not configured in Strapi yet
     return data || {
       id: 0,
-      address: '123 School St',
-      phone: '+1234567890',
-      email: 'info@yahayaschool.com'
+      campusInfo: {
+        address: '123 School St',
+        phone: '+1234567890',
+        email: 'info@yahayaschool.com'
+      }
     };
   },
   
@@ -277,7 +279,7 @@ export const cmsService = {
     };
     
     try {
-      const url = `${process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337/api'}/navigation-menus?${qs.stringify(query, { encodeValuesOnly: true })}`;
+      const url = `${process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1339'}/api/navigation-menus?${qs.stringify(query, { encodeValuesOnly: true })}`;
       const res = await fetch(url, { cache: 'no-store' });
       if (res.ok) {
         const json = await res.json();

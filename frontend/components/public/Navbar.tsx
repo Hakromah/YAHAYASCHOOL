@@ -5,6 +5,15 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from '@/i18n/routing';
 import { Menu, X, ChevronDown, ChevronRight, ArrowRight, User, HandHeart, GraduationCap } from 'lucide-react';
+import { LanguageSwitcher } from './LanguageSwitcher';
+import { Container } from '../ui/Container';
+import { useTranslations } from 'next-intl';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Parallax } from 'swiper/modules';
+import type { Swiper as SwiperType } from 'swiper';
+import { useLenis } from 'lenis/react';
+import 'swiper/css';
+import type { StaticImport } from 'next/dist/shared/lib/get-img-props';
 
 const FacebookIcon = ({ className }: { className?: string }) => (
   <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -33,16 +42,26 @@ const LinkedinIcon = ({ className }: { className?: string }) => (
     <circle cx="4" cy="4" r="2"></circle>
   </svg>
 );
-import { LanguageSwitcher } from './LanguageSwitcher';
-import { Container } from '../ui/Container';
-import { useTranslations } from 'next-intl';
-import { Swiper, SwiperSlide } from 'swiper/react';
-import { Parallax } from 'swiper/modules';
-import type { Swiper as SwiperType } from 'swiper';
-import { useLenis } from 'lenis/react';
-import 'swiper/css';
 
-export function Navbar({ locale = 'en', menu, topbarMenu, contactInfo }: { locale?: string; menu?: any; topbarMenu?: any; contactInfo?: any }) {
+export interface AboutMenuOption {
+  id: string;
+  label: string;
+  href: string;
+  image: string | StaticImport;
+  badge: string;
+}
+
+export function Navbar({
+  locale = 'en',
+  menu,
+  topbarMenu,
+  contactInfo
+}: {
+  locale?: string;
+  menu?: any;
+  topbarMenu?: any;
+  contactInfo?: any;
+}) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileAboutOpen, setMobileAboutOpen] = useState(false);
   const [aboutDropdownOpen, setAboutDropdownOpen] = useState(false);
@@ -89,9 +108,11 @@ export function Navbar({ locale = 'en', menu, topbarMenu, contactInfo }: { local
   }, [mobileMenuOpen, lenis]);
 
   // Try to find the "About" item to build the mega-menu dynamically
-  const aboutMenuItem = menu?.items?.find((item: any) => item.subItems && item.subItems.length > 0) || menu?.items?.find((item: any) => item.title.toLowerCase().includes('about'));
-  
-  const dynamicAboutOptions = aboutMenuItem?.subItems?.map((child: any) => ({
+  const aboutMenuItem =
+    menu?.items?.find((item: any) => item.subItems && item.subItems.length > 0) ||
+    menu?.items?.find((item: any) => item.title?.toLowerCase().includes('about'));
+
+  const dynamicAboutOptions: AboutMenuOption[] | undefined = aboutMenuItem?.subItems?.map((child: any) => ({
     id: child.title.toLowerCase().replace(/\s+/g, '-'),
     label: child.title,
     href: child.url,
@@ -99,25 +120,30 @@ export function Navbar({ locale = 'en', menu, topbarMenu, contactInfo }: { local
     badge: child.badge || t('ourCommunity')
   }));
 
-  const aboutMenuOptions = dynamicAboutOptions && dynamicAboutOptions.length > 0 
-    ? dynamicAboutOptions 
+  const aboutMenuOptions: AboutMenuOption[] =
+    dynamicAboutOptions && dynamicAboutOptions.length > 0
+      ? dynamicAboutOptions
+      : [
+          { id: 'about', label: t('aboutUs'), href: '/about', image: '/images/figma-home/02-about.jpeg', badge: t('ourCommunity') },
+          { id: 'staffs', label: t('staffs'), href: '/staffs', image: '/images/figma-home/20-news.jpeg', badge: t('ourTeam') },
+          { id: 'career', label: t('career'), href: '/career', image: '/images/figma-home/15-news.jpeg', badge: t('joinUs') },
+        ];
+
+  const isOnlineLearning = (url: string) => url && url.includes('online-learning');
+
+  const leftNavItems = menu?.items
+    ? menu.items.filter((i: any) => i.id !== aboutMenuItem?.id && !isOnlineLearning(i.url)).slice(0, 3)
     : [
-        { id: 'about', label: t('aboutUs'), href: '/about', image: '/images/figma-home/02-about.jpeg', badge: t('ourCommunity') },
-        { id: 'staffs', label: t('staffs'), href: '/staffs', image: '/images/figma-home/20-news.jpeg', badge: t('ourTeam') },
-        { id: 'career', label: t('career'), href: '/career', image: '/images/figma-home/15-news.jpeg', badge: t('joinUs') },
+        { title: t('home'), url: '/' },
+        { title: t('academicPrograms'), url: '/programs' },
+        { title: t('newsAndEvents'), url: '/news' }
       ];
 
-  const isOnlineLearning = (url: string) => url.includes('online-learning');
-
-  const leftNavItems = menu?.items ? menu.items.filter((i: any) => i.id !== aboutMenuItem?.id && !isOnlineLearning(i.url)).slice(0, 3) : [
-    { title: t('home'), url: '/' },
-    { title: t('academicPrograms'), url: '/programs' },
-    { title: t('newsAndEvents'), url: '/news' }
-  ];
-
-  const rightNavItems = menu?.items ? menu.items.filter((i: any) => i.id !== aboutMenuItem?.id && !isOnlineLearning(i.url)).slice(3) : [
-    { title: t('contact'), url: '/contact' }
-  ];
+  const rightNavItems = menu?.items
+    ? menu.items.filter((i: any) => i.id !== aboutMenuItem?.id && !isOnlineLearning(i.url)).slice(3)
+    : [
+        { title: t('contact'), url: '/contact' }
+      ];
 
   // Basic link active check
   const isLinkActive = (url: string) => {
@@ -126,339 +152,424 @@ export function Navbar({ locale = 'en', menu, topbarMenu, contactInfo }: { local
   };
 
   const getHref = (url: string) => {
+    if (!url) return '/';
     if (url.startsWith('http') || url.startsWith('#')) return url;
     if (locale === 'en' || !locale) return url;
     const cleanUrl = url.startsWith('/') ? url : `/${url}`;
     return cleanUrl === '/' ? `/${locale}` : `/${locale}${cleanUrl}`;
   };
 
-  const NavLink = ({ href, children, hasDropdown = false, isOpen = false, className = '' }: { href: string; children: React.ReactNode; hasDropdown?: boolean; isOpen?: boolean; className?: string }) => {
+  const NavLink = ({
+    href,
+    children,
+    hasDropdown = false,
+    isOpen = false,
+    className = ''
+  }: {
+    href: string;
+    children: React.ReactNode;
+    hasDropdown?: boolean;
+    isOpen?: boolean;
+    className?: string;
+  }) => {
     const active = isLinkActive(href);
     return (
       <Link
         href={getHref(href)}
-        className={`flex items-center gap-1 text-[15px] font-semibold transition-colors outline-none ${active ? 'text-[#048ED6]' : 'text-gray-800 hover:text-[#048ED6]'
-          } ${className}`}
+        className={`flex items-center gap-1 text-[15px] font-semibold transition-colors outline-none ${
+          active ? 'text-[#048ED6]' : 'text-gray-800 hover:text-[#048ED6]'
+        } ${className}`}
       >
         {children}
-        {hasDropdown && <ChevronDown className={`w-4 h-4 transition-transform duration-500 ${isOpen ? '-rotate-180' : 'lg:group-hover:-rotate-180'}`} />}
+        {hasDropdown && (
+          <ChevronDown
+            className={`w-4 h-4 transition-transform duration-300 ${
+              isOpen ? '-rotate-180' : 'lg:group-hover:-rotate-180'
+            }`}
+          />
+        )}
       </Link>
     );
   };
 
   return (
     <>
-    <header className={`sticky top-0 z-50 bg-white border-b border-gray-100 transition-transform duration-500 ${isVisible ? 'translate-y-0' : '-translate-y-[calc(100%+40px)]'}`}>
-      
-      {/* Top Bar - Desktop Only */}
-      <div className="hidden h-[50px] lg:flex w-full bg-gradient-to-r from-primary via-white to-primary text-white py-2 px-[var(--spacing-side)] justify-between items-center text-sm font-medium z-20 relative border-b border-white/10">
-        <div className="flex items-center gap-6">
-          {topbarMenu?.items ? topbarMenu.items.map((item: any, idx: number) => (
-            <Link key={idx} href={getHref(item.url)} className="group lg:hover:text-white/80 transition-colors flex items-center gap-2 font-semibold text-[13px] tracking-wide">
-              {item.url.includes('online-learning') && (
+      <header
+        className={`sticky top-0 z-50 bg-white border-b border-gray-100 transition-transform duration-500 ${
+          isVisible ? 'translate-y-0' : '-translate-y-[calc(100%+40px)]'
+        }`}
+      >
+        {/* Top Bar - Desktop Only */}
+        <div className="hidden h-[50px] lg:flex w-full bg-[#0D3B2E] text-white py-2 px-[var(--spacing-side)] justify-between items-center text-sm font-medium z-20 relative border-b border-white/10">
+          <div className="flex items-center gap-6">
+            {topbarMenu?.items ? (
+              topbarMenu.items.map((item: any, idx: number) => (
+                <Link
+                  key={idx}
+                  href={getHref(item.url)}
+                  className="group hover:text-white/80 transition-colors flex items-center gap-2 font-semibold text-[13px] tracking-wide"
+                >
+                  {item.url.includes('online-learning') && (
+                    <div className="relative flex items-center justify-center">
+                      <div className="absolute inset-0 bg-white/40 rounded-full animate-ping opacity-75 duration-1000"></div>
+                      <div className="relative bg-white/10 group-hover:bg-white/20 p-1.5 rounded-full transition-colors flex items-center justify-center">
+                        <GraduationCap className="w-4 h-4 relative z-10" />
+                      </div>
+                    </div>
+                  )}
+                  <span className="text-[13px]">{item.title}</span>
+                </Link>
+              ))
+            ) : (
+              <Link
+                href={getHref('/online-learning')}
+                className="group hover:text-white/80 transition-colors flex items-center gap-2 font-semibold text-[13px] tracking-wide"
+              >
                 <div className="relative flex items-center justify-center">
                   <div className="absolute inset-0 bg-white/40 rounded-full animate-ping opacity-75 duration-1000"></div>
                   <div className="relative bg-white/10 group-hover:bg-white/20 p-1.5 rounded-full transition-colors flex items-center justify-center">
                     <GraduationCap className="w-4 h-4 relative z-10" />
                   </div>
                 </div>
-              )}
-              <div className='text-from-18 text-to-20'>
-                  {item.title}
-              </div>
-            </Link>
-          )) : (
-            <Link href={getHref('/online-learning')} className="group lg:hover:text-white/80 transition-colors flex items-center gap-2 font-semibold text-[13px] tracking-wide">
-              <div className="relative flex items-center justify-center">
-                <div className="absolute inset-0 bg-white/40 rounded-full animate-ping opacity-75 duration-1000"></div>
-                <div className="relative bg-white/10 group-hover:bg-white/20 p-1.5 rounded-full transition-colors flex items-center justify-center">
-                  <GraduationCap className="w-4 h-4 relative z-10" />
-                </div>
-              </div>
-              <div className='text-from-18 text-to-20'>
-                  {'Online Learning'}
-              </div>
-            </Link>
-          )}
-        </div>
-        <div className="flex items-center gap-5">
-          {contactInfo?.socialMedia?.length > 0 ? (
-            <div className="flex items-center gap-4 text-white/90">
-              {contactInfo.socialMedia.map((s: any, i: number) => {
-                let iconClass = 'icon-link';
-                const iconName = s.icon || s.title;
-                if (iconName) {
-                  iconClass = iconName.startsWith('icon-') ? iconName.toLowerCase() : `icon-${iconName.toLowerCase()}`;
-                }
-                return (
-                  <a key={i} href={s.url} target="_blank" rel="noopener noreferrer" aria-label={s.title} className="lg:hover:text-white/80 transition-all lg:hover:-translate-y-[1px] block">
-                    <i className={`${iconClass} text-[15px] flex justify-center items-center`} />
-                  </a>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="flex items-center gap-4 text-white/90">
-              <a href="#" aria-label="Facebook" className="lg:hover:text-white/80 transition-all lg:hover:-translate-y-[1px] block"><FacebookIcon className="w-4 h-4" /></a>
-              <a href="#" aria-label="Twitter" className="lg:hover:text-white/80 transition-all lg:hover:-translate-y-[1px] block"><TwitterIcon className="w-4 h-4" /></a>
-              <a href="#" aria-label="Instagram" className="lg:hover:text-white/80 transition-all lg:hover:-translate-y-[1px] block"><InstagramIcon className="w-4 h-4" /></a>
-              <a href="#" aria-label="LinkedIn" className="lg:hover:text-white/80 transition-all lg:hover:-translate-y-[1px] block"><LinkedinIcon className="w-4 h-4" /></a>
-            </div>
-          )}
-          
-          <div className="w-[1px] h-4 bg-white/40"></div>
-          
-          <a href={getHref(topbarMenu?.ctaButtonUrl || '/login')} target="_blank" rel="noopener noreferrer" className="bg-transparent border border-white text-white hover:bg-white/10 px-5 py-1.5 rounded-full transition-all flex items-center gap-2 font-medium text-[13px]">
-            <User className="w-4 h-4" />
-            {topbarMenu?.ctaButtonTitle || t('loginPortal')}
-          </a>
-        </div>
-      </div>
+                <span className="text-[13px]">{t('onlineLearning')}</span>
+              </Link>
+            )}
+          </div>
 
-      <Container className='max-w-[1920px] px-[var(--spacing-side)]'>
-        <div className="w-[300px] h-[40px] max-lg:hidden flex justify-center items-end pointer-events-none absolute bottom-[-12px] left-1/2 -translate-x-1/2 z-[10]">
-          <Image
-            src="/logo-under.webp"
-            alt="Logo under please ignore it"
-            width={185}
-            height={145}
-            className="object-contain lg:hover:scale-105 transition-transform"
-            priority
-          />
-        </div>
-        <div className="w-full h-full relative">
-
-          {/* Left Navigation */}
-          <nav className='w-full h-24.75 bg-white flex justify-between items-center lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,auto)_minmax(0,1fr)]'>
-            <div className="hidden lg:flex items-center gap-2 xl:gap-(--spacing-gap)  lg:[&_*]:text-[18px] [&_*]:text-[16px]">
-              {leftNavItems.map((item: any, idx: number) => (
-                <NavLink key={idx} href={item.url}>{item.title}</NavLink>
-              ))}
-            </div>
-
-            {/* Center Logo */}
-            <Link href={getHref('/')} className="flex lg:max-w-[76px] items-center justify-center z-10 shrink-0">
-              <Image
-                src="/headerlogo.png"
-                alt="YAHAYASCHOOL Logo"
-                width={80}
-                height={95}
-                className="object-contain lg:hover:scale-105  lg:max-w-[76px] max-w-[65px] max-xs:max-w-[55px] transition-transform"
-                priority
-              />
-            </Link>
-
-            {/* Right Navigation & Actions */}
-            <div className="hidden lg:flex items-center  gap-5 xl:gap-[40px] h-full justify-end ps-8">
-              <nav className="flex items-center h-full gap-2 xl:gap-(--spacing-gap) gap-(--spacing-gap) xl:[&_*]:text-[18px] [&_*]:text-[16px]">
-
-
-                {/* About Dropdown */}
-                <div
-                  className="group relative h-full flex items-center outline-none cursor-pointer"
-                  onClick={() => setAboutDropdownOpen(!aboutDropdownOpen)}
-                >
-                  <NavLink href="/about" hasDropdown isOpen={aboutDropdownOpen} className="w-full h-full relative cursor-pointer">{aboutMenuItem?.title || t('about')}</NavLink>
-                  
-                  <div
-                    // Clicks inside the panel must not reach the wrapper's toggle above:
-                    // it would flip the dropdown *open*, and since the backdrop is
-                    // pointer-events-none the page would be left blurred with no way to
-                    // dismiss it. Most visible when picking the page you are already on,
-                    // where the route never changes so no navigation reset fires.
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setAboutDropdownOpen(false);
-                    }}
-                    className={`lg:absolute lg:top-full z-50 lg:left-[-150px] pointer-events-none w-full lg:w-[clamp(600px,50vw,690px)] bg-white rounded-2xl shadow-2xl border border-gray-100 p-4 transition-all duration-300 origin-top ${aboutDropdownOpen
-                      ? 'opacity-100 visible scale-100 pointer-events-auto'
-                      : 'opacity-0 invisible scale-95 pointer-events-none lg:group-hover:opacity-100 lg:group-hover:visible lg:group-hover:scale-100 lg:group-hover:pointer-events-auto'
-                      }`}
-                  >
-                    <div className="grid grid-cols-1 lg:grid-cols-[200px_1fr] gap-(--spacing-gap)">
-                      {/* Left Column - List */}
-                      <div className="flex flex-col gap-2">
-                        {aboutMenuOptions.map((item, index) => (
-                          <Link
-                            key={item.id}
-                            href={getHref(item.href)}
-                            onMouseEnter={() => {
-                              setActiveAboutMenu(item.id);
-                              if (swiperRef.current) {
-                                swiperRef.current.slideTo(index);
-                              }
-                            }}
-                            className={`flex items-center border border-gray-200 text-gray-700 justify-between px-4 py-3 rounded-xl text-[16px] font-medium transition-all cursor-pointer ${activeAboutMenu === item.id
-                              ? 'bg-[#048ED6] text-white duration-500 border border-gray-200'
-                              : 'bg-white border border-gray-200 text-gray-700 lg:hover:border-gray-300 lg:hover:bg-gray-50'
-                              }`}
-                          >
-                            {item.label}
-                            <ChevronRight className="w-5 h-5" />
-                          </Link>
-                        ))}
-                      </div>
-
-                      {/* Right Column - Slider Image (hidden on small screens) */}
-                      <div className="hidden lg:block relative rounded-2xl overflow-hidden h-[240px] bg-gray-100">
-                        <Swiper
-                          direction="vertical"
-                          className="w-full h-full"
-                          parallax={true}
-                          modules={[Parallax]}
-                          onSwiper={(swiper) => {
-                            swiperRef.current = swiper;
-                          }}
-                          allowTouchMove={false}
-                          speed={800}
-                        >
-                          {aboutMenuOptions.map((item) => (
-                            <SwiperSlide key={item.id} className="group/slide w-full h-full relative overflow-hidden">
-                              <div className='w-full h-full relative overflow-hidden'>
-                                <a href={getHref(item.href)} className='w-full h-full block overflow-hidden'>
-                                  <div className="w-full h-full relative scale-125" data-swiper-parallax-y="-20%">
-                                    <Image
-                                      src={item.image}
-                                      alt={item.label}
-                                      fill
-                                      className="object-cover w-full h-full"
-                                    />
-                                  </div>
-                                  <div className="absolute opacity-0 group-[&.swiper-slide-active]/slide:opacity-100 translate-x-[-100%] group-[&.swiper-slide-active]/slide:translate-x-0  group-[&.swiper-slide-active]/slide:delay-300 duration-500 top-4 left-4 group-[&.swiper-slide-active]/slide:bg-white group-[&.swiper-slide-active]/slide:backdrop-blur-sm px-4 py-1.5 rounded-full text-[#048ED6] font-medium text-sm shadow-sm z-10" data-swiper-parallax-y="-20" data-swiper-parallax-opacity="0">
-                                    {item.badge}
-                                  </div>
-                                </a>
-                              </div>
-
-                            </SwiperSlide>
-                          ))}
-                        </Swiper>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {rightNavItems.map((item: any, idx: number) => (
-                  <NavLink key={idx} href={item.url}>{item.title}</NavLink>
-                ))}
-              </nav>
-
-              <div className="flex items-center h-full gap-(--spacing-gap)  border-gray-200">
-                <LanguageSwitcher currentLocale={locale} />
-                <Link
-                  href={getHref(menu?.ctaButtonUrl || '/donations')}
-                  className="flex items-center gap-2 px-[32px] py-[13px] rounded-full text-sm font-bold text-white bg-[#048ED6] hover:bg-sky-500 shadow-md transition-all"
-                >
-                  <HandHeart className="w-5 h-5" />
-                  <span>{menu?.ctaButtonTitle || t('donations')}</span>
-                  <ArrowRight className="w-4 h-4 rtl:rotate-180" />
-                </Link>
-              </div>
-            </div>
-
-            {/* Mobile Menu Toggle & Language */}
-            <div className="lg:hidden h-full flex items-center gap-2 max-lg:gap-5 z-50 relative">
-              <LanguageSwitcher 
-                currentLocale={locale} 
-                forceClose={mobileMenuOpen}
-                onToggle={(isOpen) => {
-                  if (isOpen) setMobileMenuOpen(false);
-                }}
-              />
-              <button
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="cursor-pointer"
-                aria-label="Toggle Navigation Menu"
-              >
-                <div className="w-8 h-6 flex flex-col justify-between items-center relative">
-                  <span className={`block h-[2px] w-full transform transition duration-300 ease-in-out ${mobileMenuOpen ? 'rotate-45 translate-y-[11px] bg-[#048ED6]' : 'bg-gray-800'}`} />
-                  <span className={`block h-[2px] w-full transform transition duration-300 ease-in-out ${mobileMenuOpen ? 'opacity-0 bg-white/0 w-0' : 'bg-gray-800'}`} />
-                  <span className={`block h-[2px] w-full transform transition duration-300 ease-in-out ${mobileMenuOpen ? '-rotate-45 -translate-y-[11px] bg-[#048ED6]' : 'bg-gray-800'}`} />
-                </div>
-              </button>
-            </div>
-          </nav>
-        </div>
-      </Container>
-
-      {/* Mobile Menu Drawer */}
-      {mobileMenuOpen && (
-        <div className="lg:hidden bg-white border-t border-gray-100 pt-4 pb-6 shadow-xl absolute w-full left-0 z-550 overflow-hidden transition-all duration-300 origin-top animate-in fade-in slide-in-from-top-2">
-          <div className="flex flex-col">
-            {(menu?.items || [
-              { id: 'home', title: t('home'), url: '/' },
-              { id: 'about-fallback', title: t('about'), url: '/about', subItems: aboutMenuOptions },
-              { id: 'programs', title: t('academicPrograms'), url: '/programs' },
-              { id: 'online', title: t('onlineLearning'), url: '/online-learning' },
-              { id: 'news', title: t('newsAndEvents'), url: '/news' },
-              { id: 'gallery', title: t('gallery'), url: '/gallery' },
-              { id: 'contact', title: t('contact'), url: '/contact' }
-            ]).map((item: any, idx: number) => {
-              const isAbout = item.id === aboutMenuItem?.id || item.id === 'about-fallback';
-              
-              if (isAbout) {
-                return (
-                  <div key={idx} className="flex flex-col">
-                    <button 
-                      onClick={() => setMobileAboutOpen(!mobileAboutOpen)}
-                      className={`flex justify-between items-center px-[var(--spacing-side)] py-3 text-[18px] font-semibold text-gray-800 transition-colors ${mobileAboutOpen ? 'bg-primary/5' : 'bg-white'}`}
+          <div className="flex items-center gap-5">
+            {contactInfo?.socialMedia?.length > 0 ? (
+              <div className="flex items-center gap-4 text-white/90">
+                {contactInfo.socialMedia.map((s: any, i: number) => {
+                  let iconClass = 'icon-link';
+                  const iconName = s.icon || s.title;
+                  if (iconName) {
+                    iconClass = iconName.startsWith('icon-') ? iconName.toLowerCase() : `icon-${iconName.toLowerCase()}`;
+                  }
+                  return (
+                    <a
+                      key={i}
+                      href={s.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={s.title}
+                      className="hover:text-white/80 transition-all hover:-translate-y-[1px] block"
                     >
-                      {item.title}
-                      <ChevronDown className={`w-5 h-5 transition-transform duration-300 ${mobileAboutOpen ? 'rotate-180' : ''}`} />
-                    </button>
-                    <div className={`grid transition-all duration-300 ease-in-out ${mobileAboutOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
-                      <div className="overflow-hidden flex flex-col">
-                        <div className='flex flex-col w-full bg-primary'>
-                        {aboutMenuOptions.map((subItem, index) => (
-                          <Link key={subItem.id} href={getHref(subItem.href)} onClick={() => setMobileMenuOpen(false)} className="pl-[calc(var(--spacing-side)+12px)] py-2 text-[16px] border-t-[1px] border-white font-medium text-white">
-                            {subItem.label}
-                          </Link>
-                        ))}
+                      <i className={`${iconClass} text-[15px] flex justify-center items-center`} />
+                    </a>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="flex items-center gap-4 text-white/90">
+                <a href="#" aria-label="Facebook" className="hover:text-white/80 transition-all hover:-translate-y-[1px] block">
+                  <FacebookIcon className="w-4 h-4" />
+                </a>
+                <a href="#" aria-label="Twitter" className="hover:text-white/80 transition-all hover:-translate-y-[1px] block">
+                  <TwitterIcon className="w-4 h-4" />
+                </a>
+                <a href="#" aria-label="Instagram" className="hover:text-white/80 transition-all hover:-translate-y-[1px] block">
+                  <InstagramIcon className="w-4 h-4" />
+                </a>
+                <a href="#" aria-label="LinkedIn" className="hover:text-white/80 transition-all hover:-translate-y-[1px] block">
+                  <LinkedinIcon className="w-4 h-4" />
+                </a>
+              </div>
+            )}
+
+            <div className="w-[1px] h-4 bg-white/40"></div>
+
+            <Link
+              href={getHref(topbarMenu?.ctaButtonUrl || '/login')}
+              className="bg-transparent border border-white text-white hover:bg-white/10 px-5 py-1.5 rounded-full transition-all flex items-center gap-2 font-medium text-[13px]"
+            >
+              <User className="w-4 h-4" />
+              <span>{topbarMenu?.ctaButtonTitle || t('loginPortal')}</span>
+            </Link>
+          </div>
+        </div>
+
+        <Container className="max-w-[1920px] px-[var(--spacing-side)]">
+          {/* Decorative center curve image */}
+          <div className="w-[300px] h-[40px] max-lg:hidden flex justify-center items-end pointer-events-none absolute bottom-[-12px] left-1/2 -translate-x-1/2 z-[10]">
+            <Image
+              src="/logo-under.webp"
+              alt="Brand Under Logo"
+              width={185}
+              height={145}
+              className="object-contain hover:scale-105 transition-transform"
+              priority
+            />
+          </div>
+
+          <div className="w-full h-full relative">
+            <nav className="w-full h-[96px] bg-white flex justify-between items-center lg:grid lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
+              {/* Left Navigation */}
+              <div className="hidden lg:flex items-center gap-4 xl:gap-8 text-[15px] xl:text-[17px]">
+                {leftNavItems.map((item: any, idx: number) => (
+                  <NavLink key={idx} href={item.url}>
+                    {item.title}
+                  </NavLink>
+                ))}
+              </div>
+
+              {/* Center Logo */}
+              <Link href={getHref('/')} className="flex lg:max-w-[76px] items-center justify-center z-10 shrink-0 mx-4">
+                <Image
+                  src="/headerlogo.png"
+                  alt="YAHAYASCHOOL Logo"
+                  width={80}
+                  height={95}
+                  className="object-contain hover:scale-105 lg:max-w-[76px] max-w-[65px] transition-transform"
+                  priority
+                />
+              </Link>
+
+              {/* Right Navigation & Actions */}
+              <div className="hidden lg:flex items-center gap-4 xl:gap-8 h-full justify-end ps-4">
+                <div className="flex items-center h-full gap-4 xl:gap-6 text-[15px] xl:text-[17px]">
+                  {/* About Dropdown */}
+                  <div
+                    className="group relative h-full flex items-center outline-none cursor-pointer"
+                    onClick={() => setAboutDropdownOpen(!aboutDropdownOpen)}
+                  >
+                    <NavLink href="/about" hasDropdown isOpen={aboutDropdownOpen} className="w-full h-full relative cursor-pointer">
+                      {aboutMenuItem?.title || t('about')}
+                    </NavLink>
+
+                    {/* Dropdown Panel */}
+                    <div
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setAboutDropdownOpen(false);
+                      }}
+                      className={`lg:absolute lg:top-full z-50 lg:left-[-120px] rtl:lg:left-auto rtl:lg:right-[-120px] w-[clamp(580px,48vw,680px)] bg-white rounded-2xl shadow-2xl border border-gray-100 p-4 transition-all duration-300 origin-top ${
+                        aboutDropdownOpen
+                          ? 'opacity-100 visible scale-100 pointer-events-auto'
+                          : 'opacity-0 invisible scale-95 pointer-events-none lg:group-hover:opacity-100 lg:group-hover:visible lg:group-hover:scale-100 lg:group-hover:pointer-events-auto'
+                      }`}
+                    >
+                      <div className="grid grid-cols-1 lg:grid-cols-[200px_1fr] gap-4">
+                        {/* Left Column - List */}
+                        <div className="flex flex-col gap-2">
+                          {aboutMenuOptions.map((item: AboutMenuOption, index: number) => (
+                            <Link
+                              key={item.id}
+                              href={getHref(item.href)}
+                              onMouseEnter={() => {
+                                setActiveAboutMenu(item.id);
+                                if (swiperRef.current) {
+                                  swiperRef.current.slideTo(index);
+                                }
+                              }}
+                              className={`flex items-center justify-between px-4 py-3 rounded-xl text-[15px] font-medium transition-all cursor-pointer border ${
+                                activeAboutMenu === item.id
+                                  ? 'bg-[#048ED6] text-white border-[#048ED6] shadow-sm'
+                                  : 'bg-white border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-gray-50'
+                              }`}
+                            >
+                              <span>{item.label}</span>
+                              <ChevronRight className="w-5 h-5 rtl:rotate-180" />
+                            </Link>
+                          ))}
+                        </div>
+
+                        {/* Right Column - Slider Image */}
+                        <div className="hidden lg:block relative rounded-2xl overflow-hidden h-[240px] bg-gray-100">
+                          <Swiper
+                            direction="vertical"
+                            className="w-full h-full"
+                            parallax={true}
+                            modules={[Parallax]}
+                            onSwiper={(swiper) => {
+                              swiperRef.current = swiper;
+                            }}
+                            allowTouchMove={false}
+                            speed={800}
+                          >
+                            {aboutMenuOptions.map((item: AboutMenuOption) => (
+                              <SwiperSlide key={item.id} className="group/slide w-full h-full relative overflow-hidden">
+                                <div className="w-full h-full relative overflow-hidden">
+                                  <Link href={getHref(item.href)} className="w-full h-full block overflow-hidden">
+                                    <div className="w-full h-full relative scale-125" data-swiper-parallax-y="-20%">
+                                      <Image
+                                        src={item.image}
+                                        alt={typeof item.label === 'string' ? item.label : 'Menu image'}
+                                        fill
+                                        className="object-cover w-full h-full"
+                                      />
+                                    </div>
+                                    <div
+                                      className="absolute opacity-0 group-[&.swiper-slide-active]/slide:opacity-100 translate-x-[-100%] group-[&.swiper-slide-active]/slide:translate-x-0 group-[&.swiper-slide-active]/slide:delay-300 duration-500 top-4 left-4 group-[&.swiper-slide-active]/slide:bg-white/90 group-[&.swiper-slide-active]/slide:backdrop-blur-sm px-4 py-1.5 rounded-full text-[#048ED6] font-medium text-sm shadow-sm z-10"
+                                      data-swiper-parallax-y="-20"
+                                      data-swiper-parallax-opacity="0"
+                                    >
+                                      {item.badge}
+                                    </div>
+                                  </Link>
+                                </div>
+                              </SwiperSlide>
+                            ))}
+                          </Swiper>
                         </div>
                       </div>
                     </div>
                   </div>
-                );
-              }
 
-              return (
-                <Link key={idx} href={getHref(item.url)} onClick={() => setMobileMenuOpen(false)} className="px-[var(--spacing-side)] py-3 rounded-lg text-[18px] font-semibold text-gray-800">
-                  {item.title}
+                  {rightNavItems.map((item: any, idx: number) => (
+                    <NavLink key={idx} href={item.url}>
+                      {item.title}
+                    </NavLink>
+                  ))}
+                </div>
+
+                <div className="flex items-center h-full gap-4">
+                  <LanguageSwitcher currentLocale={locale} />
+                  <Link
+                    href={getHref(menu?.ctaButtonUrl || '/donations')}
+                    className="flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-bold text-white bg-[#048ED6] hover:bg-sky-500 shadow-sm transition-all"
+                  >
+                    <HandHeart className="w-4 h-4" />
+                    <span>{menu?.ctaButtonTitle || t('donations')}</span>
+                    <ArrowRight className="w-4 h-4 rtl:rotate-180" />
+                  </Link>
+                </div>
+              </div>
+
+              {/* Mobile Menu Toggle & Language */}
+              <div className="lg:hidden h-full flex items-center gap-4 z-50 relative">
+                <LanguageSwitcher
+                  currentLocale={locale}
+                  forceClose={mobileMenuOpen}
+                  onToggle={(isOpen) => {
+                    if (isOpen) setMobileMenuOpen(false);
+                  }}
+                />
+                <button
+                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                  className="cursor-pointer p-2"
+                  aria-label="Toggle Navigation Menu"
+                >
+                  <div className="w-7 h-5 flex flex-col justify-between items-center relative">
+                    <span
+                      className={`block h-[2px] w-full transform transition duration-300 ease-in-out ${
+                        mobileMenuOpen ? 'rotate-45 translate-y-[9px] bg-[#048ED6]' : 'bg-gray-800'
+                      }`}
+                    />
+                    <span
+                      className={`block h-[2px] w-full transform transition duration-300 ease-in-out ${
+                        mobileMenuOpen ? 'opacity-0' : 'bg-gray-800'
+                      }`}
+                    />
+                    <span
+                      className={`block h-[2px] w-full transform transition duration-300 ease-in-out ${
+                        mobileMenuOpen ? '-rotate-45 -translate-y-[9px] bg-[#048ED6]' : 'bg-gray-800'
+                      }`}
+                    />
+                  </div>
+                </button>
+              </div>
+            </nav>
+          </div>
+        </Container>
+
+        {/* Mobile Menu Drawer */}
+        {mobileMenuOpen && (
+          <div className="lg:hidden bg-white border-t border-gray-100 pt-4 pb-6 shadow-xl absolute w-full left-0 z-50 overflow-hidden transition-all duration-300 origin-top animate-in fade-in slide-in-from-top-2">
+            <div className="flex flex-col">
+              {(
+                menu?.items || [
+                  { id: 'home', title: t('home'), url: '/' },
+                  { id: 'about-fallback', title: t('about'), url: '/about', subItems: aboutMenuOptions },
+                  { id: 'programs', title: t('academicPrograms'), url: '/programs' },
+                  { id: 'online', title: t('onlineLearning'), url: '/online-learning' },
+                  { id: 'news', title: t('newsAndEvents'), url: '/news' },
+                  { id: 'gallery', title: t('gallery'), url: '/gallery' },
+                  { id: 'contact', title: t('contact'), url: '/contact' }
+                ]
+              ).map((item: any, idx: number) => {
+                const isAbout = item.id === aboutMenuItem?.id || item.id === 'about-fallback';
+
+                if (isAbout) {
+                  return (
+                    <div key={idx} className="flex flex-col">
+                      <button
+                        onClick={() => setMobileAboutOpen(!mobileAboutOpen)}
+                        className={`flex justify-between items-center px-[var(--spacing-side)] py-3 text-[17px] font-semibold text-gray-800 transition-colors ${
+                          mobileAboutOpen ? 'bg-primary/5 text-[#048ED6]' : 'bg-white'
+                        }`}
+                      >
+                        <span>{item.title}</span>
+                        <ChevronDown
+                          className={`w-5 h-5 transition-transform duration-300 ${
+                            mobileAboutOpen ? 'rotate-180' : ''
+                          }`}
+                        />
+                      </button>
+                      <div
+                        className={`grid transition-all duration-300 ease-in-out ${
+                          mobileAboutOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+                        }`}
+                      >
+                        <div className="overflow-hidden flex flex-col bg-[#0D3B2E]">
+                          {aboutMenuOptions.map((subItem: AboutMenuOption) => (
+                            <Link
+                              key={subItem.id}
+                              href={getHref(subItem.href)}
+                              onClick={() => setMobileMenuOpen(false)}
+                              className="px-[var(--spacing-side)] py-2.5 text-[15px] border-t border-white/10 font-medium text-white hover:bg-white/10 transition-colors block"
+                            >
+                              {subItem.label}
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
+
+                return (
+                  <Link
+                    key={idx}
+                    href={getHref(item.url)}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="px-[var(--spacing-side)] py-3 text-[17px] font-semibold text-gray-800 hover:text-[#048ED6] transition-colors"
+                  >
+                    {item.title}
+                  </Link>
+                );
+              })}
+
+              <div className="pt-4 mt-2 flex flex-col min-[450px]:flex-row gap-3 px-[var(--spacing-side)]">
+                <Link
+                  href={getHref(menu?.ctaButtonUrl || '/donations')}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex-1 py-3 px-3 rounded-full text-center font-bold text-white bg-[#048ED6] hover:bg-sky-500 transition-colors flex items-center justify-center gap-1.5 text-[14px]"
+                >
+                  <HandHeart className="w-4 h-4 shrink-0" />
+                  <span className="truncate">{menu?.ctaButtonTitle || t('donations')}</span>
                 </Link>
-              );
-            })}
-            <div className="pt-4 mt-2 flex flex-col min-[450px]:flex-row gap-3 px-[var(--spacing-side)]">
-              <Link
-                href={getHref(menu?.ctaButtonUrl || '/donations')}
-                className="flex-1 py-3 px-2 rounded-full text-center font-bold text-white bg-[#048ED6] hover:bg-sky-500 transition-colors flex items-center justify-center gap-1.5 text-[13px] sm:text-sm"
-              >
-                <HandHeart className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
-                <span className="truncate">{menu?.ctaButtonTitle || t('donations')}</span>
-              </Link>
-              <a
-                href="/login"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex-1 py-3 px-2 rounded-full text-center font-bold text-[#048ED6] bg-blue-50 border border-[#048ED6]/20 hover:bg-blue-100 transition-colors flex items-center justify-center gap-1.5 text-[13px] sm:text-sm"
-              >
-                <User className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
-                <span className="truncate">{t('loginPortal')}</span>
-              </a>
+                <Link
+                  href={getHref('/login')}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex-1 py-3 px-3 rounded-full text-center font-bold text-[#048ED6] bg-blue-50 border border-[#048ED6]/20 hover:bg-blue-100 transition-colors flex items-center justify-center gap-1.5 text-[14px]"
+                >
+                  <User className="w-4 h-4 shrink-0" />
+                  <span className="truncate">{t('loginPortal')}</span>
+                </Link>
+              </div>
             </div>
           </div>
-        </div>
+        )}
+      </header>
+
+      {/* Mobile Menu Overlay */}
+      {mobileMenuOpen && (
+        <div
+          className="fixed inset-0 z-[45] bg-black/50 backdrop-blur-xs lg:hidden"
+          onClick={() => setMobileMenuOpen(false)}
+          aria-hidden="true"
+        />
       )}
-    </header>
-
-    {/* Mobile Menu Overlay */}
-    {mobileMenuOpen && (
-      <div 
-        className="fixed inset-0 z-[45] bg-black/50 backdrop-blur-sm lg:hidden"
-        onClick={() => setMobileMenuOpen(false)}
-        aria-hidden="true"
-      />
-    )}
-
     </>
   );
 }
