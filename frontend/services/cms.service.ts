@@ -1,4 +1,4 @@
-import { apiClient } from './api.service';
+import axios from 'axios';
 import qs from 'qs';
 import type {
   HomepageEntity,
@@ -35,19 +35,47 @@ import type {
   PrivacyPageEntity
 } from '../types/cms.types';
 
+// ── Dedicated CMS client ────────────────────────────────────────────────────
+// Public CMS reads (homepage, about, nav, footer…) must use the Strapi API
+// Token, NOT the end-user JWT, because these are called server-side where
+// no cookie exists, and Strapi returns 403 for unauthenticated requests.
+const STRAPI_BASE =
+  process.env.NEXT_PUBLIC_STRAPI_URL ||
+  process.env.STRAPI_URL ||
+  'http://localhost:1339';
+
+const STRAPI_TOKEN =
+  process.env.STRAPI_API_TOKEN ||
+  process.env.NEXT_PUBLIC_STRAPI_API_TOKEN ||
+  '';
+
+const cmsClient = axios.create({
+  baseURL: `${STRAPI_BASE}/api`,
+  timeout: 30_000,
+  headers: {
+    'Content-Type': 'application/json',
+    ...(STRAPI_TOKEN ? { Authorization: `Bearer ${STRAPI_TOKEN}` } : {}),
+  },
+});
+
 export const cmsService = {
-  /** Helper for robust querying */
+  /** Helper for robust querying — uses the CMS API-token client, not user JWT */
   async fetchStrapi<T>(endpoint: string, queryParams: any = {}): Promise<T | null> {
     try {
       const queryString = qs.stringify(queryParams, { encodeValuesOnly: true });
       const url = `${endpoint}${queryString ? `?${queryString}` : ''}`;
-      const { data } = await apiClient.get<{ data: T }>(url);
+      const { data } = await cmsClient.get<{ data: T }>(url);
       return data.data;
-    } catch (error) {
-      console.error(`Error fetching ${endpoint}:`, error);
+    } catch (error: any) {
+      if (axios.isAxiosError(error) && error.response?.status === 404) {
+        // Entry not yet published in Strapi for this locale — frontend falls back cleanly
+        return null;
+      }
+      console.warn(`[CMS] Notice on ${endpoint}: ${error?.response?.status || error?.message || 'offline'}`);
       return null;
     }
   },
+
 
   async getHomepage(locale = 'en'): Promise<HomepageEntity | null> {
     const query = {
@@ -422,19 +450,16 @@ export const cmsService = {
         items: {
           populate: ['subItems.media']
         }
-      }
+      },
+      sort: ['updatedAt:desc']
     };
 
-    const baseUrl = process.env.NEXT_PUBLIC_STRAPI_API_URL 
-      || (process.env.NEXT_PUBLIC_STRAPI_URL ? `${process.env.NEXT_PUBLIC_STRAPI_URL}/api` : 'http://localhost:1337/api');
-    
     try {
-      const url = `${process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1339'}/api/navigation-menus?${qs.stringify(query, { encodeValuesOnly: true })}`;
-      const res = await fetch(url, { cache: 'no-store' });
-      if (res.ok) {
-        const json = await res.json();
-        const data = json.data;
-        if (data && data.length > 0 && data[0].items && data[0].items.length > 0) return data[0];
+      const data = await this.fetchStrapi<NavigationMenu[]>('/navigation-menus', query);
+      if (data && Array.isArray(data) && data.length > 0) {
+        const menuWithItems = data.find(m => m.items && m.items.length > 0);
+        if (menuWithItems) return menuWithItems;
+        return data[0];
       }
     } catch (e) {
       console.error('Error fetching navigation menu:', e);
@@ -450,15 +475,14 @@ export const cmsService = {
             items: {
               populate: ['subItems.media']
             }
-          }
+          },
+          sort: ['updatedAt:desc']
         };
-        const fallbackUrl = `${baseUrl}/navigation-menus?${qs.stringify(fallbackQuery, { encodeValuesOnly: true })}`;
-        const fallbackRes = await fetch(fallbackUrl, { cache: 'no-store' });
-        if (fallbackRes.ok) {
-          const fbJson = await fallbackRes.json();
-          if (fbJson.data && fbJson.data.length > 0 && fbJson.data[0].items && fbJson.data[0].items.length > 0) {
-            return fbJson.data[0];
-          }
+        const fbData = await this.fetchStrapi<NavigationMenu[]>('/navigation-menus', fallbackQuery);
+        if (fbData && Array.isArray(fbData) && fbData.length > 0) {
+          const menuWithItems = fbData.find(m => m.items && m.items.length > 0);
+          if (menuWithItems) return menuWithItems;
+          return fbData[0];
         }
       } catch (e) {
         // ignore
@@ -593,7 +617,7 @@ export function getStrapiMediaUrl(media: any): string | null {
   if (!rawUrl || typeof rawUrl !== 'string') return null;
   
   if (rawUrl.startsWith('/')) {
-    const strapiUrl = process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1337';
+    const strapiUrl = process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1339';
     return `${strapiUrl}${rawUrl}`;
   }
   

@@ -129,7 +129,7 @@ export function DonationHero({
 
   // Ensure the image URL is absolute since Strapi returns a relative path like `/uploads/...`
   const rawUrl = coverImage?.url;
-  const strapiUrl = process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1337';
+  const strapiUrl = process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1339';
   const imageUrl = rawUrl
     ? (rawUrl.startsWith('http') ? rawUrl : `${strapiUrl}${rawUrl}`)
     : "/images/figma-home/09.png";

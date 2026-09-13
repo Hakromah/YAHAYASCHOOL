@@ -48,9 +48,14 @@ export function Navbar({
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
-      if (currentScrollY > lastScrollY.current && currentScrollY > 50) {
+      const delta = currentScrollY - lastScrollY.current;
+
+      // Ignore micro-scrolls from Lenis animation frames (< 8px)
+      if (Math.abs(delta) < 8) return;
+
+      if (delta > 0 && currentScrollY > 80) {
         setIsVisible(false);
-      } else if (currentScrollY < lastScrollY.current) {
+      } else if (delta < 0) {
         setIsVisible(true);
       }
       lastScrollY.current = currentScrollY;
@@ -121,10 +126,37 @@ export function Navbar({
     );
   };
 
+  const isDonationItem = (item: any) => {
+    const url = (item.url || '').toLowerCase();
+    const title = (item.title || '').toLowerCase();
+    return (
+      url.includes('donat') || url.includes('waqf') ||
+      title.includes('donat') || title.includes('waqf')
+    );
+  };
+
+  const isExcludedItem = (item: any) => {
+    const url = (item.url || '').toLowerCase();
+    const title = (item.title || '').toLowerCase();
+    return (
+      url.includes('department') || title.includes('department') ||
+      url.includes('admission') || title.includes('admission')
+    );
+  };
+
   const rawItems: any[] =
     menu?.items && Array.isArray(menu.items) && menu.items.length > 0 ? menu.items : [];
 
+  // Find About item from CMS — used for both the dropdown label and sub-items
   const aboutMenuItem = rawItems.find((item: any) => isAboutItem(item));
+
+  const isMatchingAbout = (item: any) => {
+    if (!item) return false;
+    if (aboutMenuItem && item === aboutMenuItem) return true;
+    if (aboutMenuItem?.id && item.id && item.id === aboutMenuItem.id) return true;
+    if (aboutMenuItem?.url && item.url && item.url === aboutMenuItem.url) return true;
+    return isAboutItem(item);
+  };
 
   const dynamicAboutOptions = aboutMenuItem?.subItems?.map((child: any) => ({
     id: (child.title || 'item').toLowerCase().replace(/\s+/g, '-'),
@@ -161,35 +193,44 @@ export function Navbar({
           },
         ];
 
-  const isMatchingAbout = (item: any) => {
+  const isContactItem = (item: any) => {
     if (!item) return false;
-    if (aboutMenuItem && item === aboutMenuItem) return true;
-    if (aboutMenuItem?.id && item.id && item.id === aboutMenuItem.id) return true;
-    if (aboutMenuItem?.url && item.url && item.url === aboutMenuItem.url) return true;
-    return isAboutItem(item);
+    const url = (item.url || '').toLowerCase();
+    const title = (item.title || '').toLowerCase();
+    return (
+      url === '/contact' || url === 'contact' || url.includes('/contact') ||
+      title.includes('contact') || title.includes('اتصل') || title.includes('iletişim')
+    );
   };
 
-  const nonAboutItems = rawItems.filter(
-    (i: any) => !isMatchingAbout(i) && !isOnlineLearning(i.url)
+  const contactMenuItem = rawItems.find((item: any) => isContactItem(item));
+
+  // Left items: all CMS navigation items that are not About, Online Learning, Donation, Contact, Departments, or Admissions
+  const leftItemsFromCMS = rawItems.filter(
+    (i: any) =>
+      !isMatchingAbout(i) &&
+      !isOnlineLearning(i.url) &&
+      !isDonationItem(i) &&
+      !isContactItem(i) &&
+      !isExcludedItem(i)
   );
 
-  const leftNavItems =
-    nonAboutItems.length > 0
-      ? nonAboutItems.slice(0, 3)
-      : [
-          { id: 'nav-home', title: t('home'), url: '/' },
-          { id: 'nav-programs', title: t('academicPrograms'), url: '/programs' },
-          { id: 'nav-news', title: t('newsAndEvents'), url: '/news' },
-        ];
+  // Fallback if CMS is empty or loading
+  const defaultLeftNav = [
+    { id: 'nav-home',     title: t('home'),             url: '/'        },
+    { id: 'nav-programs', title: t('academicPrograms'), url: '/programs' },
+    { id: 'nav-news',     title: t('newsAndEvents'),    url: '/news'    },
+  ];
 
-  const rightNavItems =
-    nonAboutItems.length > 3
-      ? nonAboutItems.slice(3)
-      : [{ id: 'nav-contact', title: t('contact'), url: '/contact' }];
+  const leftNavItems = leftItemsFromCMS.length > 0 ? leftItemsFromCMS : defaultLeftNav;
+
+  const rightNavItems = [
+    contactMenuItem || { id: 'nav-contact', title: t('contact'), url: '/contact' },
+  ];
 
   const getLocalizedTitle = (item: any) => {
     if (!item) return '';
-    if (menu?.locale === locale && item.title) return item.title;
+    if (item.title) return item.title;
     const url = (item.url || '').toLowerCase();
     if (url === '/' || url === '') return t('home');
     if (url.includes('/programs') || url === 'programs') return t('academicPrograms');
@@ -542,70 +583,66 @@ export function Navbar({
                   ? rawItems
                   : [
                       { id: 'home', title: t('home'), url: '/' },
-                      {
-                        id: 'about-fallback',
-                        title: t('about'),
-                        url: '/about',
-                        subItems: aboutMenuOptions,
-                      },
+                      { id: 'about-fallback', title: t('about'), url: '/about', subItems: aboutMenuOptions },
                       { id: 'programs', title: t('academicPrograms'), url: '/programs' },
-                      { id: 'online', title: t('onlineLearning'), url: '/online-learning' },
                       { id: 'news', title: t('newsAndEvents'), url: '/news' },
-                      { id: 'gallery', title: t('gallery'), url: '/gallery' },
                       { id: 'contact', title: t('contact'), url: '/contact' },
                     ]
-              ).map((item: any, idx: number) => {
-                const isAbout = isMatchingAbout(item) || item.id === 'about-fallback';
+              )
+                .filter((item: any) => !isDonationItem(item) && !isOnlineLearning(item.url) && !isExcludedItem(item))
+                .map((item: any, idx: number) => {
+                  const isAbout = isMatchingAbout(item) || item.id === 'about-fallback';
 
-                if (isAbout) {
-                  return (
-                    <div key={idx} className="flex flex-col">
-                      <button
-                        onClick={() => setMobileAboutOpen(!mobileAboutOpen)}
-                        className={`flex justify-between items-center px-[var(--spacing-side)] py-3 text-[18px] font-semibold text-gray-800 transition-colors ${
-                          mobileAboutOpen ? 'bg-primary/5 text-[#048ED6]' : 'bg-white'
-                        }`}
-                      >
-                        <span>{getLocalizedTitle(item)}</span>
-                        <ChevronDown
-                          className={`w-5 h-5 transition-transform duration-300 ${
-                            mobileAboutOpen ? 'rotate-180' : ''
+                  if (isAbout) {
+                    return (
+                      <div key={idx} className="flex flex-col">
+                        <button
+                          onClick={() => setMobileAboutOpen(!mobileAboutOpen)}
+                          className={`flex justify-between items-center px-[var(--spacing-side)] py-3 text-[17px] font-semibold text-gray-800 transition-colors ${
+                            mobileAboutOpen ? 'bg-primary/5 text-[#048ED6]' : 'bg-white'
                           }`}
-                        />
-                      </button>
-                      <div
-                        className={`grid transition-all duration-300 ease-in-out ${
-                          mobileAboutOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
-                        }`}
-                      >
-                        <div className="overflow-hidden flex flex-col bg-[#0D3B2E]">
-                          {aboutMenuOptions.map((subItem: AboutMenuOption) => (
-                            <Link
-                              key={subItem.id}
-                              href={getHref(subItem.href)}
-                              onClick={() => setMobileMenuOpen(false)}
-                              className="px-[var(--spacing-side)] py-2.5 text-[15px] border-t border-white/10 font-medium text-white hover:bg-white/10 transition-colors block"
-                            >
-                              {subItem.label}
-                            </Link>
-                          ))}
+                        >
+                          <span>{getLocalizedTitle(item)}</span>
+                          <ChevronDown
+                            className={`w-5 h-5 transition-transform duration-300 ${
+                              mobileAboutOpen ? 'rotate-180' : ''
+                            }`}
+                          />
+                        </button>
+                        <div
+                          className={`grid transition-all duration-300 ease-in-out ${
+                            mobileAboutOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+                          }`}
+                        >
+                          <div className="overflow-hidden flex flex-col bg-[#0D3B2E]">
+                            {aboutMenuOptions.map((subItem: AboutMenuOption) => (
+                              <Link
+                                key={subItem.id}
+                                href={getHref(subItem.href)}
+                                onClick={() => setMobileMenuOpen(false)}
+                                className="px-[var(--spacing-side)] py-2.5 text-[15px] border-t border-white/10 font-medium text-white hover:bg-white/10 transition-colors block"
+                              >
+                                {subItem.label}
+                              </Link>
+                            ))}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                }
+                    );
+                  }
 
-                return (
-                  <Link
-                    key={idx}
-                    href={getHref(item.url)}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="px-[var(--spacing-side)] py-3 text-[17px] font-semibold text-gray-800 hover:text-[#048ED6] transition-colors"
-                  >
-                    {getLocalizedTitle(item)}
-                  </Link>
-                );
-              })}
+                  return (
+                    <Link
+                      key={idx}
+                      href={getHref(item.url)}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="px-[var(--spacing-side)] py-3 text-[17px] font-semibold text-gray-800 hover:text-[#048ED6] transition-colors"
+                    >
+                      {getLocalizedTitle(item)}
+                    </Link>
+                  );
+                })}
+
 
               {/* Mobile CTA buttons */}
               <div className="pt-4 mt-2 flex flex-col min-[450px]:flex-row gap-3 px-[var(--spacing-side)]">
