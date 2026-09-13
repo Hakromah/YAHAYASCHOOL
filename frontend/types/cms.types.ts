@@ -692,7 +692,7 @@ export interface DonationSettingsEntity {
     id: number;
     title?: string;
     image?: { url: string; alternativeText?: string };
-    bankAccounts?: BankAccountEntity[];
+    bankAccounts?: BankAccountComponent[];
   };
   formLabels?: {
     id: number;
@@ -727,8 +727,8 @@ export interface DonationSettingsEntity {
     subtitle: string;
     patrons: Array<{ id: number; name: string; quote: string }>;
   };
-  amounts?: StringItemEntity[];
-  currencies?: StringItemEntity[];
+  amounts?: StringItemComponent[];
+  currencies?: StringItemComponent[];
   designations?: StringItemComponent[];
 }
 

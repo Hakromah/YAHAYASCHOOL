@@ -1,12 +1,9 @@
 'use client';
 
-import React from 'react';
-import Link from 'next/link';
+import React, { useState } from 'react';
+import { Link } from '@/i18n/routing';
 import Image from 'next/image';
-import { useState } from 'react';
-import {
-  ChevronDown,
-} from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
 import type { FooterConfig } from '../../types/cms.types';
 import { SOCIALS } from './shared/socials';
@@ -23,8 +20,6 @@ import { getStrapiMediaUrl } from '@/services/cms.service';
  *   heading 48 · eyebrow 15 · link 15 (36 pitch) · pill h38 · bottom bar h79
  *   link columns at x 1108 / 1346 / 1605 — a 248px pitch
  */
-
-// SOCIALS now lives in shared/socials so the staff cards can use it too.
 
 const LINK_COLUMNS = [
   {
@@ -60,6 +55,28 @@ const LINK_COLUMNS = [
   },
 ];
 
+const DEFAULT_LINK_LABELS: Record<string, string> = {
+  aboutUs: 'About Us',
+  academicPrograms: 'Academic Programs',
+  newsEvents: 'News & Events',
+  gallery: 'Gallery',
+  careers: 'Careers',
+  contact: 'Contact',
+  quranDepartment: 'Quran Department',
+  arabicLanguage: 'Arabic Language',
+  englishDepartment: 'English Department',
+  onlineLearning: 'Online Learning',
+  studentLife: 'Student Life',
+  faqs: 'FAQs',
+  helpCenter: 'Help Center',
+  // Backward compatibility in case CMS or legacy props provide string keys
+  'Quran Department': 'Quran Department',
+  'Arabic Language': 'Arabic Language',
+  'English Department': 'English Department',
+  'Online Learning': 'Online Learning',
+  'Student Life': 'Student Life',
+};
+
 const PILLS = [
   { key: 'islamicEducation', href: '#' },
   { key: 'modernLearning', href: '#' },
@@ -68,6 +85,21 @@ const PILLS = [
 
 type LinkItem = { key: string; href: string; label?: string };
 type ColType = { key: string; title?: string; links: LinkItem[] };
+
+function getSafeTranslation(t: any, key: string, fallback: string): string {
+  try {
+    if (typeof t === 'function') {
+      if (t.has && typeof t.has === 'function') {
+        return t.has(key) ? t(key) : fallback;
+      }
+      const val = t(key);
+      return val || fallback;
+    }
+    return fallback;
+  } catch {
+    return fallback;
+  }
+}
 
 function FooterAccordion({ col, open, onToggle }: { col: ColType; open: boolean; onToggle: () => void }) {
   const t = useTranslations('footer.links');
@@ -100,10 +132,11 @@ function FooterAccordion({ col, open, onToggle }: { col: ColType; open: boolean;
 
       {/* Mobile: collapsible list via grid row trick */}
       <div
-        className={`sm:hidden grid transition-[grid-template-rows] duration-300 ease-in-out ${open ? 'grid-rows-[1fr] pb-4' : 'grid-rows-[0fr]'
-          }`}
+        className={`sm:hidden grid transition-[grid-template-rows] duration-300 ease-in-out ${
+          open ? 'grid-rows-[1fr] pb-4' : 'grid-rows-[0fr]'
+        }`}
       >
-        <ul className="overflow-hidden flex flex-col gap-2 ">
+        <ul className="overflow-hidden flex flex-col gap-2">
           {col.links.map((l) => (
             <li key={l.key}>
               <Link
@@ -139,7 +172,15 @@ function FooterAccordion({ col, open, onToggle }: { col: ColType; open: boolean;
   );
 }
 
-export function Footer({ locale: propLocale, config, contactInfo }: { config?: FooterConfig | null; locale?: string; contactInfo?: any }) {
+export function Footer({
+  locale: propLocale,
+  config,
+  contactInfo,
+}: {
+  config?: FooterConfig | null;
+  locale?: string;
+  contactInfo?: any;
+}) {
   const t = useTranslations('footer');
   const activeLocale = useLocale();
   const locale = propLocale || activeLocale || 'en';
@@ -151,63 +192,108 @@ export function Footer({ locale: propLocale, config, contactInfo }: { config?: F
   const logoUrl = config?.logo ? (getStrapiMediaUrl(config.logo) || '/headerlogo.png') : '/headerlogo.png';
   const email = config?.email || 'Yahayahighschool@Gmail.Com';
   const phone = config?.phone || '+23188368801';
-  const brandName = config?.brandName || t('brand.name');
-  const brandTagline1 = config?.brandTagline1 || t('brand.tagline1');
-  const brandTagline2 = config?.brandTagline2 || t('brand.tagline2');
-  const brandDescription = config?.brandDescription || t('brand.description');
-  const termsLabel = config?.termsLabel || t('bottom.terms');
+  const brandName = config?.brandName || getSafeTranslation(t, 'brand.name', 'Yahaya International Islamic and English High School');
+  const brandTagline1 = config?.brandTagline1 || getSafeTranslation(t, 'brand.tagline1', 'Knowledge Faith &');
+  const brandTagline2 = config?.brandTagline2 || getSafeTranslation(t, 'brand.tagline2', 'Excellence');
+  const brandDescription = config?.brandDescription || getSafeTranslation(t, 'brand.description', 'Building a brighter future through Islamic values, quality education and character development');
+  const termsLabel = config?.termsLabel || getSafeTranslation(t, 'bottom.terms', 'Terms of Service');
   const privacyUrl = config?.privacyUrl || '/privacy';
-  const privacyLabel = config?.privacyLabel || t('bottom.privacy');
-  const socialsLabel = config?.socialsLabel || t('contact.socials');
-  const emailLabel = config?.emailLabel || t('contact.email');
-  const phoneLabel = config?.phoneLabel || t('contact.phone');
+  const privacyLabel = config?.privacyLabel || getSafeTranslation(t, 'bottom.privacy', 'Privacy Policy');
+  const socialsLabel = config?.socialsLabel || getSafeTranslation(t, 'contact.socials', 'Follow us on Social Media');
+  const emailLabel = config?.emailLabel || getSafeTranslation(t, 'contact.email', 'Email');
+  const phoneLabel = config?.phoneLabel || getSafeTranslation(t, 'contact.phone', 'Phone');
 
   const socialLinksData = contactInfo?.socialMedia?.length ? contactInfo.socialMedia : config?.socialLinks;
-  
-  const socialLinks = socialLinksData?.length ? socialLinksData.map((s: any) => {
-    let iconClass = 'icon-link';
-    const iconName = s.icon || s.title;
-    if (iconName) {
-      iconClass = iconName.startsWith('icon-') ? iconName.toLowerCase() : `icon-${iconName.toLowerCase()}`;
-    }
-    return { name: s.title, href: s.url, icon: iconClass };
-  }) : SOCIALS.map(s => ({ name: s.name, href: s.href, icon: `icon-${s.name.toLowerCase()}` }));
 
-  const pills = config?.pills?.length ? config.pills.map(p => {
-    return {
-      key: p.id?.toString() || p.title,
-      label: p.title,
-      href: p.url || '#'
-    };
-  }) : PILLS.map(p => ({ key: p.key, label: t(`pills.${p.key}`), href: p.href }));
+  const socialLinks = socialLinksData?.length
+    ? socialLinksData.map((s: any) => {
+        let iconClass = 'icon-link';
+        const iconName = s.icon || s.title;
+        if (iconName) {
+          iconClass = iconName.startsWith('icon-') ? iconName.toLowerCase() : `icon-${iconName.toLowerCase()}`;
+        }
+        return { name: s.title, href: s.url, icon: iconClass };
+      })
+    : SOCIALS.map((s) => ({ name: s.name, href: s.href, icon: `icon-${s.name.toLowerCase()}` }));
+
+  const pills = config?.pills?.length
+    ? config.pills.map((p) => {
+        return {
+          key: p.id?.toString() || p.title,
+          label: p.title,
+          href: p.url || '#',
+        };
+      })
+    : PILLS.map((p) => {
+        const fallback =
+          p.key === 'islamicEducation'
+            ? 'Islamic Education'
+            : p.key === 'modernLearning'
+            ? 'Modern Learning'
+            : p.key === 'brightFuture'
+            ? 'Bright Future'
+            : p.key;
+        return {
+          key: p.key,
+          label: getSafeTranslation(t, `pills.${p.key}`, fallback),
+          href: p.href,
+        };
+      });
 
   const columns: ColType[] = [
     {
       key: 'quickLinks',
-      title: config?.quickLinksTitle || t('links.quickLinks.title'),
-      links: config?.quickLinks?.length ? config.quickLinks.map(l => ({ key: l.id?.toString() || l.title, label: l.title, href: l.url })) : LINK_COLUMNS[0].links,
+      title: config?.quickLinksTitle || getSafeTranslation(t, 'links.quickLinks.title', 'Quick Links'),
+      links: config?.quickLinks?.length
+        ? config.quickLinks.map((l) => ({ key: l.id?.toString() || l.title, label: l.title, href: l.url }))
+        : LINK_COLUMNS[0].links,
     },
     {
       key: 'academics',
-      title: config?.academicsTitle || t('links.academics.title'),
-      links: config?.academicsLinks?.length ? config.academicsLinks.map(l => ({ key: l.id?.toString() || l.title, label: l.title, href: l.url })) : LINK_COLUMNS[1].links,
+      title: config?.academicsTitle || getSafeTranslation(t, 'links.academics.title', 'Academics'),
+      links: config?.academicsLinks?.length
+        ? config.academicsLinks.map((l) => ({ key: l.id?.toString() || l.title, label: l.title, href: l.url }))
+        : LINK_COLUMNS[1].links,
     },
     {
       key: 'support',
-      title: config?.supportTitle || t('links.support.title'),
-      links: config?.supportLinks?.length ? config.supportLinks.map(l => ({ key: l.id?.toString() || l.title, label: l.title, href: l.url })) : LINK_COLUMNS[2].links,
+      title: config?.supportTitle || getSafeTranslation(t, 'links.support.title', 'Support'),
+      links: config?.supportLinks?.length
+        ? config.supportLinks.map((l) => ({ key: l.id?.toString() || l.title, label: l.title, href: l.url }))
+        : LINK_COLUMNS[2].links,
     },
   ];
+
+  let copyrightText = config?.copyrightText;
+  if (!copyrightText) {
+    try {
+      if (t.has && t.has('bottom.copyright')) {
+        copyrightText = t('bottom.copyright', { year: formattedYear });
+      } else {
+        copyrightText = `© ${formattedYear} Yahaya International Islamic and English School. All rights reserved.`;
+      }
+    } catch {
+      copyrightText = `© ${formattedYear} Yahaya International Islamic and English School. All rights reserved.`;
+    }
+  }
 
   return (
     <footer className="w-full bg-white">
       <div className="max-w-[1920px] mx-auto px-(--spacing-side)">
-
         {/* ── Contact strip, crest straddling its top edge ─────────── */}
         <div className="relative pt-[52px] max-sm:pt-[80px] max-xs:pt-[100px]">
-          <span style={{ fill: '#FFF', filter: 'drop-shadow(0 2px 2px rgba(15, 108, 189, 0.20))' }} className="absolute top-0 left-1/2 -translate-x-1/2 z-10 md:w-[184px] md:h-[184px] w-[140px] h-[140px] rounded-full bg-white grid place-items-center overflow-hidden">
-            <div className='relative w-full h-full flex justify-center items-center '>
-              <Image src={logoUrl} alt={brandName} width={78} height={78} className="object-contain w-full h-full max-h-[150px] max-w-[100px]" />
+          <span
+            style={{ fill: '#FFF', filter: 'drop-shadow(0 2px 2px rgba(15, 108, 189, 0.20))' }}
+            className="absolute top-0 left-1/2 -translate-x-1/2 z-10 md:w-[184px] md:h-[184px] w-[140px] h-[140px] rounded-full bg-white grid place-items-center overflow-hidden"
+          >
+            <div className="relative w-full h-full flex justify-center items-center">
+              <Image
+                src={logoUrl}
+                alt={brandName}
+                width={78}
+                height={78}
+                className="object-contain w-full h-full max-h-[150px] max-w-[100px]"
+              />
             </div>
           </span>
 
@@ -247,7 +333,10 @@ export function Footer({ locale: propLocale, config, contactInfo }: { config?: F
                 </a>
 
                 <span className="hidden sm:block w-px self-stretch bg-[#BCD5EE]" />
-                <a href={`tel:${phone.replace(/[^\d+]/g, '')}`} className="text-[15px] text-[#111C2D] md:hover:text-[#048ED6] transition-colors">
+                <a
+                  href={`tel:${phone.replace(/[^\d+]/g, '')}`}
+                  className="text-[15px] text-[#111C2D] md:hover:text-[#048ED6] transition-colors"
+                >
                   <div className="flex flex-col gap-[10px] sm:ps-[46px]">
                     <span className="text-[13px] text-[#6B7280]">{phoneLabel}</span>
                     <span className="flex items-center gap-3">
@@ -267,7 +356,6 @@ export function Footer({ locale: propLocale, config, contactInfo }: { config?: F
 
         {/* ── Brand block + link columns ───────────────────────────── */}
         <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_auto] gap-x-[clamp(2rem,5vw,6rem)] gap-y-12 pt-[clamp(1.5rem,4.8vw,5.8rem)] pb-[clamp(1.5rem,4.5vw,5.5rem)]">
-
           <div>
             <p className="text-[#048ED6] font-semibold uppercase tracking-[0.02em] text-[1rem]">
               {brandName}
@@ -285,9 +373,19 @@ export function Footer({ locale: propLocale, config, contactInfo }: { config?: F
                   aria-hidden
                   preserveAspectRatio="none"
                 >
-                  <path d="M0.078125 8.5C0.078125 8.5 54.1334 -0.127191 94.4565 0.53641C131.155 1.14037 194.078 8.5 194.078 8.5" stroke="url(#footer-excellence-gradient)" />
+                  <path
+                    d="M0.078125 8.5C0.078125 8.5 54.1334 -0.127191 94.4565 0.53641C131.155 1.14037 194.078 8.5 194.078 8.5"
+                    stroke="url(#footer-excellence-gradient)"
+                  />
                   <defs>
-                    <linearGradient id="footer-excellence-gradient" x1="97.0781" y1="-8.43934" x2="97.0781" y2="8.50112" gradientUnits="userSpaceOnUse">
+                    <linearGradient
+                      id="footer-excellence-gradient"
+                      x1="97.0781"
+                      y1="-8.43934"
+                      x2="97.0781"
+                      y2="8.50112"
+                      gradientUnits="userSpaceOnUse"
+                    >
                       <stop stopColor="#005396" />
                       <stop offset="0.5" stopColor="#046ED6" />
                       <stop offset="1" stopColor="white" />
@@ -330,15 +428,34 @@ export function Footer({ locale: propLocale, config, contactInfo }: { config?: F
       {/* ── Bottom bar ──────────────────────────────────────────── */}
       <div className="bg-[#048ED6] text-white">
         <div className="max-w-[1920px] max-sm:[&_p]:text-center mx-auto px-(--spacing-side) min-h-[79px] py-4 flex flex-col sm:flex-row items-center justify-between max-sm:justify-center gap-3 text-[clamp(0.8125rem,0.73vw,0.875rem)]">
-          <p>{config?.copyrightText || t('bottom.copyright', { year: formattedYear })}</p>
+          <p>{copyrightText}</p>
           <div className="flex items-center gap-8">
-            <Link href="?policy=terms" scroll={false} className="transition-opacity hover:opacity-80">{termsLabel}</Link>
-            <Link href={privacyUrl} className="transition-opacity hover:opacity-80">{privacyLabel}</Link>
+            <Link href="?policy=terms" scroll={false} className="transition-opacity hover:opacity-80">
+              {termsLabel}
+            </Link>
+            <Link href={privacyUrl} className="transition-opacity hover:opacity-80">
+              {privacyLabel}
+            </Link>
           </div>
           <div className="flex items-center gap-2 max-xs:gap-1">
-            <span className='text-[clamp(1rem,0.73vw,1.175rem)] text-white'>Done</span>
-            <Link href="https://github.com/Mus-k" target='_blank' rel='noopener noreferrer' className="transition-opacity hover:opacity-80 font-medium text-[clamp(0.8125rem,0.73vw,0.875rem)] text-white relative before:absolute before:bottom-0 before:left-0 before:w-0 lg:hover:before:w-full before:ease-out before:duration-300 before:h-px before:bg-white max-md:before:hidden">Musah</Link> &
-            <Link href="https://github.com/Hakromah" target='_blank' rel='noopener noreferrer' className="transition-opacity hover:opacity-80 font-medium text-[clamp(0.8125rem,0.73vw,0.875rem)] text-white relative before:absolute before:bottom-0 before:left-0 before:w-0 lg:hover:before:w-full before:ease-out before:duration-300 before:h-px before:bg-white max-md:before:hidden">Hassan</Link>
+            <span className="text-[clamp(1rem,0.73vw,1.175rem)] text-white">Done</span>
+            <a
+              href="https://github.com/Mus-k"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="transition-opacity hover:opacity-80 font-medium text-[clamp(0.8125rem,0.73vw,0.875rem)] text-white relative before:absolute before:bottom-0 before:left-0 before:w-0 lg:hover:before:w-full before:ease-out before:duration-300 before:h-px before:bg-white max-md:before:hidden"
+            >
+              Musah
+            </a>{' '}
+            &{' '}
+            <a
+              href="https://github.com/Hakromah"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="transition-opacity hover:opacity-80 font-medium text-[clamp(0.8125rem,0.73vw,0.875rem)] text-white relative before:absolute before:bottom-0 before:left-0 before:w-0 lg:hover:before:w-full before:ease-out before:duration-300 before:h-px before:bg-white max-md:before:hidden"
+            >
+              Hassan
+            </a>
           </div>
         </div>
       </div>

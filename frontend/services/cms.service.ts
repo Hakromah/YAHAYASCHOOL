@@ -261,7 +261,7 @@ export const cmsService = {
   async getPrograms(locale = 'en', featuredOnly = false, limit = 20): Promise<ProgramEntity[]> {
     const query: any = {
       locale,
-      populate: ['coverImage', 'department'],
+      populate: ['images', 'department'],
       pagination: { limit }
     };
     if (featuredOnly) {
@@ -284,7 +284,7 @@ export const cmsService = {
   async getDepartments(locale = 'en', limit = 20): Promise<DepartmentEntity[]> {
     const query = {
       locale,
-      populate: ['coverImage'],
+      populate: ['gallery', 'programs'],
       pagination: { limit }
     };
     const data = await this.fetchStrapi<DepartmentEntity[]>('/departments', query);
@@ -301,12 +301,42 @@ export const cmsService = {
     return data && data.length > 0 ? data[0] : null;
   },
   
+  async getArticles(locale = 'en', page = 1, pageSize = 6, categorySlug?: string): Promise<{ data: ArticleEntity[]; total: number }> {
+    const query: any = {
+      locale,
+      populate: ['featuredImage', 'category', 'gallery'],
+      pagination: { page, pageSize }
+    };
+    if (categorySlug) {
+      query.filters = { category: { slug: { $eq: categorySlug } } };
+    }
+    try {
+      const queryString = qs.stringify(query, { encodeValuesOnly: true });
+      const { data } = await apiClient.get(`/articles?${queryString}`);
+      return {
+        data: data.data || [],
+        total: data.meta?.pagination?.total || 0
+      };
+    } catch (e) {
+      return { data: [], total: 0 };
+    }
+  },
+  
+  async getArticleBySlug(slug: string, locale = 'en'): Promise<ArticleEntity | null> {
+    const query = {
+      locale,
+      filters: { slug: { $eq: slug } },
+      populate: '*'
+    };
+    const data = await this.fetchStrapi<ArticleEntity[]>('/articles', query);
+    return data && data.length > 0 ? data[0] : null;
+  },
   
 
   async getEvents(locale = 'en', limit = 10): Promise<EventEntity[]> {
     const query = {
       locale,
-      populate: ['coverImage'],
+      populate: ['banner', 'gallery', 'department'],
       pagination: { limit },
       sort: ['startDate:asc']
     };
@@ -337,7 +367,7 @@ export const cmsService = {
   async getGalleryItems(locale = 'en', limit = 12): Promise<GalleryItemEntity[]> {
     const query = {
       locale,
-      populate: ['image'],
+      populate: ['mediaFile'],
       pagination: { limit }
     };
     const data = await this.fetchStrapi<GalleryItemEntity[]>('/gallery-items', query);
@@ -347,7 +377,7 @@ export const cmsService = {
   async getDownloadItems(locale = 'en'): Promise<DownloadItemEntity[]> {
     const query = {
       locale,
-      populate: ['file', 'category']
+      populate: ['file']
     };
     const data = await this.fetchStrapi<DownloadItemEntity[]>('/download-items', query);
     return data || [];
@@ -367,9 +397,11 @@ export const cmsService = {
     // Fallback if not configured in Strapi yet
     return data as ContactInfo || {
       id: 0,
-      address: '123 School St',
-      phone: '+1234567890',
-      email: 'info@yahayaschool.com'
+      campusInfo: {
+        address: '123 School St',
+        phone: '+1234567890',
+        email: 'info@yahayaschool.com'
+      }
     };
   },
   
@@ -396,7 +428,7 @@ export const cmsService = {
       || (process.env.NEXT_PUBLIC_STRAPI_URL ? `${process.env.NEXT_PUBLIC_STRAPI_URL}/api` : 'http://localhost:1337/api');
     
     try {
-      const url = `${baseUrl}/navigation-menus?${qs.stringify(query, { encodeValuesOnly: true })}`;
+      const url = `${process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1339'}/api/navigation-menus?${qs.stringify(query, { encodeValuesOnly: true })}`;
       const res = await fetch(url, { cache: 'no-store' });
       if (res.ok) {
         const json = await res.json();
