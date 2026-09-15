@@ -9,6 +9,9 @@ import {
 } from 'lucide-react';
 import { useLocale } from 'next-intl';
 import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
 import { financeService } from '@/services/finance.service';
 import { erpService } from '@/services/erp.service';
 import { EnterpriseModuleShell } from '@/components/erp/EnterpriseModuleShell';
@@ -22,7 +25,7 @@ import { Link } from '@/i18n/routing';
 
 export default function FinancialStatementsReportsPage() {
   const locale = useLocale();
-  const t = useCallback((key: string) => i18nT(key, locale), [locale]);
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
   const { user } = useAuth();
 
   const [activeTab, setActiveTab] = useState<'income' | 'balance' | 'cashflow'>('income');
@@ -249,7 +252,7 @@ export default function FinancialStatementsReportsPage() {
       id: 'audit_readiness',
       title: t('Live Reconciliation Status'),
       value: reportData && Math.abs(totalAssets - (totalLiabilities + totalEquity)) < 0.01 ? t('Balanced (Zero Error)') : t('Balanced'),
-      subtitle: `Assets: ${formatMoney(totalAssets)} | Liab+Eq: ${formatMoney(totalLiabilities + totalEquity)}`,
+      subtitle: `${t('Assets')}: ${formatMoney(totalAssets)} | ${t('Liabilities & Equity')}: ${formatMoney(totalLiabilities + totalEquity)}`,
       trendDirection: 'up',
       icon: <FileText className="w-5 h-5 text-amber-500" />
     }
@@ -452,8 +455,8 @@ export default function FinancialStatementsReportsPage() {
               <span className="px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 font-bold text-xs border border-emerald-200 dark:border-emerald-800">
                 ✓ {t('CERTIFIED ACCURATE')}
               </span>
-              <span className="text-[10px] text-slate-400 font-mono mt-1.5">Hash: {reportData?.reportHash?.substring(0, 16)}...</span>
-              <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-mono font-bold mt-0.5">Currency: {selectedCurrency} ({activeCurrencySymbol})</span>
+              <span className="text-[10px] text-slate-400 font-mono mt-1.5">{t('Hash')}: {reportData?.reportHash?.substring(0, 16)}...</span>
+              <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-mono font-bold mt-0.5">{t('Currency')}: {selectedCurrency} ({activeCurrencySymbol})</span>
             </div>
 
             {/* 1. INCOME STATEMENT */}

@@ -1,5 +1,11 @@
 'use client';
 
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
+
 import React, { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { getUserDisplayName, getUserInitials } from '@/types/user.types';
@@ -8,7 +14,9 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
 export default function UserProfilePage() {
-  const { user } = useAuth();
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const { user } = useAuth();
   const displayName = user ? getUserDisplayName(user as any) : 'Sheikh Yahaya Camara';
   const initials = user ? getUserInitials(user as any) : 'SC';
   const idCode = user?.schoolId || user?.username || 'AC000000001';
@@ -57,7 +65,7 @@ export default function UserProfilePage() {
               <button
                 onClick={() => toast.info('Photo upload capability connected to Strapi Media Library.')}
                 className="absolute -bottom-2 -right-2 p-2 rounded-xl bg-white text-slate-900 shadow-md hover:scale-105 transition-transform"
-                title="Upload Photo Avatar"
+                title={t('Upload Photo Avatar')}
               >
                 <Upload className="w-4 h-4 text-emerald-600" />
               </button>

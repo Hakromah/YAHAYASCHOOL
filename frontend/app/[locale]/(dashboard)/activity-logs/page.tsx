@@ -11,6 +11,9 @@ import {
 } from 'lucide-react';
 import { useLocale } from 'next-intl';
 import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
 import { auditService, type ActivityItem } from '@/services/audit.service';
 import { financeService } from '@/services/finance.service';
 import { EnterpriseModuleShell } from '@/components/erp/EnterpriseModuleShell';
@@ -22,9 +25,8 @@ import { toast } from 'sonner';
 
 export default function ActivityLogsPage() {
   const locale = useLocale();
-  const t = (key: string) => i18nT(key, locale);
-
-  const [activities, setActivities] = useState<ActivityItem[]>([]);
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Filters & Views

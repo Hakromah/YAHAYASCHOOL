@@ -1,5 +1,11 @@
 'use client';
 
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { apiClient } from '@/services/api.service';
@@ -12,7 +18,9 @@ import {
 } from 'lucide-react';
 
 export default function MurajaahEnginePage() {
-  const router = useRouter();
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const router = useRouter();
   const { user, isLoading: authLoading } = useAuth();
   const teacher = (user as any)?.profile;
 
@@ -245,7 +253,7 @@ export default function MurajaahEnginePage() {
 
   return (
     <PageContainer>
-      <PageHeader title="Muraja'ah Workspace" description="Manage revision sessions and student progress" />
+      <PageHeader title={t('Muraja\'ah Workspace')} description={t('Manage revision sessions and student progress')} />
       
       {overdueRecords.length > 0 && (
         <div className="mb-6 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl flex items-center gap-3 text-amber-800 dark:text-amber-200">

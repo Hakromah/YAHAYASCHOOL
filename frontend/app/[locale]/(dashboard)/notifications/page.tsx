@@ -12,7 +12,10 @@ import { Link } from '@/i18n/routing';
 import { useAuth } from '@/hooks/useAuth';
 import { notificationService } from '@/services/notification.service';
 import { apiClient } from '@/services/api.service';
-import { t } from '@/lib/i18n-dict';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
 import type { Notification } from '@/types/notification.types';
 import { NotificationStatusEnum } from '@/types/enums';
 import { PAGINATION } from '@/lib/constants';
@@ -20,7 +23,8 @@ import { cn } from '@/lib/utils';
 
 export default function NotificationsPage() {
   const locale = useLocale();
-  const { user } = useAuth();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const { user } = useAuth();
 
   // Data states
   const [notifications, setNotifications] = useState<Notification[]>([]);

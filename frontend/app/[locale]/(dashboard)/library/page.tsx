@@ -1,5 +1,11 @@
 'use client';
 
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
+
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   BookOpen, BookCheck, QrCode, Plus, Eye, RotateCcw, AlertTriangle, FileText,
@@ -47,7 +53,9 @@ function daysOverdue(dueDate: string) {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function LibraryPage() {
-  const [books, setBooks] = useState<LibraryBook[]>([]);
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const [books, setBooks] = useState<LibraryBook[]>([]);
   const [borrowRecords, setBorrowRecords] = useState<LibraryBorrowRecord[]>([]);
   const [borrowers, setBorrowers] = useState<any[]>([]); // students + teachers
   const [sections, setSections] = useState<any[]>([]);
@@ -415,7 +423,7 @@ export default function LibraryPage() {
   const circulationColumns = useMemo<ColumnDef<any, any>[]>(() => [
     {
       accessorKey: 'borrowNumber',
-      header: 'Borrow ID & Book Title',
+      header: t('Borrow ID & Book Title'),
       cell: ({ row }) => {
         const r = row.original;
         return (
@@ -429,7 +437,7 @@ export default function LibraryPage() {
     },
     {
       accessorKey: 'borrowerName',
-      header: 'Borrower',
+      header: t('Borrower'),
       cell: ({ row }) => (
         <div>
           <span className="font-semibold text-slate-900 dark:text-white text-xs block">{row.original.borrowerName}</span>
@@ -439,7 +447,7 @@ export default function LibraryPage() {
     },
     {
       accessorKey: 'issueDate',
-      header: 'Issue / Due Date',
+      header: t('Issue / Due Date'),
       cell: ({ row }) => {
         const r = row.original;
         const overdue = r.status === 'overdue';
@@ -456,7 +464,7 @@ export default function LibraryPage() {
     },
     {
       accessorKey: 'fineAmount',
-      header: 'Overdue Fine',
+      header: t('Overdue Fine'),
       cell: ({ row }) => {
         const r = row.original;
         return (
@@ -473,12 +481,12 @@ export default function LibraryPage() {
     },
     {
       accessorKey: 'status',
-      header: 'Circulation Status',
+      header: t('Circulation Status'),
       cell: ({ row }) => <StatusBadge status={row.original.status} size="sm" />
     },
     {
       id: 'actions',
-      header: 'Actions',
+      header: t('Actions'),
       cell: ({ row }) => {
         const r = row.original;
         return (
@@ -507,7 +515,7 @@ export default function LibraryPage() {
   const catalogColumns = useMemo<ColumnDef<any, any>[]>(() => [
     {
       accessorKey: 'title',
-      header: 'Book Title & Author',
+      header: t('Book Title & Author'),
       cell: ({ row }) => {
         const b = row.original;
         return (
@@ -521,7 +529,7 @@ export default function LibraryPage() {
     },
     {
       accessorKey: 'isbn',
-      header: 'ISBN & Rack',
+      header: t('ISBN & Rack'),
       cell: ({ row }) => (
         <div>
           <span className="font-mono text-xs font-semibold text-slate-700 dark:text-slate-200 block">{row.original.isbn}</span>
@@ -533,7 +541,7 @@ export default function LibraryPage() {
     },
     {
       accessorKey: 'totalCopies',
-      header: 'Copies',
+      header: t('Copies'),
       cell: ({ row }) => {
         const b = row.original;
         const avail = b.availableCopies;
@@ -550,7 +558,7 @@ export default function LibraryPage() {
     },
     {
       accessorKey: 'isDigital',
-      header: 'Format & Tracking',
+      header: t('Format & Tracking'),
       cell: ({ row }) => {
         const b = row.original;
         return (
@@ -573,15 +581,15 @@ export default function LibraryPage() {
     },
     {
       accessorKey: 'publisher',
-      header: 'Publisher',
+      header: t('Publisher'),
       cell: ({ row }) => <span className="text-xs text-slate-600 dark:text-slate-300 font-semibold">{row.original.publisher}</span>
     }
   ], []);
 
   return (
     <EnterpriseModuleShell
-      title="Academic Library ERP & Circulation Desk"
-      description="Integrated ISBN book cataloging, barcode/QR circulation desk, digital PDF library access, and automated overdue fine settlement via Finance ERP (GL 4030)."
+      title={t('Academic Library ERP & Circulation Desk')}
+      description={t('Integrated ISBN book cataloging, barcode/QR circulation desk, digital PDF library access, and automated overdue fine settlement via Finance ERP (GL 4030).')}
       breadcrumbs={[{ label: 'School ERP' }, { label: 'Library System' }]}
       icon={<BookOpen className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />}
       recordCount={activeTab === 'circulation' ? filteredRecords.length : filteredBooks.length}

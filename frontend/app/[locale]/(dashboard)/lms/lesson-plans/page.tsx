@@ -1,6 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
+
 import { useState, useEffect, useMemo } from 'react';
 import { 
   PenTool, Plus, Search, Filter, CheckCircle2, XCircle, Clock, 
@@ -58,7 +64,9 @@ interface LessonPlan {
 }
 
 export default function LessonPlansPage() {
-  const { user } = useAuth();
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const { user } = useAuth();
   const { userRole } = usePermissions();
 
   const isTeacher = userRole === 'teacher';
@@ -437,8 +445,8 @@ export default function LessonPlansPage() {
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <PageHeader 
-            title="Lesson Planning & Curriculums" 
-            description="Coordinate academic syllabi, teaching methods, learning objectives, and check homework across class sections."
+            title={t('Lesson Planning & Curriculums')} 
+            description={t('Coordinate academic syllabi, teaching methods, learning objectives, and check homework across class sections.')}
           />
           {isTeacher && (
             <button
@@ -677,7 +685,7 @@ export default function LessonPlansPage() {
                           setShowDrawer(true);
                         }}
                         className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-805 dark:text-slate-400 dark:hover:text-slate-205 rounded-lg cursor-pointer border-none transition-colors"
-                        title="View Details"
+                        title={t('View Details')}
                       >
                         <Eye className="w-4 h-4" />
                       </button>
@@ -688,7 +696,7 @@ export default function LessonPlansPage() {
                           <button
                             onClick={() => handleOpenEdit(plan)}
                             className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-805 dark:text-slate-400 dark:hover:text-slate-205 rounded-lg cursor-pointer border-none transition-colors"
-                            title="Edit Plan"
+                            title={t('Edit Plan')}
                           >
                             <Edit className="w-4 h-4" />
                           </button>
@@ -696,7 +704,7 @@ export default function LessonPlansPage() {
                             <button
                               onClick={() => handleStatusChange(plan, 'Pending Approval')}
                               className="p-1.5 hover:bg-amber-50 dark:hover:bg-amber-950/20 text-amber-600 hover:text-amber-700 rounded-lg cursor-pointer border-none transition-colors"
-                              title="Submit for Approval"
+                              title={t('Submit for Approval')}
                             >
                               <CheckCircle2 className="w-4 h-4" />
                             </button>
@@ -705,7 +713,7 @@ export default function LessonPlansPage() {
                             <button
                               onClick={() => handleStatusChange(plan, 'Pending Approval')}
                               className="p-1.5 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 text-emerald-600 hover:text-emerald-700 rounded-lg cursor-pointer border-none transition-colors"
-                              title="Resubmit for Approval"
+                              title={t('Resubmit for Approval')}
                             >
                               <CheckCircle2 className="w-4 h-4" />
                             </button>
@@ -713,7 +721,7 @@ export default function LessonPlansPage() {
                           <button
                             onClick={() => handleDelete(plan)}
                             className="p-1.5 hover:bg-rose-50 dark:hover:bg-rose-950/20 text-rose-600 hover:text-rose-700 rounded-lg cursor-pointer border-none transition-colors"
-                            title="Delete"
+                            title={t('Delete')}
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>

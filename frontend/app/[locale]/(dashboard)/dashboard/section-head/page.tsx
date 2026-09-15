@@ -1,5 +1,11 @@
 'use client';
 
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
+
 import { useEffect, useState } from 'react';
 import { useRouter } from '@/i18n/routing';
 import { useAuth } from '@/hooks/useAuth';
@@ -25,7 +31,9 @@ interface SectionStats {
 }
 
 export default function SectionHeadDashboardPage() {
-  const { user, isLoading: authLoading } = useAuth();
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const [sections, setSections] = useState<any[]>([]);
   const [sectionStats, setSectionStats] = useState<Record<string, SectionStats>>({});

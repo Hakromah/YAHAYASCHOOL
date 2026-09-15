@@ -1,6 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
+
 import { useState, useEffect } from 'react';
 import { Plus, FileText, Calendar, Award, RefreshCw, CheckCircle2 } from 'lucide-react';
 import { PageContainer, PageHeader } from '@/components/shared/layout/PageContainer';
@@ -23,7 +29,9 @@ interface ExamRecord {
 }
 
 export default function ExaminationBuilderSessionsPage() {
-  const [data, setData] = useState<ExamRecord[]>([]);
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const [data, setData] = useState<ExamRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<ExamRecord | null>(null);
@@ -200,8 +208,8 @@ export default function ExaminationBuilderSessionsPage() {
   return (
     <PageContainer>
       <PageHeader
-        title="Examination Builder & Sessions"
-        description="Schedule examination periods, configure continuous assessment weightages, and open grading portals for teachers."
+        title={t('Examination Builder & Sessions')}
+        description={t('Schedule examination periods, configure continuous assessment weightages, and open grading portals for teachers.')}
       >
         <div className="flex items-center gap-2">
           <button
@@ -231,7 +239,7 @@ export default function ExaminationBuilderSessionsPage() {
         columns={columns}
         data={data}
         isLoading={isLoading}
-        searchPlaceholder="Search exams by title, academic year, or level..."
+        searchPlaceholder={t('Search exams by title, academic year, or level...')}
         exportFileName="examination_sessions.csv"
         onEdit={canModify ? (item) => { setEditingItem(item); setIsModalOpen(true); } : undefined}
         onDelete={canModify ? (item) => handleDelete([item]) : undefined}

@@ -10,6 +10,9 @@ import {
 } from 'lucide-react';
 import { useLocale } from 'next-intl';
 import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
 import { financeService } from '@/services/finance.service';
 import type { FinancialLedgerTransaction } from '@/types/finance.types';
 import { EnterpriseModuleShell } from '@/components/erp/EnterpriseModuleShell';
@@ -22,9 +25,8 @@ import { toast } from 'sonner';
 
 export default function GlobalTransactionsExplorerPage() {
   const locale = useLocale();
-  const t = (key: string) => i18nT(key, locale);
-
-  const [transactions, setTransactions] = useState<FinancialLedgerTransaction[]>([]);
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const [transactions, setTransactions] = useState<FinancialLedgerTransaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
@@ -261,13 +263,13 @@ export default function GlobalTransactionsExplorerPage() {
         record={selectedTx ? {
           name: selectedTx.description,
           id: selectedTx.transactionId,
-          role: `MODULE: ${selectedTx.type.toUpperCase()}`,
+          role: `${t('Module')}: ${selectedTx.type.toUpperCase()}`,
           status: selectedTx.status,
-          email: `Date: ${selectedTx.date}`,
-          phone: `Party: ${selectedTx.partyName || 'N/A'}`,
-          department: `Ref ID: ${selectedTx.referenceId || 'N/A'}`,
+          email: `${t('Date')}: ${selectedTx.date}`,
+          phone: `${t('Party')}: ${selectedTx.partyName || 'N/A'}`,
+          department: `${t('Ref ID')}: ${selectedTx.referenceId || 'N/A'}`,
           joinDate: selectedTx.academicYearCode,
-          balance: selectedTx.creditAmount > 0 ? `CREDIT INFLOW: +$${selectedTx.creditAmount.toFixed(2)}` : `DEBIT OUTFLOW: -$${selectedTx.debitAmount.toFixed(2)}`
+          balance: selectedTx.creditAmount > 0 ? `${t('CREDIT INFLOW')}: +$${selectedTx.creditAmount.toFixed(2)}` : `${t('DEBIT OUTFLOW')}: -$${selectedTx.debitAmount.toFixed(2)}`
         } : null}
         category="finance"
       />

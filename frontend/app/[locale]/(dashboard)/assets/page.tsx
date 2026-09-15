@@ -1,5 +1,11 @@
 'use client';
 
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   Landmark, QrCode, TrendingDown, Plus, Eye, Calculator, Calendar, ShieldCheck, FileText,
@@ -461,7 +467,9 @@ function SettingsModal({
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function AssetManagementPage() {
-  const [assets, setAssets] = useState<FixedAsset[]>([]);
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const [assets, setAssets] = useState<FixedAsset[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
   const [density, setDensity] = useState<TableDensity>('cozy');
@@ -556,7 +564,7 @@ export default function AssetManagementPage() {
     return [
       {
         accessorKey: 'assetTag',
-        header: 'Asset Tag & Name',
+        header: t('Asset Tag & Name'),
         cell: ({ row }) => {
           const a = row.original;
           return (
@@ -572,7 +580,7 @@ export default function AssetManagementPage() {
       },
       {
         accessorKey: 'location',
-        header: 'Location & Department',
+        header: t('Location & Department'),
         cell: ({ row }) => (
           <div>
             <span className="font-semibold text-slate-900 dark:text-white text-xs block">{row.original.location}</span>
@@ -602,12 +610,12 @@ export default function AssetManagementPage() {
       },
       {
         accessorKey: 'status',
-        header: 'Status',
+        header: t('Status'),
         cell: ({ row }) => <StatusBadge status={row.original.status} size="sm" />
       },
       {
         id: 'actions',
-        header: 'Actions',
+        header: t('Actions'),
         cell: ({ row }) => {
           const a = row.original;
           return (
@@ -651,12 +659,12 @@ export default function AssetManagementPage() {
   return (
     <>
       <EnterpriseModuleShell
-        title="Fixed Asset Management ERP"
-        description="Enterprise fixed asset register, QR/Barcode tagging, life-cycle tracking, location assignments, and automated monthly depreciation journal postings."
+        title={t('Fixed Asset Management ERP')}
+        description={t('Enterprise fixed asset register, QR/Barcode tagging, life-cycle tracking, location assignments, and automated monthly depreciation journal postings.')}
         breadcrumbs={[{ label: 'School ERP' }, { label: 'Fixed Assets' }]}
         icon={<Landmark className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />}
         recordCount={filteredAssets.length}
-        recordLabel="Fixed Assets"
+        recordLabel={t('Fixed Assets')}
         onClearFilters={() => setQuery('')}
         headerActions={
           <div className="flex gap-2">
@@ -681,7 +689,7 @@ export default function AssetManagementPage() {
         <EnterpriseToolbar
           searchQuery={query}
           onSearchChange={setQuery}
-          searchPlaceholder="Search fixed assets by asset tag, name, category, location..."
+          searchPlaceholder={t('Search fixed assets by asset tag, name, category, location...')}
           density={density}
           onDensityChange={setDensity}
           onRefresh={loadData}

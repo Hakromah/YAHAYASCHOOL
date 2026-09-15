@@ -21,11 +21,18 @@ import { EnterpriseDataGrid, type ColumnDef } from '@/components/erp/EnterpriseD
 import { Avatar } from '@/components/shared/Avatar';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
 
 export default function PeopleDirectoryPage() {
   const params = useParams();
   const router = useRouter();
-  const locale = params?.locale || 'en';
+  const currentLocale = useLocale();
+  const rawParam = params?.locale; const locale = (Array.isArray(rawParam) ? rawParam[0] : rawParam) || currentLocale || 'en';
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
 
   const [activeTab, setActiveTab] = useState<'students' | 'teachers' | 'parents' | 'workers'>('students');
   const [query, setQuery] = useState('');
@@ -349,7 +356,7 @@ export default function PeopleDirectoryPage() {
     return [
       {
         accessorKey: 'name',
-        header: 'Person & ID Code',
+        header: t('Person & ID Code'),
         cell: ({ row }: any) => {
           const item = row.original;
           const name = item.name || item.fullName || item.displayName || [item.firstName, item.lastName].filter(Boolean).join(' ') || item.username || 'Unnamed Person';
@@ -373,7 +380,7 @@ export default function PeopleDirectoryPage() {
       },
       {
         accessorKey: 'categoryInfo',
-        header: 'Role / Program / Section',
+        header: t('Role / Program / Section'),
         cell: ({ row }: any) => {
           const item = row.original;
           if (activeTab === 'students') {
@@ -406,7 +413,7 @@ export default function PeopleDirectoryPage() {
       },
       {
         accessorKey: 'contact',
-        header: 'Contact Credentials',
+        header: t('Contact Credentials'),
         cell: ({ row }: any) => {
           const item = row.original;
           const phone = item.phone || item.contactPhone || item.mobileNumber || '+231 770 000 000';
@@ -428,7 +435,7 @@ export default function PeopleDirectoryPage() {
       },
       {
         accessorKey: 'status',
-        header: 'System Clearance',
+        header: t('System Clearance'),
         cell: ({ row }: any) => {
           const status = row.original.status || row.original.enrollmentStatus || 'Active';
           return <StatusBadge status={status} size="sm" />;
@@ -436,7 +443,7 @@ export default function PeopleDirectoryPage() {
       },
       {
         id: 'actions',
-        header: 'Quick Inspect',
+        header: t('Quick Inspect'),
         cell: ({ row }: any) => (
           <button
             onClick={(e) => {
@@ -455,8 +462,8 @@ export default function PeopleDirectoryPage() {
 
   return (
     <EnterpriseModuleShell
-      title="Unified People Registry & SIS Directory"
-      description="Browse, search, and manage all students, faculty, guardians, and support staff across school campuses with full SAP S/4 real-time integration."
+      title={t('Unified People Registry & SIS Directory')}
+      description={t('Browse, search, and manage all students, faculty, guardians, and support staff across school campuses with full SAP S/4 real-time integration.')}
       breadcrumbs={[{ label: 'School ERP' }, { label: 'People Directory' }]}
       icon={<Users className="w-8 h-8" />}
       recordCount={currentList.length}

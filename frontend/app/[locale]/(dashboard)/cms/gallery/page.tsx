@@ -1,6 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
+
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
   Image as ImageIcon, Plus, Eye, Trash2, Star, Search,
@@ -548,7 +554,9 @@ function AddMediaModal({ onClose, onSaved }: AddMediaModalProps) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function GalleryPage() {
-  const [items, setItems] = useState<GalleryItemEntity[]>([]);
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const [items, setItems] = useState<GalleryItemEntity[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
@@ -1000,16 +1008,16 @@ export default function GalleryPage() {
                       <>
                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
                         <div className="absolute bottom-2 inset-x-0 flex items-center justify-center gap-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                          <button onClick={() => setLightboxIndex(idx)} title="Maximize View" className="p-2 rounded-xl bg-white/95 text-slate-800 hover:bg-white cursor-pointer border-none shadow-md transition-colors">
+                          <button onClick={() => setLightboxIndex(idx)} title={t('Maximize View')} className="p-2 rounded-xl bg-white/95 text-slate-800 hover:bg-white cursor-pointer border-none shadow-md transition-colors">
                             <ZoomIn className="w-4 h-4" />
                           </button>
-                          <button onClick={() => setEditingItem(item)} title="Edit Properties" className="p-2 rounded-xl bg-white/95 text-slate-800 hover:bg-white cursor-pointer border-none shadow-md transition-colors">
+                          <button onClick={() => setEditingItem(item)} title={t('Edit Properties')} className="p-2 rounded-xl bg-white/95 text-slate-800 hover:bg-white cursor-pointer border-none shadow-md transition-colors">
                             <Edit3 className="w-4 h-4" />
                           </button>
                           <button onClick={() => handleToggleFeatured(item)} title={item.isFeatured ? 'Remove Showcase' : 'Feature Showcase'} className={`p-2 rounded-xl border-none shadow-md cursor-pointer transition-colors ${item.isFeatured ? 'bg-amber-400 text-amber-950 hover:bg-amber-500' : 'bg-white/95 text-slate-850 hover:bg-white'}`}>
                             <Star className="w-4 h-4 fill-current" />
                           </button>
-                          <button onClick={() => handleDelete(item)} title="Delete media" className="p-2 rounded-xl bg-rose-500 hover:bg-rose-600 text-white cursor-pointer border-none shadow-md transition-colors">
+                          <button onClick={() => handleDelete(item)} title={t('Delete media')} className="p-2 rounded-xl bg-rose-500 hover:bg-rose-600 text-white cursor-pointer border-none shadow-md transition-colors">
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
@@ -1131,16 +1139,16 @@ export default function GalleryPage() {
                         </td>
                         <td className="px-5 py-3 text-right">
                           <div className="flex justify-end gap-2">
-                            <button onClick={() => setLightboxIndex(idx)} title="Open Fullscreen" className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer bg-transparent transition-colors">
+                            <button onClick={() => setLightboxIndex(idx)} title={t('Open Fullscreen')} className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer bg-transparent transition-colors">
                               <Eye className="w-3.5 h-3.5" />
                             </button>
-                            <button onClick={() => setEditingItem(item)} title="Edit Properties" className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-sky-600 hover:bg-sky-50 dark:hover:bg-sky-950/30 cursor-pointer bg-transparent transition-colors">
+                            <button onClick={() => setEditingItem(item)} title={t('Edit Properties')} className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-sky-600 hover:bg-sky-50 dark:hover:bg-sky-950/30 cursor-pointer bg-transparent transition-colors">
                               <Edit3 className="w-3.5 h-3.5" />
                             </button>
                             <button onClick={() => handleToggleFeatured(item)} title={item.isFeatured ? 'Remove Feature' : 'Featured showcase'} className={`p-1.5 rounded-lg border cursor-pointer bg-transparent transition-colors ${item.isFeatured ? 'border-amber-250 dark:border-amber-800 text-amber-600 hover:bg-amber-50' : 'border-slate-200 dark:border-slate-700 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
                               <Star className="w-3.5 h-3.5 fill-current" />
                             </button>
-                            <button onClick={() => handleDelete(item)} title="Delete Item" className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20 cursor-pointer bg-transparent transition-colors">
+                            <button onClick={() => handleDelete(item)} title={t('Delete Item')} className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20 cursor-pointer bg-transparent transition-colors">
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </div>

@@ -1,5 +1,11 @@
 'use client';
 
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Award, Printer, CheckCircle2, AlertTriangle, RefreshCw, FileText,
@@ -277,7 +283,9 @@ body{font-family:system-ui,sans-serif;font-size:9.5pt;color:#0f172a;background:#
 // Main Page
 // ─────────────────────────────────────────────────────────────────────────────
 export default function RegistrarWorkspacePage() {
-  const [activeTab, setActiveTab] = useState<Tab>('dashboard');
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const [activeTab, setActiveTab] = useState<Tab>('dashboard');
 
   // Students
   const [students, setStudents] = useState<StudentRecord[]>([]);
@@ -433,8 +441,8 @@ export default function RegistrarWorkspacePage() {
   return (
     <PageContainer>
       <PageHeader
-        title="Registrar Command Workspace"
-        description="Generate official transcripts for any student, audit clearances, manage digital signatories, and export institutional registers."
+        title={t('Registrar Command Workspace')}
+        description={t('Generate official transcripts for any student, audit clearances, manage digital signatories, and export institutional registers.')}
       >
         <button
           onClick={() => { loadStudents(); loadKPIs(); if (activeTab === 'clearance') loadClearance(); }}

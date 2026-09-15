@@ -1,5 +1,11 @@
 'use client';
 
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Plus, 
@@ -73,7 +79,9 @@ interface HomeworkSubmissionItem {
 }
 
 export default function HomeworkPage() {
-  const { user, role } = useAuth();
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const { user, role } = useAuth();
   const { userRole } = usePermissions();
   const userRoleStr = String(userRole || role || '');
   const isStudentRole = role === 'student' || role === 'parent' || userRoleStr === 'student' || userRoleStr === 'parent';
@@ -772,7 +780,7 @@ export default function HomeworkPage() {
                             <button
                               onClick={() => handleOpenInspect(hw)}
                               className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-emerald-600 hover:text-white text-slate-700 dark:text-slate-200 font-bold text-xs transition-all border border-slate-200 dark:border-slate-700 cursor-pointer"
-                              title="Inspect & Grade Submissions"
+                              title={t('Inspect & Grade Submissions')}
                             >
                               <Eye className="w-3.5 h-3.5" />
                               <span>Submissions ({hw.submissionsCount})</span>
@@ -780,14 +788,14 @@ export default function HomeworkPage() {
                             <button
                               onClick={() => handleOpenCreateModal(hw)}
                               className="p-1.5 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 transition-colors cursor-pointer"
-                              title="Edit Assignment"
+                              title={t('Edit Assignment')}
                             >
                               <Edit2 className="w-3.5 h-3.5" />
                             </button>
                             <button
                               onClick={() => handleDeleteHomework(hw.id)}
                               className="p-1.5 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-500 transition-colors cursor-pointer"
-                              title="Delete Assignment"
+                              title={t('Delete Assignment')}
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>

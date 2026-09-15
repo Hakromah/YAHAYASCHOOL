@@ -1,5 +1,11 @@
 'use client';
 
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
+
 import { useEffect, useState } from 'react';
 import {
   MapPin, Car, Fuel, Wrench, RefreshCw, CheckCircle2,
@@ -24,7 +30,9 @@ const DEFAULT_WIDGETS: WidgetConfig[] = [
 ];
 
 export default function DriverDashboardPage() {
-  const [data, setData] = useState<any | null>(null);
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const [data, setData] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [widgets, setWidgets] = useState<WidgetConfig[]>(DEFAULT_WIDGETS);
 
@@ -57,8 +65,8 @@ export default function DriverDashboardPage() {
   return (
     <PageContainer>
       <PageHeader
-        title="Transport Driver Portal"
-        description="Monitor assigned transport routes, check passenger logs, log vehicle fuel, and report maintenance needs."
+        title={t('Transport Driver Portal')}
+        description={t('Monitor assigned transport routes, check passenger logs, log vehicle fuel, and report maintenance needs.')}
       >
         <div className="flex items-center gap-2">
           <button
@@ -81,7 +89,7 @@ export default function DriverDashboardPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {isVisible('stat-routes') && (
           <StatCard
-            title="Assigned Routes"
+            title={t('Assigned Routes')}
             value="Route #3 (North)"
             subtitle="Morning & Afternoon pick-up"
             icon={MapPin}
@@ -93,7 +101,7 @@ export default function DriverDashboardPage() {
         )}
         {isVisible('stat-vehicle') && (
           <StatCard
-            title="Assigned Vehicle"
+            title={t('Assigned Vehicle')}
             value="Bus KANO-104"
             subtitle="32 Seater Toyota Coaster"
             icon={Car}
@@ -105,7 +113,7 @@ export default function DriverDashboardPage() {
         )}
         {isVisible('stat-fuel') && (
           <StatCard
-            title="Fuel Log"
+            title={t('Fuel Log')}
             value="82% Tank"
             subtitle="Last refueled yesterday"
             icon={Fuel}
@@ -117,7 +125,7 @@ export default function DriverDashboardPage() {
         )}
         {isVisible('stat-maintenance') && (
           <StatCard
-            title="Maintenance Status"
+            title={t('Maintenance Status')}
             value="Optimal"
             subtitle="Next check in 1,200 km"
             icon={Wrench}
@@ -133,7 +141,7 @@ export default function DriverDashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {isVisible('chart-trips') && (
           <ChartCard
-            title="Daily Route Trips & Passenger Volume"
+            title={t('Daily Route Trips & Passenger Volume')}
             subtitle="Student transport attendance log"
             data={tripChartData}
             type="bar"

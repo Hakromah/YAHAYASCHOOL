@@ -9,6 +9,9 @@ import {
 } from 'lucide-react';
 import { useLocale } from 'next-intl';
 import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
 import { financeService } from '@/services/finance.service';
 import { EnterpriseModuleShell } from '@/components/erp/EnterpriseModuleShell';
 import { EnterpriseKPIDeck, type EnterpriseKPICard } from '@/components/erp/EnterpriseKPIDeck';
@@ -25,9 +28,8 @@ interface PaymentGatewayConfig {
 
 export default function PaymentGatewaysAndPOSPage() {
   const locale = useLocale();
-  const t = (key: string) => i18nT(key, locale);
-
-  const [gateways, setGateways] = useState<PaymentGatewayConfig[]>([]);
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const [gateways, setGateways] = useState<PaymentGatewayConfig[]>([]);
   const [loading, setLoading] = useState(true);
   const [testingWebhooks, setTestingWebhooks] = useState(false);
 

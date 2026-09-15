@@ -8,6 +8,9 @@ import { useRouter } from '@/i18n/routing';
 import { toast } from 'sonner';
 import { useLocale } from 'next-intl';
 import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
 import { 
   BookOpen, 
   Users, 
@@ -26,9 +29,8 @@ export default function LanguageProgramsPage() {
   const teacher = (user as any)?.profile;
   const router = useRouter();
   const locale = useLocale();
-  const t = (key: string) => i18nT(key, locale);
-
-  const [isLoading, setIsLoading] = useState(true);
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const [isLoading, setIsLoading] = useState(true);
   const [offerings, setOfferings] = useState<any[]>([]);
   const [programs, setPrograms] = useState<any[]>([]);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);

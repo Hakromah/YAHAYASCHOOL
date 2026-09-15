@@ -1,5 +1,11 @@
 'use client';
 
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link } from '@/i18n/routing';
 import {
@@ -297,7 +303,9 @@ function AnnouncementCard({ announcement }: { announcement: AnnouncementEntity }
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function AnnouncementsPage() {
-  const [announcements, setAnnouncements] = useState<AnnouncementEntity[]>([]);
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const [announcements, setAnnouncements] = useState<AnnouncementEntity[]>([]);
   const [loading, setLoading]             = useState(true);
   const [query, setQuery]                 = useState('');
   const [priorityFilter, setPriorityFilter]   = useState('all');
@@ -384,12 +392,12 @@ export default function AnnouncementsPage() {
 
   return (
     <EnterpriseModuleShell
-      title="Announcements & School Bulletins"
-      description="Broadcast official notices, fee alerts, academic updates, and urgent bulletins across student, parent, and faculty portals."
+      title={t('Announcements & School Bulletins')}
+      description={t('Broadcast official notices, fee alerts, academic updates, and urgent bulletins across student, parent, and faculty portals.')}
       breadcrumbs={[{ label: 'School ERP' }, { label: 'Announcements' }]}
       icon={<Megaphone className="w-8 h-8" />}
       recordCount={filteredAnnouncements.length}
-      recordLabel="Announcements"
+      recordLabel={t('Announcements')}
       activeFilterCount={activeFiltersCount}
       onClearFilters={clearFilters}
       headerActions={
@@ -478,13 +486,13 @@ export default function AnnouncementsPage() {
       <EnterpriseToolbar
         searchQuery={query}
         onSearchChange={setQuery}
-        searchPlaceholder="Search announcements by title or content..."
+        searchPlaceholder={t('Search announcements by title or content...')}
         density={density}
         onDensityChange={setDensity}
         onRefresh={() => { loadData(); toast.success('Announcements refreshed.'); }}
         activeFilterCount={activeFiltersCount}
         onResetFilters={clearFilters}
-        createButtonLabel="+ Post Announcement"
+        createButtonLabel={t('+ Post Announcement')}
         onCreate={() => setShowCreateModal(true)}
       />
 

@@ -1,6 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
+
 import { EnterpriseDataGrid, type ColumnDef } from '@/components/erp/EnterpriseDataGrid';
 import { type EnterpriseKPICard } from '@/components/erp/EnterpriseKPIDeck';
 import { EnterpriseModuleShell } from '@/components/erp/EnterpriseModuleShell';
@@ -39,7 +45,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
 export default function HostelERPPage() {
-  const searchParams = useSearchParams();
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const searchParams = useSearchParams();
   const tabParam = searchParams.get('tab');
 
   const [activeTab, setActiveTab] = useState<string>('dashboard');
@@ -444,7 +452,7 @@ export default function HostelERPPage() {
   const columns = useMemo(() => {
     const getActionColumn = (tabType: string) => ({
       id: 'actions-crud',
-      header: 'Actions',
+      header: t('Actions'),
       cell: ({ row }: any) => {
         const item = row.original;
         return (
@@ -501,7 +509,7 @@ export default function HostelERPPage() {
       return [
         {
           accessorKey: 'allocationNumber',
-          header: 'Allocation & Scholar',
+          header: t('Allocation & Scholar'),
           cell: ({ row }: any) => {
             const a = row.original;
             return (
@@ -517,7 +525,7 @@ export default function HostelERPPage() {
         },
         {
           accessorKey: 'buildingName',
-          header: 'Building & Room',
+          header: t('Building & Room'),
           cell: ({ row }: any) => (
             <div>
               <span className="font-semibold text-slate-900 dark:text-white text-xs block">{row.original.buildingName}</span>
@@ -527,14 +535,14 @@ export default function HostelERPPage() {
         },
         {
           accessorKey: 'checkInDate',
-          header: 'Check-In Date',
+          header: t('Check-In Date'),
           cell: ({ row }: any) => (
             <span className="font-mono text-xs text-slate-600 dark:text-slate-400 font-semibold">{row.original.checkInDate}</span>
           )
         },
         {
           accessorKey: 'termFee',
-          header: 'Hostel Fee & Deposit',
+          header: t('Hostel Fee & Deposit'),
           cell: ({ row }: any) => {
             const a = row.original;
             const studentPayments = payments.filter((p: any) => {
@@ -564,12 +572,12 @@ export default function HostelERPPage() {
         },
         {
           accessorKey: 'status',
-          header: 'Status',
+          header: t('Status'),
           cell: ({ row }: any) => <StatusBadge status={row.original.status} size="sm" />
         },
         {
           id: 'actions',
-          header: 'Actions',
+          header: t('Actions'),
           cell: ({ row }: any) => {
             const a = row.original;
             return (
@@ -619,22 +627,22 @@ export default function HostelERPPage() {
         return [
           {
             accessorKey: 'bedNumber',
-            header: 'Bed Number',
+            header: t('Bed Number'),
             cell: ({ row }: any) => <span className="font-extrabold text-slate-900 dark:text-white">{row.original.bedNumber}</span>
           },
           {
             accessorKey: 'roomNumber',
-            header: 'Room Number',
+            header: t('Room Number'),
             cell: ({ row }: any) => <span className="font-semibold text-slate-600 dark:text-slate-400">Suite {row.original.roomNumber}</span>
           },
           {
             accessorKey: 'buildingName',
-            header: 'Building Location',
+            header: t('Building Location'),
             cell: ({ row }: any) => <span className="text-slate-500 font-semibold">{row.original.buildingName}</span>
           },
           {
             accessorKey: 'status',
-            header: 'Bed Status',
+            header: t('Bed Status'),
             cell: ({ row }: any) => (
               <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
                 row.original.status === 'available' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400' :
@@ -651,22 +659,22 @@ export default function HostelERPPage() {
       return [
         {
           accessorKey: 'roomNumber',
-          header: 'Room Number',
+          header: t('Room Number'),
           cell: ({ row }: any) => <span className="font-extrabold text-slate-900 dark:text-white">Room {row.original.roomNumber}</span>
         },
         {
           accessorKey: 'building',
-          header: 'Building Location',
+          header: t('Building Location'),
           cell: ({ row }: any) => <span className="text-slate-600 dark:text-slate-300 font-semibold">{row.original.buildingName || 'Boarding Hall'}</span>
         },
         {
           accessorKey: 'roomType',
-          header: 'Room Type',
+          header: t('Room Type'),
           cell: ({ row }: any) => <span className="capitalize font-medium text-slate-500">{row.original.roomType} Room</span>
         },
         {
           accessorKey: 'capacity',
-          header: 'Capacity & Occupancy',
+          header: t('Capacity & Occupancy'),
           cell: ({ row }: any) => (
             <div className="flex items-center gap-2">
               <div className="w-16 bg-slate-100 dark:bg-slate-800 rounded-full h-2.5 overflow-hidden">
@@ -683,7 +691,7 @@ export default function HostelERPPage() {
         },
         {
           accessorKey: 'status',
-          header: 'Status',
+          header: t('Status'),
           cell: ({ row }: any) => {
             const avail = row.original.capacity - row.original.occupiedBeds;
             return (
@@ -703,27 +711,27 @@ export default function HostelERPPage() {
       return [
         {
           accessorKey: 'documentId',
-          header: 'Gate Pass #',
+          header: t('Gate Pass #'),
           cell: ({ row }: any) => <span className="font-mono text-xs font-bold text-indigo-600 dark:text-indigo-400">{row.original.documentId?.slice(0, 8) || row.original.id}</span>
         },
         {
           accessorKey: 'studentName',
-          header: 'Scholar / Resident',
+          header: t('Scholar / Resident'),
           cell: ({ row }: any) => <span className="font-bold text-slate-900 dark:text-white">{row.original.studentName || 'Student Resident'}</span>
         },
         {
           accessorKey: 'reason',
-          header: 'Reason for Exit',
+          header: t('Reason for Exit'),
           cell: ({ row }: any) => <span className="text-slate-600 dark:text-slate-300">{row.original.reason || 'Weekend Leave'}</span>
         },
         {
           accessorKey: 'outTime',
-          header: 'Exit Timestamp',
+          header: t('Exit Timestamp'),
           cell: ({ row }: any) => <span className="font-mono text-xs text-slate-500">{row.original.outTime || row.original.createdAt?.split('T')[0]}</span>
         },
         {
           accessorKey: 'status',
-          header: 'Status',
+          header: t('Status'),
           cell: ({ row }: any) => (
             <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
               row.original.status === 'approved' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400' : 'bg-amber-50 text-amber-700 dark:bg-amber-950/20'
@@ -734,7 +742,7 @@ export default function HostelERPPage() {
         },
         {
           id: 'actions',
-          header: 'Actions',
+          header: t('Actions'),
           cell: ({ row }: any) => {
             const item = row.original;
             return (
@@ -798,22 +806,22 @@ export default function HostelERPPage() {
       return [
         {
           accessorKey: 'id',
-          header: 'Ticket ID',
+          header: t('Ticket ID'),
           cell: ({ row }: any) => <span className="font-mono text-xs font-bold text-indigo-600 dark:text-indigo-400">#MT-{row.original.id}</span>
         },
         {
           accessorKey: 'issueType',
-          header: 'Issue / Category',
+          header: t('Issue / Category'),
           cell: ({ row }: any) => <span className="font-bold text-slate-900 dark:text-white capitalize">{row.original.issueType || 'general'}</span>
         },
         {
           accessorKey: 'description',
-          header: 'Description',
+          header: t('Description'),
           cell: ({ row }: any) => <span className="text-slate-600 dark:text-slate-300">{row.original.description}</span>
         },
         {
           accessorKey: 'priority',
-          header: 'Priority',
+          header: t('Priority'),
           cell: ({ row }: any) => (
             <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
               row.original.priority === 'high' ? 'bg-rose-100 text-rose-800' : 'bg-amber-100 text-amber-800'
@@ -824,7 +832,7 @@ export default function HostelERPPage() {
         },
         {
           accessorKey: 'status',
-          header: 'Status',
+          header: t('Status'),
           cell: ({ row }: any) => (
             <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
               row.original.status === 'completed' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20' : 'bg-amber-50 text-amber-700 dark:bg-amber-950/20'
@@ -835,7 +843,7 @@ export default function HostelERPPage() {
         },
         {
           id: 'actions',
-          header: 'Actions',
+          header: t('Actions'),
           cell: ({ row }: any) => {
             const item = row.original;
             return (
@@ -899,22 +907,22 @@ export default function HostelERPPage() {
       return [
         {
           accessorKey: 'visitorName',
-          header: 'Guest / Visitor',
+          header: t('Guest / Visitor'),
           cell: ({ row }: any) => <span className="font-bold text-slate-900 dark:text-white">{row.original.visitorName}</span>
         },
         {
           accessorKey: 'idPassportNumber',
-          header: 'ID Document',
+          header: t('ID Document'),
           cell: ({ row }: any) => <span className="font-mono text-xs text-slate-500">{row.original.idPassportNumber || 'PASS-99201'}</span>
         },
         {
           accessorKey: 'phone',
-          header: 'Phone Number',
+          header: t('Phone Number'),
           cell: ({ row }: any) => <span className="font-mono text-xs text-slate-600 dark:text-slate-400">{row.original.phone || 'N/A'}</span>
         },
         {
           accessorKey: 'purpose',
-          header: 'Purpose / Host',
+          header: t('Purpose / Host'),
           cell: ({ row }: any) => (
             <div>
               <span className="font-semibold text-slate-900 dark:text-white text-xs block">{row.original.purpose}</span>
@@ -924,7 +932,7 @@ export default function HostelERPPage() {
         },
         {
           id: 'assignedLodging',
-          header: 'Assigned Accommodation',
+          header: t('Assigned Accommodation'),
           cell: ({ row }: any) => {
             const visitor = row.original;
             const bName = visitor.building?.name || '';
@@ -957,7 +965,7 @@ export default function HostelERPPage() {
         },
         {
           accessorKey: 'dailyChargeUSD',
-          header: 'Rates / Deposit',
+          header: t('Rates / Deposit'),
           cell: ({ row }: any) => (
             <div>
               <span className="font-bold text-emerald-600 dark:text-emerald-400 block">{hostelSettings.currency} {row.original.dailyChargeUSD || 50.0}/day</span>
@@ -967,7 +975,7 @@ export default function HostelERPPage() {
         },
         {
           id: 'visitor-status',
-          header: 'Status',
+          header: t('Status'),
           cell: ({ row }: any) => {
             const v = row.original;
             if (v.checkOut) {
@@ -993,7 +1001,7 @@ export default function HostelERPPage() {
         },
         {
           id: 'visitor-actions',
-          header: 'Actions',
+          header: t('Actions'),
           cell: ({ row }: any) => {
             const visitor = row.original;
             return (
@@ -1044,7 +1052,7 @@ export default function HostelERPPage() {
       return [
         {
           accessorKey: 'planName',
-          header: 'Plan Name & Period',
+          header: t('Plan Name & Period'),
           cell: ({ row }: any) => {
             const plan = row.original;
             const nameStr = plan.planName || plan.name || 'Standard Plan';
@@ -1126,27 +1134,27 @@ export default function HostelERPPage() {
         return [
           {
             accessorKey: 'floorName',
-            header: 'Floor Name',
+            header: t('Floor Name'),
             cell: ({ row }: any) => <span className="font-bold text-slate-900 dark:text-white">{row.original.floorName}</span>
           },
           {
             accessorKey: 'floorNumber',
-            header: 'Floor Number',
+            header: t('Floor Number'),
             cell: ({ row }: any) => <span className="font-mono font-semibold">{row.original.floorNumber}</span>
           },
           {
             accessorKey: 'buildingName',
-            header: 'Parent Building',
+            header: t('Parent Building'),
             cell: ({ row }: any) => <span className="font-semibold text-slate-600 dark:text-slate-400">{row.original.buildingName}</span>
           },
           {
             accessorKey: 'capacity',
-            header: 'Capacity',
+            header: t('Capacity'),
             cell: ({ row }: any) => <span className="font-mono font-bold">{row.original.capacity || 0} Beds</span>
           },
           {
             accessorKey: 'roomsCount',
-            header: 'Rooms Count',
+            header: t('Rooms Count'),
             cell: ({ row }: any) => <span className="font-semibold">{row.original.roomsCount || 0} Rooms</span>
           },
           getActionColumn('floors')
@@ -1156,12 +1164,12 @@ export default function HostelERPPage() {
       return [
         {
           accessorKey: 'name',
-          header: 'Building / Hall Name',
+          header: t('Building / Hall Name'),
           cell: ({ row }: any) => <span className="font-bold text-slate-900 dark:text-white">{row.original.name}</span>
         },
         {
           accessorKey: 'genderAllowed',
-          header: 'Gender Category',
+          header: t('Gender Category'),
           cell: ({ row }: any) => {
             const gender = row.original.genderAllowed || 'male';
             return (
@@ -1175,12 +1183,12 @@ export default function HostelERPPage() {
         },
         {
           accessorKey: 'totalBeds',
-          header: 'Total Capacity',
+          header: t('Total Capacity'),
           cell: ({ row }: any) => <span className="font-mono font-bold">{row.original.totalBeds || 0} Beds</span>
         },
         {
           accessorKey: 'occupiedBeds',
-          header: 'Occupied',
+          header: t('Occupied'),
           cell: ({ row }: any) => {
             const occupied = row.original.occupiedBeds || 0;
             const total = row.original.totalBeds || 1;
@@ -1193,7 +1201,7 @@ export default function HostelERPPage() {
         },
         {
           accessorKey: 'totalRooms',
-          header: 'Rooms Count',
+          header: t('Rooms Count'),
           cell: ({ row }: any) => <span className="font-semibold">{row.original.totalRooms || 0} Rooms</span>
         },
         getActionColumn('buildings')
@@ -1204,29 +1212,29 @@ export default function HostelERPPage() {
       return [
         {
           accessorKey: 'name',
-          header: 'Scholar Name',
+          header: t('Scholar Name'),
           cell: ({ row }: any) => <span className="font-bold text-slate-900 dark:text-white">{row.original.name}</span>
         },
         {
           accessorKey: 'gender',
-          header: 'Gender',
+          header: t('Gender'),
           cell: ({ row }: any) => (
             <span className="text-slate-600 dark:text-slate-400 font-semibold">{row.original.gender}</span>
           )
         },
         {
           accessorKey: 'grade',
-          header: 'Program / Grade',
+          header: t('Program / Grade'),
           cell: ({ row }: any) => <span className="text-slate-600 dark:text-slate-400 font-semibold">{row.original.grade}</span>
         },
         {
           accessorKey: 'waitingDays',
-          header: 'Waiting Period',
+          header: t('Waiting Period'),
           cell: ({ row }: any) => <span className="font-bold text-indigo-600">{row.original.waitingDays} Days</span>
         },
         {
           id: 'action',
-          header: 'Action',
+          header: t('Action'),
           cell: ({ row }: any) => (
             <button
               onClick={() => setIsWizardOpen(true)}
@@ -1243,22 +1251,22 @@ export default function HostelERPPage() {
       return [
         {
           accessorKey: 'studentName',
-          header: 'Scholar Name',
+          header: t('Scholar Name'),
           cell: ({ row }: any) => <span className="font-bold text-slate-900 dark:text-white">{row.original.studentName}</span>
         },
         {
           accessorKey: 'roomNumber',
-          header: 'Room / Suite',
+          header: t('Room / Suite'),
           cell: ({ row }: any) => <span className="font-semibold text-slate-600 dark:text-slate-400">{row.original.buildingName} - Suite {row.original.roomNumber}</span>
         },
         {
           accessorKey: 'securityDeposit',
-          header: 'Security Deposit (GL 2050)',
+          header: t('Security Deposit (GL 2050)'),
           cell: ({ row }: any) => <span className="font-mono font-bold text-slate-900 dark:text-white">{hostelSettings.currency} {row.original.securityDeposit?.toFixed(2)}</span>
         },
         {
           accessorKey: 'status',
-          header: 'Deposit Status',
+          header: t('Deposit Status'),
           cell: ({ row }: any) => (
             <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
               row.original.status === 'active' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'
@@ -1269,7 +1277,7 @@ export default function HostelERPPage() {
         },
         {
           id: 'action',
-          header: 'Action',
+          header: t('Action'),
           cell: ({ row }: any) => {
             const a = row.original;
             return a.status === 'active' ? (
@@ -1293,7 +1301,7 @@ export default function HostelERPPage() {
       return [
         {
           accessorKey: 'studentName',
-          header: 'Scholar & ID',
+          header: t('Scholar & ID'),
           cell: ({ row }: any) => (
             <div className="space-y-0.5">
               <span className="font-bold text-slate-900 dark:text-white block">{row.original.studentName}</span>
@@ -1303,12 +1311,12 @@ export default function HostelERPPage() {
         },
         {
           accessorKey: 'date',
-          header: 'Date',
+          header: t('Date'),
           cell: ({ row }: any) => <span className="font-semibold text-slate-600 dark:text-slate-400 font-mono text-xs">{row.original.date}</span>
         },
         {
           accessorKey: 'attendanceStatus',
-          header: 'Status',
+          header: t('Status'),
           cell: ({ row }: any) => {
             const s = row.original.attendanceStatus;
             const cfg: Record<string, string> = {
@@ -1326,21 +1334,21 @@ export default function HostelERPPage() {
         },
         {
           accessorKey: 'checkInTime',
-          header: 'Check-In Time',
+          header: t('Check-In Time'),
           cell: ({ row }: any) => (
             <span className="font-mono text-xs text-slate-500">{row.original.checkInTime || '—'}</span>
           )
         },
         {
           accessorKey: 'notes',
-          header: 'Notes',
+          header: t('Notes'),
           cell: ({ row }: any) => (
             <span className="text-slate-500 dark:text-slate-400 italic text-xs">{row.original.notes || '—'}</span>
           )
         },
         {
           id: 'attendance-actions',
-          header: 'Actions',
+          header: t('Actions'),
           cell: ({ row }: any) => {
             const item = row.original;
             return (
@@ -1404,7 +1412,7 @@ export default function HostelERPPage() {
       return [
         {
           accessorKey: 'name',
-          header: 'Warden Name & Role',
+          header: t('Warden Name & Role'),
           cell: ({ row }: any) => {
             const w = row.original;
             const roleLabel = w.role === 'chief_warden' ? 'Chief Warden' : w.role === 'assistant_warden' ? 'Asst. Warden' : w.role === 'resident_assistant' ? 'Resident Asst.' : 'Warden';
@@ -1418,12 +1426,12 @@ export default function HostelERPPage() {
         },
         {
           accessorKey: 'building',
-          header: 'Assigned Building',
+          header: t('Assigned Building'),
           cell: ({ row }: any) => <span className="font-semibold text-slate-600 dark:text-slate-400">{row.original.building}</span>
         },
         {
           accessorKey: 'dutyShift',
-          header: 'Duty Shift',
+          header: t('Duty Shift'),
           cell: ({ row }: any) => {
             const shift = row.original.dutyShift || 'full_day';
             const shiftLabel: Record<string, string> = { morning: 'Morning', afternoon: 'Afternoon', evening: 'Evening', night: 'Night', full_day: 'Full Day' };
@@ -1437,12 +1445,12 @@ export default function HostelERPPage() {
         },
         {
           accessorKey: 'phone',
-          header: 'Phone / Contact',
+          header: t('Phone / Contact'),
           cell: ({ row }: any) => <span className="font-mono text-xs text-slate-500">{row.original.phone}</span>
         },
         {
           accessorKey: 'status',
-          header: 'Duty Status',
+          header: t('Duty Status'),
           cell: ({ row }: any) => (
             <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
               row.original.status === 'On Duty' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
@@ -1453,7 +1461,7 @@ export default function HostelERPPage() {
         },
         {
           id: 'warden-actions',
-          header: 'Actions',
+          header: t('Actions'),
           cell: ({ row }: any) => {
             const item = row.original;
             return (
@@ -1499,7 +1507,7 @@ export default function HostelERPPage() {
 
   return (
     <EnterpriseModuleShell
-      title="Hostel Operations Center"
+      title={t('Hostel Operations Center')}
       description=""
       breadcrumbs={[{ label: 'School ERP' }, { label: 'Hostel & Boarding' }]}
       icon={<Home className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />}

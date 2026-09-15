@@ -1,5 +1,11 @@
 'use client';
 
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   ShoppingBag, Truck, CheckCircle2, AlertCircle, Plus, Eye, FileCheck, Layers, DollarSign,
@@ -612,7 +618,9 @@ function SettingsModal({
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function ProcurementPage() {
-  const [vendors, setVendors] = useState<Vendor[]>([]);
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const [vendors, setVendors] = useState<Vendor[]>([]);
   const [requisitions, setRequisitions] = useState<PurchaseRequisition[]>([]);
   const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([]);
   const [loading, setLoading] = useState(true);
@@ -726,7 +734,7 @@ export default function ProcurementPage() {
     return [
       {
         accessorKey: 'poNumber',
-        header: 'PO Number & Vendor',
+        header: t('PO Number & Vendor'),
         cell: ({ row }) => {
           const po = row.original;
           return (
@@ -742,7 +750,7 @@ export default function ProcurementPage() {
       },
       {
         accessorKey: 'orderDate',
-        header: 'Order / Delivery Date',
+        header: t('Order / Delivery Date'),
         cell: ({ row }) => (
           <div>
             <span className="font-mono text-xs text-slate-700 dark:text-slate-300 font-semibold block">{row.original.orderDate}</span>
@@ -761,7 +769,7 @@ export default function ProcurementPage() {
       },
       {
         accessorKey: 'threeWayMatchStatus',
-        header: '3-Way Match & AP',
+        header: t('3-Way Match & AP'),
         cell: ({ row }) => (
           <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold ${row.original.threeWayMatchStatus === 'matched' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200'}`}>
             <CheckCircle2 className="w-3 h-3" />
@@ -771,12 +779,12 @@ export default function ProcurementPage() {
       },
       {
         accessorKey: 'approvalStatus',
-        header: 'Status',
+        header: t('Status'),
         cell: ({ row }) => <StatusBadge status={row.original.approvalStatus} size="sm" />
       },
       {
         id: 'actions',
-        header: 'Actions',
+        header: t('Actions'),
         cell: ({ row }) => {
           const po = row.original;
           return (
@@ -812,7 +820,7 @@ export default function ProcurementPage() {
   const vendorColumns = useMemo<ColumnDef<Vendor, any>[]>(() => [
     {
       accessorKey: 'vendorCode',
-      header: 'Vendor Code & Company',
+      header: t('Vendor Code & Company'),
       cell: ({ row }) => {
         const v = row.original;
         return (
@@ -826,7 +834,7 @@ export default function ProcurementPage() {
     },
     {
       accessorKey: 'contactPerson',
-      header: 'Contact Info',
+      header: t('Contact Info'),
       cell: ({ row }) => {
         const v = row.original;
         return (
@@ -840,7 +848,7 @@ export default function ProcurementPage() {
     },
     {
       accessorKey: 'taxRegistrationNumber',
-      header: 'Tax Reg (TIN) & Bank',
+      header: t('Tax Reg (TIN) & Bank'),
       cell: ({ row }) => {
         const v = row.original;
         return (
@@ -853,7 +861,7 @@ export default function ProcurementPage() {
     },
     {
       accessorKey: 'status',
-      header: 'Status',
+      header: t('Status'),
       cell: ({ row }) => <StatusBadge status={row.original.status} size="sm" />
     }
   ], []);
@@ -870,8 +878,8 @@ export default function ProcurementPage() {
   return (
     <>
       <EnterpriseModuleShell
-        title="Procurement & Accounts Payable ERP"
-        description="Vendor relationship portal, Purchase Orders (PO), Requisitions, 3-Way Matching (PO ↔ GRN ↔ Vendor Invoice), and automatic Accounts Payable (GL 2010) posting."
+        title={t('Procurement & Accounts Payable ERP')}
+        description={t('Vendor relationship portal, Purchase Orders (PO), Requisitions, 3-Way Matching (PO ↔ GRN ↔ Vendor Invoice), and automatic Accounts Payable (GL 2010) posting.')}
         breadcrumbs={[{ label: 'School ERP' }, { label: 'Procurement' }]}
         icon={<ShoppingBag className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />}
         recordCount={activeTab === 'pos' ? filteredOrders.length : filteredVendors.length}

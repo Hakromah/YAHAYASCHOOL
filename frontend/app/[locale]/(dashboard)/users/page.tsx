@@ -1,6 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
+
 import React, { useState, useEffect } from 'react';
 import { Users, Shield, Plus, Search, ChevronLeft, ChevronRight, Edit2, Trash2, X, CheckCircle2 } from 'lucide-react';
 import { userService } from '@/services/user.service';
@@ -10,7 +16,9 @@ import { toast } from 'sonner';
 import { Link } from '@/i18n/routing';
 
 export default function UsersManagementPage() {
-  const [users, setUsers] = useState<SchoolUser[]>([]);
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const [users, setUsers] = useState<SchoolUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [query, setQuery] = useState('');
@@ -217,14 +225,14 @@ export default function UsersManagementPage() {
                           <button
                             onClick={() => handleEditClick(user)}
                             className="p-2 text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 rounded-lg transition-colors border-none bg-transparent cursor-pointer"
-                            title="Edit User"
+                            title={t('Edit User')}
                           >
                             <Edit2 className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleDeleteClick(user)}
                             className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-lg transition-colors border-none bg-transparent cursor-pointer"
-                            title="Delete User"
+                            title={t('Delete User')}
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>

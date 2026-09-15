@@ -1,11 +1,19 @@
 'use client';
 
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
+
 import React from 'react';
 import { Link } from '@/i18n/routing';
 import { BarChart3, FileText, ScrollText, BadgeCheck, ArrowRight, Trophy, CheckCircle2, Award } from 'lucide-react';
 
 export default function ResultsOverviewPage() {
-  const modules = [
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const modules = [
     { title: 'Report Cards', desc: 'Generate, certify, and print term-end report cards with grading analytics.', href: '/results/report-cards', icon: FileText, color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30' },
     { title: 'Academic Transcripts', desc: 'Full multi-year academic transcripts with cumulative GPAs and credits.', href: '/results/transcripts', icon: ScrollText, color: 'text-sky-400 bg-sky-500/10 border-sky-500/30' },
     { title: 'Certificates of Achievement', desc: 'Issue verifiable digital certificates for Hifz completion and honors.', href: '/results/certificates', icon: BadgeCheck, color: 'text-amber-400 bg-amber-500/10 border-amber-500/30' },

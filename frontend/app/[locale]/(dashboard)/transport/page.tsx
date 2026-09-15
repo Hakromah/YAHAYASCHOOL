@@ -1,5 +1,11 @@
 'use client';
 
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
+
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   Bus, MapPin, Users, Fuel, Plus, Eye, Navigation, ShieldCheck, FileText,
@@ -16,7 +22,9 @@ import { StatusBadge } from '@/components/erp/StatusBadge';
 import { toast } from 'sonner';
 
 export default function TransportPage() {
-  const [vehicles, setVehicles] = useState<TransportVehicle[]>([]);
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const [vehicles, setVehicles] = useState<TransportVehicle[]>([]);
   const [routes, setRoutes] = useState<TransportRoute[]>([]);
   const [assignments, setAssignments] = useState<StudentTransportAssignment[]>([]);
   const [students, setStudents] = useState<any[]>([]);
@@ -279,7 +287,7 @@ export default function TransportPage() {
     return [
       {
         accessorKey: 'assignmentNumber',
-        header: 'Assignment & Scholar',
+        header: t('Assignment & Scholar'),
         cell: ({ row }) => {
           const a = row.original;
           return (
@@ -295,7 +303,7 @@ export default function TransportPage() {
       },
       {
         accessorKey: 'routeName',
-        header: 'Route & Bus Stop',
+        header: t('Route & Bus Stop'),
         cell: ({ row }) => (
           <div>
             <span className="font-semibold text-slate-900 dark:text-white text-xs block">{row.original.routeName}</span>
@@ -307,7 +315,7 @@ export default function TransportPage() {
       },
       {
         accessorKey: 'pickupTime',
-        header: 'Schedule (Pickup / Drop)',
+        header: t('Schedule (Pickup / Drop)'),
         cell: ({ row }) => (
           <span className="font-mono text-xs text-slate-700 dark:text-slate-300 font-bold block">
             {row.original.pickupTime} / {row.original.dropTime}
@@ -316,7 +324,7 @@ export default function TransportPage() {
       },
       {
         accessorKey: 'termFee',
-        header: 'Transport Fee',
+        header: t('Transport Fee'),
         cell: ({ row }) => (
           <div>
             <span className="font-mono text-xs font-extrabold text-emerald-600 dark:text-emerald-400 block">${row.original.termFee.toFixed(2)} / term</span>
@@ -326,12 +334,12 @@ export default function TransportPage() {
       },
       {
         accessorKey: 'status',
-        header: 'Status',
+        header: t('Status'),
         cell: ({ row }) => <StatusBadge status={row.original.status} size="sm" />
       },
       {
         id: 'actions',
-        header: 'Actions',
+        header: t('Actions'),
         cell: ({ row }) => (
           <button
             onClick={(e) => {
@@ -350,12 +358,12 @@ export default function TransportPage() {
 
   return (
     <EnterpriseModuleShell
-      title="Transport & Fleet Logistics ERP"
-      description="School shuttle route management, student pickup/drop manifests, fleet maintenance, fuel logs, and automated Finance ERP transport fee billing."
+      title={t('Transport & Fleet Logistics ERP')}
+      description={t('School shuttle route management, student pickup/drop manifests, fleet maintenance, fuel logs, and automated Finance ERP transport fee billing.')}
       breadcrumbs={[{ label: 'School ERP' }, { label: 'Transport Management' }]}
       icon={<Bus className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />}
       recordCount={filteredAssignments.length}
-      recordLabel="Route Assignments"
+      recordLabel={t('Route Assignments')}
       onClearFilters={() => setQuery('')}
       headerActions={
         <div className="flex items-center gap-2">
@@ -381,7 +389,7 @@ export default function TransportPage() {
       <EnterpriseToolbar
         searchQuery={query}
         onSearchChange={setQuery}
-        searchPlaceholder="Search transport assignments by student name, route, stop..."
+        searchPlaceholder={t('Search transport assignments by student name, route, stop...')}
         density={density}
         onDensityChange={setDensity}
         onRefresh={loadData}

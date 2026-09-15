@@ -9,6 +9,9 @@ import { useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { useLocale } from 'next-intl';
 import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
 import { 
   BookOpen, 
   Users, 
@@ -34,9 +37,8 @@ export default function LanguageSkillsPage() {
   const searchParams = useSearchParams();
   const offeringParam = searchParams.get('offering');
   const locale = useLocale();
-  const t = (key: string) => i18nT(key, locale);
-
-  const [isLoading, setIsLoading] = useState(true);
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const [isLoading, setIsLoading] = useState(true);
   const [isDataLoading, setIsDataLoading] = useState(false);
   const [offerings, setOfferings] = useState<any[]>([]);
   const [selectedOfferingId, setSelectedOfferingId] = useState<string>('');

@@ -1,5 +1,11 @@
 'use client';
 
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
+
 import React, { useState, useEffect } from 'react';
 import { Megaphone, Calendar, MapPin, User, Users } from 'lucide-react';
 import { qmsService } from '@/services/qms.service';
@@ -8,7 +14,9 @@ import type { DawahActivity } from '@/types/qms.types';
 import { toast } from 'sonner';
 
 export default function DawahActivitiesPage() {
-  const [activities, setActivities] = useState<DawahActivity[]>([]);
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const [activities, setActivities] = useState<DawahActivity[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -28,12 +36,12 @@ export default function DawahActivitiesPage() {
 
   return (
     <EnterpriseModuleShell
-      title="Da'wah Activities"
-      description="Manage community outreach, mosque programs, and Islamic awareness campaigns organized by the institution."
+      title={t('Da\'wah Activities')}
+      description={t('Manage community outreach, mosque programs, and Islamic awareness campaigns organized by the institution.')}
       breadcrumbs={[{ label: 'QMS', href: '/qms' }, { label: 'Da\'wah Activities' }]}
       icon={<Megaphone className="w-8 h-8" />}
       recordCount={activities.length}
-      recordLabel="Active Programs"
+      recordLabel={t('Active Programs')}
     >
       {loading ? (
         <div className="flex items-center justify-center p-24">

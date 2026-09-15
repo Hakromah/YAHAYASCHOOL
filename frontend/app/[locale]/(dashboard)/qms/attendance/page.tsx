@@ -1,5 +1,11 @@
 'use client';
 
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { apiClient } from '@/services/api.service';
@@ -38,7 +44,9 @@ interface AttendanceRecord {
 }
 
 export default function AttendancePage() {
-  const { user, isLoading: authLoading } = useAuth();
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const { user, isLoading: authLoading } = useAuth();
   const teacher = (user as any)?.profile;
   const router = useRouter();
 
@@ -286,8 +294,8 @@ export default function AttendancePage() {
   return (
     <PageContainer>
       <PageHeader 
-        title="Quran Attendance Workspace" 
-        description="Record and manage daily attendance for your Quran sessions"
+        title={t('Quran Attendance Workspace')} 
+        description={t('Record and manage daily attendance for your Quran sessions')}
       />
 
       {/* Top Controls */}
@@ -409,7 +417,7 @@ export default function AttendancePage() {
                           <div>
                             <p className="font-semibold text-slate-900 dark:text-white">
                               {student.firstName} {student.lastName}
-                              {record.isDirty && <span className="ml-2 inline-block w-2 h-2 rounded-full bg-amber-500" title="Unsaved changes"></span>}
+                              {record.isDirty && <span className="ml-2 inline-block w-2 h-2 rounded-full bg-amber-500" title={t('Unsaved changes')}></span>}
                             </p>
                             <p className="text-xs text-slate-500">{student.admissionNumber}</p>
                           </div>

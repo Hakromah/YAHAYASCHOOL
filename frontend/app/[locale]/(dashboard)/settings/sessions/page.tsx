@@ -6,6 +6,9 @@ import { useLocale } from 'next-intl';
 import { useAuth } from '@/hooks/useAuth';
 import { apiClient } from '@/services/api.service';
 import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -55,8 +58,8 @@ function timeSince(dateStr: string): string {
 
 export default function LoginSessionsPage() {
   const locale = useLocale();
-  const t = (key: string) => i18nT(key, locale);
-  const { user } = useAuth();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const { user } = useAuth();
 
   const [users, setUsers] = useState<StrapiUser[]>([]);
   const [loading, setLoading] = useState(true);

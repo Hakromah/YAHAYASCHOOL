@@ -1,6 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import {
@@ -24,9 +30,11 @@ import { Avatar } from '@/components/shared/Avatar';
 import { toast } from 'sonner';
 
 export default function TeachersListPage() {
-  const params = useParams();
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const params = useParams();
   const router = useRouter();
-  const locale = params?.locale || 'en';
+  
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
@@ -302,7 +310,7 @@ export default function TeachersListPage() {
     return [
       {
         accessorKey: 'name',
-        header: 'Faculty Instructor & Employee ID',
+        header: t('Faculty Instructor & Employee ID'),
         cell: ({ row }: any) => {
           const tch = row.original;
           const name = tch.name || tch.fullName || tch.displayName || [tch.firstName, tch.lastName].filter(Boolean).join(' ') || tch.username || 'Unnamed Instructor';
@@ -326,7 +334,7 @@ export default function TeachersListPage() {
       },
       {
         accessorKey: 'department',
-        header: 'Academic Department & Qualification',
+        header: t('Academic Department & Qualification'),
         cell: ({ row }: any) => {
           const tch = row.original;
           const dept = (tch.departments && tch.departments.length > 0
@@ -342,7 +350,7 @@ export default function TeachersListPage() {
       },
       {
         accessorKey: 'contact',
-        header: 'Faculty Credentials',
+        header: t('Faculty Credentials'),
         cell: ({ row }: any) => {
           const tch = row.original;
           const phone = tch.phone || tch.contactPhone || null;
@@ -364,7 +372,7 @@ export default function TeachersListPage() {
       },
       {
         accessorKey: 'status',
-        header: 'Teaching Status',
+        header: t('Teaching Status'),
         cell: ({ row }: any) => {
           const status = row.original.status || 'Active';
           return <StatusBadge status={status} size="sm" />;
@@ -372,7 +380,7 @@ export default function TeachersListPage() {
       },
       {
         id: 'actions',
-        header: 'Roster Actions',
+        header: t('Roster Actions'),
         cell: ({ row }: any) => {
           const tch = row.original;
           return (
@@ -380,21 +388,21 @@ export default function TeachersListPage() {
               <button
                 onClick={() => setSelectedRow(tch)}
                 className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 cursor-pointer border-none bg-transparent"
-                title="Inspect Profile"
+                title={t('Inspect Profile')}
               >
                 <Eye className="w-4 h-4" />
               </button>
               <button
                 onClick={() => handleEditOpen(tch)}
                 className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 cursor-pointer border-none bg-transparent"
-                title="Edit Instructor"
+                title={t('Edit Instructor')}
               >
                 <Edit className="w-4 h-4" />
               </button>
               <button
                 onClick={() => handleDelete(tch)}
                 className="p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/20 text-rose-600 cursor-pointer border-none bg-transparent"
-                title="Delete Instructor"
+                title={t('Delete Instructor')}
               >
                 <Trash2 className="w-4 h-4" />
               </button>
@@ -462,12 +470,12 @@ export default function TeachersListPage() {
 
   return (
     <EnterpriseModuleShell
-      title="Faculty & Sheikhs Academic Registry"
-      description="Browse all teaching faculty, Islamic scholars, section homeroom advisors, and department heads across campuses with full S/4 real-time metrics."
+      title={t('Faculty & Sheikhs Academic Registry')}
+      description={t('Browse all teaching faculty, Islamic scholars, section homeroom advisors, and department heads across campuses with full S/4 real-time metrics.')}
       breadcrumbs={[{ label: 'School ERP' }, { label: 'Teachers' }]}
       icon={<UserCheck className="w-8 h-8" />}
       recordCount={teachers.length}
-      recordLabel="Instructors"
+      recordLabel={t('Instructors')}
       activeFilterCount={activeFiltersCount}
       onClearFilters={handleClearFilters}
       headerActions={
@@ -496,7 +504,7 @@ export default function TeachersListPage() {
       <EnterpriseToolbar
         searchQuery={query}
         onSearchChange={setQuery}
-        searchPlaceholder="Search faculty by name, employee ID, department, or qualification..."
+        searchPlaceholder={t('Search faculty by name, employee ID, department, or qualification...')}
         density={density}
         onDensityChange={setDensity}
         onRefresh={loadTeachers}
@@ -505,7 +513,7 @@ export default function TeachersListPage() {
         onExport={() => setExportModalOpen(true)}
         activeFilterCount={activeFiltersCount}
         onResetFilters={handleClearFilters}
-        createButtonLabel="+ Onboard Instructor"
+        createButtonLabel={t('+ Onboard Instructor')}
         onCreate={handleOnboardOpen}
         customFilterNodes={
           <div className="flex flex-wrap items-center gap-2">
@@ -544,11 +552,11 @@ export default function TeachersListPage() {
         onRowClick={(row: any) => setSelectedRow(row)}
         onRowEdit={(row: any) => handleEditOpen(row)}
         emptyStateProps={{
-          title: 'No Instructors Found',
-          description: 'No teaching faculty exist matching your search query or department criteria.',
+          title: t('No Instructors Found'),
+          description: t('No teaching faculty exist matching your search query or department criteria.'),
           isFilterActive: activeFiltersCount > 0 || query.length > 0,
           onResetFilters: handleClearFilters,
-          createLabel: 'Onboard New Instructor',
+          createLabel: t('Onboard New Instructor'),
           onCreate: handleOnboardOpen
         }}
       />

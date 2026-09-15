@@ -13,6 +13,11 @@ import { EnterpriseDataGrid, type ColumnDef } from '@/components/erp/EnterpriseD
 import { SlideOutDrawer } from '@/components/erp/SlideOutDrawer';
 import { StatusBadge } from '@/components/erp/StatusBadge';
 import { toast } from 'sonner';
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
 
 export interface AdmissionApplication {
   id: string;
@@ -27,7 +32,9 @@ export interface AdmissionApplication {
 }
 
 export default function AdmissionsPage() {
-  const [loading, setLoading] = useState(false);
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const [loading, setLoading] = useState(false);
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [trackFilter, setTrackFilter] = useState('all');
@@ -115,7 +122,7 @@ export default function AdmissionsPage() {
     return [
       {
         accessorKey: 'applicantName',
-        header: 'App ID & Candidate Scholar',
+        header: t('App ID & Candidate Scholar'),
         cell: ({ row }) => {
           const app = row.original;
           return (
@@ -130,7 +137,7 @@ export default function AdmissionsPage() {
       },
       {
         accessorKey: 'gradeApplied',
-        header: 'Program Track Applied',
+        header: t('Program Track Applied'),
         cell: ({ row }) => (
           <div className="space-y-0.5 text-xs">
             <span className="font-semibold text-slate-200 block">{row.original.gradeApplied}</span>
@@ -140,7 +147,7 @@ export default function AdmissionsPage() {
       },
       {
         accessorKey: 'parentName',
-        header: 'Guardian & Contact Phone',
+        header: t('Guardian & Contact Phone'),
         cell: ({ row }) => (
           <div className="space-y-0.5 text-xs">
             <span className="font-bold text-slate-300 block">{row.original.parentName}</span>
@@ -152,7 +159,7 @@ export default function AdmissionsPage() {
       },
       {
         accessorKey: 'hifzAssessment',
-        header: 'Hifz / Oral Assessment',
+        header: t('Hifz / Oral Assessment'),
         cell: ({ row }) => (
           <span className="text-xs text-slate-300 font-medium block truncate max-w-xs">
             {row.original.hifzAssessment || 'Standard Evaluation'}
@@ -161,7 +168,7 @@ export default function AdmissionsPage() {
       },
       {
         accessorKey: 'status',
-        header: 'Committee Status',
+        header: t('Committee Status'),
         cell: ({ row }) => {
           const s = row.original.status;
           return <StatusBadge status={s === 'approved' ? 'active' : s === 'pending' || s === 'interview' ? 'pending' : 'suspended'} size="sm" />;
@@ -169,7 +176,7 @@ export default function AdmissionsPage() {
       },
       {
         id: 'actions',
-        header: 'Inspect / Enroll',
+        header: t('Inspect / Enroll'),
         cell: ({ row }) => (
           <button
             onClick={(e) => {
@@ -188,12 +195,12 @@ export default function AdmissionsPage() {
 
   return (
     <EnterpriseModuleShell
-      title="Admissions & Enrollment Portal"
-      description="Review incoming candidate scholar applications, schedule Hifz oral placement interviews, score academic testing, and execute 1-click SIS roster placement."
+      title={t('Admissions & Enrollment Portal')}
+      description={t('Review incoming candidate scholar applications, schedule Hifz oral placement interviews, score academic testing, and execute 1-click SIS roster placement.')}
       breadcrumbs={[{ label: 'School ERP' }, { label: 'Admissions Portal' }]}
       icon={<ScrollText className="w-8 h-8" />}
       recordCount={filteredApps.length}
-      recordLabel="Applications"
+      recordLabel={t('Applications')}
       activeFilterCount={activeFiltersCount}
       onClearFilters={handleClearFilters}
       headerActions={
@@ -215,13 +222,13 @@ export default function AdmissionsPage() {
       <EnterpriseToolbar
         searchQuery={query}
         onSearchChange={setQuery}
-        searchPlaceholder="Search admissions by applicant scholar name, application ID, or guardian contact..."
+        searchPlaceholder={t('Search admissions by applicant scholar name, application ID, or guardian contact...')}
         density={density}
         onDensityChange={setDensity}
         onRefresh={() => toast.success('Admissions queue synchronized')}
         activeFilterCount={activeFiltersCount}
         onResetFilters={handleClearFilters}
-        createButtonLabel="+ Submit Application"
+        createButtonLabel={t('+ Submit Application')}
         onCreate={() => toast.info('Opened online prospective student application form.')}
         customFilterNodes={
           <div className="flex flex-wrap items-center gap-2">
@@ -262,11 +269,11 @@ export default function AdmissionsPage() {
         onRowClick={(row) => setSelectedRow(row)}
         onRowEdit={(row) => toast.info(`Opening application review scorecard for ${row.applicantName}`)}
         emptyStateProps={{
-          title: 'No Applications Found',
-          description: 'No student admission applications match your current search query or committee status filter.',
+          title: t('No Applications Found'),
+          description: t('No student admission applications match your current search query or committee status filter.'),
           isFilterActive: activeFiltersCount > 0 || query.length > 0,
           onResetFilters: handleClearFilters,
-          createLabel: 'Submit Candidate Application',
+          createLabel: t('Submit Candidate Application'),
           onCreate: () => toast.info('Opened application submission modal')
         }}
       />

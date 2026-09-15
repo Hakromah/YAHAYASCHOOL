@@ -1,6 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   Calendar, Clock, MapPin, Users, Plus, X, Edit2, Trash2,
@@ -737,7 +743,9 @@ function TimelineView({ schedules, onExamClick }: {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function ExamSchedulingPage() {
-  const [schedules, setSchedules] = useState<ScheduledExam[]>([]);
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const [schedules, setSchedules] = useState<ScheduledExam[]>([]);
   const [rooms, setRooms] = useState<ExamRoom[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>('timeline');
@@ -939,8 +947,8 @@ export default function ExamSchedulingPage() {
 
   return (
     <EnterpriseModuleShell
-      title="Exam Scheduling & Timetabling"
-      description="Plan, schedule, and manage examination timetables — assign rooms, invigilators, detect conflicts, and publish to students."
+      title={t('Exam Scheduling & Timetabling')}
+      description={t('Plan, schedule, and manage examination timetables — assign rooms, invigilators, detect conflicts, and publish to students.')}
       icon={<Calendar className="w-8 h-8" />}
       breadcrumbs={[
         { label: 'Assessment ERP', href: '/assessment/exams' },
@@ -1147,15 +1155,15 @@ export default function ExamSchedulingPage() {
                         <td className="p-4">
                           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
                             <button onClick={() => setViewingExam(ex)}
-                              className="p-1.5 rounded-lg hover:bg-slate-700 text-slate-400 hover:text-white transition-colors cursor-pointer" title="View">
+                              className="p-1.5 rounded-lg hover:bg-slate-700 text-slate-400 hover:text-white transition-colors cursor-pointer" title={t('View')}>
                               <Eye className="w-3.5 h-3.5" />
                             </button>
                             <button onClick={() => { setEditingExam(ex); setShowForm(true); }}
-                              className="p-1.5 rounded-lg hover:bg-slate-700 text-slate-400 hover:text-emerald-400 transition-colors cursor-pointer" title="Edit">
+                              className="p-1.5 rounded-lg hover:bg-slate-700 text-slate-400 hover:text-emerald-400 transition-colors cursor-pointer" title={t('Edit')}>
                               <Edit2 className="w-3.5 h-3.5" />
                             </button>
                             <button onClick={() => handleDelete(ex.id)}
-                              className="p-1.5 rounded-lg hover:bg-slate-700 text-slate-400 hover:text-rose-400 transition-colors cursor-pointer" title="Delete">
+                              className="p-1.5 rounded-lg hover:bg-slate-700 text-slate-400 hover:text-rose-400 transition-colors cursor-pointer" title={t('Delete')}>
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </div>

@@ -1,6 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
+
 import React, { useState, useEffect } from 'react';
 import { BookOpen, ChevronRight, ChevronDown, Plus, Book, Compass, Library, HelpCircle, Layers, CheckCircle2 } from 'lucide-react';
 import { PageContainer, PageHeader } from '@/components/shared/layout/PageContainer';
@@ -8,7 +14,9 @@ import { apiClient } from '@/services/api.service';
 import { toast } from 'sonner';
 
 export default function CurriculumPage() {
-  const [curriculums, setCurriculums] = useState<any[]>([]);
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const [curriculums, setCurriculums] = useState<any[]>([]);
   const [selectedCurriculumId, setSelectedCurriculumId] = useState<string | number>('');
   const [topics, setTopics] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -131,8 +139,8 @@ export default function CurriculumPage() {
   return (
     <PageContainer>
       <PageHeader
-        title="Curriculum & Learning Outcome Mapping"
-        description="Design structural pathways, map subjects to learning outcomes, and detail weekly core objectives."
+        title={t('Curriculum & Learning Outcome Mapping')}
+        description={t('Design structural pathways, map subjects to learning outcomes, and detail weekly core objectives.')}
       >
         <div className="flex items-center gap-3">
           <select

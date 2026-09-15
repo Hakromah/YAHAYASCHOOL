@@ -5,13 +5,15 @@ import { Link } from '@/i18n/routing';
 import { Settings, School, Cpu, ShieldCheck, Key, Globe, ArrowRight, Building2, Landmark } from 'lucide-react';
 import { useLocale } from 'next-intl';
 import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
 import { apiClient } from '@/services/api.service';
 
 export default function SettingsOverviewPage() {
   const locale = useLocale();
-  const t = (key: string) => i18nT(key, locale);
-
-  const [campusCount, setCampusCount] = useState<number | null>(null);
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const [campusCount, setCampusCount] = useState<number | null>(null);
   const [roleCount, setRoleCount] = useState<number | null>(null);
 
   useEffect(() => {

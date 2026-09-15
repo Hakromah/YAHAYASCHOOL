@@ -1,5 +1,11 @@
 'use client';
 
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   GraduationCap, FileCheck, Calendar, Award, UserCheck, Plus, CheckCircle2,
@@ -576,7 +582,9 @@ function AdmissionDetailModal({
 // ─── Main Component ──────────────────────────────────────────────────────────
 
 export default function AdmissionsERPPage() {
-  const [applications, setApplications] = useState<AdmissionApplication[]>([]);
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const [applications, setApplications] = useState<AdmissionApplication[]>([]);
   const [loading, setLoading]             = useState(true);
   const [stageFilter, setStageFilter]     = useState<string>('all');
   const [query, setQuery]                 = useState('');
@@ -656,7 +664,7 @@ export default function AdmissionsERPPage() {
     return [
       {
         accessorKey: 'applicationNumber',
-        header: 'Application & Applicant',
+        header: t('Application & Applicant'),
         cell: ({ row }) => {
           const app = row.original;
           return (
@@ -672,7 +680,7 @@ export default function AdmissionsERPPage() {
       },
       {
         accessorKey: 'gradeApplyingFor',
-        header: 'Target Grade & Program',
+        header: t('Target Grade & Program'),
         cell: ({ row }) => (
           <div>
             <span className="font-bold text-slate-900 dark:text-white text-xs block">{row.original.gradeApplyingFor}</span>
@@ -682,7 +690,7 @@ export default function AdmissionsERPPage() {
       },
       {
         accessorKey: 'guardianName',
-        header: 'Guardian Info',
+        header: t('Guardian Info'),
         cell: ({ row }) => (
           <div>
             <span className="font-bold text-slate-800 dark:text-slate-200 text-xs block">{row.original.guardianName} ({row.original.guardianRelationship})</span>
@@ -692,7 +700,7 @@ export default function AdmissionsERPPage() {
       },
       {
         accessorKey: 'stage',
-        header: 'Workflow Stage',
+        header: t('Workflow Stage'),
         cell: ({ row }) => (
           <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-xs font-bold uppercase ${stageColor(row.original.stage)}`}>
             <Clock className="w-3 h-3 shrink-0" />
@@ -702,7 +710,7 @@ export default function AdmissionsERPPage() {
       },
       {
         accessorKey: 'status',
-        header: 'Status',
+        header: t('Status'),
         cell: ({ row }) => <StatusBadge status={row.original.status} size="sm" />
       },
       {
@@ -726,12 +734,12 @@ export default function AdmissionsERPPage() {
 
   return (
     <EnterpriseModuleShell
-      title="Admissions ERP & Student Onboarding Console"
-      description="Automated 10-step admission workflow from online application, document verification, and assessment to automatic Student ID and Tuition Invoice generation."
+      title={t('Admissions ERP & Student Onboarding Console')}
+      description={t('Automated 10-step admission workflow from online application, document verification, and assessment to automatic Student ID and Tuition Invoice generation.')}
       breadcrumbs={[{ label: 'School ERP' }, { label: 'Admissions ERP' }]}
       icon={<GraduationCap className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />}
       recordCount={filteredApplications.length}
-      recordLabel="Applications"
+      recordLabel={t('Applications')}
       onClearFilters={() => setStageFilter('all')}
       headerActions={
         <button
@@ -748,7 +756,7 @@ export default function AdmissionsERPPage() {
       <EnterpriseToolbar
         searchQuery={query}
         onSearchChange={setQuery}
-        searchPlaceholder="Search applications by applicant name, ADM number, email..."
+        searchPlaceholder={t('Search applications by applicant name, ADM number, email...')}
         density={density}
         onDensityChange={setDensity}
         onRefresh={loadData}
@@ -777,11 +785,11 @@ export default function AdmissionsERPPage() {
         onRowInspect={setSelectedApp}
         onRowClick={setSelectedApp}
         emptyStateProps={{
-          title: 'No Applications Found',
-          description: 'No student admission requests match your current query or workflow stage filter.',
+          title: t('No Applications Found'),
+          description: t('No student admission requests match your current query or workflow stage filter.'),
           isFilterActive: stageFilter !== 'all' || query.length > 0,
           onResetFilters: () => { setStageFilter('all'); setQuery(''); },
-          createLabel: 'Register New Applicant',
+          createLabel: t('Register New Applicant'),
           onCreate: () => setShowCreateModal(true)
         }}
       />

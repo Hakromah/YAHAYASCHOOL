@@ -1,6 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
+
 import { useEffect, useState, useMemo } from 'react';
 import {
   GraduationCap, DollarSign, Calendar, Bell, CheckCircle2, Award,
@@ -25,7 +31,9 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
 export default function ParentDashboardPage() {
-  const [data, setData] = useState<ParentDashboardData | null>(null);
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const [data, setData] = useState<ParentDashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [children, setChildren] = useState<any[]>([]);
   const [selectedChildIndex, setSelectedChildIndex] = useState<number>(0);
@@ -253,7 +261,7 @@ export default function ParentDashboardPage() {
             <div className="space-y-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <StatCard
-                  title="Wards GPA"
+                  title={t('Wards GPA')}
                   value="3.85"
                   subtitle="CA Weighted Average"
                   icon={Award}
@@ -261,7 +269,7 @@ export default function ParentDashboardPage() {
                   bgColor="bg-indigo-500/10"
                 />
                 <StatCard
-                  title="Monthly Attendance"
+                  title={t('Monthly Attendance')}
                   value="96.5%"
                   subtitle="Class participation logs"
                   icon={CheckCircle2}
@@ -269,7 +277,7 @@ export default function ParentDashboardPage() {
                   bgColor="bg-emerald-500/10"
                 />
                 <StatCard
-                  title="Due Fees Balance"
+                  title={t('Due Fees Balance')}
                   value={outstandingFees > 0 ? `$${outstandingFees.toFixed(2)}` : 'Cleared'}
                   subtitle="Outstanding invoices"
                   icon={CreditCard}
@@ -277,7 +285,7 @@ export default function ParentDashboardPage() {
                   bgColor={outstandingFees > 0 ? 'bg-rose-500/10' : 'bg-emerald-500/10'}
                 />
                 <StatCard
-                  title="Conduct Score"
+                  title={t('Conduct Score')}
                   value="A+"
                   subtitle="Zero behavioral incidents"
                   icon={Shield}

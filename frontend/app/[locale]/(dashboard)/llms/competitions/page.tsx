@@ -14,6 +14,9 @@ import qs from 'qs';
 import { useLocale } from 'next-intl';
 import { t as i18nT } from '@/lib/i18n-dict';
 
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
 // ─────────────────────────────────────────────────────────────────────────────
@@ -98,8 +101,8 @@ function CompetitionModal({
 }) {
   const isEdit = !!editItem;
   const locale = useLocale();
-  const t = (key: string) => i18nT(key, locale);
-  const [form, setForm] = useState({
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const [form, setForm] = useState({
     title: editItem?.title || '',
     category: editItem?.category || 'Debate',
     date: editItem?.date || new Date().toISOString().split('T')[0],
@@ -373,8 +376,8 @@ function InspectDrawer({
   onClose: () => void;
 }) {
   const locale = useLocale();
-  const t = (key: string) => i18nT(key, locale);
-  return (
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+return (
     <div className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col animate-in slide-in-from-right duration-200">
       
       {/* Header */}
@@ -483,8 +486,8 @@ function InspectDrawer({
 
 export default function LanguageCompetitionsPage() {
   const locale = useLocale();
-  const t = (key: string) => i18nT(key, locale);
-  const [competitions, setCompetitions] = useState<CompetitionRecord[]>([]);
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const [competitions, setCompetitions] = useState<CompetitionRecord[]>([]);
   const [loading, setLoading] = useState(true);
   
   const [showModal, setShowModal] = useState(false);

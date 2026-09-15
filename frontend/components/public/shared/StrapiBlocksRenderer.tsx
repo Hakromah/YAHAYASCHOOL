@@ -1,8 +1,6 @@
 'use client';
 
 import React, { useMemo } from 'react';
-import { BlocksRenderer } from '@strapi/blocks-react-renderer';
-import { marked } from 'marked';
 
 interface Props {
   content: any[] | string | null | undefined;
@@ -242,25 +240,288 @@ const RICHTEXT_STYLES = `
   }
 `;
 
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function parseMarkdownToHtml(md: string): string {
+  if (!md) return '';
+  // If already HTML, return as is
+  if (md.trim().startsWith('<') && md.includes('</')) {
+    return md;
+  }
+
+  const lines = md.split('\n');
+  const result: string[] = [];
+  let inList = false;
+  let listType = '';
+  let inCodeBlock = false;
+  let codeBlockContent: string[] = [];
+
+  const flushList = () => {
+    if (inList) {
+      result.push(listType === 'ol' ? '</ol>' : '</ul>');
+      inList = false;
+      listType = '';
+    }
+  };
+
+  const flushCodeBlock = () => {
+    if (inCodeBlock) {
+      result.push(`<pre><code>${escapeHtml(codeBlockContent.join('\n'))}</code></pre>`);
+      inCodeBlock = false;
+      codeBlockContent = [];
+    }
+  };
+
+  const parseInline = (text: string): string => {
+    let out = text;
+    // Images: ![alt](url)
+    out = out.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" />');
+    // Links: [text](url)
+    out = out.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+    // Bold: **text** or __text__
+    out = out.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    out = out.replace(/__([^_]+)__/g, '<strong>$1</strong>');
+    // Italic: *text* or _text_
+    out = out.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+    out = out.replace(/_([^_]+)_/g, '<em>$1</em>');
+    // Inline code: `text`
+    out = out.replace(/`([^`]+)`/g, '<code>$1</code>');
+    // Strikethrough: ~~text~~
+    out = out.replace(/~~([^~]+)~~/g, '<s>$1</s>');
+    return out;
+  };
+
+  for (let i = 0; i < lines.length; i++) {
+    const rawLine = lines[i];
+    const trimmed = rawLine.trim();
+
+    // Code block toggle
+    if (trimmed.startsWith('```')) {
+      if (inCodeBlock) {
+        flushCodeBlock();
+      } else {
+        flushList();
+        inCodeBlock = true;
+      }
+      continue;
+    }
+
+    if (inCodeBlock) {
+      codeBlockContent.push(rawLine);
+      continue;
+    }
+
+    // Empty line
+    if (!trimmed) {
+      flushList();
+      continue;
+    }
+
+    // Headings: #, ##, ###, ####, #####, ######
+    const headingMatch = trimmed.match(/^(#{1,6})\s*(.*)$/);
+    if (headingMatch) {
+      flushList();
+      const level = headingMatch[1].length;
+      const content = parseInline(headingMatch[2]);
+      result.push(`<h${level}>${content}</h${level}>`);
+      continue;
+    }
+
+    // Horizontal Rule
+    if (/^(\*\*\*|---|___)$/.test(trimmed)) {
+      flushList();
+      result.push('<hr />');
+      continue;
+    }
+
+    // Blockquote
+    if (trimmed.startsWith('>')) {
+      flushList();
+      const quoteContent = parseInline(trimmed.replace(/^>\s*/, ''));
+      result.push(`<blockquote><p>${quoteContent}</p></blockquote>`);
+      continue;
+    }
+
+    // Unordered list item: - item or * item
+    const ulMatch = trimmed.match(/^[-*+]\s+(.*)$/);
+    if (ulMatch) {
+      if (!inList || listType !== 'ul') {
+        flushList();
+        result.push('<ul>');
+        inList = true;
+        listType = 'ul';
+      }
+      result.push(`<li>${parseInline(ulMatch[1])}</li>`);
+      continue;
+    }
+
+    // Ordered list item: 1. item
+    const olMatch = trimmed.match(/^\d+\.\s+(.*)$/);
+    if (olMatch) {
+      if (!inList || listType !== 'ol') {
+        flushList();
+        result.push('<ol>');
+        inList = true;
+        listType = 'ol';
+      }
+      result.push(`<li>${parseInline(olMatch[1])}</li>`);
+      continue;
+    }
+
+    // Regular paragraph
+    flushList();
+    result.push(`<p>${parseInline(trimmed)}</p>`);
+  }
+
+  flushList();
+  flushCodeBlock();
+
+  return result.join('\n');
+}
+
+/**
+ * Recursive renderer for Strapi v5 Block nodes
+ */
+function renderBlockNode(node: any, key: number | string): React.ReactNode {
+  if (!node) return null;
+
+  // Text node
+  if (node.type === 'text') {
+    let content: React.ReactNode = node.text || '';
+    if (node.bold) content = <strong>{content}</strong>;
+    if (node.italic) content = <em>{content}</em>;
+    if (node.underline) content = <span className="underline">{content}</span>;
+    if (node.strikethrough) content = <s>{content}</s>;
+    if (node.code) content = <code>{content}</code>;
+    return <React.Fragment key={key}>{content}</React.Fragment>;
+  }
+
+  // Link node
+  if (node.type === 'link') {
+    const isExt = typeof node.url === 'string' && node.url.startsWith('http');
+    return (
+      <a
+        key={key}
+        href={node.url}
+        target={isExt ? '_blank' : undefined}
+        rel={isExt ? 'noopener noreferrer' : undefined}
+        className="text-[#048ED6] underline font-medium hover:text-[#037ab8] transition-colors"
+      >
+        {node.children?.map((child: any, idx: number) => renderBlockNode(child, idx))}
+      </a>
+    );
+  }
+
+  // Paragraph
+  if (node.type === 'paragraph') {
+    return (
+      <p key={key} className="mb-4 leading-[1.8] text-[#5A636D]">
+        {node.children?.map((child: any, idx: number) => renderBlockNode(child, idx))}
+      </p>
+    );
+  }
+
+  // Heading
+  if (node.type === 'heading') {
+    const level = node.level || 2;
+    const sizes: Record<number, string> = {
+      1: 'text-3xl font-bold mt-8 mb-4',
+      2: 'text-2xl font-bold mt-6 mb-3',
+      3: 'text-xl font-semibold mt-5 mb-2',
+      4: 'text-lg font-semibold mt-4 mb-2',
+      5: 'text-base font-semibold mt-3 mb-1',
+      6: 'text-sm font-semibold mt-3 mb-1',
+    };
+    const cls = `font-serif text-[#121C2A] ${sizes[level] || ''}`;
+    const children = node.children?.map((child: any, idx: number) => renderBlockNode(child, idx));
+
+    switch (level) {
+      case 1: return <h1 key={key} className={cls}>{children}</h1>;
+      case 2: return <h2 key={key} className={cls}>{children}</h2>;
+      case 3: return <h3 key={key} className={cls}>{children}</h3>;
+      case 4: return <h4 key={key} className={cls}>{children}</h4>;
+      case 5: return <h5 key={key} className={cls}>{children}</h5>;
+      case 6: return <h6 key={key} className={cls}>{children}</h6>;
+      default: return <h2 key={key} className={cls}>{children}</h2>;
+    }
+  }
+
+  // List
+  if (node.type === 'list') {
+    const children = node.children?.map((child: any, idx: number) => renderBlockNode(child, idx));
+    return node.format === 'ordered' ? (
+      <ol key={key} className="mb-4 list-decimal pl-6 space-y-1 text-[#5A636D]">{children}</ol>
+    ) : (
+      <ul key={key} className="mb-4 list-disc pl-6 space-y-1 text-[#5A636D]">{children}</ul>
+    );
+  }
+
+  // List Item
+  if (node.type === 'list-item') {
+    return (
+      <li key={key}>
+        {node.children?.map((child: any, idx: number) => renderBlockNode(child, idx))}
+      </li>
+    );
+  }
+
+  // Quote
+  if (node.type === 'quote') {
+    return (
+      <blockquote key={key} className="my-6 border-l-4 border-[#048ED6] pl-5 italic text-[#121C2A] bg-[#F2F9FD] p-4 rounded-r-lg">
+        {node.children?.map((child: any, idx: number) => renderBlockNode(child, idx))}
+      </blockquote>
+    );
+  }
+
+  // Code Block
+  if (node.type === 'code') {
+    const plainText = node.children?.map((c: any) => c.text || '').join('') || '';
+    return (
+      <pre key={key} className="my-4 overflow-x-auto rounded-lg bg-[#121C2A] p-4 text-sm font-mono text-white">
+        <code>{plainText}</code>
+      </pre>
+    );
+  }
+
+  // Image
+  if (node.type === 'image' && node.image) {
+    return (
+      <figure key={key} className="my-6">
+        <img
+          src={node.image.url}
+          alt={node.image.alternativeText || ''}
+          className="w-full rounded-lg shadow-sm"
+        />
+        {node.image.caption && (
+          <figcaption className="mt-2 text-center text-xs text-[#9AA3AD]">
+            {node.image.caption}
+          </figcaption>
+        )}
+      </figure>
+    );
+  }
+
+  return null;
+}
+
 /**
  * Renders Strapi richtext content supporting both:
- * 1. Strapi v5 Blocks JSON array (via BlocksRenderer)
- * 2. Markdown & HTML strings (via marked + custom typography styles)
- *
- * Supports h1-h6, p, span, strong, em, lists, quotes, tables, code, links, images.
+ * 1. Strapi v5 Blocks JSON array
+ * 2. Markdown & HTML strings
  */
 export function StrapiBlocksRenderer({ content, className }: Props) {
   const parsedHtml = useMemo(() => {
     if (typeof content !== 'string' || !content.trim()) return '';
     try {
-      // 1. Normalize headings without space e.g. "##Title" -> "## Title"
-      let preprocessed = content.replace(/^(#{1,6})([^\s#])/gm, '$1 $2');
-      // 2. Normalize multiline bold e.g. "**text\n**" -> "<strong>text</strong>"
-      preprocessed = preprocessed.replace(/\*\*([\s\S]+?)\s*\*\*/g, '<strong>$1</strong>');
-      // 3. Normalize multiline italic e.g. "*text\n*" -> "<em>text</em>"
-      preprocessed = preprocessed.replace(/(?<!\*)\*([^*\n]+?)\s*\*(?!\*)/g, '<em>$1</em>');
-
-      return marked.parse(preprocessed, { gfm: true, breaks: true }) as string;
+      return parseMarkdownToHtml(content);
     } catch {
       return content;
     }
@@ -274,86 +535,7 @@ export function StrapiBlocksRenderer({ content, className }: Props) {
       <>
         <style dangerouslySetInnerHTML={{ __html: RICHTEXT_STYLES }} />
         <div className={`strapi-richtext ${className || ''}`}>
-          <BlocksRenderer
-            content={content}
-            blocks={{
-              paragraph: ({ children }) => (
-                <p className="mb-4 leading-[1.8] text-[#5A636D]">{children}</p>
-              ),
-              heading: ({ children, level }) => {
-                const sizes: Record<number, string> = {
-                  1: 'text-3xl font-bold mt-8 mb-4',
-                  2: 'text-2xl font-bold mt-6 mb-3',
-                  3: 'text-xl font-semibold mt-5 mb-2',
-                  4: 'text-lg font-semibold mt-4 mb-2',
-                  5: 'text-base font-semibold mt-3 mb-1',
-                  6: 'text-sm font-semibold mt-3 mb-1',
-                };
-                const cls = `font-serif text-[#121C2A] ${sizes[level] || ''}`;
-                switch (level) {
-                  case 1: return <h1 className={cls}>{children}</h1>;
-                  case 2: return <h2 className={cls}>{children}</h2>;
-                  case 3: return <h3 className={cls}>{children}</h3>;
-                  case 4: return <h4 className={cls}>{children}</h4>;
-                  case 5: return <h5 className={cls}>{children}</h5>;
-                  case 6: return <h6 className={cls}>{children}</h6>;
-                  default: return <h2 className={cls}>{children}</h2>;
-                }
-              },
-              list: ({ children, format }) =>
-                format === 'ordered' ? (
-                  <ol className="mb-4 list-decimal pl-6 space-y-1 text-[#5A636D]">{children}</ol>
-                ) : (
-                  <ul className="mb-4 list-disc pl-6 space-y-1 text-[#5A636D]">{children}</ul>
-                ),
-              'list-item': ({ children }) => <li>{children}</li>,
-              quote: ({ children }) => (
-                <blockquote className="my-6 border-l-4 border-[#048ED6] pl-5 italic text-[#121C2A] bg-[#F2F9FD] p-4 rounded-r-lg">
-                  {children}
-                </blockquote>
-              ),
-              code: ({ plainText }) => (
-                <pre className="my-4 overflow-x-auto rounded-lg bg-[#121C2A] p-4 text-sm font-mono text-white">
-                  <code>{plainText}</code>
-                </pre>
-              ),
-              image: ({ image }) => (
-                <figure className="my-6">
-                  <img
-                    src={image.url}
-                    alt={image.alternativeText || ''}
-                    className="w-full rounded-lg shadow-sm"
-                  />
-                  {image.caption && (
-                    <figcaption className="mt-2 text-center text-xs text-[#9AA3AD]">
-                      {image.caption}
-                    </figcaption>
-                  )}
-                </figure>
-              ),
-              link: ({ children, url }) => (
-                <a
-                  href={url}
-                  className="text-[#048ED6] underline font-medium hover:text-[#037ab8] transition-colors"
-                  target={url.startsWith('http') ? '_blank' : undefined}
-                  rel={url.startsWith('http') ? 'noopener noreferrer' : undefined}
-                >
-                  {children}
-                </a>
-              ),
-            }}
-            modifiers={{
-              bold: ({ children }) => <strong className="font-bold text-[#121C2A]">{children}</strong>,
-              italic: ({ children }) => <em className="italic">{children}</em>,
-              underline: ({ children }) => <span className="underline">{children}</span>,
-              strikethrough: ({ children }) => <s className="line-through">{children}</s>,
-              code: ({ children }) => (
-                <code className="rounded bg-[#F1F2F4] px-1.5 py-0.5 font-mono text-sm text-[#0B3B57]">
-                  {children}
-                </code>
-              ),
-            }}
-          />
+          {content.map((block: any, idx: number) => renderBlockNode(block, idx))}
         </div>
       </>
     );

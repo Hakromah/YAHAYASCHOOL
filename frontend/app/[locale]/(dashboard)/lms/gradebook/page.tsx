@@ -1,6 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Award, Search, Plus, Users, School, Trash2, Edit2, Eye, X, 
@@ -26,7 +32,9 @@ interface GradeRow {
 }
 
 export default function GradebookPage() {
-  const [offerings, setOfferings] = useState<any[]>([]);
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const [offerings, setOfferings] = useState<any[]>([]);
   const [selectedOfferingId, setSelectedOfferingId] = useState<string | number>('');
   
   // Assessment fields

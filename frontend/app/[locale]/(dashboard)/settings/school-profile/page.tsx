@@ -9,6 +9,9 @@ import {
 import { useLocale } from 'next-intl';
 import { apiClient } from '@/services/api.service';
 import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -76,9 +79,8 @@ const EMPTY_CAMPUS: {
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function SchoolProfileSettingsPage() {
   const locale = useLocale();
-  const t = (key: string) => i18nT(key, locale);
-
-  const [profile, setProfile] = useState<SchoolProfile>(EMPTY_PROFILE);
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const [profile, setProfile] = useState<SchoolProfile>(EMPTY_PROFILE);
   const [campuses, setCampuses] = useState<Campus[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);

@@ -1,6 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
+
 import React, { useState, useEffect } from 'react';
 import { 
   Users, Award, ShieldAlert, Plus, HelpCircle, Save, CheckCircle2,
@@ -14,7 +20,9 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
 export default function AppealsPage() {
-  const [appeals, setAppeals] = useState<any[]>([]);
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const [appeals, setAppeals] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -144,8 +152,8 @@ export default function AppealsPage() {
   return (
     <PageContainer>
       <PageHeader
-        title="Appeals & Retakes Management"
-        description="Moderate academic appeals, schedule supplementary exams, and log grades correction timeline."
+        title={t('Appeals & Retakes Management')}
+        description={t('Moderate academic appeals, schedule supplementary exams, and log grades correction timeline.')}
       >
         <div className="flex items-center gap-2">
           <button

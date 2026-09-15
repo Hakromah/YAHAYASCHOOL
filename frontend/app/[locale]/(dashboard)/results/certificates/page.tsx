@@ -1,5 +1,11 @@
 'use client';
 
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Award, 
@@ -55,7 +61,9 @@ const loadImage = (url: string): Promise<HTMLImageElement> => {
 };
 
 export default function CertificatesBuilderPage() {
-  const { user, role } = useAuth();
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const { user, role } = useAuth();
   const isStudentRole = role === 'student' || role === 'parent';
 
   const [issuedCerts, setIssuedCerts] = useState<CertificateRecord[]>([]);
@@ -717,7 +725,7 @@ export default function CertificatesBuilderPage() {
                           <button 
                             onClick={() => triggerCertificatePDF(cert)}
                             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-all shadow-sm cursor-pointer"
-                            title="Download Official PDF Certificate"
+                            title={t('Download Official PDF Certificate')}
                           >
                             <Printer className="w-3.5 h-3.5" />
                             <span>Download PDF</span>
@@ -725,7 +733,7 @@ export default function CertificatesBuilderPage() {
                           <button
                             onClick={() => toast.info(`Verification URL: https://yahayascool.edu.ng/verify/certificate?hash=${cert.verificationHash}`)}
                             className="p-1.5 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 transition-colors cursor-pointer"
-                            title="Verify Certificate Hash"
+                            title={t('Verify Certificate Hash')}
                           >
                             <QrCode className="w-3.5 h-3.5 text-emerald-600" />
                           </button>

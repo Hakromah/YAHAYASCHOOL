@@ -1,6 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   BookOpen, Plus, Search, Filter, RefreshCw, Trash2, Edit2, X,
@@ -634,7 +640,9 @@ function PoolManagerPanel({
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function QuestionBankPage() {
-  const [questions, setQuestions] = useState<QuestionRecord[]>([]);
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const [questions, setQuestions] = useState<QuestionRecord[]>([]);
   const [pools, setPools] = useState<PoolRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -856,8 +864,8 @@ export default function QuestionBankPage() {
 
   return (
     <EnterpriseModuleShell
-      title="Question Bank & Pools"
-      description="Institutional item bank for building assessments — organise, manage, and reuse questions across subjects, terms, and examinations."
+      title={t('Question Bank & Pools')}
+      description={t('Institutional item bank for building assessments — organise, manage, and reuse questions across subjects, terms, and examinations.')}
       icon={<BookOpen className="w-8 h-8" />}
       breadcrumbs={[
         { label: 'Assessment ERP', href: '/assessment/exams' },
@@ -1070,25 +1078,25 @@ export default function QuestionBankPage() {
                         <button
                           onClick={() => setViewingQuestion(q)}
                           className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer"
-                          title="Preview">
+                          title={t('Preview')}>
                           <Eye className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => { setEditingQuestion(q); setShowForm(true); }}
                           className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-emerald-400 transition-colors cursor-pointer"
-                          title="Edit">
+                          title={t('Edit')}>
                           <Edit2 className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleDuplicate(q)}
                           className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-sky-400 transition-colors cursor-pointer"
-                          title="Duplicate">
+                          title={t('Duplicate')}>
                           <Copy className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleDelete(new Set([q.id]))}
                           className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-rose-400 transition-colors cursor-pointer"
-                          title="Delete">
+                          title={t('Delete')}>
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>

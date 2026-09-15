@@ -341,7 +341,7 @@ export const cmsService = {
     }
     try {
       const queryString = qs.stringify(query, { encodeValuesOnly: true });
-      const { data } = await apiClient.get(`/articles?${queryString}`);
+      const { data } = await cmsClient.get(`/articles?${queryString}`);
       return {
         data: data.data || [],
         total: data.meta?.pagination?.total || 0
@@ -544,7 +544,7 @@ export const cmsService = {
   
   async submitContactForm(payload: ContactSubmissionPayload): Promise<{ success: boolean; message?: string }> {
     try {
-      await apiClient.post('/contact-submissions', { data: payload });
+      await cmsClient.post('/contact-submissions', { data: payload });
       return { success: true };
     } catch (e) {
       return { success: false, message: 'Failed to submit form' };
@@ -553,7 +553,7 @@ export const cmsService = {
   
   async submitAdmissionApplication(payload: AdmissionApplicationPayload): Promise<{ success: boolean; applicationNumber?: string; message?: string }> {
     try {
-      const res = await apiClient.post('/admission-applications', { data: payload });
+      const res = await cmsClient.post('/admission-applications', { data: payload });
       return { success: true, applicationNumber: res.data?.data?.applicationNumber || 'APP-00000' };
     } catch (e) {
       return { success: false, message: 'Failed to submit application' };
@@ -562,7 +562,7 @@ export const cmsService = {
 
   async subscribeNewsletter(email: string, locale = 'en'): Promise<{ success: boolean; message?: string }> {
     try {
-      await apiClient.post('/newsletter-subscribers', {
+      await cmsClient.post('/newsletter-subscribers', {
         data: {
           email,
           locale,
@@ -591,7 +591,7 @@ export const cmsService = {
    * Create a new event
    */
   async createEvent(payload: Partial<EventEntity>): Promise<EventEntity> {
-    const res = await apiClient.post('/events', { data: payload });
+    const res = await cmsClient.post('/events', { data: payload });
     return res.data?.data || res.data;
   },
 
@@ -599,7 +599,7 @@ export const cmsService = {
    * Create a new announcement
    */
   async createAnnouncement(payload: Partial<AnnouncementEntity>): Promise<AnnouncementEntity> {
-    const res = await apiClient.post('/announcements', { data: payload });
+    const res = await cmsClient.post('/announcements', { data: payload });
     return res.data?.data || res.data;
   },
 

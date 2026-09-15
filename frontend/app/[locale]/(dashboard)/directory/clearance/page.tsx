@@ -6,8 +6,13 @@ import {
   Users, CheckCircle2, AlertCircle, RefreshCw, Printer, ShieldAlert,
   Building, BookOpen, CreditCard, ShieldCheck, Search, HelpCircle
 } from 'lucide-react';
+import { useLocale } from 'next-intl';
 import { PageContainer, PageHeader } from '@/components/shared/layout/PageContainer';
 import { apiClient } from '@/services/api.service';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -19,7 +24,9 @@ interface ClearanceHold {
 }
 
 export default function ClearancePage() {
-  const [students, setStudents] = useState<any[]>([]);
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const [students, setStudents] = useState<any[]>([]);
   const [selectedStudentId, setSelectedStudentId] = useState<string | number>('');
   const [selectedStudent, setSelectedStudent] = useState<any | null>(null);
   
@@ -41,8 +48,8 @@ export default function ClearancePage() {
       if (data.length > 0) {
         setSelectedStudentId(data[0].documentId);
       }
-    } catch (e) {
-      toast.error('Failed to load student registry');
+    } catch {
+      toast.error(t('Failed to load student registry'));
     } finally {
       setIsLoading(false);
     }
@@ -102,41 +109,47 @@ export default function ClearancePage() {
       const list: ClearanceHold[] = [
         {
           id: 'attendance',
-          name: 'Academic Attendance Rate',
+          name: t('Academic Attendance Rate'),
           cleared: presenceRate >= 75,
-          notes: presenceRate >= 75 ? `Attendance is at ${presenceRate.toFixed(0)}% (threshold >= 75%)` : `Below threshold at ${presenceRate.toFixed(0)}%`
+          notes: presenceRate >= 75 
+            ? `${t('Attendance is at')} ${presenceRate.toFixed(0)}% (${t('threshold')} >= 75%)` 
+            : `${t('Below threshold at')} ${presenceRate.toFixed(0)}%`
         },
         {
           id: 'finance',
-          name: 'Finance & Tuition Account',
+          name: t('Finance & Tuition Account'),
           cleared: outstanding <= 0,
-          notes: outstanding <= 0 ? 'No outstanding tuition or portal balance.' : `Outstanding invoice balance of $${outstanding.toFixed(2)}`
+          notes: outstanding <= 0 
+            ? t('No outstanding tuition or portal balance.') 
+            : `${t('Outstanding invoice balance of')} $${outstanding.toFixed(2)}`
         },
         {
           id: 'library',
-          name: 'Library Circulation Audit',
+          name: t('Library Circulation Audit'),
           cleared: libraryHolds.length === 0,
-          notes: libraryHolds.length === 0 ? 'All borrowed catalog assets returned.' : `${libraryHolds.length} catalog holds outstanding`
+          notes: libraryHolds.length === 0 
+            ? t('All borrowed catalog assets returned.') 
+            : `${libraryHolds.length} ${t('catalog holds outstanding')}`
         },
         {
           id: 'conduct',
-          name: 'Behavior & Conduct Evaluation',
-          cleared: true, // Default cleared, behaviour is logged in timeline
-          notes: 'Standard conduct index cleared.'
+          name: t('Behavior & Conduct Evaluation'),
+          cleared: true,
+          notes: t('Standard conduct index cleared.')
         },
         {
           id: 'hostel',
-          name: 'Dormitory & Hostel Clearance',
+          name: t('Dormitory & Hostel Clearance'),
           cleared: true,
-          notes: 'Dormitory room checkout complete.'
+          notes: t('Dormitory room checkout complete.')
         }
       ];
 
       setHolds(list);
       setAuditDone(true);
-      toast.success('Clearance hold check completed');
-    } catch (e) {
-      toast.error('Failed to run clearance evaluation audit');
+      toast.success(t('Clearance hold check completed'));
+    } catch {
+      toast.error(t('Failed to run clearance evaluation audit'));
     } finally {
       setIsAuditing(false);
     }
@@ -147,8 +160,8 @@ export default function ClearancePage() {
   return (
     <PageContainer>
       <PageHeader
-        title="Academic Clearance Hold Engine"
-        description="Verify student compliance matrices, audit outstanding library/finance holds, and release graduation clearance status."
+        title={t('Academic Clearance Hold Engine')}
+        description={t('Verify student compliance matrices, audit outstanding library/finance holds, and release graduation clearance status.')}
       >
         <div className="flex items-center gap-3">
           <select
@@ -169,7 +182,7 @@ export default function ClearancePage() {
             className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-bold hover:bg-primary/95 transition shadow-sm cursor-pointer border-none"
           >
             <RefreshCw className={cn("w-3.5 h-3.5", isAuditing && "animate-spin")} />
-            <span>{isAuditing ? 'Auditing...' : 'Evaluate Hold'}</span>
+            <span>{isAuditing ? t('Auditing...') : t('Evaluate Hold')}</span>
           </button>
         </div>
       </PageHeader>
@@ -180,12 +193,12 @@ export default function ClearancePage() {
         <div className="lg:col-span-2 space-y-4">
           <h3 className="font-extrabold text-sm text-foreground flex items-center gap-2 mb-1">
             <ShieldAlert className="w-5 h-5 text-indigo-505" />
-            <span>Holds Clearance Checklist</span>
+            <span>{t('Holds Clearance Checklist')}</span>
           </h3>
 
           {!auditDone ? (
             <div className="p-12 text-center text-muted-foreground bg-card border border-border rounded-2xl">
-              Please choose a scholar from the dropdown and click "Evaluate Hold" to run the clearance checker.
+              {t('Please choose a scholar from the dropdown and click "Evaluate Hold" to run the clearance checker.')}
             </div>
           ) : (
             <div className="space-y-3">
@@ -202,7 +215,7 @@ export default function ClearancePage() {
                       ? "bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 border-emerald-250/50" 
                       : "bg-rose-50 dark:bg-rose-950/20 text-rose-600 border-rose-250/50"
                   )}>
-                    {h.cleared ? 'Cleared' : 'On Hold'}
+                    {h.cleared ? t('Cleared') : t('On Hold')}
                   </span>
                 </div>
               ))}
@@ -214,7 +227,7 @@ export default function ClearancePage() {
         <div className="lg:col-span-1 space-y-6">
           <h3 className="font-extrabold text-sm text-foreground flex items-center gap-2 mb-1">
             <ShieldCheck className="w-5 h-5 text-indigo-505" />
-            <span>Clearance Certificate Status</span>
+            <span>{t('Clearance Certificate Status')}</span>
           </h3>
 
           <div className="p-5 rounded-2xl border border-border bg-card shadow-2xs space-y-5 text-center">
@@ -233,7 +246,7 @@ export default function ClearancePage() {
                 </div>
 
                 <div className="space-y-1">
-                  <span className="text-muted-foreground block text-[10px] uppercase">Scholar ID clearance</span>
+                  <span className="text-muted-foreground block text-[10px] uppercase">{t('Scholar ID clearance')}</span>
                   <span className="text-foreground font-black text-sm">{selectedStudent.firstName} {selectedStudent.lastName}</span>
                   <span className={cn(
                     "inline-block px-3 py-1 rounded-full text-[10px] font-black border font-mono mt-2",
@@ -241,7 +254,7 @@ export default function ClearancePage() {
                       ? "bg-emerald-500 text-white border-emerald-500" 
                       : "bg-rose-500 text-white border-rose-500"
                   )}>
-                    {isCleared ? 'ACADEMIC ELIGIBLE' : 'BLOCKED / ON HOLD'}
+                    {isCleared ? t('ACADEMIC ELIGIBLE') : t('BLOCKED / ON HOLD')}
                   </span>
                 </div>
 
@@ -251,13 +264,13 @@ export default function ClearancePage() {
                     className="w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-extrabold cursor-pointer border-none shadow-md"
                   >
                     <Printer className="w-4 h-4" />
-                    <span>Print Clearance Certificate</span>
+                    <span>{t('Print Clearance Certificate')}</span>
                   </button>
                 )}
               </div>
             ) : (
               <div className="text-muted-foreground font-medium p-6">
-                Clearance certificate status will generate here after evaluating the selected student holds checks.
+                {t('Clearance certificate status will generate here after evaluating the selected student holds checks.')}
               </div>
             )}
           </div>

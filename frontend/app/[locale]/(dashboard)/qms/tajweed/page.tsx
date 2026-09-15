@@ -1,5 +1,11 @@
 'use client';
 
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { apiClient } from '@/services/api.service';
@@ -11,7 +17,9 @@ import {
 } from 'lucide-react';
 
 export default function TajweedEvaluationsPage() {
-  const router = useRouter();
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const router = useRouter();
   const { user, isLoading: authLoading } = useAuth();
   const teacher = (user as any)?.profile;
 
@@ -246,7 +254,7 @@ export default function TajweedEvaluationsPage() {
 
   return (
     <PageContainer>
-      <PageHeader title="Tajweed Competency Tracker" description="Evaluate and track student tajweed proficiency" />
+      <PageHeader title={t('Tajweed Competency Tracker')} description={t('Evaluate and track student tajweed proficiency')} />
       
       <div className="flex flex-wrap gap-2 mb-6 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-800">
         {[

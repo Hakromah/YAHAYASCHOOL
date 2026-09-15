@@ -1,5 +1,11 @@
 'use client';
 
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
+
 import React, { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import {
@@ -562,8 +568,8 @@ function MessagesCenterContent() {
   return (
     <PageContainer>
       <PageHeader
-        title="Institutional Communication Hub"
-        description="Secure intra-school messaging linking faculty, parents, scholars, and executive administration."
+        title={t('Institutional Communication Hub')}
+        description={t('Secure intra-school messaging linking faculty, parents, scholars, and executive administration.')}
       >
         <div className="flex items-center gap-2">
           <button
@@ -793,13 +799,13 @@ function MessagesCenterContent() {
                     {selectedMsg.subject}
                   </h2>
                   <div className="flex items-center gap-1 shrink-0">
-                    <button onClick={e => handleStar(selectedMsg, e)} className="p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer" title="Star">
+                    <button onClick={e => handleStar(selectedMsg, e)} className="p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer" title={t('Star')}>
                       <Star className={cn('w-3.5 h-3.5', selectedMsg.isStarred ? 'text-amber-400 fill-amber-400' : 'text-slate-400')} />
                     </button>
-                    <button onClick={() => handleArchive(selectedMsg)} className="p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer" title="Archive">
+                    <button onClick={() => handleArchive(selectedMsg)} className="p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer" title={t('Archive')}>
                       <Archive className="w-3.5 h-3.5 text-slate-400" />
                     </button>
-                    <button onClick={() => handleDelete(selectedMsg)} className="p-1.5 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer" title="Delete">
+                    <button onClick={() => handleDelete(selectedMsg)} className="p-1.5 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer" title={t('Delete')}>
                       <Trash2 className="w-3.5 h-3.5 text-rose-400" />
                     </button>
                   </div>
@@ -1072,7 +1078,9 @@ function MessagesCenterContent() {
 }
 
 export default function MessagesCenterPage() {
-  return (
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+return (
     <Suspense fallback={
       <div className="flex items-center justify-center min-h-[400px] text-xs font-bold text-slate-400">
         <RefreshCw className="w-5 h-5 animate-spin text-emerald-500 mr-2" />

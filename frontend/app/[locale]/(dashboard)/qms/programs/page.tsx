@@ -1,5 +1,11 @@
 'use client';
 
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
+
 import { useState, useEffect } from 'react';
 import { Plus, BookOpen, Users, Award, Calendar, CheckCircle, XCircle } from 'lucide-react';
 import { PageContainer, PageHeader } from '@/components/shared/layout/PageContainer';
@@ -33,7 +39,9 @@ interface QuranGroup {
 }
 
 export default function QuranGroupsWorkspace() {
-  const router = useRouter();
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const router = useRouter();
   const { user, isLoading: authLoading } = useAuth();
   const teacher = (user as any)?.profile;
 
@@ -217,8 +225,8 @@ export default function QuranGroupsWorkspace() {
   return (
     <PageContainer>
       <PageHeader
-        title="Quran Groups Workspace"
-        description="Manage your Quran halaqahs and student groups for each course offering."
+        title={t('Quran Groups Workspace')}
+        description={t('Manage your Quran halaqahs and student groups for each course offering.')}
       >
         <div className="flex items-center gap-2">
             <select

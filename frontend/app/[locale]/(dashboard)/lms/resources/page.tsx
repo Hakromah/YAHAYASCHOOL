@@ -1,6 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
+
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
   Library, Plus, Search, Filter, RefreshCw, X, Upload, Download,
@@ -582,10 +588,10 @@ function ResourceCard({ resource, onView, onEdit, onDelete }: {
       <div className="flex items-start justify-between gap-2">
         <CategoryIcon category={resource.category} size="md" />
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all" onClick={e => e.stopPropagation()}>
-          <button onClick={onEdit} className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-emerald-400 cursor-pointer" title="Edit">
+          <button onClick={onEdit} className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-emerald-400 cursor-pointer" title={t('Edit')}>
             <Edit2 className="w-3.5 h-3.5" />
           </button>
-          <button onClick={onDelete} className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-rose-400 cursor-pointer" title="Delete">
+          <button onClick={onDelete} className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-rose-400 cursor-pointer" title={t('Delete')}>
             <Trash2 className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -640,7 +646,9 @@ function ResourceCard({ resource, onView, onEdit, onDelete }: {
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function ResourceLibraryPage() {
-  const [resources, setResources] = useState<ResourceRecord[]>([]);
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const [resources, setResources] = useState<ResourceRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
 
@@ -871,8 +879,8 @@ export default function ResourceLibraryPage() {
   return (
     <PageContainer>
       <PageHeader
-        title="Resource Library"
-        description="Central repository for academic materials — documents, videos, audio lectures, images, and external links for all subjects."
+        title={t('Resource Library')}
+        description={t('Central repository for academic materials — documents, videos, audio lectures, images, and external links for all subjects.')}
       >
         <div className="flex items-center gap-2 flex-wrap">
           <button onClick={loadResources} disabled={loading}
@@ -1085,15 +1093,15 @@ export default function ResourceLibraryPage() {
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all" onClick={e => e.stopPropagation()}>
                           <button onClick={() => setViewingResource(r)}
-                            className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer" title="View">
+                            className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer" title={t('View')}>
                             <Eye className="w-3.5 h-3.5" />
                           </button>
                           <button onClick={() => { setEditingResource(r); setShowForm(true); }}
-                            className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-emerald-600 cursor-pointer" title="Edit">
+                            className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-emerald-600 cursor-pointer" title={t('Edit')}>
                             <Edit2 className="w-3.5 h-3.5" />
                           </button>
                           <button onClick={() => handleDelete(r)}
-                            className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-rose-500 cursor-pointer" title="Delete">
+                            className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-rose-500 cursor-pointer" title={t('Delete')}>
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>

@@ -21,11 +21,15 @@ import { StatusBadge } from '@/components/erp/StatusBadge';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useLocale } from 'next-intl';
-import { t } from '@/lib/i18n-dict';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
 
 export default function WorkersListPage() {
   const locale = useLocale();
-  const [workers, setWorkers] = useState<Worker[]>([]);
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const [workers, setWorkers] = useState<Worker[]>([]);
   const [departments, setDepartments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
@@ -573,21 +577,21 @@ export default function WorkersListPage() {
                           <button
                             onClick={() => handleInspectOpen(wrk)}
                             className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-850 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 border-none bg-transparent cursor-pointer"
-                            title="Inspect Associates"
+                            title={t('Inspect Associates')}
                           >
                             <Eye className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleEditOpen(wrk)}
                             className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-850 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 border-none bg-transparent cursor-pointer"
-                            title="Edit"
+                            title={t('Edit')}
                           >
                             <Edit className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleDelete(wrk)}
                             className="p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/20 text-rose-600 border-none bg-transparent cursor-pointer"
-                            title="Delete"
+                            title={t('Delete')}
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>

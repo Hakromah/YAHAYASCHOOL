@@ -1,6 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
+
 import { useEffect, useRef } from 'react';
 import { useRouter } from '@/i18n/routing';
 import { useAuth } from '@/hooks/useAuth';
@@ -25,7 +31,9 @@ const ROLE_DASHBOARD: Record<string, string> = {
 };
 
 export default function DashboardRootPage() {
-  const { user, isLoading, isAuthenticated } = useAuth();
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const { user, isLoading, isAuthenticated } = useAuth();
   const router = useRouter();
   const hasRedirected = useRef(false);
 

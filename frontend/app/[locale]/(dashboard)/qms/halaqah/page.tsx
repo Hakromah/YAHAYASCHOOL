@@ -1,5 +1,11 @@
 'use client';
 
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { apiClient } from '@/services/api.service';
@@ -36,7 +42,9 @@ interface Halaqah {
 }
 
 export default function HalaqahPage() {
-  const { user, isLoading: authLoading } = useAuth();
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const { user, isLoading: authLoading } = useAuth();
   const teacher = (user as any)?.profile;
   const router = useRouter();
 
@@ -218,8 +226,8 @@ export default function HalaqahPage() {
   return (
     <PageContainer>
       <PageHeader 
-        title="Halaqah Sessions Workspace" 
-        description="Manage your Quran groups and teaching sessions"
+        title={t('Halaqah Sessions Workspace')} 
+        description={t('Manage your Quran groups and teaching sessions')}
       />
 
       {/* Top Filter Bar */}

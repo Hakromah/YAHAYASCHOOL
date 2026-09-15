@@ -1,5 +1,11 @@
 'use client';
 
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
+
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import {
@@ -127,7 +133,7 @@ function StudentCourseRow({ course, idx }: { course: CourseRecord; idx: number }
           {course.componentBreakdown.length > 0 ? (
             <button onClick={() => setExpanded(v => !v)}
               className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition"
-              title="View assessment breakdown">
+              title={t('View assessment breakdown')}>
               {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
             </button>
           ) : <td />}
@@ -171,7 +177,9 @@ const TRANSCRIPT_MODES: { id: TranscriptMode; label: string; desc: string; icon:
 type WorkspaceTab = 'overview' | 'grades' | 'assignments' | 'attendance' | 'resources' | 'announcements' | 'messages' | 'analytics';
 
 export default function StudentDashboardPage() {
-  const { user } = useAuth();
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const { user } = useAuth();
   const student = user?.profile as any;
   const searchParams = useSearchParams();
 
@@ -795,11 +803,11 @@ ${blocksHtml}
 
           {/* KPIs */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard title="Current GPA" value={currentGPA !== null ? currentGPA.toFixed(2) : '—'} subtitle="From gradebook entries" icon={Award} color="text-indigo-500" bgColor="bg-indigo-500/10" />
-            <StatCard title="Attendance Rate" value={attendanceRate} subtitle="All recorded sessions" icon={CheckCircle2} color="text-emerald-500" bgColor="bg-emerald-500/10" />
-            <StatCard title="Credits Enrolled" value={creditsEarned} subtitle="Active course credits" icon={BookOpenCheck} color="text-blue-500" bgColor="bg-blue-500/10" />
+            <StatCard title={t('Current GPA')} value={currentGPA !== null ? currentGPA.toFixed(2) : '—'} subtitle="From gradebook entries" icon={Award} color="text-indigo-500" bgColor="bg-indigo-500/10" />
+            <StatCard title={t('Attendance Rate')} value={attendanceRate} subtitle="All recorded sessions" icon={CheckCircle2} color="text-emerald-500" bgColor="bg-emerald-500/10" />
+            <StatCard title={t('Credits Enrolled')} value={creditsEarned} subtitle="Active course credits" icon={BookOpenCheck} color="text-blue-500" bgColor="bg-blue-500/10" />
             <StatCard
-              title="Outstanding Dues"
+              title={t('Outstanding Dues')}
               value={outstandingFees > 0 ? `$${outstandingFees.toFixed(2)}` : 'No Dues'}
               subtitle={outstandingFees > 0 ? 'Active financial hold' : 'All cleared'}
               icon={CreditCard}

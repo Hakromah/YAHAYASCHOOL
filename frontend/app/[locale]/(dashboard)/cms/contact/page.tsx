@@ -1,6 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
+
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   MessageSquare, Search, Mail, Phone, Trash2, Eye, X,
@@ -111,7 +117,9 @@ const DEMO_MESSAGES: ContactSubmission[] = [
 ];
 
 export default function ContactMessagesPage() {
-  const [messages, setMessages] = useState<ContactSubmission[]>([]);
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const [messages, setMessages] = useState<ContactSubmission[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('');

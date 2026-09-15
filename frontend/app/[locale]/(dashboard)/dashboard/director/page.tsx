@@ -1,5 +1,11 @@
 'use client';
 
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
+
 import { useEffect, useState } from 'react';
 import {
   GraduationCap, UserCheck, BookOpen, Layers, Award,
@@ -29,7 +35,9 @@ const DEFAULT_WIDGETS: WidgetConfig[] = [
 ];
 
 export default function DirectorDashboardPage() {
-  const [data, setData] = useState<DirectorDashboardData | null>(null);
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const [data, setData] = useState<DirectorDashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [widgets, setWidgets] = useState<WidgetConfig[]>(DEFAULT_WIDGETS);
 
@@ -67,8 +75,8 @@ export default function DirectorDashboardPage() {
   return (
     <PageContainer>
       <PageHeader
-        title="Executive Director Portal"
-        description="Comprehensive academic supervision, faculty monitoring, departmental analytics, and report approvals."
+        title={t('Executive Director Portal')}
+        description={t('Comprehensive academic supervision, faculty monitoring, departmental analytics, and report approvals.')}
       >
         <div className="flex items-center gap-2">
           <button
@@ -91,7 +99,7 @@ export default function DirectorDashboardPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">
         {isVisible('stat-students') && (
           <StatCard
-            title="Students"
+            title={t('Students')}
             value={formatNumber(data?.counts?.students || 0)}
             icon={GraduationCap}
             color="text-emerald-500"
@@ -102,7 +110,7 @@ export default function DirectorDashboardPage() {
         )}
         {isVisible('stat-teachers') && (
           <StatCard
-            title="Teachers"
+            title={t('Teachers')}
             value={formatNumber(data?.counts?.teachers || 0)}
             icon={UserCheck}
             color="text-amber-500"
@@ -113,7 +121,7 @@ export default function DirectorDashboardPage() {
         )}
         {isVisible('stat-sections') && (
           <StatCard
-            title="Sections"
+            title={t('Sections')}
             value={formatNumber(data?.counts?.sections || 0)}
             icon={Layers}
             color="text-sky-500"
@@ -124,7 +132,7 @@ export default function DirectorDashboardPage() {
         )}
         {isVisible('stat-departments') && (
           <StatCard
-            title="Departments"
+            title={t('Departments')}
             value={formatNumber(data?.counts?.departments || 0)}
             icon={BookOpen}
             color="text-violet-500"
@@ -135,7 +143,7 @@ export default function DirectorDashboardPage() {
         )}
         {isVisible('stat-exams') && (
           <StatCard
-            title="Active Exams"
+            title={t('Active Exams')}
             value={formatNumber(data?.counts?.examinations || 0)}
             icon={FileText}
             color="text-rose-500"
@@ -146,7 +154,7 @@ export default function DirectorDashboardPage() {
         )}
         {isVisible('stat-lesson-plans') && (
           <StatCard
-            title="Lesson Plans"
+            title={t('Lesson Plans')}
             value={formatNumber(data?.counts?.lessonPlans || 0)}
             icon={CheckCircle2}
             color="text-indigo-500"
@@ -161,7 +169,7 @@ export default function DirectorDashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         {isVisible('chart-performance') && (
           <ChartCard
-            title="Term-by-Term Academic Performance (%)"
+            title={t('Term-by-Term Academic Performance (%)')}
             subtitle="Overall average grade progress across all sections"
             data={performanceChartData}
             type="line"
@@ -172,7 +180,7 @@ export default function DirectorDashboardPage() {
         )}
         {isVisible('chart-attendance') && (
           <ChartCard
-            title="Daily Attendance Status"
+            title={t('Daily Attendance Status')}
             subtitle="Current verification breakdown"
             data={attendanceChartData}
             type="pie"

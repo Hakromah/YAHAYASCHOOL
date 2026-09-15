@@ -9,6 +9,9 @@ import {
 } from 'lucide-react';
 import { useLocale } from 'next-intl';
 import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
 import { financeService } from '@/services/finance.service';
 import type { CashierSession } from '@/types/finance.types';
 import { EnterpriseModuleShell } from '@/components/erp/EnterpriseModuleShell';
@@ -19,9 +22,8 @@ import { toast } from 'sonner';
 
 export default function CampusCashManagementPage() {
   const locale = useLocale();
-  const t = (key: string) => i18nT(key, locale);
-
-  const [sessions, setSessions] = useState<CashierSession[]>([]);
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const [sessions, setSessions] = useState<CashierSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [vaultBalance, setVaultBalance] = useState<number>(0);
 
@@ -140,7 +142,7 @@ export default function CampusCashManagementPage() {
           <button
             onClick={fetchSessions}
             className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white transition-all shadow-sm cursor-pointer"
-            title="Refresh"
+            title={t('Refresh')}
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-emerald-400' : ''}`} />
           </button>

@@ -1,5 +1,11 @@
 'use client';
 
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
+
 import React, { useState, useEffect } from 'react';
 import { 
   ArrowUpRight, 
@@ -37,7 +43,9 @@ interface StudentPromotionRow {
 }
 
 export default function PromotionsPage() {
-  const [students, setStudents] = useState<StudentPromotionRow[]>([]);
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const [students, setStudents] = useState<StudentPromotionRow[]>([]);
   const [selectedClass, setSelectedClass] = useState<string>('JSS3');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [hasEvaluated, setHasEvaluated] = useState<boolean>(false);
@@ -99,8 +107,8 @@ export default function PromotionsPage() {
   return (
     <PageContainer>
       <PageHeader
-        title="Grade Promotions Command Console"
-        description="Process end-of-year class advancements, retention reviews, and student promotion rules."
+        title={t('Grade Promotions Command Console')}
+        description={t('Process end-of-year class advancements, retention reviews, and student promotion rules.')}
       >
         <div className="flex items-center gap-2">
           {hasEvaluated && (

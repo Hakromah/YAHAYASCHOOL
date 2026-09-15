@@ -4,11 +4,15 @@ import React, { useState } from 'react';
 import { FileSearch, Search, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import { useLocale } from 'next-intl';
-import { t } from '@/lib/i18n-dict';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
 
 export default function AuditLogsPage() {
   const locale = useLocale();
-  const [query, setQuery] = useState('');
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const [query, setQuery] = useState('');
   const [severityFilter, setSeverityFilter] = useState('all');
 
   const logs = [

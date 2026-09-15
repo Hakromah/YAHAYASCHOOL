@@ -10,6 +10,9 @@ import {
 } from 'lucide-react';
 import { useLocale } from 'next-intl';
 import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
 import { financeService } from '@/services/finance.service';
 import type { AccountingPeriod } from '@/types/finance.types';
 import { EnterpriseModuleShell } from '@/components/erp/EnterpriseModuleShell';
@@ -22,9 +25,8 @@ import { toast } from 'sonner';
 
 export default function AccountingPeriodsPage() {
   const locale = useLocale();
-  const t = (key: string) => i18nT(key, locale);
-
-  const [periods, setPeriods] = useState<AccountingPeriod[]>([]);
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const [periods, setPeriods] = useState<AccountingPeriod[]>([]);
   const [loading, setLoading] = useState(true);
   const [density, setDensity] = useState<TableDensity>('cozy');
   const [selectedPeriod, setSelectedPeriod] = useState<AccountingPeriod | null>(null);
@@ -78,7 +80,7 @@ export default function AccountingPeriodsPage() {
     {
       id: 'audit_trail',
       title: t('Audit & Compliance Status'),
-      value: '100% Verified',
+      value: t('100% Verified'),
       subtitle: t('Trial balance & cash reconciliation verified prior to close'),
       trendDirection: 'up',
       icon: <ShieldCheck className="w-5 h-5 text-sky-400" />
@@ -92,7 +94,7 @@ export default function AccountingPeriodsPage() {
       cell: ({ row }) => (
         <div className="space-y-0.5">
           <span className="font-bold text-white text-xs sm:text-sm block">{row.original.name}</span>
-          <span className="text-[11px] font-mono text-slate-400 block">Year: {row.original.academicYearCode}</span>
+          <span className="text-[11px] font-mono text-slate-400 block">{t('Year')}: {row.original.academicYearCode}</span>
         </div>
       )
     },

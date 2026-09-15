@@ -1,6 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   GraduationCap, Search, Plus, Users, School, Trash2, Edit2, Eye, X, 
@@ -34,7 +40,9 @@ interface OfferingData {
 }
 
 export default function CourseOfferingsPage() {
-  const [offerings, setOfferings] = useState<OfferingData[]>([]);
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const [offerings, setOfferings] = useState<OfferingData[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
   const [selectedSectionFilter, setSelectedSectionFilter] = useState('All');
@@ -507,14 +515,14 @@ export default function CourseOfferingsPage() {
                       <button
                         onClick={() => handleOpenEdit(off)}
                         className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-505/10 transition-colors border-none bg-transparent cursor-pointer"
-                        title="Edit Offering"
+                        title={t('Edit Offering')}
                       >
                         <Edit2 className="w-3.5 h-3.5" />
                       </button>
                       <button
                         onClick={() => handleDelete(off)}
                         className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-505/10 transition-colors border-none bg-transparent cursor-pointer"
-                        title="Delete Offering"
+                        title={t('Delete Offering')}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -765,7 +773,7 @@ export default function CourseOfferingsPage() {
                             <button
                               onClick={() => handleDropStudent(enr.id)}
                               className="p-1.5 rounded-lg text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer border-none bg-transparent"
-                              title="Drop student"
+                              title={t('Drop student')}
                             >
                               <UserMinus className="w-4 h-4" />
                             </button>

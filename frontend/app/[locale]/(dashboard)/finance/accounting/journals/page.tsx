@@ -10,6 +10,9 @@ import {
 } from 'lucide-react';
 import { useLocale } from 'next-intl';
 import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
 import { financeService } from '@/services/finance.service';
 import type { JournalEntry, ChartOfAccount, AccountingPeriod } from '@/types/finance.types';
 import { EnterpriseModuleShell } from '@/components/erp/EnterpriseModuleShell';
@@ -50,13 +53,16 @@ function todayISO() {
 // ─── Account Picker ───────────────────────────────────────────────────────────
 
 function AccountPicker({
-  value, onChange, accounts, placeholder = 'Search account...',
+  value, onChange, accounts, placeholder,
 }: {
   value: string;
   onChange: (code: string, name: string) => void;
   accounts: ChartOfAccount[];
   placeholder?: string;
 }) {
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const defaultPlaceholder = placeholder || t('Search account...');
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState('');
 
@@ -77,7 +83,7 @@ function AccountPicker({
       >
         {selected
           ? <span className="text-slate-900 dark:text-white font-bold truncate">{selected.accountCode} — {selected.accountName}</span>
-          : <span className="text-slate-400">{placeholder}</span>
+          : <span className="text-slate-400">{defaultPlaceholder}</span>
         }
         <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0 ml-1" />
       </button>
@@ -89,13 +95,13 @@ function AccountPicker({
               type="text"
               value={q}
               onChange={e => setQ(e.target.value)}
-              placeholder="Filter accounts..."
+              placeholder={t('Filter accounts...')}
               className="w-full px-3 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs focus:outline-none focus:border-emerald-500"
             />
           </div>
           <div className="max-h-48 overflow-y-auto">
             {filtered.length === 0 && (
-              <p className="text-center text-xs text-slate-400 py-4">No accounts found</p>
+              <p className="text-center text-xs text-slate-400 py-4">{t('No accounts found')}</p>
             )}
             {filtered.map(a => (
               <button
@@ -126,8 +132,8 @@ function JournalDetailPanel({
   onClose: () => void;
 }) {
   const locale = useLocale();
-  const t = (key: string) => i18nT(key, locale);
-  const isBalanced = Math.abs(journal.totalDebit - journal.totalCredit) < 0.01;
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const isBalanced = Math.abs(journal.totalDebit - journal.totalCredit) < 0.01;
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150">
@@ -225,8 +231,8 @@ function CreateJournalModal({
   onSaved: () => void;
 }) {
   const locale = useLocale();
-  const t = (key: string) => i18nT(key, locale);
-  const [description, setDescription] = useState('');
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const [description, setDescription] = useState('');
   const [reference, setReference] = useState('');
   const [postingDate, setPostingDate] = useState(todayISO());
   const [periodId, setPeriodId] = useState(periods[0]?.id || '');
@@ -329,7 +335,7 @@ function CreateJournalModal({
                   value={description}
                   onChange={e => setDescription(e.target.value)}
                   className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-emerald-500 transition-colors"
-                  placeholder="e.g. Tuition fee revenue recognition"
+                  placeholder={t('e.g. Tuition fee revenue recognition')}
                 />
               </div>
               <div className="space-y-1">
@@ -376,7 +382,7 @@ function CreateJournalModal({
                   <input
                     type="text"
                     disabled
-                    value="General Ledger Period"
+                    value={t('General Ledger Period')}
                     className="w-full px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 text-xs font-mono"
                   />
                 )}
@@ -464,9 +470,8 @@ function CreateJournalModal({
 
 export default function DoubleEntryJournalsPage() {
   const locale = useLocale();
-  const t = (key: string) => i18nT(key, locale);
-
-  const [journals, setJournals]       = useState<JournalEntry[]>([]);
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const [journals, setJournals]       = useState<JournalEntry[]>([]);
   const [accounts, setAccounts]       = useState<ChartOfAccount[]>([]);
   const [periods, setPeriods]         = useState<AccountingPeriod[]>([]);
   const [loading, setLoading]         = useState(true);
@@ -688,27 +693,27 @@ export default function DoubleEntryJournalsPage() {
         if (sm === 'invoice_recognition') {
           return (
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-sky-100 text-sky-700 dark:bg-sky-950/70 dark:text-sky-300 border border-sky-300 dark:border-sky-700 font-mono">
-              Invoice Billing
+              {t('Invoice Billing')}
             </span>
           );
         }
         if (sm === 'payment_collection') {
           return (
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-950/70 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 font-mono">
-              Payment Settlement
+              {t('Payment Settlement')}
             </span>
           );
         }
         if (sm === 'expense_disbursement') {
           return (
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700 dark:bg-rose-950/70 dark:text-rose-300 border border-rose-300 dark:border-rose-700 font-mono">
-              Expense
+              {t('Expense')}
             </span>
           );
         }
         return (
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700 font-mono">
-            Manual Entry
+            {t('Manual Entry')}
           </span>
         );
       },

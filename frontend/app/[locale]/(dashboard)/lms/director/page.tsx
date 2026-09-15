@@ -1,8 +1,16 @@
 'use client';
+
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
 import { BarChart } from 'lucide-react';
 
 export default function DirectorDashboardPage() {
-  return (
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+return (
     <div className="flex-1 p-6 md:p-8 flex flex-col items-center justify-center text-center">
       <BarChart className="w-16 h-16 text-emerald-500 mb-4" />
       <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">

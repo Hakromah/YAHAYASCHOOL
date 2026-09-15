@@ -1,5 +1,11 @@
 'use client';
 
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
+
 import { useEffect, useState } from 'react';
 import {
   ClipboardList, CheckCircle2, Calendar, Wallet, RefreshCw,
@@ -24,7 +30,9 @@ const DEFAULT_WIDGETS: WidgetConfig[] = [
 ];
 
 export default function WorkerDashboardPage() {
-  const [data, setData] = useState<WorkerDashboardData | null>(null);
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const [data, setData] = useState<WorkerDashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [widgets, setWidgets] = useState<WidgetConfig[]>(DEFAULT_WIDGETS);
 
@@ -56,8 +64,8 @@ export default function WorkerDashboardPage() {
   return (
     <PageContainer>
       <PageHeader
-        title="Worker Portal"
-        description="Check your assigned duties, log attendance, request leave, and view staff notices."
+        title={t('Worker Portal')}
+        description={t('Check your assigned duties, log attendance, request leave, and view staff notices.')}
       >
         <div className="flex items-center gap-2">
           <button
@@ -80,7 +88,7 @@ export default function WorkerDashboardPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {isVisible('stat-tasks') && (
           <StatCard
-            title="Assigned Tasks"
+            title={t('Assigned Tasks')}
             value="3 Tasks"
             subtitle="Pending today"
             icon={ClipboardList}
@@ -92,7 +100,7 @@ export default function WorkerDashboardPage() {
         )}
         {isVisible('stat-attendance') && (
           <StatCard
-            title="My Attendance"
+            title={t('My Attendance')}
             value="100%"
             subtitle="Current month log"
             icon={CheckCircle2}
@@ -104,7 +112,7 @@ export default function WorkerDashboardPage() {
         )}
         {isVisible('stat-leave') && (
           <StatCard
-            title="Leave Balance"
+            title={t('Leave Balance')}
             value="14 Days"
             subtitle="Annual allocation"
             icon={Calendar}
@@ -116,7 +124,7 @@ export default function WorkerDashboardPage() {
         )}
         {isVisible('stat-salary') && (
           <StatCard
-            title="Payroll Cycle"
+            title={t('Payroll Cycle')}
             value="28th Monthly"
             subtitle="Direct bank deposit"
             icon={Wallet}
@@ -132,7 +140,7 @@ export default function WorkerDashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {isVisible('chart-tasks') && (
           <ChartCard
-            title="Weekly Task Completion Rate"
+            title={t('Weekly Task Completion Rate')}
             subtitle="Completed vs Pending duties over past month"
             data={taskChartData}
             type="bar"

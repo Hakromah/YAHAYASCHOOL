@@ -10,6 +10,9 @@ import {
 } from 'lucide-react';
 import { useLocale } from 'next-intl';
 import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
 import { financeService } from '@/services/finance.service';
 import type { StudentFinanceAccount, StudentLedgerEntry } from '@/types/finance.types';
 import { EnterpriseModuleShell } from '@/components/erp/EnterpriseModuleShell';
@@ -22,9 +25,8 @@ import { toast } from 'sonner';
 
 export default function StudentRunningLedgerPage() {
   const locale = useLocale();
-  const t = (key: string) => i18nT(key, locale);
-
-  const [accounts, setAccounts] = useState<StudentFinanceAccount[]>([]);
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const [accounts, setAccounts] = useState<StudentFinanceAccount[]>([]);
   const [selectedStudentId, setSelectedStudentId] = useState<string>('');
   const [ledgerEntries, setLedgerEntries] = useState<StudentLedgerEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -321,13 +323,13 @@ export default function StudentRunningLedgerPage() {
         record={selectedEntry ? {
           name: selectedEntry.description,
           id: selectedEntry.documentNumber,
-          role: `SCHOLAR: ${currentAccount?.studentName || 'Student'} (${currentAccount?.admissionNumber || 'N/A'})`,
+          role: `${t('Scholar')}: ${currentAccount?.studentName || t('Student')} (${currentAccount?.admissionNumber || 'N/A'})`,
           status: selectedEntry.type === 'debit' ? 'charge' : 'payment',
-          email: `Transaction Date: ${selectedEntry.transactionDate}`,
-          phone: `Posted by: ${selectedEntry.postedBy}`,
-          department: `Type: ${selectedEntry.type.toUpperCase()}`,
+          email: `${t('Transaction Date')}: ${selectedEntry.transactionDate}`,
+          phone: `${t('Posted by')}: ${selectedEntry.postedBy}`,
+          department: `${t('Type')}: ${t(selectedEntry.type).toUpperCase()}`,
           joinDate: selectedEntry.transactionDate,
-          balance: `AMOUNT: $${(Number(selectedEntry.amount) || 0).toFixed(2)} | RUNNING BAL: $${(Number(selectedEntry.runningBalance) || 0).toFixed(2)}`
+          balance: `${t('Amount')}: $${(Number(selectedEntry.amount) || 0).toFixed(2)} | ${t('Running Balance')}: $${(Number(selectedEntry.runningBalance) || 0).toFixed(2)}`
         } : null}
         category="finance"
       />

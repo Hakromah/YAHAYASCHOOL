@@ -1,6 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   BookOpen, Search, Plus, Award, RefreshCw, Layers, Users, Trash2, 
@@ -30,7 +36,9 @@ interface ProgramData {
 }
 
 export default function AcademicProgramsPage() {
-  const [programs, setPrograms] = useState<ProgramData[]>([]);
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const [programs, setPrograms] = useState<ProgramData[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
 
@@ -425,21 +433,21 @@ export default function AcademicProgramsPage() {
                       <button
                         onClick={() => handleOpenInspect(prog)}
                         className="p-2 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-505 dark:text-slate-305 border-none cursor-pointer"
-                        title="Inspect Track Details"
+                        title={t('Inspect Track Details')}
                       >
                         <Eye className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => handleOpenEdit(prog)}
                         className="p-2 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-505 dark:text-slate-305 border-none cursor-pointer"
-                        title="Edit Track"
+                        title={t('Edit Track')}
                       >
                         <Edit className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => handleDelete(prog)}
                         className="p-2 rounded-xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-955/20 text-rose-600 border-none cursor-pointer"
-                        title="Delete Track"
+                        title={t('Delete Track')}
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>

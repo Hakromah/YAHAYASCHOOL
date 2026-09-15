@@ -1,5 +1,11 @@
 'use client';
 
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
+
 import React, { useState } from 'react';
 import { 
   BarChart, 
@@ -81,7 +87,9 @@ interface RankStudent {
 }
 
 export default function AcademicAnalyticsPage() {
-  const [rankCategory, setRankCategory] = useState<'Overall' | 'Class' | 'Program' | 'Gender'>('Overall');
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const [rankCategory, setRankCategory] = useState<'Overall' | 'Class' | 'Program' | 'Gender'>('Overall');
   const [searchVal, setSearchVal] = useState<string>('');
 
   const rankStudents: RankStudent[] = [
@@ -107,8 +115,8 @@ export default function AcademicAnalyticsPage() {
   return (
     <PageContainer>
       <PageHeader
-        title="Executive Academic Analytics & AI Insights"
-        description="Review institutional performance stats, monitor teacher grading workloads, and access deterministic AI academic risk models."
+        title={t('Executive Academic Analytics & AI Insights')}
+        description={t('Review institutional performance stats, monitor teacher grading workloads, and access deterministic AI academic risk models.')}
       >
         <div className="flex items-center gap-2">
           <button

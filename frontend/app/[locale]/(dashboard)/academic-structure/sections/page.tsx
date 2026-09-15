@@ -1,6 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Layers, Search, Plus, Users, School, Trash2, Edit2, Eye, X, 
@@ -39,7 +45,9 @@ const AVAILABLE_ICONS = [
 ];
 
 export default function AcademicSectionsPage() {
-  const [sections, setSections] = useState<SectionData[]>([]);
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const [sections, setSections] = useState<SectionData[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
 
@@ -404,21 +412,21 @@ export default function AcademicSectionsPage() {
                       <button
                         onClick={() => handleOpenInspect(sec)}
                         className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors border-none bg-transparent cursor-pointer"
-                        title="Inspect Section"
+                        title={t('Inspect Section')}
                       >
                         <Eye className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => handleOpenEdit(sec)}
                         className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-505/10 transition-colors border-none bg-transparent cursor-pointer"
-                        title="Edit Section"
+                        title={t('Edit Section')}
                       >
                         <Edit2 className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => handleDelete(sec)}
                         className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-505/10 transition-colors border-none bg-transparent cursor-pointer"
-                        title="Delete Section"
+                        title={t('Delete Section')}
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>

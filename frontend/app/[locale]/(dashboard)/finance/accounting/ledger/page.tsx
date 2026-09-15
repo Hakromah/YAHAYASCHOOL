@@ -11,6 +11,9 @@ import {
 } from 'lucide-react';
 import { useLocale } from 'next-intl';
 import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
 import { financeService } from '@/services/finance.service';
 import type { ChartOfAccount, JournalEntry, MultiCurrencyRate } from '@/types/finance.types';
 import { EnterpriseModuleShell } from '@/components/erp/EnterpriseModuleShell';
@@ -40,7 +43,7 @@ interface GLPostingRow {
 
 export default function GeneralLedgerDrillDownPage() {
   const locale = useLocale();
-  const t = useCallback((key: string) => i18nT(key, locale), [locale]);
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
 
   // Multi-Currency State
   const [currencies, setCurrencies] = useState<MultiCurrencyRate[]>([]);
@@ -264,7 +267,7 @@ export default function GeneralLedgerDrillDownPage() {
       id: 'current_balance',
       title: `${currentAccount?.accountName || t('Account')} (${currentAccount?.accountCode || '---'})`,
       value: formatMoney(Math.abs(currentNetBalance)),
-      subtitle: `${t('Certified Net Balance')} • ${currentAccount?.accountType || 'Asset'} (${currentNetBalance >= 0 ? t('Normal Parity') : t('Contra/Credit')})`,
+      subtitle: `${t('Certified Net Balance')} • ${t(currentAccount?.accountType || 'Asset')} (${currentNetBalance >= 0 ? t('Normal Parity') : t('Contra/Credit')})`,
       trendDirection: currentNetBalance >= 0 ? 'up' : 'down',
       icon: <Landmark className="w-5 h-5 text-emerald-400" />
     },
@@ -372,15 +375,15 @@ export default function GeneralLedgerDrillDownPage() {
       return;
     }
     const exportData = filteredRows.map(r => ({
-      'Posting Date': r.postingDate,
-      'Voucher #': r.journalNumber,
-      'Account Code': r.accountCode,
-      'Account Name': r.accountName,
-      'Transaction Memo': r.memo,
-      'Reference': r.referenceNumber,
-      [`Debit (${selectedCurrency})`]: (r.debit * activeCurrencyRate).toFixed(2),
-      [`Credit (${selectedCurrency})`]: (r.credit * activeCurrencyRate).toFixed(2),
-      [`Running Balance (${selectedCurrency})`]: (r.runningBalance * activeCurrencyRate).toFixed(2)
+      [t('Posting Date')]: r.postingDate,
+      [t('Voucher #')]: r.journalNumber,
+      [t('Account Code')]: r.accountCode,
+      [t('Account Name')]: r.accountName,
+      [t('Transaction Memo')]: r.memo,
+      [t('Reference')]: r.referenceNumber,
+      [`${t('Debit')} (${selectedCurrency})`]: (r.debit * activeCurrencyRate).toFixed(2),
+      [`${t('Credit')} (${selectedCurrency})`]: (r.credit * activeCurrencyRate).toFixed(2),
+      [`${t('Running Balance')} (${selectedCurrency})`]: (r.runningBalance * activeCurrencyRate).toFixed(2)
     }));
     financeService.exportToCSV(exportData, `GeneralLedger_${selectedCode}_${selectedCurrency}_${new Date().toISOString().split('T')[0]}.csv`);
     toast.success(t('General Ledger CSV exported successfully.'));
@@ -450,7 +453,7 @@ export default function GeneralLedgerDrillDownPage() {
           >
             {filteredCoa.map(a => (
               <option key={a.accountCode} value={a.accountCode} className="bg-slate-900 text-white">
-                {a.accountCode} — {a.accountName} ({a.accountType})
+                {a.accountCode} — {a.accountName} ({t(a.accountType)})
               </option>
             ))}
           </select>
@@ -502,7 +505,7 @@ export default function GeneralLedgerDrillDownPage() {
                   : 'bg-slate-950 border border-slate-800 text-slate-400 hover:text-white'
               )}
             >
-              {cat === 'all' ? t('All Accounts') : cat}
+              {cat === 'all' ? t('All Accounts') : t(cat)}
             </button>
           ))}
         </div>
@@ -560,7 +563,7 @@ export default function GeneralLedgerDrillDownPage() {
         onRowClick={(row) => setSelectedRow(row)}
         emptyStateProps={{
           title: `${t('No Transactions on Account')} ${selectedCode}`,
-          description: `${t('No journal entries have been posted to')} ${currentAccount?.accountName || 'this account'}.`,
+          description: `${t('No journal entries have been posted to')} ${currentAccount?.accountName || t('this account')}.`,
           isFilterActive: activeFiltersCount > 0,
           onResetFilters: clearFilters
         }}
@@ -573,13 +576,13 @@ export default function GeneralLedgerDrillDownPage() {
         record={selectedRow ? {
           name: `${selectedRow.journalNumber} — ${selectedRow.accountName}`,
           id: String(selectedRow.id),
-          role: `GL ACCOUNT: ${selectedRow.accountCode} (${currentAccount?.accountType || 'Asset'})`,
+          role: `${t('GL Account')}: ${selectedRow.accountCode} (${t(currentAccount?.accountType || 'Asset')})`,
           status: 'posted',
-          email: `Posting Date: ${selectedRow.postingDate} | Ref: ${selectedRow.referenceNumber}`,
-          phone: `Transaction Narrative: ${selectedRow.memo}`,
-          department: `Debit: ${formatMoney(selectedRow.debit)} | Credit: ${formatMoney(selectedRow.credit)}`,
+          email: `${t('Posting Date')}: ${selectedRow.postingDate} | ${t('Ref')}: ${selectedRow.referenceNumber}`,
+          phone: `${t('Transaction Narrative')}: ${selectedRow.memo}`,
+          department: `${t('Debit')}: ${formatMoney(selectedRow.debit)} | ${t('Credit')}: ${formatMoney(selectedRow.credit)}`,
           joinDate: selectedRow.postingDate,
-          balance: `CUMULATIVE RUNNING BALANCE: ${formatMoney(selectedRow.runningBalance)}`
+          balance: `${t('Cumulative Running Balance')}: ${formatMoney(selectedRow.runningBalance)}`
         } : null}
         category="finance"
       />

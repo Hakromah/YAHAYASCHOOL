@@ -1,6 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
+
 import React, { useState, useEffect } from 'react';
 import { 
   Book, Compass, Award, CheckCircle2, RefreshCw, Layers,
@@ -12,7 +18,9 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
 export default function QmsProfilePage() {
-  const [students, setStudents] = useState<any[]>([]);
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const [students, setStudents] = useState<any[]>([]);
   const [selectedStudentId, setSelectedStudentId] = useState<string | number>('');
   const [hifzData, setHifzData] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -88,8 +96,8 @@ export default function QmsProfilePage() {
   return (
     <PageContainer>
       <PageHeader
-        title="Qur'an Memorization (Hifz) & Tajweed Profile"
-        description="Monitor scholar memorization progress, audit Surah/Juz logs, track revision (Muraja'ah), and issue Ijazah records."
+        title={t('Qur\'an Memorization (Hifz) & Tajweed Profile')}
+        description={t('Monitor scholar memorization progress, audit Surah/Juz logs, track revision (Muraja\'ah), and issue Ijazah records.')}
       >
         <div className="flex items-center gap-3">
           <select

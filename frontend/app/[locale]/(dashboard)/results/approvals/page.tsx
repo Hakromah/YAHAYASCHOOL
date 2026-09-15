@@ -1,6 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
+
 import React, { useState, useEffect } from 'react';
 import { 
   Award, CheckCircle2, ShieldAlert, Lock, Eye, BookOpen, RefreshCw, 
@@ -14,7 +20,9 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
 export default function GradeApprovalsPage() {
-  const [approvals, setApprovals] = useState<any[]>([]);
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const [approvals, setApprovals] = useState<any[]>([]);
   const [offerings, setOfferings] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedOffering, setSelectedOffering] = useState<any | null>(null);
@@ -129,8 +137,8 @@ export default function GradeApprovalsPage() {
   return (
     <PageContainer>
       <PageHeader
-        title="Grade Approval & Moderation Console"
-        description="Verify assessment results, audit class averages, and release academic records for student portal publication."
+        title={t('Grade Approval & Moderation Console')}
+        description={t('Verify assessment results, audit class averages, and release academic records for student portal publication.')}
       >
         <button
           onClick={loadWorkflowData}

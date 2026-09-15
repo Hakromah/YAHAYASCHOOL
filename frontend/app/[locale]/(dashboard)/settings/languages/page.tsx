@@ -5,6 +5,9 @@ import { Globe, CheckCircle2, RefreshCw, ExternalLink } from 'lucide-react';
 import { useLocale } from 'next-intl';
 import { useRouter } from '@/i18n/routing';
 import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
 import { apiClient } from '@/services/api.service';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -34,8 +37,8 @@ const NATIVE_NAME: Record<string, string> = {
 
 export default function LocalizationSettingsPage() {
   const locale = useLocale();
-  const t = (key: string) => i18nT(key, locale);
-  const router = useRouter();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const router = useRouter();
 
   const [locales, setLocales] = useState<StrapiLocale[]>([]);
   const [loading, setLoading] = useState(true);

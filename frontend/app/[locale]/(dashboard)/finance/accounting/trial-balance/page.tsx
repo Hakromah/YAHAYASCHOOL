@@ -9,6 +9,9 @@ import {
 } from 'lucide-react';
 import { useLocale } from 'next-intl';
 import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
 import { financeService } from '@/services/finance.service';
 import type { ChartOfAccount } from '@/types/finance.types';
 import { EnterpriseModuleShell } from '@/components/erp/EnterpriseModuleShell';
@@ -26,9 +29,8 @@ interface TrialBalanceRow {
 
 export default function TrialBalancePage() {
   const locale = useLocale();
-  const t = (key: string) => i18nT(key, locale);
-
-  const [coa, setCoa] = useState<ChartOfAccount[]>([]);
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const [coa, setCoa] = useState<ChartOfAccount[]>([]);
   const [loading, setLoading] = useState(true);
 
   const loadData = async () => {

@@ -10,6 +10,9 @@ import {
 } from 'lucide-react';
 import { useLocale } from 'next-intl';
 import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
 import { financeService } from '@/services/finance.service';
 import type { ChartOfAccount } from '@/types/finance.types';
 import { EnterpriseModuleShell } from '@/components/erp/EnterpriseModuleShell';
@@ -21,9 +24,8 @@ import { toast } from 'sonner';
 
 export default function BankAccountsAndReconciliationPage() {
   const locale = useLocale();
-  const t = (key: string) => i18nT(key, locale);
-
-  const [assetAccounts, setAssetAccounts] = useState<ChartOfAccount[]>([]);
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const [assetAccounts, setAssetAccounts] = useState<ChartOfAccount[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
   const [density, setDensity] = useState<TableDensity>('cozy');
@@ -62,9 +64,9 @@ export default function BankAccountsAndReconciliationPage() {
     const variance = stmtNum - showReconcileModal.currentBalance;
 
     if (Math.abs(variance) > 0.01) {
-      toast.warning(`Reconciliation Variance of $${variance.toFixed(2)} detected!`);
+      toast.warning(`${t('Reconciliation Variance of')} $${variance.toFixed(2)} ${t('detected!')}`);
     } else {
-      toast.success(`Account [${showReconcileModal.accountCode} - ${showReconcileModal.accountName}] 100% Reconciled!`);
+      toast.success(`${t('Account')} [${showReconcileModal.accountCode} - ${showReconcileModal.accountName}] ${t('100% Reconciled')}!`);
       setShowReconcileModal(null);
     }
   };
@@ -99,7 +101,7 @@ export default function BankAccountsAndReconciliationPage() {
     {
       id: 'reconciliation',
       title: t('Monthly Reconciliation Audit'),
-      value: '100% Reconciled',
+      value: t('100% Reconciled'),
       subtitle: t('External statements verified against GL records'),
       trendDirection: 'up',
       icon: <ShieldCheck className="w-5 h-5 text-emerald-400" />
@@ -305,13 +307,13 @@ export default function BankAccountsAndReconciliationPage() {
         record={selectedAccount ? {
           name: selectedAccount.accountName,
           id: selectedAccount.accountCode,
-          role: 'TREASURY REPOSITORY',
+          role: t('TREASURY REPOSITORY'),
           status: selectedAccount.isActive ? 'active' : 'inactive',
-          email: `Type: ${selectedAccount.accountType}`,
-          phone: `Currency: ${selectedAccount.currency}`,
-          department: `GL Code: ${selectedAccount.accountCode}`,
-          joinDate: selectedAccount.accountCode.slice(0, 1) + '000 Series',
-          balance: `GL BOOK BALANCE: $${selectedAccount.currentBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })}`
+          email: `${t('Type')}: ${t(selectedAccount.accountType)}`,
+          phone: `${t('Currency')}: ${selectedAccount.currency}`,
+          department: `${t('GL Code')}: ${selectedAccount.accountCode}`,
+          joinDate: `${selectedAccount.accountCode.slice(0, 1)}000 ${t('Series')}`,
+          balance: `${t('GL BOOK BALANCE')}: $${selectedAccount.currentBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })}`
         } : null}
         category="finance"
       />

@@ -7,6 +7,9 @@ import { PageContainer } from '@/components/shared/layout/PageContainer';
 import { apiClient } from '@/services/api.service';
 import { useLocale } from 'next-intl';
 import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
 import {
   Languages, Users, BarChart2, AlertTriangle,
   BookOpen, Layers, TrendingUp, FolderOpen, ChevronRight
@@ -35,9 +38,8 @@ export default function LlmsTeacherDashboard() {
   const router = useRouter();
   const teacher = (user as any)?.profile;
   const locale = useLocale();
-  const t = (key: string) => i18nT(key, locale);
-
-  const [offerings, setOfferings] = useState<LangOffering[]>([]);
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const [offerings, setOfferings] = useState<LangOffering[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const loadDashboard = useCallback(async () => {

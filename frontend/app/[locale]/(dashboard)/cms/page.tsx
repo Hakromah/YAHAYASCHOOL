@@ -1,6 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
+
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from '@/i18n/routing';
 import {
@@ -116,7 +122,9 @@ const CMS_MODULES = [
 interface CMSStats { events: number; upcomingEvents: number; announcements: number; gallery: number; }
 
 export default function WebsiteCMSPage() {
-  const [stats, setStats] = useState<CMSStats>({ events: 0, upcomingEvents: 0, announcements: 0, gallery: 0 });
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const [stats, setStats] = useState<CMSStats>({ events: 0, upcomingEvents: 0, announcements: 0, gallery: 0 });
   const [recentAnnouncements, setRecentAnnouncements] = useState<AnnouncementEntity[]>([]);
   const [upcomingEvents, setUpcomingEvents] = useState<EventEntity[]>([]);
   const [loading, setLoading] = useState(true);

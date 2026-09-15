@@ -22,10 +22,17 @@ import { EnterpriseDataGrid, type ColumnDef } from '@/components/erp/EnterpriseD
 import { SlideOutDrawer } from '@/components/erp/SlideOutDrawer';
 import { StatusBadge } from '@/components/erp/StatusBadge';
 import { toast } from 'sonner';
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
 import { printReceiptDocument } from '@/lib/print-finance';
 
 function CashierPaymentsContent() {
-  const router = useRouter();
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const router = useRouter();
   const searchParams = useSearchParams();
   const initialInvoiceNumber = searchParams.get('invoiceNumber');
   const { user, role } = useAuth();
@@ -125,7 +132,7 @@ function CashierPaymentsContent() {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [locale]);
 
   // Handle URL Parameter Prefill
   useEffect(() => {
@@ -468,18 +475,18 @@ function CashierPaymentsContent() {
   const adminKpiCards: EnterpriseKPICard[] = [
     {
       id: 'collections',
-      title: 'Total Receipts & POS Collections',
+      title: t('Total Receipts & POS Collections'),
       value: `$${totalCollected.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
-      subtitle: `${receipts.length} verified transaction vouchers posted`,
+      subtitle: `${receipts.length} ${t('verified transaction vouchers posted')}`,
       trendDirection: 'up',
       icon: <CreditCard className="w-5 h-5" />,
       onClick: () => toast.info('Displaying all cashier receipts and settlements.')
     },
     {
       id: 'bank',
-      title: 'Commercial Bank & Wire Transfers',
+      title: t('Commercial Bank & Wire Transfers'),
       value: `$${bankTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
-      subtitle: 'Deposited directly to Account 1010',
+      subtitle: t('Deposited directly to Account 1010'),
       trendDirection: 'up',
       icon: <Landmark className="w-5 h-5 text-emerald-400" />,
       isActive: methodFilter === 'Bank Transfer',
@@ -487,9 +494,9 @@ function CashierPaymentsContent() {
     },
     {
       id: 'mobile',
-      title: 'Mobile Wallet Integrations',
+      title: t('Mobile Wallet Integrations'),
       value: `$${mobileTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
-      subtitle: 'Instant mobile gateway deposits (Account 1020)',
+      subtitle: t('Instant mobile gateway deposits (Account 1020)'),
       trendDirection: 'up',
       icon: <Smartphone className="w-5 h-5 text-sky-400" />,
       isActive: methodFilter === 'Orange Money',
@@ -497,9 +504,9 @@ function CashierPaymentsContent() {
     },
     {
       id: 'cash',
-      title: 'Campus Cash Drawer Collections',
+      title: t('Campus Cash Drawer Collections'),
       value: `$${cashTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
-      subtitle: 'Open Cashier Session: CSH-2026-088 (Reconciled)',
+      subtitle: t('Open Cashier Session: CSH-2026-088 (Reconciled)'),
       trendDirection: 'neutral',
       icon: <PiggyBank className="w-5 h-5 text-amber-400" />,
       isActive: methodFilter === 'Cash',
@@ -511,33 +518,33 @@ function CashierPaymentsContent() {
   const studentKpiCards: EnterpriseKPICard[] = [
     {
       id: 'student-paid',
-      title: 'Total Settled Payments',
+      title: t('Total Settled Payments'),
       value: `$${studentPaidTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
-      subtitle: `${myStudentReceipts.length} verified payment receipt vouchers`,
+      subtitle: `${myStudentReceipts.length} ${t('verified payment receipt vouchers')}`,
       trendDirection: 'up',
       icon: <CreditCard className="w-5 h-5 text-emerald-400" />
     },
     {
       id: 'student-debt',
-      title: 'Active Outstanding Fees',
+      title: t('Active Outstanding Fees'),
       value: `$${studentUnpaidDebt.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
-      subtitle: studentUnpaidDebt > 0 ? 'Action needed: Term fee balance due' : '✓ All academic fees paid in full',
+      subtitle: studentUnpaidDebt > 0 ? t('Action needed: Term fee balance due') : t('✓ All academic fees paid in full'),
       trendDirection: studentUnpaidDebt > 0 ? 'down' : 'up',
       icon: <Landmark className={`w-5 h-5 ${studentUnpaidDebt > 0 ? 'text-rose-400' : 'text-emerald-400'}`} />
     },
     {
       id: 'student-wallet',
-      title: 'Advance Wallet Balance',
+      title: t('Advance Wallet Balance'),
       value: `$${studentWalletCredit.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
-      subtitle: 'Prepaid credit stored for future term invoices',
+      subtitle: t('Prepaid credit stored for future term invoices'),
       trendDirection: 'neutral',
       icon: <Wallet className="w-5 h-5 text-sky-400" />
     },
     {
       id: 'student-billed',
-      title: 'Total Fees Invoiced',
+      title: t('Total Fees Invoiced'),
       value: `$${studentBilledTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
-      subtitle: `${myStudentInvoices.length} total fee invoices issued`,
+      subtitle: `${myStudentInvoices.length} ${t('total fee invoices issued')}`,
       trendDirection: 'neutral',
       icon: <FileText className="w-5 h-5 text-amber-400" />
     }
@@ -588,7 +595,7 @@ function CashierPaymentsContent() {
     return [
       {
         accessorKey: 'receiptNumber',
-        header: 'Receipt # & Invoice Ref',
+        header: t('Receipt # & Invoice Ref'),
         cell: ({ row }) => {
           const r = row.original;
           return (
@@ -612,7 +619,7 @@ function CashierPaymentsContent() {
       },
       {
         accessorKey: 'studentName',
-        header: 'Student Scholar & Sponsor Profile',
+        header: t('Student Scholar & Sponsor Profile'),
         cell: ({ row }) => {
           const r = row.original;
           const s = resolveStudent(r);
@@ -645,7 +652,7 @@ function CashierPaymentsContent() {
       },
       {
         accessorKey: 'paymentMethod',
-        header: 'Payment Channel & Ref',
+        header: t('Payment Channel & Ref'),
         cell: ({ row }) => {
           const r = row.original;
           const m = r.paymentMethod || 'Cash';
@@ -674,7 +681,7 @@ function CashierPaymentsContent() {
       },
       {
         accessorKey: 'paymentDate',
-        header: 'Date & Cashier',
+        header: t('Date & Cashier'),
         cell: ({ row }) => (
           <div className="space-y-0.5 font-mono text-[11px] py-1">
             <span className="text-slate-200 block font-bold">{row.original.paymentDate.split('T')[0]}</span>
@@ -684,7 +691,7 @@ function CashierPaymentsContent() {
       },
       {
         accessorKey: 'amount',
-        header: 'Revenue & Allocation ($)',
+        header: t('Revenue & Allocation ($)'),
         cell: ({ row }) => {
           const r = row.original as any;
           const invAlloc = r.invoiceAllocation ?? r.amount ?? 0;
@@ -693,7 +700,7 @@ function CashierPaymentsContent() {
 
           return (
             <div className="space-y-0.5 font-mono text-xs py-1">
-              <span className="font-black text-emerald-400 block text-sm" title="Allocated Revenue">
+              <span className="font-black text-emerald-400 block text-sm" title={t('Allocated Revenue')}>
                 +${invAlloc.toLocaleString('en-US', { minimumFractionDigits: 2 })}
               </span>
               {(wAlloc > 0 || overpay > 0) && (
@@ -708,12 +715,12 @@ function CashierPaymentsContent() {
       },
       {
         accessorKey: 'status',
-        header: 'Status',
+        header: t('Status'),
         cell: ({ row }) => <StatusBadge status={row.original.status || 'posted'} size="sm" />
       },
       {
         id: 'actions',
-        header: 'Actions',
+        header: t('Actions'),
         cell: ({ row }) => (
           <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
             <button
@@ -721,12 +728,12 @@ function CashierPaymentsContent() {
               className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-emerald-600 text-slate-300 hover:text-white font-bold text-xs transition-all border border-slate-700 hover:border-emerald-500 shadow-sm cursor-pointer"
             >
               <Eye className="w-3.5 h-3.5" />
-              <span>Inspect</span>
+              <span>{t('Inspect')}</span>
             </button>
             <button
               onClick={() => setShowQrModal(row.original)}
               className="p-1.5 rounded-xl bg-slate-800 hover:bg-sky-600 text-slate-300 hover:text-white transition-all border border-slate-700 cursor-pointer"
-              title="Verify QR Code"
+              title={t('Verify QR Code')}
             >
               <QrCode className="w-3.5 h-3.5 text-sky-400" />
             </button>
@@ -735,7 +742,7 @@ function CashierPaymentsContent() {
                 printReceiptDocument(row.original);
               }}
               className="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-all border border-slate-700 cursor-pointer"
-              title="Print Receipt"
+              title={t('Print Receipt')}
             >
               <Printer className="w-3.5 h-3.5" />
             </button>
@@ -743,13 +750,13 @@ function CashierPaymentsContent() {
         )
       }
     ];
-  }, [liveStudents]);
+  }, [liveStudents, locale]);
 
   const studentColumns = useMemo<ColumnDef<PaymentReceipt, any>[]>(() => {
     return [
       {
         accessorKey: 'receiptNumber',
-        header: 'Receipt # & Invoice Ref',
+        header: t('Receipt # & Invoice Ref'),
         cell: ({ row }) => {
           const r = row.original;
           return (
@@ -762,7 +769,7 @@ function CashierPaymentsContent() {
       },
       {
         accessorKey: 'paymentMethod',
-        header: 'Payment Method & Gateway Ref',
+        header: t('Payment Method & Gateway Ref'),
         cell: ({ row }) => (
           <div className="space-y-0.5 text-xs">
             <span className="inline-flex items-center gap-1.5 font-bold text-slate-200">
@@ -778,7 +785,7 @@ function CashierPaymentsContent() {
       },
       {
         accessorKey: 'paymentDate',
-        header: 'Payment Date & Time',
+        header: t('Payment Date & Time'),
         cell: ({ row }) => (
           <div className="space-y-0.5 font-mono text-[11px]">
             <span className="text-slate-300 block font-bold">{row.original.paymentDate.split('T')[0]}</span>
@@ -788,7 +795,7 @@ function CashierPaymentsContent() {
       },
       {
         accessorKey: 'amount',
-        header: 'Amount Paid ($)',
+        header: t('Amount Paid ($)'),
         cell: ({ row }) => {
           const r = row.original as any;
           return (
@@ -805,12 +812,12 @@ function CashierPaymentsContent() {
       },
       {
         accessorKey: 'status',
-        header: 'Status',
+        header: t('Status'),
         cell: ({ row }) => <StatusBadge status={row.original.status} size="sm" />
       },
       {
         id: 'actions',
-        header: 'Actions & Official Receipt',
+        header: t('Actions & Official Receipt'),
         cell: ({ row }) => (
           <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
             <button
@@ -818,14 +825,14 @@ function CashierPaymentsContent() {
               className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-emerald-600 text-slate-300 hover:text-white font-bold text-xs transition-all border border-slate-700 hover:border-emerald-500 cursor-pointer"
             >
               <QrCode className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Verify QR</span>
+              <span>{t('Verify QR')}</span>
             </button>
             <button
               onClick={() => printReceiptDocument(row.original)}
               className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white font-bold text-xs transition-all border border-emerald-500/40 cursor-pointer"
             >
               <Printer className="w-3.5 h-3.5" />
-              <span>Print Official Receipt</span>
+              <span>{t('Print Official Receipt')}</span>
             </button>
           </div>
         )
@@ -837,9 +844,9 @@ function CashierPaymentsContent() {
   if (viewMode === 'student') {
     return (
       <EnterpriseModuleShell
-        title="My Payment Receipts & Fee History"
-        description="View your verified payment vouchers, official digital receipts, fee settlements, and student wallet credit."
-        breadcrumbs={[{ label: 'My Fees & Ledger', href: '/finance/billing/invoices' }, { label: 'Payment Receipts' }]}
+        title={t("My Payment Receipts & Fee History")}
+        description={t("View your verified payment vouchers, official digital receipts, fee settlements, and student wallet credit.")}
+        breadcrumbs={[{ label: t('My Fees & Ledger'), href: '/finance/billing/invoices' }, { label: t('Payment Receipts') }]}
         headerActions={
           <div className="flex items-center gap-2">
             {!isStudentRole && (
@@ -847,7 +854,7 @@ function CashierPaymentsContent() {
                 onClick={() => setViewMode('admin')}
                 className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition-all border border-slate-700"
               >
-                ← Switch to Cashier POS Mode
+                {t('← Switch to Cashier POS Mode')}
               </button>
             )}
             <button
@@ -855,7 +862,7 @@ function CashierPaymentsContent() {
               className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-black text-xs shadow-lg shadow-emerald-600/30 transition-all flex items-center gap-1.5 cursor-pointer"
             >
               <CreditCard className="w-3.5 h-3.5" />
-              <span>+ Pay Fees Online</span>
+              <span>{t('+ Pay Fees Online')}</span>
             </button>
           </div>
         }
@@ -875,7 +882,7 @@ function CashierPaymentsContent() {
           </Link>
           <Link href="/finance/billing/statements" className="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white font-bold text-xs transition-all flex items-center gap-1.5">
             <FileText className="w-3.5 h-3.5 text-amber-400" />
-            <span>Financial Statement</span>
+            <span>{t('Financial Statement')}</span>
           </Link>
 
           {studentUnpaidDebt > 0 && (
@@ -890,7 +897,7 @@ function CashierPaymentsContent() {
         <EnterpriseToolbar
           searchQuery={query}
           onSearchChange={setQuery}
-          searchPlaceholder="Search my receipts by receipt number (RCP-2026-XXXX), reference, or invoice..."
+          searchPlaceholder={t('Search my receipts by receipt number (RCP-2026-XXXX), reference, or invoice...')}
           density={density}
           onDensityChange={setDensity}
           onRefresh={() => {
@@ -899,7 +906,7 @@ function CashierPaymentsContent() {
           }}
           activeFilterCount={activeFiltersCount}
           onResetFilters={handleClearFilters}
-          createButtonLabel="+ Pay Online"
+          createButtonLabel={t('+ Pay Online')}
           onCreate={() => setShowStudentPayModal(true)}
           customFilterNodes={
             <div className="flex items-center gap-2">
@@ -928,11 +935,11 @@ function CashierPaymentsContent() {
           onRowInspect={(row) => setSelectedReceipt(row)}
           onRowClick={(row) => setSelectedReceipt(row)}
           emptyStateProps={{
-            title: 'No Payment Receipts Logged',
-            description: 'You have no verified payment transaction receipts matching the filter.',
+            title: t('No Payment Receipts Logged'),
+            description: t('You have no verified payment transaction receipts matching the filter.'),
             isFilterActive: activeFiltersCount > 0 || query.length > 0,
             onResetFilters: handleClearFilters,
-            createLabel: 'Pay Fees Online',
+            createLabel: t('Pay Fees Online'),
             onCreate: () => setShowStudentPayModal(true)
           }}
         />
@@ -947,8 +954,8 @@ function CashierPaymentsContent() {
                     <CreditCard className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="text-base font-black text-white">Student Online Fee Checkout</h3>
-                    <p className="text-xs text-slate-400 font-mono">Instant Gateway Payment & Verified Digital Receipt</p>
+                    <h3 className="text-base font-black text-white">{t("Student Online Fee Checkout")}</h3>
+                    <p className="text-xs text-slate-400 font-mono">{t("Instant Gateway Payment & Verified Digital Receipt")}</p>
                   </div>
                 </div>
                 <button
@@ -961,14 +968,14 @@ function CashierPaymentsContent() {
 
               <form onSubmit={handlePostStudentPayment} className="space-y-4">
                 <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between text-xs">
-                  <span className="text-slate-400 font-medium">Paying For Scholar:</span>
+                  <span className="text-slate-400 font-medium">{t("Paying For Scholar:")}</span>
                   <strong className="text-emerald-400 font-mono">
                     {user?.firstName || (user as any)?.name || 'Scholar'} ({(user as any)?.schoolId || (user as any)?.studentId || 'STUDENT'})
                   </strong>
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-300">Select Invoice to Settle</label>
+                  <label className="text-xs font-bold text-slate-300">{t("Select Invoice to Settle")}</label>
                   <select
                     value={studentPayInvoiceNumber}
                     onChange={(e) => {
@@ -981,7 +988,7 @@ function CashierPaymentsContent() {
                     }}
                     className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 text-xs font-mono focus:outline-none focus:border-emerald-500 cursor-pointer"
                   >
-                    <option value="">General Advance Wallet Deposit (No Invoice)</option>
+                    <option value="">{t("General Advance Wallet Deposit (No Invoice)")}</option>
                     {myStudentInvoices.map(inv => (
                       <option key={inv.id} value={inv.invoiceNumber}>
                         {inv.invoiceNumber} — ${((inv.remainingBalance ?? inv.totalAmount ?? 0)).toFixed(2)} ({inv.status.toUpperCase()})
@@ -992,7 +999,7 @@ function CashierPaymentsContent() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-300">Payment Amount ($)</label>
+                    <label className="text-xs font-bold text-slate-300">{t("Payment Amount ($)")}</label>
                     <input
                       type="number"
                       step="0.01"
@@ -1004,7 +1011,7 @@ function CashierPaymentsContent() {
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-300">Payment Gateway</label>
+                    <label className="text-xs font-bold text-slate-300">{t("Payment Gateway")}</label>
                     <select
                       value={studentPayMethod}
                       onChange={(e) => setStudentPayMethod(e.target.value as PaymentMethodType)}
@@ -1020,7 +1027,7 @@ function CashierPaymentsContent() {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-300">Phone Number / Reference (Optional)</label>
+                  <label className="text-xs font-bold text-slate-300">{t("Phone Number / Reference (Optional)")}</label>
                   <input
                     type="text"
                     value={studentPayRef}
@@ -1032,7 +1039,7 @@ function CashierPaymentsContent() {
 
                 <div className="p-3 bg-emerald-950/30 border border-emerald-500/30 rounded-2xl text-[11px] text-emerald-300 flex items-center gap-2">
                   <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>Secure 256-bit Encrypted Transaction. An official receipt with QR verification code will be generated instantly.</span>
+                  <span>{t("Secure 256-bit Encrypted Transaction. An official receipt with QR verification code will be generated instantly.")}</span>
                 </div>
 
                 <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
@@ -1076,8 +1083,8 @@ function CashierPaymentsContent() {
               </div>
 
               <div className="space-y-1">
-                <h3 className="text-base font-black text-white">Public Verification QR Code</h3>
-                <p className="text-xs text-slate-400">Scan to verify cryptographic receipt authenticity on YAHAYASCOOL Verification Portal</p>
+                <h3 className="text-base font-black text-white">{t("Public Verification QR Code")}</h3>
+                <p className="text-xs text-slate-400">{t("Scan to verify cryptographic receipt authenticity on YAHAYASCOOL Verification Portal")}</p>
                 <div className="p-2.5 bg-slate-950 border border-slate-800 rounded-xl mt-3 text-[11px] font-mono text-emerald-400 break-all">
                   {showQrModal.qrPayloadUrl}
                 </div>
@@ -1110,7 +1117,7 @@ function CashierPaymentsContent() {
                 className="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 text-white font-black text-xs shadow-md flex items-center justify-center gap-1.5"
               >
                 <Printer className="w-4 h-4" />
-                <span>Print Official Receipt Voucher →</span>
+                <span>{t("Print Official Receipt Voucher →")}</span>
               </button>
             </div>
           </div>
@@ -1139,30 +1146,30 @@ function CashierPaymentsContent() {
   // RENDER: ADMIN CASHIER POS CONSOLE (For Super Admin, Director, Accountant, Cashier)
   return (
     <EnterpriseModuleShell
-      title="Multi-Method Cashier Payment Console & POS"
-      description="Process and reconcile multi-currency payments across banking, mobile wallets, and campus drawer."
-      breadcrumbs={[{ label: 'Finance ERP', href: '/finance' }, { label: 'Payments' }]}
+      title={t("Multi-Method Cashier Payment Console & POS")}
+      description={t("Process and reconcile multi-currency payments across banking, mobile wallets, and campus drawer.")}
+      breadcrumbs={[{ label: t('Finance ERP'), href: '/finance' }, { label: t('Payments') }]}
       headerActions={
         <div className="flex items-center gap-2">
           <button
             onClick={() => setViewMode('student')}
             className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-300 text-xs font-bold transition-all"
           >
-            👁️ Preview Student View
+            {t('👁️ Preview Student View')}
           </button>
           <Link
             href="/finance/reports"
             className="px-3.5 py-1.5 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-800 text-white font-bold text-xs transition-all shadow-md flex items-center gap-2"
           >
             <AlertCircle className="w-3.5 h-3.5 text-rose-500" />
-            Reconciliation Required: 2
+            {t('Reconciliation Required: 2')}
           </Link>
           <button
             onClick={() => setShowPayModal(true)}
             className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-black text-xs shadow-lg shadow-emerald-600/30 transition-all flex items-center gap-1.5 cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>Record Payment</span>
+            <span>{t('Record Payment')}</span>
           </button>
         </div>
       }
@@ -1174,15 +1181,15 @@ function CashierPaymentsContent() {
       <div className="flex flex-wrap items-center gap-2 pb-2 border-b border-slate-800">
         <Link href="/finance/billing/invoices" className="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white font-bold text-xs transition-all flex items-center gap-1.5">
           <FileText className="w-3.5 h-3.5 text-emerald-400" />
-          <span>Invoices Console</span>
+          <span>{t('Invoices Console')}</span>
         </Link>
         <Link href="/finance/billing/payments" className="px-3.5 py-1.5 rounded-xl bg-emerald-600 text-white font-black text-xs shadow-md flex items-center gap-1.5">
           <CreditCard className="w-3.5 h-3.5" />
-          <span>Multi-Method Cashier & POS</span>
+          <span>{t('Multi-Method Cashier & POS')}</span>
         </Link>
         <Link href="/finance/billing/statements" className="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white font-bold text-xs transition-all flex items-center gap-1.5">
           <FileText className="w-3.5 h-3.5 text-amber-400" />
-          <span>Student Statements</span>
+          <span>{t('Student Statements')}</span>
         </Link>
 
         <button
@@ -1199,7 +1206,7 @@ function CashierPaymentsContent() {
       <EnterpriseToolbar
         searchQuery={query}
         onSearchChange={setQuery}
-        searchPlaceholder="Search receipts by sequence (RCP-2026-XXXX), scholar name, or reference number..."
+        searchPlaceholder={t('Search receipts by sequence (RCP-2026-XXXX), scholar name, or reference number...')}
         density={density}
         onDensityChange={setDensity}
         onRefresh={() => {
@@ -1208,7 +1215,7 @@ function CashierPaymentsContent() {
         }}
         activeFilterCount={activeFiltersCount}
         onResetFilters={handleClearFilters}
-        createButtonLabel="+ Record Payment"
+        createButtonLabel={t('+ Record Payment')}
         onCreate={() => setShowPayModal(true)}
         customFilterNodes={
           <div className="flex items-center gap-2">
@@ -1238,11 +1245,11 @@ function CashierPaymentsContent() {
         onRowClick={(row) => setSelectedReceipt(row)}
         onRowEdit={(row) => setSelectedReceipt(row)}
         emptyStateProps={{
-          title: 'No Payment Receipts Found',
-          description: 'No payment transactions match your search query or payment method filter.',
+          title: t('No Payment Receipts Found'),
+          description: t('No payment transactions match your search query or payment method filter.'),
           isFilterActive: activeFiltersCount > 0 || query.length > 0,
           onResetFilters: handleClearFilters,
-          createLabel: 'Record New Payment',
+          createLabel: t('Record New Payment'),
           onCreate: () => setShowPayModal(true)
         }}
       />
@@ -1257,8 +1264,8 @@ function CashierPaymentsContent() {
                   <Landmark className="w-6 h-6" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-black text-white">Record Advanced Cashier Payment</h3>
-                  <p className="text-xs text-slate-400 font-mono">Ledger Reconciliation & Pre-payment Handler</p>
+                  <h3 className="text-lg font-black text-white">{t("Record Advanced Cashier Payment")}</h3>
+                  <p className="text-xs text-slate-400 font-mono">{t("Ledger Reconciliation & Pre-payment Handler")}</p>
                 </div>
               </div>
               <button
@@ -1431,7 +1438,7 @@ function CashierPaymentsContent() {
               {targetInvoice && advancePaymentBalance > 0 && (
                 <div className="bg-slate-950/80 border border-emerald-500/20 rounded-2xl p-4 space-y-3 animate-in slide-in-from-top duration-200">
                   <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-                    <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider block">Wallet Allocation Calculator</span>
+                    <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider block">{t("Wallet Allocation Calculator")}</span>
                     <label className="flex items-center gap-2 text-xs font-bold text-slate-300 cursor-pointer select-none">
                       <input
                         type="checkbox"
@@ -1445,7 +1452,7 @@ function CashierPaymentsContent() {
                         }}
                         className="rounded border-slate-800 bg-slate-900 text-emerald-500 focus:ring-0 focus:ring-offset-0 cursor-pointer"
                       />
-                      <span>Apply Wallet Balance</span>
+                      <span>{t("Apply Wallet Balance")}</span>
                     </label>
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-xs font-mono">
@@ -1483,7 +1490,7 @@ function CashierPaymentsContent() {
                   type="submit"
                   className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs shadow-lg shadow-emerald-600/30"
                 >
-                  Post Ledger Settlement
+                  {t("Post Ledger Settlement")}
                 </button>
               </div>
             </form>
@@ -1615,7 +1622,7 @@ function CashierPaymentsContent() {
                   <button
                     onClick={() => setShowQrModal(selectedReceipt)}
                     className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-all border border-slate-700 cursor-pointer"
-                    title="View QR Code"
+                    title={t('View QR Code')}
                   >
                     <QrCode className="w-4 h-4 text-emerald-400" />
                   </button>

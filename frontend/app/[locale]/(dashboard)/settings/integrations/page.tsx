@@ -5,6 +5,9 @@ import { Cpu, CheckCircle2, AlertTriangle, RefreshCw, Key, Webhook, Mail, PhoneC
 import { useLocale } from 'next-intl';
 import { apiClient } from '@/services/api.service';
 import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -18,9 +21,8 @@ const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1339'
 
 export default function IntegrationsSettingsPage() {
   const locale = useLocale();
-  const t = (key: string) => i18nT(key, locale);
-
-  const [strapiStatus, setStrapiStatus] = useState<PingResult | null>(null);
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const [strapiStatus, setStrapiStatus] = useState<PingResult | null>(null);
   const [pinging, setPinging] = useState(false);
 
   const pingStrapi = useCallback(async () => {

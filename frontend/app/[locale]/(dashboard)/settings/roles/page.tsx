@@ -3,13 +3,20 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { ShieldCheck, Plus, CheckCircle2, Lock, Users, Key, Search, RefreshCw, Save, Activity } from 'lucide-react';
+import { useLocale } from 'next-intl';
 import { PageContainer, PageHeader } from '@/components/shared/layout/PageContainer';
 import { userService } from '@/services/user.service';
 import { apiClient } from '@/services/api.service';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
 import { toast } from 'sonner';
 
 export default function RolesPermissionsPage() {
-  const [roles, setRoles] = useState<any[]>([]);
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const [roles, setRoles] = useState<any[]>([]);
   const [selectedRoleId, setSelectedRoleId] = useState<string | number>('');
   const [permissions, setPermissions] = useState<any>({});
   const [roleName, setRoleName] = useState('');
@@ -36,8 +43,8 @@ export default function RolesPermissionsPage() {
         setSelectedRoleId(activeId);
         await loadRolePermissions(activeId);
       }
-    } catch (e) {
-      toast.error('Failed to load system roles.');
+    } catch {
+      toast.error(t('Failed to load system roles.'));
     } finally {
       setIsLoading(false);
     }
@@ -50,8 +57,8 @@ export default function RolesPermissionsPage() {
       setRoleName(roleDetails.name || '');
       setRoleDescription(roleDetails.description || '');
       setPermissions(roleDetails.permissions || {});
-    } catch (e) {
-      toast.error('Failed to load role permissions details.');
+    } catch {
+      toast.error(t('Failed to load role permissions details.'));
     }
   };
 
@@ -82,10 +89,10 @@ export default function RolesPermissionsPage() {
         description: roleDescription,
         permissions: permissions
       });
-      toast.success('Enterprise role permissions matrix updated successfully!');
+      toast.success(t('Enterprise role permissions matrix updated successfully!'));
       loadRoles(selectedRoleId);
-    } catch (e) {
-      toast.error('Failed to save role permissions.');
+    } catch {
+      toast.error(t('Failed to save role permissions.'));
     } finally {
       setIsSaving(false);
     }
@@ -94,7 +101,7 @@ export default function RolesPermissionsPage() {
   const handleCreateRole = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newRoleName) {
-      toast.error('Role name is required.');
+      toast.error(t('Role name is required.'));
       return;
     }
     setIsCreating(true);
@@ -103,13 +110,13 @@ export default function RolesPermissionsPage() {
         name: newRoleName,
         description: newRoleDesc
       });
-      toast.success(`Role "${newRoleName}" created successfully.`);
+      toast.success(`${t('Role')} "${newRoleName}" ${t('created successfully.')}`);
       setIsCreateModalOpen(false);
       setNewRoleName('');
       setNewRoleDesc('');
       loadRoles(res.data?.role?.id || '');
-    } catch (e) {
-      toast.error('Failed to create custom role.');
+    } catch {
+      toast.error(t('Failed to create custom role.'));
     } finally {
       setIsCreating(false);
     }
@@ -117,24 +124,24 @@ export default function RolesPermissionsPage() {
 
   const getNamespaceDisplayName = (ns: string) => {
     const mapping: Record<string, string> = {
-      'api::student': 'Student SIS (Information System)',
-      'api::teacher': 'Teacher Faculty Roster',
-      'api::parent': 'Parent Guardian Directory',
-      'api::worker': 'Support Staff Registry',
-      'api::timetable-slot': 'Weekly Timetables & Classes',
-      'api::subject': 'Academic Subjects & Syllabus',
-      'api::homework': 'LMS Homework Assignments',
-      'api::student-grade': 'Gradebook Marks & Report Cards',
-      'api::academic-certificate': 'Verifiable Certificates Registry',
-      'api::promotion-record': 'Bulk Promotion Command Console',
-      'api::invoice': 'Financial Invoices & Billing',
-      'api::payment': 'Payment Logs & Transactions',
-      'api::department': 'School Academic Departments',
-      'api::program': 'Linked Curriculum Programs',
-      'api::section': 'Academic Sections',
-      'api::academic-year': 'Academic Sessions/Years',
-      'api::academic-term': 'Academic Semesters/Terms',
-      'plugin::users-permissions': 'User Authentication & Access control',
+      'api::student': t('Student SIS (Information System)'),
+      'api::teacher': t('Teacher Faculty Roster'),
+      'api::parent': t('Parent Guardian Directory'),
+      'api::worker': t('Support Staff Registry'),
+      'api::timetable-slot': t('Weekly Timetables & Classes'),
+      'api::subject': t('Academic Subjects & Syllabus'),
+      'api::homework': t('LMS Homework Assignments'),
+      'api::student-grade': t('Gradebook Marks & Report Cards'),
+      'api::academic-certificate': t('Verifiable Certificates Registry'),
+      'api::promotion-record': t('Bulk Promotion Command Console'),
+      'api::invoice': t('Financial Invoices & Billing'),
+      'api::payment': t('Payment Logs & Transactions'),
+      'api::department': t('School Academic Departments'),
+      'api::program': t('Linked Curriculum Programs'),
+      'api::section': t('Academic Sections'),
+      'api::academic-year': t('Academic Sessions/Years'),
+      'api::academic-term': t('Academic Semesters/Terms'),
+      'plugin::users-permissions': t('User Authentication & Access control'),
     };
 
     const cleanNs = ns.replace(/\.[^.]+$/, '');
@@ -166,7 +173,7 @@ export default function RolesPermissionsPage() {
         actions: actionsList
       };
     }).filter(item => item.actions.length > 0);
-  }, [permissions]);
+  }, [permissions, locale]);
 
   const filteredPermissions = useMemo(() => {
     if (!searchQuery) return permissionItems;
@@ -179,23 +186,23 @@ export default function RolesPermissionsPage() {
   return (
     <PageContainer>
       <PageHeader
-        title="Enterprise Roles & Permissions Matrix"
-        description="Configure role-based access control (RBAC), granular module privileges, and security boundaries."
+        title={t('Enterprise Roles & Permissions Matrix')}
+        description={t('Configure role-based access control (RBAC), granular module privileges, and security boundaries.')}
       >
         <div className="flex gap-2">
           <button
             onClick={() => loadRoles(selectedRoleId)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border bg-card hover:bg-muted text-xs font-semibold transition-colors"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border bg-card hover:bg-muted text-xs font-semibold transition-colors cursor-pointer"
           >
-            <RefreshCw className="w-3.5 h-3.5 text-black" />
-            <span className='text-blue-700'>Sync live roles</span>
+            <RefreshCw className="w-3.5 h-3.5" />
+            <span>{t('Sync live roles')}</span>
           </button>
           <button
             onClick={() => setIsCreateModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/95 transition-all shadow-md shadow-primary/20"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/95 transition-all shadow-md shadow-primary/20 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
-            <span>Create Custom Role</span>
+            <span>{t('Create Custom Role')}</span>
           </button>
         </div>
       </PageHeader>
@@ -203,13 +210,13 @@ export default function RolesPermissionsPage() {
       {isLoading ? (
         <div className="flex flex-col items-center justify-center py-20">
           <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin mb-3" />
-          <p className="text-xs text-muted-foreground font-medium">Loading Strapi roles registry...</p>
+          <p className="text-xs text-muted-foreground font-medium">{t('Loading Strapi roles registry...')}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Roles list */}
           <div className="space-y-3">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Platform Roles</h3>
+            <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{t('Platform Roles')}</h3>
             {roles.map((r) => (
               <div
                 key={r.id}
@@ -221,8 +228,8 @@ export default function RolesPermissionsPage() {
                 }`}
               >
                 <div className="space-y-1">
-                  <h4 className="text-xs font-bold text-foreground">{r.name}</h4>
-                  <p className="text-[10px] text-muted-foreground line-clamp-2">{r.description || 'No description provided.'}</p>
+                  <h4 className="text-xs font-bold text-foreground">{t(r.name)}</h4>
+                  <p className="text-[10px] text-muted-foreground line-clamp-2">{t(r.description || 'No description provided.')}</p>
                 </div>
               </div>
             ))}
@@ -234,9 +241,9 @@ export default function RolesPermissionsPage() {
               <div>
                 <h3 className="text-sm font-black text-foreground flex items-center gap-2">
                   <Lock className="w-4.5 h-4.5 text-primary" />
-                  <span>Privilege Matrix: {roles.find(r => r.id === selectedRoleId)?.name}</span>
+                  <span>{t('Privilege Matrix')}: {t(roles.find(r => r.id === selectedRoleId)?.name || '')}</span>
                 </h3>
-                <p className="text-[10px] text-muted-foreground">Toggle API permissions and security boundaries.</p>
+                <p className="text-[10px] text-muted-foreground">{t('Toggle API permissions and security boundaries.')}</p>
               </div>
 
               <div className="flex items-center gap-3">
@@ -246,7 +253,7 @@ export default function RolesPermissionsPage() {
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search modules..."
+                    placeholder={t('Search modules...')}
                     className="pl-8 pr-3 py-1.5 bg-muted rounded-xl text-xs focus:outline-none border-none w-44"
                   />
                 </div>
@@ -256,7 +263,7 @@ export default function RolesPermissionsPage() {
                   className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-bold hover:bg-primary/95 disabled:opacity-50 transition-all shadow-md shadow-primary/20 cursor-pointer"
                 >
                   <Save className="w-3.5 h-3.5" />
-                  <span>Save Privileges</span>
+                  <span>{t('Save Privileges')}</span>
                 </button>
               </div>
             </div>
@@ -264,7 +271,7 @@ export default function RolesPermissionsPage() {
             {/* Matrix Form inputs */}
             <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-2">
               <div className="space-y-1 text-xs">
-                <label className="text-[10px] font-black text-muted-foreground block">Role Details Name</label>
+                <label className="text-[10px] font-black text-muted-foreground block">{t('Role Details Name')}</label>
                 <input
                   type="text"
                   value={roleName}
@@ -274,7 +281,7 @@ export default function RolesPermissionsPage() {
               </div>
 
               <div className="space-y-1 text-xs">
-                <label className="text-[10px] font-black text-muted-foreground block">Role Description</label>
+                <label className="text-[10px] font-black text-muted-foreground block">{t('Role Description')}</label>
                 <textarea
                   value={roleDescription}
                   onChange={(e) => setRoleDescription(e.target.value)}
@@ -284,7 +291,7 @@ export default function RolesPermissionsPage() {
               </div>
 
               <div className="space-y-4">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">API Namespace Controllers</h3>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{t('API Namespace Controllers')}</h3>
                 {filteredPermissions.map(item => (
                   <div key={item.namespace} className="p-4 rounded-xl border border-border bg-muted/20 space-y-3">
                     <div className="flex justify-between items-center">
@@ -315,7 +322,7 @@ export default function RolesPermissionsPage() {
                   </div>
                 ))}
                 {filteredPermissions.length === 0 && (
-                  <p className="text-center py-6 text-xs text-muted-foreground">No matching permissions found.</p>
+                  <p className="text-center py-6 text-xs text-muted-foreground">{t('No matching permissions found.')}</p>
                 )}
               </div>
             </div>
@@ -327,12 +334,12 @@ export default function RolesPermissionsPage() {
       {isCreateModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="w-full max-w-md bg-card border border-border rounded-2xl shadow-2xl p-6 relative">
-            <h3 className="text-lg font-bold text-foreground mb-1">Create Custom Role</h3>
-            <p className="text-xs text-muted-foreground mb-5">Define a new system access role. Permissions can be mapped after creation.</p>
+            <h3 className="text-lg font-bold text-foreground mb-1">{t('Create Custom Role')}</h3>
+            <p className="text-xs text-muted-foreground mb-5">{t('Define a new system access role. Permissions can be mapped after creation.')}</p>
 
             <form onSubmit={handleCreateRole} className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-foreground">Role Name</label>
+                <label className="text-xs font-semibold text-foreground">{t('Role Name')}</label>
                 <input
                   type="text"
                   required
@@ -344,11 +351,11 @@ export default function RolesPermissionsPage() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-foreground">Role Description</label>
+                <label className="text-xs font-semibold text-foreground">{t('Role Description')}</label>
                 <textarea
                   value={newRoleDesc}
                   onChange={(e) => setNewRoleDesc(e.target.value)}
-                  placeholder="Describe the scope of this custom access role..."
+                  placeholder={t('Describe the scope of this custom access role...')}
                   rows={3}
                   className="w-full rounded-xl border border-border bg-background px-3.5 py-2.5 text-sm text-foreground focus:outline-none"
                 />
@@ -358,22 +365,22 @@ export default function RolesPermissionsPage() {
                 <button
                   type="button"
                   onClick={() => setIsCreateModalOpen(false)}
-                  className="px-4 py-2.5 rounded-xl border border-border bg-background hover:bg-muted text-xs font-semibold text-muted-foreground"
+                  className="px-4 py-2.5 rounded-xl border border-border bg-background hover:bg-muted text-xs font-semibold text-muted-foreground cursor-pointer"
                 >
-                  Cancel
+                  {t('Cancel')}
                 </button>
                 <button
                   type="submit"
                   disabled={isCreating}
-                  className="px-5 py-2.5 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/95 disabled:opacity-50"
+                  className="px-5 py-2.5 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/95 disabled:opacity-50 cursor-pointer"
                 >
-                  {isCreating ? 'Creating...' : 'Create Role'}
+                  {isCreating ? t('Creating...') : t('Create Role')}
                 </button>
               </div>
             </form>
             <button
               onClick={() => setIsCreateModalOpen(false)}
-              className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground"
+              className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer"
             >
               ✕
             </button>

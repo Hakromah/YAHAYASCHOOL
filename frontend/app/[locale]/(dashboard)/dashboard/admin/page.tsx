@@ -19,7 +19,10 @@ import { formatNumber, formatCurrency } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useLocale } from 'next-intl';
-import { getTranslation } from '@/components/erp/EnterpriseModuleShell';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
 
 const DEFAULT_WIDGETS: WidgetConfig[] = [
   // Layer 1 — Summary Cards
@@ -45,7 +48,7 @@ const DEFAULT_WIDGETS: WidgetConfig[] = [
 
 export default function SuperAdminDashboardPage() {
   const locale = useLocale();
-  const t = (key: string) => getTranslation(key, locale);
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
 
   const [data, setData] = useState<AdminDashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);

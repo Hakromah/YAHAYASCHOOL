@@ -1,5 +1,11 @@
 "use client";
 
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
+
 import { Fragment, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { useSection } from "@/providers/SectionContext";
@@ -22,7 +28,9 @@ interface Subject {
 }
 
 export default function SubjectsPage() {
-  const params = useParams();
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const params = useParams();
   const sectionId = params.sectionId as string;
 
   const { section, isLoading: sectionLoading } = useSection();

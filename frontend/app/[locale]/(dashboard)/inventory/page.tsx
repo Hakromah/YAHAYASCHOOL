@@ -1,5 +1,11 @@
 'use client';
 
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   Package, Warehouse, Plus, AlertCircle, RefreshCw, FileText,
@@ -790,7 +796,9 @@ function SettingsModal({
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function InventoryPage() {
-  const [warehouses, setWarehouses] = useState<InventoryWarehouse[]>([]);
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const [warehouses, setWarehouses] = useState<InventoryWarehouse[]>([]);
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
@@ -908,7 +916,7 @@ export default function InventoryPage() {
   const itemColumns = useMemo<ColumnDef<InventoryItem, any>[]>(() => [
     {
       accessorKey: 'itemCode',
-      header: 'SKU & Item Name',
+      header: t('SKU & Item Name'),
       cell: ({ row }) => {
         const item = row.original;
         return (
@@ -922,7 +930,7 @@ export default function InventoryPage() {
     },
     {
       accessorKey: 'warehouseName',
-      header: 'Warehouse',
+      header: t('Warehouse'),
       cell: ({ row }) => (
         <div>
           <span className="font-semibold text-slate-900 dark:text-white text-xs block">{row.original.warehouseName || '—'}</span>
@@ -932,7 +940,7 @@ export default function InventoryPage() {
     },
     {
       accessorKey: 'quantityOnHand',
-      header: 'Quantity on Hand',
+      header: t('Quantity on Hand'),
       cell: ({ row }) => {
         const item = row.original;
         const isLow = item.quantityOnHand <= item.minimumReorderLevel;
@@ -948,7 +956,7 @@ export default function InventoryPage() {
     },
     {
       accessorKey: 'totalValueUSD',
-      header: 'Valuation & Unit Cost',
+      header: t('Valuation & Unit Cost'),
       cell: ({ row }) => (
         <div>
           <span className="font-mono text-xs font-extrabold text-emerald-600 dark:text-emerald-400 block">{inventorySettings.currency} {row.original.totalValueUSD.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
@@ -958,12 +966,12 @@ export default function InventoryPage() {
     },
     {
       accessorKey: 'status',
-      header: 'Status',
+      header: t('Status'),
       cell: ({ row }) => <StatusBadge status={row.original.status} size="sm" />,
     },
     {
       id: 'actions',
-      header: 'Actions',
+      header: t('Actions'),
       cell: ({ row }) => {
         const item = row.original;
         return (
@@ -989,7 +997,7 @@ export default function InventoryPage() {
   const movementColumns = useMemo<ColumnDef<InventoryMovement, any>[]>(() => [
     {
       accessorKey: 'movementNumber',
-      header: 'Movement No.',
+      header: t('Movement No.'),
       cell: ({ row }) => {
         const mov = row.original;
         const meta = movementTypeLabel(mov.type);
@@ -1003,7 +1011,7 @@ export default function InventoryPage() {
     },
     {
       accessorKey: 'itemName',
-      header: 'Item',
+      header: t('Item'),
       cell: ({ row }) => (
         <div>
           <p className="font-bold text-xs text-slate-900 dark:text-white">{row.original.itemName || '—'}</p>
@@ -1013,7 +1021,7 @@ export default function InventoryPage() {
     },
     {
       accessorKey: 'quantity',
-      header: 'Quantity',
+      header: t('Quantity'),
       cell: ({ row }) => {
         const mov = row.original;
         const isIn = mov.type === 'goods_receipt';
@@ -1026,7 +1034,7 @@ export default function InventoryPage() {
     },
     {
       accessorKey: 'totalCostUSD',
-      header: 'Total Cost',
+      header: t('Total Cost'),
       cell: ({ row }) => (
         <span className="font-mono text-xs font-bold text-slate-900 dark:text-white">
           {inventorySettings.currency} {row.original.totalCostUSD.toLocaleString('en-US', { minimumFractionDigits: 2 })}
@@ -1035,7 +1043,7 @@ export default function InventoryPage() {
     },
     {
       accessorKey: 'performedBy',
-      header: 'Performed By',
+      header: t('Performed By'),
       cell: ({ row }) => (
         <div>
           <p className="text-xs font-semibold text-slate-900 dark:text-white">{row.original.performedBy || '—'}</p>
@@ -1045,7 +1053,7 @@ export default function InventoryPage() {
     },
     {
       accessorKey: 'referenceDocNumber',
-      header: 'Reference',
+      header: t('Reference'),
       cell: ({ row }) => (
         <div>
           <p className="font-mono text-[11px] text-indigo-500">{row.original.referenceDocNumber || '—'}</p>
@@ -1058,8 +1066,8 @@ export default function InventoryPage() {
   return (
     <>
       <EnterpriseModuleShell
-        title="Inventory & Supply Chain ERP"
-        description="Multi-warehouse stock management with GRN receiving, stock issue tracking, FIFO/WAC valuation, automatic COGS & inventory asset General Ledger postings."
+        title={t('Inventory & Supply Chain ERP')}
+        description={t('Multi-warehouse stock management with GRN receiving, stock issue tracking, FIFO/WAC valuation, automatic COGS & inventory asset General Ledger postings.')}
         breadcrumbs={[{ label: 'School ERP' }, { label: 'Inventory' }]}
         icon={<Package className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />}
         recordCount={activeTab === 'items' ? filteredItems.length : filteredMovements.length}

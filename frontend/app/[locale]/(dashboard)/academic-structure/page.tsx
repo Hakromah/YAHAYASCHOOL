@@ -1,5 +1,11 @@
 'use client';
 
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
+
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
@@ -14,8 +20,10 @@ import { StatusBadge } from '@/components/erp/StatusBadge';
 import { RelationshipChip } from '@/components/erp/RelationshipChip';
 
 export default function AcademicStructurePage() {
-  const params = useParams();
-  const locale = (params?.locale as string) || 'en';
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const params = useParams();
+  
 
   const [academicYears, setAcademicYears] = useState<AcademicYear[]>([]);
   const [campuses, setCampuses] = useState<Campus[]>([]);
@@ -64,7 +72,7 @@ export default function AcademicStructurePage() {
           <button
             onClick={() => window.location.reload()}
             className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors"
-            title="Refresh Structure"
+            title={t('Refresh Structure')}
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-sky-500' : ''}`} />
           </button>

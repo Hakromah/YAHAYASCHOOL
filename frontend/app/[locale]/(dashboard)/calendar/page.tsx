@@ -10,8 +10,13 @@ import {
 import { cmsService } from '@/services/cms.service';
 import type { EventEntity, AnnouncementEntity } from '@/types/cms.types';
 import { toast } from 'sonner';
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
 
-// â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function todayISO() {
   return new Date().toISOString().split('T')[0];
@@ -22,10 +27,6 @@ function isoToDisplay(iso: string) {
   try {
     return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
   } catch { return iso; }
-}
-
-function sameDay(a: string, b: string) {
-  return a.slice(0, 10) === b.slice(0, 10);
 }
 
 function eventTypeColor(type?: string) {
@@ -46,9 +47,12 @@ function priorityColor(p: string) {
   return 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700';
 }
 
-// â”€â”€â”€ Event Detail Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Event Detail Modal ───────────────────────────────────────────────────────
 
 function EventDetailModal({ event, onClose }: { event: EventEntity; onClose: () => void }) {
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150">
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-lg shadow-2xl flex flex-col max-h-[90vh]">
@@ -56,7 +60,7 @@ function EventDetailModal({ event, onClose }: { event: EventEntity; onClose: () 
           <div className="space-y-1">
             {event.eventType && (
               <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold border ${eventTypeColor(event.eventType)}`}>
-                {event.eventType}
+                {t(event.eventType)}
               </span>
             )}
             <h3 className="font-black text-slate-900 dark:text-white text-base leading-tight">{event.title}</h3>
@@ -68,11 +72,11 @@ function EventDetailModal({ event, onClose }: { event: EventEntity; onClose: () 
         <div className="overflow-y-auto p-5 space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 space-y-1">
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide flex items-center gap-1"><CalendarIcon className="w-3 h-3" /> Start</p>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide flex items-center gap-1"><CalendarIcon className="w-3 h-3" /> {t('Start')}</p>
               <p className="text-xs font-black text-slate-900 dark:text-white">{isoToDisplay(event.startDate)}</p>
             </div>
             <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 space-y-1">
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide flex items-center gap-1"><CalendarIcon className="w-3 h-3" /> End</p>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide flex items-center gap-1"><CalendarIcon className="w-3 h-3" /> {t('End')}</p>
               <p className="text-xs font-black text-slate-900 dark:text-white">{isoToDisplay(event.endDate)}</p>
             </div>
           </div>
@@ -88,12 +92,12 @@ function EventDetailModal({ event, onClose }: { event: EventEntity; onClose: () 
           {event.registrationRequired && (
             <div className="flex items-center justify-between p-3 rounded-xl border border-emerald-200 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-950/30">
               <div>
-                <p className="text-xs font-bold text-emerald-700 dark:text-emerald-300">Registration Required</p>
-                {event.capacity && <p className="text-[11px] text-emerald-600 dark:text-emerald-400">Capacity: {event.capacity.toLocaleString('en-US')} seats</p>}
-                {event.registrationDeadline && <p className="text-[11px] text-emerald-600 dark:text-emerald-400">Deadline: {isoToDisplay(event.registrationDeadline)}</p>}
+                <p className="text-xs font-bold text-emerald-700 dark:text-emerald-300">{t('Registration Required')}</p>
+                {event.capacity && <p className="text-[11px] text-emerald-600 dark:text-emerald-400">{t('Capacity')}: {event.capacity.toLocaleString()} {t('seats')}</p>}
+                {event.registrationDeadline && <p className="text-[11px] text-emerald-600 dark:text-emerald-400">{t('Deadline')}: {isoToDisplay(event.registrationDeadline)}</p>}
               </div>
-              <Link href={`/cms/events`} className="px-3 py-1.5 rounded-xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-500 transition-colors">
-                Register â†’
+              <Link href="/cms/events" className="px-3 py-1.5 rounded-xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-500 transition-colors">
+                {t('Register')} →
               </Link>
             </div>
           )}
@@ -103,7 +107,7 @@ function EventDetailModal({ event, onClose }: { event: EventEntity; onClose: () 
   );
 }
 
-// â”€â”€â”€ Mini Calendar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Mini Calendar ────────────────────────────────────────────────────────────
 
 function MiniCalendar({
   year, month, events, onDayClick, selectedDay
@@ -136,7 +140,6 @@ function MiniCalendar({
     ...Array(firstDow).fill(null),
     ...Array.from({ length: daysInMonth }, (_, i) => i + 1)
   ];
-  // Pad to complete last week
   while (cells.length % 7 !== 0) cells.push(null);
 
   return (
@@ -173,9 +176,12 @@ function MiniCalendar({
   );
 }
 
-// â”€â”€â”€ Main Page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function SchoolCalendarPage() {
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+
   const [events, setEvents]               = useState<EventEntity[]>([]);
   const [announcements, setAnnouncements] = useState<AnnouncementEntity[]>([]);
   const [loading, setLoading]             = useState(true);
@@ -196,11 +202,11 @@ export default function SchoolCalendarPage() {
       setAnnouncements(anns);
     } catch (err) {
       console.error(err);
-      toast.error('Failed to load calendar data.');
+      toast.error(t('Failed to load calendar data.'));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
@@ -255,22 +261,22 @@ export default function SchoolCalendarPage() {
         <div>
           <h1 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-slate-100 flex items-center gap-2.5">
             <CalendarIcon className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
-            Enterprise School Calendar
+            {t('Enterprise School Calendar')}
           </h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Institutional master calendar â€” academic events, Islamic observances, examinations, and public ceremonies.
+            {t('Institutional master calendar — academic events, Islamic observances, examinations, and public ceremonies.')}
           </p>
         </div>
         <div className="flex items-center gap-2">
           <button onClick={goToday} className="px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition-colors cursor-pointer">
-            Today
+            {t('Today')}
           </button>
-          <button onClick={() => { loadData(); toast.success('Calendar refreshed.'); }} className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 transition-colors cursor-pointer">
+          <button onClick={() => { loadData(); toast.success(t('Calendar refreshed.')); }} className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 transition-colors cursor-pointer">
             <RefreshCw className="w-4 h-4" />
           </button>
           <Link href="/cms/events" className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 text-white text-xs font-black shadow-lg shadow-emerald-600/30 hover:scale-[1.02] transition-all">
             <Plus className="w-4 h-4 stroke-[3]" />
-            Manage Events
+            {t('Manage Events')}
           </Link>
         </div>
       </div>
@@ -281,13 +287,13 @@ export default function SchoolCalendarPage() {
           onClick={() => setTypeFilter('all')}
           className={`px-3 py-1 rounded-full text-xs font-bold border transition-colors cursor-pointer ${ typeFilter === 'all' ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-emerald-400' }`}
         >
-          All Events
+          {t('All Events')}
         </button>
-        {eventTypes.map(t => (
-          <button key={t} onClick={() => setTypeFilter(typeFilter === t ? 'all' : t)}
-            className={`px-3 py-1 rounded-full text-xs font-bold border transition-colors cursor-pointer ${ typeFilter === t ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-emerald-400' }`}
+        {eventTypes.map(typ => (
+          <button key={typ} onClick={() => setTypeFilter(typeFilter === typ ? 'all' : typ)}
+            className={`px-3 py-1 rounded-full text-xs font-bold border transition-colors cursor-pointer ${ typeFilter === typ ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-emerald-400' }`}
           >
-            {t}
+            {t(typ)}
           </button>
         ))}
       </div>
@@ -301,7 +307,7 @@ export default function SchoolCalendarPage() {
               <ChevronLeft className="w-4 h-4" />
             </button>
             <h2 className="text-base font-black text-slate-900 dark:text-white">
-              {MONTH_NAMES[month]} {year}
+              {t(MONTH_NAMES[month])} {year}
             </h2>
             <button onClick={nextMonth} className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors cursor-pointer">
               <ChevronRight className="w-4 h-4" />
@@ -312,10 +318,10 @@ export default function SchoolCalendarPage() {
 
           {/* Legend */}
           <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm space-y-2">
-            <h4 className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">Event Types</h4>
-            {eventTypes.map(t => (
-              <div key={t} className="flex items-center gap-2">
-                <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-bold border ${eventTypeColor(t)}`}>{t}</span>
+            <h4 className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">{t('Event Types')}</h4>
+            {eventTypes.map(typ => (
+              <div key={typ} className="flex items-center gap-2">
+                <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-bold border ${eventTypeColor(typ)}`}>{t(typ)}</span>
               </div>
             ))}
           </div>
@@ -326,16 +332,16 @@ export default function SchoolCalendarPage() {
               <div className="flex items-center justify-between">
                 <h4 className="text-xs font-black text-slate-900 dark:text-white flex items-center gap-1.5">
                   <Megaphone className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
-                  Announcements
+                  {t('Announcements')}
                 </h4>
-                <Link href="/announcements" className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold hover:underline">View all â†’</Link>
+                <Link href="/announcements" className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold hover:underline">{t('View all →')}</Link>
               </div>
               <div className="space-y-2">
                 {upcomingAnnouncements.map(a => (
                   <div key={a.id} className="p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 space-y-1">
                     <div className="flex items-center gap-1.5">
-                      <span className={`px-1.5 py-0.5 rounded text-[9px] font-black border ${priorityColor(a.priority)}`}>{a.priority.toUpperCase()}</span>
-                      <span className="text-[10px] text-slate-400 capitalize">{a.targetAudience}</span>
+                      <span className={`px-1.5 py-0.5 rounded text-[9px] font-black border ${priorityColor(a.priority)}`}>{t(a.priority.toUpperCase())}</span>
+                      <span className="text-[10px] text-slate-400 capitalize">{t(a.targetAudience)}</span>
                     </div>
                     <p className="text-xs font-bold text-slate-800 dark:text-white leading-tight line-clamp-2">{a.title}</p>
                   </div>
@@ -349,11 +355,11 @@ export default function SchoolCalendarPage() {
         <div className="lg:col-span-2 space-y-3">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-black text-slate-900 dark:text-white">
-              {selectedDay ? `Events on ${isoToDisplay(selectedDay)}` : `Events in ${MONTH_NAMES[month]} ${year}`}
+              {selectedDay ? `${t('Events on')} ${isoToDisplay(selectedDay)}` : `${t('Events in')} ${t(MONTH_NAMES[month])} ${year}`}
               <span className="ml-2 text-emerald-600 dark:text-emerald-400">({displayEvents.length})</span>
             </h3>
             {selectedDay && (
-              <button onClick={() => setSelectedDay(null)} className="text-xs text-slate-400 hover:text-slate-700 dark:hover:text-white font-bold transition-colors cursor-pointer">Show month Ã—</button>
+              <button onClick={() => setSelectedDay(null)} className="text-xs text-slate-400 hover:text-slate-700 dark:hover:text-white font-bold transition-colors cursor-pointer">{t('Show month ×')}</button>
             )}
           </div>
 
@@ -367,11 +373,11 @@ export default function SchoolCalendarPage() {
             <div className="flex flex-col items-center justify-center p-12 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-center">
               <CalendarIcon className="w-10 h-10 text-slate-300 dark:text-slate-600 mb-3" />
               <p className="text-sm font-bold text-slate-600 dark:text-slate-400">
-                {selectedDay ? 'No events scheduled for this day.' : 'No events this month.'}
+                {selectedDay ? t('No events scheduled for this day.') : t('No events this month.')}
               </p>
-              <p className="text-xs text-slate-400 mt-1">Events created in the CMS Events module will appear here.</p>
+              <p className="text-xs text-slate-400 mt-1">{t('Events created in the CMS Events module will appear here.')}</p>
               <Link href="/cms/events" className="mt-4 px-4 py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-500 transition-colors">
-                Go to Events CMS â†’
+                {t('Go to Events CMS →')}
               </Link>
             </div>
           ) : (
@@ -387,11 +393,11 @@ export default function SchoolCalendarPage() {
                       <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                         {ev.eventType && (
                           <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${eventTypeColor(ev.eventType)}`}>
-                            {ev.eventType}
+                            {t(ev.eventType)}
                           </span>
                         )}
                         {ev.registrationRequired && (
-                          <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-300 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-700 text-[10px] font-bold">Registration Required</span>
+                          <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-300 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-700 text-[10px] font-bold">{t('Registration Required')}</span>
                         )}
                       </div>
                       <h4 className="font-black text-slate-900 dark:text-white text-sm group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors truncate">{ev.title}</h4>
@@ -402,7 +408,7 @@ export default function SchoolCalendarPage() {
                     <div className="text-right shrink-0 space-y-1">
                       <p className="text-[11px] font-bold text-slate-700 dark:text-slate-200 font-mono whitespace-nowrap">{isoToDisplay(ev.startDate)}</p>
                       {ev.startDate !== ev.endDate && (
-                        <p className="text-[10px] text-slate-400 font-mono whitespace-nowrap">â†’ {isoToDisplay(ev.endDate)}</p>
+                        <p className="text-[10px] text-slate-400 font-mono whitespace-nowrap">→ {isoToDisplay(ev.endDate)}</p>
                       )}
                     </div>
                   </div>
@@ -415,12 +421,12 @@ export default function SchoolCalendarPage() {
                       )}
                       {ev.capacity && (
                         <span className="flex items-center gap-1">
-                          <Users className="w-3 h-3" /> {ev.capacity.toLocaleString('en-US')} seats
+                          <Users className="w-3 h-3" /> {ev.capacity.toLocaleString()} {t('seats')}
                         </span>
                       )}
                     </div>
                     <button className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold hover:underline flex items-center gap-1">
-                      Details <ExternalLink className="w-3 h-3" />
+                      {t('Details')} <ExternalLink className="w-3 h-3" />
                     </button>
                   </div>
                 </div>

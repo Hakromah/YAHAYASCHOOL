@@ -1,6 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
+
 import React, { useState, useEffect } from 'react';
 import { 
   Users, BookOpen, Clock, Calendar, RefreshCw, Save, CheckCircle2, 
@@ -14,7 +20,9 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
 export default function TeacherWorkloadPage() {
-  const [offerings, setOfferings] = useState<any[]>([]);
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const [offerings, setOfferings] = useState<any[]>([]);
   const [selectedOfferingId, setSelectedOfferingId] = useState<string | number>('');
   const [weeklyProgress, setWeeklyProgress] = useState<any[]>([]);
   
@@ -156,8 +164,8 @@ export default function TeacherWorkloadPage() {
   return (
     <PageContainer>
       <PageHeader
-        title="Teaching Progress & Workload Engine"
-        description="Verify teaching loads, track weekly lesson plan delivery, and manage curriculum compliance."
+        title={t('Teaching Progress & Workload Engine')}
+        description={t('Verify teaching loads, track weekly lesson plan delivery, and manage curriculum compliance.')}
       >
         <button
           onClick={loadWorkload}

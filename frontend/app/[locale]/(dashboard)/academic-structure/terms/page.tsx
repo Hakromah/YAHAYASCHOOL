@@ -12,6 +12,9 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { t as i18nT } from '@/lib/i18n-dict';
 
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
 // ─────────────────────────────────────────────────────────────────────────────
@@ -70,9 +73,8 @@ function daysLeft(endDate: string) {
 // ─────────────────────────────────────────────────────────────────────────────
 export default function AcademicTermsPage() {
   const locale = useLocale();
-  const t = (key: string) => i18nT(key, locale);
-
-  const [terms, setTerms] = useState<AcademicTerm[]>([]);
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const [terms, setTerms] = useState<AcademicTerm[]>([]);
   const [academicYears, setAcademicYears] = useState<AcademicYear[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');

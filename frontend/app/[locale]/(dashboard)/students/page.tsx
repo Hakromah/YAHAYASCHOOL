@@ -1,6 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import {
@@ -24,9 +30,11 @@ import { SlideOutDrawer } from '@/components/erp/SlideOutDrawer';
 import { toast } from 'sonner';
 
 export default function StudentsListPage() {
-  const params = useParams();
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const params = useParams();
   const router = useRouter();
-  const locale = params?.locale || 'en';
+  
   const [students, setStudents] = useState<Student[]>([]);
   const [sections, setSections] = useState<Section[]>([]);
   const [loading, setLoading] = useState(true);
@@ -273,7 +281,7 @@ export default function StudentsListPage() {
     return [
       {
         accessorKey: 'name',
-        header: 'Student Scholar & ID',
+        header: t('Student Scholar & ID'),
         cell: ({ row }: any) => {
           const st = row.original;
           const name = st.name || st.fullName || st.displayName || [st.firstName, st.lastName].filter(Boolean).join(' ') || st.username || 'Unnamed Student';
@@ -298,7 +306,7 @@ export default function StudentsListPage() {
       },
       {
         accessorKey: 'academic',
-        header: 'Program & Homeroom Section',
+        header: t('Program & Homeroom Section'),
         cell: ({ row }: any) => {
           const st = row.original;
           return (
@@ -311,7 +319,7 @@ export default function StudentsListPage() {
       },
       {
         accessorKey: 'guardian',
-        header: 'Linked Parent Guardian',
+        header: t('Linked Parent Guardian'),
         cell: ({ row }: any) => {
           const st = row.original;
           const guardian = st.parentName || st.guardian?.name || 'No Guardian Linked';
@@ -327,7 +335,7 @@ export default function StudentsListPage() {
       },
       {
         accessorKey: 'status',
-        header: 'Enrollment Status',
+        header: t('Enrollment Status'),
         cell: ({ row }: any) => {
           const status = row.original.enrollmentStatus || row.original.status || 'Active';
           return <StatusBadge status={status} size="sm" />;
@@ -335,7 +343,7 @@ export default function StudentsListPage() {
       },
       {
         id: 'actions',
-        header: 'Roster Actions',
+        header: t('Roster Actions'),
         cell: ({ row }: any) => {
           const st = row.original;
           return (
@@ -343,21 +351,21 @@ export default function StudentsListPage() {
               <button
                 onClick={() => setSelectedRow(st)}
                 className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 cursor-pointer border-none bg-transparent"
-                title="Inspect Profile"
+                title={t('Inspect Profile')}
               >
                 <Eye className="w-4 h-4" />
               </button>
               <button
                 onClick={() => handleEditOpen(st)}
                 className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 cursor-pointer border-none bg-transparent"
-                title="Edit Student"
+                title={t('Edit Student')}
               >
                 <Edit className="w-4 h-4" />
               </button>
               <button
                 onClick={() => handleDelete(st)}
                 className="p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/20 text-rose-600 cursor-pointer border-none bg-transparent"
-                title="Delete Student"
+                title={t('Delete Student')}
               >
                 <Trash2 className="w-4 h-4" />
               </button>
@@ -455,12 +463,12 @@ export default function StudentsListPage() {
 
   return (
     <EnterpriseModuleShell
-      title="Students Management & Academic Roster"
-      description="Manage all enrolled students, admissions placements, academic progress records, and homeroom assignments with live Strapi S/4 data."
+      title={t('Students Management & Academic Roster')}
+      description={t('Manage all enrolled students, admissions placements, academic progress records, and homeroom assignments with live Strapi S/4 data.')}
       breadcrumbs={[{ label: 'School ERP' }, { label: 'Students' }]}
       icon={<GraduationCap className="w-8 h-8" />}
       recordCount={students.length}
-      recordLabel="Scholars"
+      recordLabel={t('Scholars')}
       activeFilterCount={activeFiltersCount}
       onClearFilters={handleClearFilters}
       headerActions={
@@ -489,7 +497,7 @@ export default function StudentsListPage() {
       <EnterpriseToolbar
         searchQuery={query}
         onSearchChange={setQuery}
-        searchPlaceholder="Search students by name, ID code, homeroom section, or parent contact..."
+        searchPlaceholder={t('Search students by name, ID code, homeroom section, or parent contact...')}
         density={density}
         onDensityChange={setDensity}
         onRefresh={loadStudents}
@@ -498,7 +506,7 @@ export default function StudentsListPage() {
         onExport={() => setExportModalOpen(true)}
         activeFilterCount={activeFiltersCount}
         onResetFilters={handleClearFilters}
-        createButtonLabel="+ Register New Student"
+        createButtonLabel={t('+ Register New Student')}
         onCreate={handleOnboardOpen}
         customFilterNodes={
           <div className="flex flex-wrap items-center gap-2">
@@ -549,11 +557,11 @@ export default function StudentsListPage() {
         onRowClick={(row: any) => setSelectedRow(row)}
         onRowEdit={(row: any) => handleEditOpen(row)}
         emptyStateProps={{
-          title: 'No Scholars Found',
-          description: 'No enrolled students exist matching your current search criteria or section filter.',
+          title: t('No Scholars Found'),
+          description: t('No enrolled students exist matching your current search criteria or section filter.'),
           isFilterActive: activeFiltersCount > 0 || query.length > 0,
           onResetFilters: handleClearFilters,
-          createLabel: 'Enroll New Scholar',
+          createLabel: t('Enroll New Scholar'),
           onCreate: handleOnboardOpen
         }}
       />

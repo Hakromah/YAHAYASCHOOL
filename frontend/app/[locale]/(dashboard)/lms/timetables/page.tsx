@@ -1,6 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
+
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   Plus, Calendar, Clock, MapPin, RefreshCw, Search, BookOpen, Users,
@@ -426,7 +432,9 @@ function ScheduleModal({ editItem, onClose, onSaved, sections, subjects, teacher
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function TimetablesPage() {
-  const [slots, setSlots] = useState<TimetableSlot[]>([]);
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const [slots, setSlots] = useState<TimetableSlot[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>('week');
   const [showModal, setShowModal] = useState(false);

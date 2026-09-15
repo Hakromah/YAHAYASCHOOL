@@ -1,5 +1,11 @@
 'use client';
 
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
+
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { Link } from '@/i18n/routing';
@@ -12,7 +18,9 @@ import type { Parent } from '@/types/erp.types';
 import { StatusBadge } from '@/components/erp/StatusBadge';
 
 export default function ParentProfilePage() {
-  const params = useParams();
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const params = useParams();
   const idOrDocumentId = params?.id as string;
   const [parent, setParent] = useState<Parent | null>(null);
   const [loading, setLoading] = useState(true);

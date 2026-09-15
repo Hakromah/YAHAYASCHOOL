@@ -13,7 +13,11 @@ import { PageContainer } from '@/components/shared/layout/PageContainer';
 import { Avatar } from '@/components/shared/Avatar';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { useLocale } from 'next-intl';
+import {  useLocale  } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
 
 interface ParentData {
   id: number;
@@ -38,8 +42,7 @@ interface ParentData {
 export default function ParentsListPage() {
   const locale = useLocale();
   const isRtl = locale === 'ar';
-
-  const t = (key: string) => {
+  const t = (key: string, loc?: string) => {
     const dict: Record<string, Record<string, string>> = {
       ar: {
         'registry_title': 'سجل أولياء الأمور والأوصياء',
@@ -627,21 +630,21 @@ export default function ParentsListPage() {
                             <button
                               onClick={() => handleOpenInspect(par)}
                               className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 border-none bg-transparent cursor-pointer transition-colors"
-                              title="Inspect Associates"
+                              title={t('Inspect Associates')}
                             >
                               <Eye className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => handleOpenEdit(par)}
                               className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 border-none bg-transparent cursor-pointer transition-colors"
-                              title="Edit"
+                              title={t('Edit')}
                             >
                               <Edit className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => handleDelete(par)}
                               className="p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/20 text-rose-600 hover:text-rose-700 border-none bg-transparent cursor-pointer transition-colors"
-                              title="Delete"
+                              title={t('Delete')}
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>

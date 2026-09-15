@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { useTheme } from '@/providers/theme.provider';
 import { toast } from 'sonner';
+import { t as i18nT } from '@/lib/i18n-dict';
 
 import { useAuth } from '@/hooks/useAuth';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -1362,6 +1363,10 @@ export function Sidebar({ className }: SidebarProps) {
       },
     };
 
+    const globalTrans = i18nT(label, locale);
+    if (globalTrans && globalTrans !== label) {
+      return globalTrans;
+    }
     return localDict[locale]?.[label] || label;
   };
 
@@ -1377,6 +1382,11 @@ export function Sidebar({ className }: SidebarProps) {
     const key = titleKeyMap[title];
     if (key && t.has(key)) {
       return t(key);
+    }
+
+    const globalTrans = i18nT(title, locale);
+    if (globalTrans && globalTrans !== title) {
+      return globalTrans;
     }
 
     const sectionDict: Record<string, Record<string, string>> = {
@@ -1702,7 +1712,7 @@ export function Sidebar({ className }: SidebarProps) {
           )}
         >
           {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-          {!isCollapsed && <span className="text-sm font-medium">{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>}
+          {!isCollapsed && <span className="text-sm font-medium">{theme === 'dark' ? i18nT('Light Mode', locale) : i18nT('Dark Mode', locale)}</span>}
         </button>
 
         {/* User Profile */}
@@ -1749,14 +1759,14 @@ export function Sidebar({ className }: SidebarProps) {
                     {user?.schoolId || user?.username || 'AC000000001'}
                   </span>
                 </div>
-                <p className="text-[10px] text-muted-foreground truncate capitalize mt-0.5">{roleLabel}</p>
+                <p className="text-[10px] text-muted-foreground truncate capitalize mt-0.5">{i18nT(roleLabel, locale)}</p>
               </motion.div>
             )}
           </AnimatePresence>
           {!isCollapsed && (
             <button
               onClick={handleLogout}
-              title="Logout"
+              title={i18nT('Logout', locale)}
               className="p-1.5 rounded-lg hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-colors flex-shrink-0"
             >
               <LogOut className="w-3.5 h-3.5" />

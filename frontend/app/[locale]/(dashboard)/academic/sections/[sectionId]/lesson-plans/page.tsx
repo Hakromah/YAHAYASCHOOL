@@ -1,5 +1,11 @@
 'use client';
 
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
+
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useSection } from '@/providers/SectionContext';
@@ -15,7 +21,9 @@ import {
 import { cn } from '@/lib/utils';
 
 export default function SectionLessonPlansPage() {
-  const routeParams = useParams();
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const routeParams = useParams();
   const sectionId = (routeParams?.sectionId as string) || '';
   const { section, isLoading: sectionLoading } = useSection();
   
@@ -311,7 +319,7 @@ export default function SectionLessonPlansPage() {
                         setShowDrawer(true);
                       }}
                       className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-indigo-600 rounded-lg cursor-pointer transition-colors border-none bg-transparent"
-                      title="View Details"
+                      title={t('View Details')}
                     >
                       <Eye className="w-4 h-4" />
                     </button>

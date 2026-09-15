@@ -10,6 +10,9 @@ import {
 } from 'lucide-react';
 import { useLocale } from 'next-intl';
 import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
 import { useAuth } from '@/hooks/useAuth';
 import { financeService } from '@/services/finance.service';
 import type { Invoice, InvoiceLineItem } from '@/types/finance.types';
@@ -26,8 +29,8 @@ import { printInvoiceDocument } from '@/lib/print-finance';
 
 export default function StudentInvoicesPage() {
   const locale = useLocale();
-  const t = (key: string) => i18nT(key, locale);
-  const { user, role } = useAuth();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const { user, role } = useAuth();
 
   // Role Evaluation for Invoice Operations
   const userRoleStr = String(role || user?.role?.type || user?.role?.name || '').toLowerCase();
@@ -656,13 +659,13 @@ export default function StudentInvoicesPage() {
         onClose={() => setSelectedInvoice(null)}
         record={selectedInvoice ? {
           name: selectedInvoice.student
-            ? `${selectedInvoice.student.firstName || ''} ${selectedInvoice.student.lastName || ''}`.trim() || selectedInvoice.student.name || selectedInvoice.studentName || 'Unknown Scholar'
-            : selectedInvoice.studentName || 'Unknown Scholar',
+            ? `${selectedInvoice.student.firstName || ''} ${selectedInvoice.student.lastName || ''}`.trim() || selectedInvoice.student.name || selectedInvoice.studentName || t('Unknown Scholar')
+            : selectedInvoice.studentName || t('Unknown Scholar'),
           id: selectedInvoice.invoiceNumber,
-          role: `Admission: ${selectedInvoice.student?.admissionNumber || selectedInvoice.student?.schoolId || selectedInvoice.admissionNumber || 'N/A'}`,
+          role: `${t('Admission')}: ${selectedInvoice.student?.admissionNumber || selectedInvoice.student?.schoolId || selectedInvoice.admissionNumber || 'N/A'}`,
           status: selectedInvoice.status,
-          email: selectedInvoice.parentEmail || 'No Email Provided',
-          phone: selectedInvoice.issueDate ? `Issued: ${selectedInvoice.issueDate}` : 'N/A',
+          email: selectedInvoice.parentEmail || t('No Email Provided'),
+          phone: selectedInvoice.issueDate ? `${t('Issued')}: ${selectedInvoice.issueDate}` : 'N/A',
         } : null}
         category="finance"
         hideIntelligence={true}

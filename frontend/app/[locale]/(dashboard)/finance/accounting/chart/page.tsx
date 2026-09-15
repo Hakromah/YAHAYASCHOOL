@@ -10,6 +10,9 @@ import {
 } from 'lucide-react';
 import { useLocale } from 'next-intl';
 import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
 import { financeService } from '@/services/finance.service';
 import type { ChartOfAccount, AccountType } from '@/types/finance.types';
 import { EnterpriseModuleShell } from '@/components/erp/EnterpriseModuleShell';
@@ -22,9 +25,8 @@ import { toast } from 'sonner';
 
 export default function ChartOfAccountsPage() {
   const locale = useLocale();
-  const t = (key: string) => i18nT(key, locale);
-
-  const [accounts, setAccounts] = useState<ChartOfAccount[]>([]);
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const [accounts, setAccounts] = useState<ChartOfAccount[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
@@ -348,13 +350,13 @@ export default function ChartOfAccountsPage() {
         record={selectedAccount ? {
           name: selectedAccount.accountName,
           id: selectedAccount.accountCode,
-          role: `GL ${selectedAccount.accountType.toUpperCase()} ACCOUNT`,
+          role: `${t('GL Account')}: ${selectedAccount.accountCode} (${t(selectedAccount.accountType)})`,
           status: selectedAccount.isActive ? 'active' : 'inactive',
-          email: `Classification: ${selectedAccount.accountType}`,
-          phone: `Currency: ${selectedAccount.currency}`,
-          department: `Normal Balance: ${selectedAccount.accountType === 'Asset' || selectedAccount.accountType === 'Expense' ? 'Debit' : 'Credit'}`,
-          joinDate: selectedAccount.accountCode.slice(0, 1) + '000 Series',
-          balance: `LIVE GL BALANCE: $${selectedAccount.currentBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })}`
+          email: `${t('Classification')}: ${t(selectedAccount.accountType)}`,
+          phone: `${t('Currency')}: ${selectedAccount.currency}`,
+          department: `${t('Normal Balance')}: ${selectedAccount.accountType === 'Asset' || selectedAccount.accountType === 'Expense' ? t('Debit') : t('Credit')}`,
+          joinDate: `${selectedAccount.accountCode.slice(0, 1)}000 ${t('Series')}`,
+          balance: `${t('Live GL Balance')}: $${selectedAccount.currentBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })}`
         } : null}
         category="finance"
       />

@@ -1,5 +1,11 @@
 'use client';
 
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
+
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { useSection } from '@/providers/SectionContext';
@@ -154,7 +160,7 @@ function CourseRow({ course, idx }: { course: CourseRecord; idx: number }) {
             <button
               onClick={() => setExpanded(v => !v)}
               className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 transition"
-              title="View assessment breakdown"
+              title={t('View assessment breakdown')}
             >
               {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
             </button>
@@ -188,7 +194,9 @@ function CourseRow({ course, idx }: { course: CourseRecord; idx: number }) {
 // Main Page
 // ─────────────────────────────────────────────────────────────────────────────
 export default function TranscriptsPage() {
-  const params = useParams();
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const params = useParams();
   const sectionId = params.sectionId as string;
 
   const { section, isLoading: sectionLoading } = useSection();

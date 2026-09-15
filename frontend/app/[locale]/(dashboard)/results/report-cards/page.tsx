@@ -1,5 +1,11 @@
 'use client';
 
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
+
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { 
   Award, 
@@ -57,7 +63,9 @@ interface StudentGradeRow {
 }
 
 export default function GradebookAndReportCardsPage() {
-  const { user, role } = useAuth();
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const { user, role } = useAuth();
   const { userRole } = usePermissions();
   const userRoleStr = String(userRole || role || '');
   const isStudentRole = role === 'student' || role === 'parent' || userRoleStr === 'student' || userRoleStr === 'parent';
@@ -596,7 +604,7 @@ export default function GradebookAndReportCardsPage() {
               <button
                 onClick={handleUndo}
                 className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-200 transition-colors"
-                title="Undo last grid edit"
+                title={t('Undo last grid edit')}
               >
                 <Undo className="w-3.5 h-3.5" />
                 <span>Undo</span>

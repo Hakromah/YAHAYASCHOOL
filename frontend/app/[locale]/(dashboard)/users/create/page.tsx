@@ -1,6 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
+
 import React, { useState, useEffect } from 'react';
 import { useRouter, Link } from '@/i18n/routing';
 import {
@@ -94,7 +100,9 @@ function Toggle({ checked, onChange, label, description, danger }: {
 }
 
 export default function CreateUserPage() {
-  const router = useRouter();
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [roles, setRoles] = useState<any[]>([]);
   const [showPassword, setShowPassword] = useState(false);
@@ -196,7 +204,7 @@ export default function CreateUserPage() {
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* ── Personal Information ───────────────────────────────────────── */}
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-6 space-y-6">
-          <SectionHeader icon={User} title="Personal Information" />
+          <SectionHeader icon={User} title={t('Personal Information')} />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <Field label="First Name">
               <input type="text" value={form.firstName} onChange={set('firstName')}
@@ -265,7 +273,7 @@ export default function CreateUserPage() {
 
         {/* ── Authentication Credentials ─────────────────────────────────── */}
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-6 space-y-6">
-          <SectionHeader icon={Shield} title="Authentication Credentials" />
+          <SectionHeader icon={Shield} title={t('Authentication Credentials')} />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <Field label="Username" required hint="Unique login handle, no spaces">
               <div className="relative">
@@ -313,14 +321,14 @@ export default function CreateUserPage() {
 
         {/* ── Access State ──────────────────────────────────────────────── */}
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-6 space-y-6">
-          <SectionHeader icon={BadgeCheck} title="Access State" />
+          <SectionHeader icon={BadgeCheck} title={t('Access State')} />
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
               <Toggle
                 checked={form.isActive}
                 onChange={v => setForm(p => ({ ...p, isActive: v }))}
                 label="Active Account"
-                description="User can access their assigned portals."
+                description={t('User can access their assigned portals.')}
               />
             </div>
             <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
@@ -328,7 +336,7 @@ export default function CreateUserPage() {
                 checked={form.confirmed}
                 onChange={v => setForm(p => ({ ...p, confirmed: v }))}
                 label="Email Confirmed"
-                description="If off, the user cannot log in until confirmed."
+                description={t('If off, the user cannot log in until confirmed.')}
               />
             </div>
             <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
@@ -336,7 +344,7 @@ export default function CreateUserPage() {
                 checked={form.blocked}
                 onChange={v => setForm(p => ({ ...p, blocked: v }))}
                 label="Block Account"
-                description="Immediately prevents access to the system."
+                description={t('Immediately prevents access to the system.')}
                 danger
               />
             </div>

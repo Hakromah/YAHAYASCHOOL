@@ -11,6 +11,9 @@ import {
 } from 'lucide-react';
 import { useLocale } from 'next-intl';
 import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
 import { usePermissions } from '@/hooks/usePermissions';
 import { apiClient } from '@/services/api.service';
 import { erpService } from '@/services/erp.service';
@@ -33,8 +36,8 @@ interface FeeItemInput {
 
 export default function FeeStructuresPage() {
   const locale = useLocale();
-  const t = (key: string) => i18nT(key, locale);
-  const { can } = usePermissions();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const { can } = usePermissions();
   const isAdmin = Boolean(can.isAdmin);
 
   const [structures, setStructures] = useState<FeeStructure[]>([]);

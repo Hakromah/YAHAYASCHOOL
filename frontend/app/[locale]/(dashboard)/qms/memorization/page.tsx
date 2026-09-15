@@ -1,5 +1,11 @@
 'use client';
 
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
+
 import { useState, useEffect, useMemo } from 'react';
 import { Plus, BookOpen, Award, CheckCircle2, RefreshCw, History, Users, Search, AlertCircle, Calendar } from 'lucide-react';
 import { PageContainer, PageHeader } from '@/components/shared/layout/PageContainer';
@@ -50,7 +56,9 @@ interface Memorization {
 }
 
 export default function HifzTrackingWorkspace() {
-  const { user, isLoading: authLoading } = useAuth();
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const { user, isLoading: authLoading } = useAuth();
   const teacher = (user as any)?.profile;
 
   const [offerings, setOfferings] = useState<CourseOffering[]>([]);
@@ -282,8 +290,8 @@ export default function HifzTrackingWorkspace() {
   return (
     <PageContainer>
       <PageHeader
-        title="Hifz Tracking Workspace"
-        description="Log student memorization progress, track Juz completion, and evaluate recitation."
+        title={t('Hifz Tracking Workspace')}
+        description={t('Log student memorization progress, track Juz completion, and evaluate recitation.')}
       >
         <div className="flex items-center gap-2">
             <select

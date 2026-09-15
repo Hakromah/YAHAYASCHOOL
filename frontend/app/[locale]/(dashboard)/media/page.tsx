@@ -1,11 +1,19 @@
 'use client';
 
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
+
 import React, { useState } from 'react';
 import { HardDrive, Upload, Search, File, Image, Film, FileText, Trash2, Download } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function MediaLibraryPage() {
-  const [query, setQuery] = useState('');
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const [query, setQuery] = useState('');
 
   const files = [
     { id: 1, name: 'school_logo_master_vector.svg', type: 'Image', size: '240 KB', date: '2026-07-10', icon: Image, url: '#' },

@@ -10,6 +10,9 @@ import {
 } from 'lucide-react';
 import { useLocale } from 'next-intl';
 import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
 import { financeService } from '@/services/finance.service';
 import { erpService } from '@/services/erp.service';
 import type { ExecutiveFinanceStats, MultiCurrencyRate } from '@/types/finance.types';
@@ -24,9 +27,8 @@ import { toast } from 'sonner';
 
 export default function FinanceOverviewPage() {
   const locale = useLocale();
-  const t = (key: string) => i18nT(key, locale);
-
-  const [stats, setStats] = useState<ExecutiveFinanceStats | null>(null);
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const [stats, setStats] = useState<ExecutiveFinanceStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [academicYears, setAcademicYears] = useState<AcademicYear[]>([]);
   const [academicYear, setAcademicYear] = useState('2026-2027');

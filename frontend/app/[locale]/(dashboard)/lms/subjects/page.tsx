@@ -1,7 +1,11 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
 import { getSubjects } from '@/services/lms.service';
 import type { Subject } from '@/types/lms.types';
 import { BookOpen, Plus, Search, Layers, Clock, CheckCircle2, BookMarked, Edit3, Trash2 } from 'lucide-react';
@@ -13,7 +17,9 @@ import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 
 export default function SubjectsPage() {
-  const [subjects, setSubjects] = useState<any[]>([]);
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const [subjects, setSubjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<'All' | 'Core' | 'Elective' | 'Extracurricular'>('All');
@@ -282,8 +288,8 @@ export default function SubjectsPage() {
   return (
     <PageContainer>
       <PageHeader
-        title="Academic Subjects & Classes Registry"
-        description="Explore active institutional courses, Hifz tracks, weekly credit hours, and assigned curriculum modules."
+        title={t('Academic Subjects & Classes Registry')}
+        description={t('Explore active institutional courses, Hifz tracks, weekly credit hours, and assigned curriculum modules.')}
       >
         {canModify && (
           <button
@@ -429,14 +435,14 @@ export default function SubjectsPage() {
                                 <button
                                   onClick={() => handleEditClick(s)}
                                   className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 p-1 cursor-pointer inline-flex items-center border-none bg-transparent"
-                                  title="Edit Subject"
+                                  title={t('Edit Subject')}
                                 >
                                   <Edit3 className="w-3.5 h-3.5" />
                                 </button>
                                 <button
                                   onClick={() => handleDeleteClick(s.id, s.documentId)}
                                   className="text-rose-600 dark:text-rose-400 hover:text-rose-700 p-1 cursor-pointer inline-flex items-center border-none bg-transparent"
-                                  title="Delete Subject"
+                                  title={t('Delete Subject')}
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
                                 </button>

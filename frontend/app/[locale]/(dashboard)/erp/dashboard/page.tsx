@@ -2,7 +2,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { Link } from '@/i18n/routing';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
 import {
   Users, GraduationCap, UserCheck, Layers, Building2, BookOpen,
   ArrowRight, Plus, Upload, Download, Activity, CheckCircle2,
@@ -14,7 +18,9 @@ import { StatusBadge } from '@/components/erp/StatusBadge';
 import { BulkImportModal } from '@/components/erp/BulkImportModal';
 
 export default function ERPDashboardPage() {
-  const [studentsCount, setStudentsCount] = useState<number>(0);
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const [studentsCount, setStudentsCount] = useState<number>(0);
   const [teachersCount, setTeachersCount] = useState<number>(0);
   const [parentsCount, setParentsCount] = useState<number>(0);
   const [sections, setSections] = useState<Section[]>([]);

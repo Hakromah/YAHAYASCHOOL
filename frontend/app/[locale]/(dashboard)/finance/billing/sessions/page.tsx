@@ -10,6 +10,9 @@ import {
 } from 'lucide-react';
 import { useLocale } from 'next-intl';
 import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
 import { useAuth } from '@/hooks/useAuth';
 import { financeService } from '@/services/finance.service';
 import type { CashierSession } from '@/types/finance.types';
@@ -23,8 +26,8 @@ import { toast } from 'sonner';
 
 export default function CashierSessionsPage() {
   const locale = useLocale();
-  const t = (key: string) => i18nT(key, locale);
-  const { user } = useAuth();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const { user } = useAuth();
 
   const [sessions, setSessions] = useState<CashierSession[]>([]);
   const [loading, setLoading] = useState(true);

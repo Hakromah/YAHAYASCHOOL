@@ -1,6 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
+
 import { useState, useEffect, useMemo } from 'react';
 import { CheckCircle2, XCircle, AlertCircle, Clock, Calendar, RefreshCw, Save, HelpCircle, Users, Award, ShieldAlert } from 'lucide-react';
 import { PageContainer, PageHeader } from '@/components/shared/layout/PageContainer';
@@ -24,7 +30,9 @@ interface AttendanceRecord {
 }
 
 export default function AttendancePage() {
-  const [data, setData] = useState<AttendanceRecord[]>([]);
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const [data, setData] = useState<AttendanceRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   
@@ -321,7 +329,7 @@ export default function AttendancePage() {
   const columns: ColumnDef<AttendanceRecord>[] = [
     {
       id: 'studentName',
-      header: 'Scholar Name & ID',
+      header: t('Scholar Name & ID'),
       cell: ({ row }) => (
         <div className="flex flex-col gap-0.5">
           <strong className="text-foreground font-bold">{row.original.studentName}</strong>
@@ -331,7 +339,7 @@ export default function AttendancePage() {
     },
     {
       id: 'status',
-      header: 'Attendance Status',
+      header: t('Attendance Status'),
       cell: ({ row }) => {
         const current = row.original.status;
         return (
@@ -360,7 +368,7 @@ export default function AttendancePage() {
     },
     {
       id: 'remarks',
-      header: 'Log Remarks & Excuses',
+      header: t('Log Remarks & Excuses'),
       cell: ({ row }) => (
         <div className="flex items-center gap-2 w-full max-w-xs">
           {row.original.hasExcuse && (
@@ -384,8 +392,8 @@ export default function AttendancePage() {
   return (
     <PageContainer>
       <PageHeader
-        title="Scholars Attendance Session Tracker"
-        description="Monitor student logs, verify excused absences, and log daily class participation records."
+        title={t('Scholars Attendance Session Tracker')}
+        description={t('Monitor student logs, verify excused absences, and log daily class participation records.')}
       >
         {isStaff && (
           <div className="flex items-center gap-2">
@@ -494,7 +502,7 @@ export default function AttendancePage() {
               columns={columns}
               data={data}
               isLoading={isLoading}
-              searchPlaceholder="Filter daily roster by name..."
+              searchPlaceholder={t('Filter daily roster by name...')}
             />
           )}
         </div>

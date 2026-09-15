@@ -1,5 +1,11 @@
 'use client';
 
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
+
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   Award, Search, Filter, Save, CheckCircle2, AlertCircle, Printer, Download,
@@ -40,7 +46,9 @@ function calculateGradeDetails(total: number) {
 }
 
 export default function MarksEntryDataGridPage() {
-  const [loading, setLoading] = useState(true);
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
   // Filters & Section Context
@@ -214,8 +222,8 @@ export default function MarksEntryDataGridPage() {
 
   return (
     <EnterpriseModuleShell
-      title="Marks Entry & Assessment Data Grid"
-      description="Faculty & Executive Gradebook Console for entering, calculating, and verifying student assessment scores"
+      title={t('Marks Entry & Assessment Data Grid')}
+      description={t('Faculty & Executive Gradebook Console for entering, calculating, and verifying student assessment scores')}
       icon={<Award className="w-8 h-8" />}
       breadcrumbs={[
         { label: 'Assessment ERP', href: '/assessment' },

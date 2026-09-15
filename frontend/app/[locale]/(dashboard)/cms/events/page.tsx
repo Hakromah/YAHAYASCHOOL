@@ -1,5 +1,11 @@
 'use client';
 
+import { useLocale } from 'next-intl';
+import { t as i18nT } from '@/lib/i18n-dict';
+
+// module-level i18n fallback
+const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link } from '@/i18n/routing';
 import {
@@ -350,7 +356,9 @@ function CreateEventModal({
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function EventsPage() {
-  const [events, setEvents]   = useState<EventEntity[]>([]);
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+const [events, setEvents]   = useState<EventEntity[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery]     = useState('');
   const [typeFilter, setTypeFilter]     = useState('all');
@@ -422,7 +430,7 @@ export default function EventsPage() {
   const columns = useMemo<ColumnDef<EventEntity, any>[]>(() => [
     {
       accessorKey: 'title',
-      header: 'Event',
+      header: t('Event'),
       cell: ({ row }) => {
         const ev = row.original;
         return (
@@ -443,7 +451,7 @@ export default function EventsPage() {
     },
     {
       accessorKey: 'startDate',
-      header: 'Schedule',
+      header: t('Schedule'),
       cell: ({ row }) => {
         const ev = row.original;
         return (
@@ -458,7 +466,7 @@ export default function EventsPage() {
     },
     {
       accessorKey: 'location',
-      header: 'Venue & Capacity',
+      header: t('Venue & Capacity'),
       cell: ({ row }) => {
         const ev = row.original;
         return (
@@ -479,7 +487,7 @@ export default function EventsPage() {
     },
     {
       accessorKey: 'department',
-      header: 'Department',
+      header: t('Department'),
       cell: ({ row }) => {
         const d = row.original.department;
         return d ? (
@@ -489,7 +497,7 @@ export default function EventsPage() {
     },
     {
       id: 'timing',
-      header: 'Status',
+      header: t('Status'),
       cell: ({ row }) => {
         const ev = row.original;
         if (isPast(ev)) return <StatusBadge status="completed" size="sm" />;
@@ -521,12 +529,12 @@ export default function EventsPage() {
 
   return (
     <EnterpriseModuleShell
-      title="Events & Institutional CMS Console"
-      description="Manage institutional ceremonies, Hifz graduations, debate championships, parent conferences, and academic events. All events sync to the School Calendar."
+      title={t('Events & Institutional CMS Console')}
+      description={t('Manage institutional ceremonies, Hifz graduations, debate championships, parent conferences, and academic events. All events sync to the School Calendar.')}
       breadcrumbs={[{ label: 'School ERP' }, { label: 'CMS' }, { label: 'Events' }]}
       icon={<CalendarIcon className="w-8 h-8" />}
       recordCount={filteredEvents.length}
-      recordLabel="Events"
+      recordLabel={t('Events')}
       activeFilterCount={activeFiltersCount}
       onClearFilters={clearFilters}
       headerActions={
@@ -594,13 +602,13 @@ export default function EventsPage() {
       <EnterpriseToolbar
         searchQuery={query}
         onSearchChange={setQuery}
-        searchPlaceholder="Search events by title, venue, or slug…"
+        searchPlaceholder={t('Search events by title, venue, or slug…')}
         density={density}
         onDensityChange={setDensity}
         onRefresh={() => { loadData(); toast.success('Events refreshed from CMS.'); }}
         activeFilterCount={activeFiltersCount}
         onResetFilters={clearFilters}
-        createButtonLabel="+ Create Event"
+        createButtonLabel={t('+ Create Event')}
         onCreate={() => setShowCreateModal(true)}
       />
 
@@ -612,11 +620,11 @@ export default function EventsPage() {
         onRowInspect={setSelectedEvent}
         onRowClick={setSelectedEvent}
         emptyStateProps={{
-          title: 'No Events Found',
+          title: t('No Events Found'),
           description: 'No CMS events match your current filters. Click "Create Event" to schedule one.',
           isFilterActive: activeFiltersCount > 0 || query.length > 0,
           onResetFilters: clearFilters,
-          createLabel: 'Create New Event',
+          createLabel: t('Create New Event'),
           onCreate: () => setShowCreateModal(true)
         }}
       />
