@@ -14,10 +14,11 @@ const config: Core.Config.Middlewares = [
             "'self'",
             'data:',
             'blob:',
+            'https:',                           // allow any HTTPS image (remote Strapi, Cloudinary, etc.)
             'market-assets.strapi.io',
             'res.cloudinary.com',
           ],
-          'media-src': ["'self'", 'data:', 'blob:'],
+          'media-src': ["'self'", 'data:', 'blob:', 'https:'],
           upgradeInsecureRequests: null,
         },
       },
@@ -32,6 +33,9 @@ const config: Core.Config.Middlewares = [
         'http://localhost:3000',
         'http://localhost:3001',
         'http://127.0.0.1:3000',
+        // ── Production frontend ──────────────────────────────────────────────
+        'https://yahayaschool.vercel.app',
+        'https://*.vercel.app',               // allow Vercel preview URLs
         process.env.FRONTEND_URL || 'http://localhost:3000',
       ],
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'],
@@ -49,4 +53,3 @@ const config: Core.Config.Middlewares = [
 ];
 
 export default config;
-

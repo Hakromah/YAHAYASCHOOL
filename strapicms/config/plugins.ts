@@ -20,7 +20,7 @@ const allowedMediaTypes = [
 ];
 
 const config = ({ env }: Core.Config.Shared.ConfigParams): Record<string, unknown> => ({
-  // ── Users & Permissions (built-in to Strapi v5) ──────────────────────────
+  // ── Users & Permissions ───────────────────────────────────────────────────
   'users-permissions': {
     config: {
       jwt: {
@@ -29,9 +29,24 @@ const config = ({ env }: Core.Config.Shared.ConfigParams): Record<string, unknow
     },
   },
 
-  // ── Upload (built-in, configure allowed types) ───────────────────────────
+  // ── Upload / Media ────────────────────────────────────────────────────────
+  // When CLOUDINARY_NAME is set (production) → use Cloudinary (persistent).
+  // When unset (local dev) → use local filesystem.
   upload: {
     config: {
+      provider: env('CLOUDINARY_NAME') ? '@strapi/provider-upload-cloudinary' : 'local',
+      providerOptions: env('CLOUDINARY_NAME')
+        ? {
+            cloud_name: env('CLOUDINARY_NAME'),
+            api_key: env('CLOUDINARY_KEY'),
+            api_secret: env('CLOUDINARY_SECRET'),
+            actionOptions: {
+              upload: {
+                folder: env('CLOUDINARY_FOLDER', 'yahaya-school'),
+              },
+            },
+          }
+        : {},
       sizeLimit: 250 * 1024 * 1024, // 250 MB max upload
     },
   },
@@ -45,9 +60,9 @@ const config = ({ env }: Core.Config.Shared.ConfigParams): Record<string, unknow
     },
   },
 
-  // ── Email (built-in to Strapi v5, uses sendmail by default) ──────────────
-  // To enable SMTP, install: npm install @strapi/provider-email-nodemailer
-  // Then uncomment and configure below:
+  // ── Email ─────────────────────────────────────────────────────────────────
+  // Uncomment + configure when SMTP credentials are ready.
+  // Install: npm install @strapi/provider-email-nodemailer
   // email: {
   //   config: {
   //     provider: 'nodemailer',
