@@ -10,13 +10,12 @@
     "deploy": "strapi deploy",
     "dev": "strapi develop",
     "develop": "strapi develop",
-    "start": "NODE_OPTIONS='--max-old-space-size=400' strapi start",
+    "start": "NODE_OPTIONS='--max-old-space-size=460' strapi start",
     "strapi": "strapi",
     "upgrade": "npx @strapi/upgrade latest",
     "upgrade:dry": "npx @strapi/upgrade latest --dry"
   },
   "dependencies": {
-    "@strapi/plugin-cloud": "5.50.2",
     "@strapi/plugin-users-permissions": "5.50.2",
     "@strapi/provider-upload-cloudinary": "^5.53.0",
     "@strapi/strapi": "5.50.2",
