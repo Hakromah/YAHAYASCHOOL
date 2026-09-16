@@ -75,7 +75,7 @@ Go to your Web Service -> Environment tab -> Add these one by one:
 | Variable | Value |
 |----------|-------|
 | DATABASE_CLIENT | postgres |
-| DATABASE_URL | postgresql://yahaya_user:XXXX@dpg-XXXX/yahaya_scool |
+| DATABASE_URL | postgresql://yahaya_user:5b1yLSqsxkZVQzMgdAKk6iziIzhwzG4o@dpg-dakr0bqjnfac73bm81kg-a/yahaya_scool
 | DATABASE_SSL | true |
 | DATABASE_SSL_REJECT_UNAUTHORIZED | false |
 | DATABASE_POOL_MIN | 1 |
