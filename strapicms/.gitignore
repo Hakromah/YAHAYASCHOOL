@@ -125,7 +125,8 @@ coverage
 license.txt
 exports
 .strapi
-dist
+# dist — intentionally NOT ignored so pre-built admin panel can be committed
+# and deployed to Render without running the memory-heavy webpack build.
 build
 .strapi-updater.json
 .strapi-cloud.json
