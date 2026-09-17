@@ -78,7 +78,7 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
   return (
     <NextIntlClientProvider locale={locale} messages={messages}>
       <DirectionProvider locale={locale} direction={direction} />
-      <div lang={locale} dir={direction} className="min-h-screen flex flex-col w-full">
+      <div lang={locale} dir={direction} className="min-h-svh w-full">
         <Providers>
           {children}
         </Providers>

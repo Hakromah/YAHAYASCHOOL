@@ -38,12 +38,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html suppressHydrationWarning className={outfit.variable} data-scroll-behavior="smooth">
+    <html suppressHydrationWarning className={outfit.variable}>
       <head>
         <link rel="icon" href="/favicon.ico" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        {/* width=device-width prevents mobile zoom; interactive-widget keeps layout stable when keyboard appears */}
+        <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content" />
       </head>
-      <body className="min-h-screen antialiased bg-background text-foreground overflow-clip" suppressHydrationWarning>
+      {/* DO NOT add overflow-hidden/clip to body — it kills scroll on all devices */}
+      <body className="min-h-svh antialiased bg-background text-foreground" suppressHydrationWarning>
         <ThemeProvider>
           <LenisProvider>
             {children}
