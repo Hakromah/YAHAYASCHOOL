@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Link, usePathname } from '@/i18n/routing';
 import Image from 'next/image';
 import { useTranslations, useLocale } from 'next-intl';
@@ -1554,12 +1554,21 @@ export function Sidebar({ className }: SidebarProps) {
 
   const sidebarWidth = isCollapsed ? 72 : 280;
 
+  // Force nav scroll with mouse wheel — bypasses any parent overflow:hidden
+  const navRef = useRef<HTMLElement>(null);
+  const handleNavWheel = (e: React.WheelEvent<HTMLElement>) => {
+    e.stopPropagation();
+    if (navRef.current) {
+      navRef.current.scrollTop += e.deltaY;
+    }
+  };
+
   const sidebarContent = (
     <aside
       className={cn(
         'fixed inset-y-0 z-40 flex flex-col h-full bg-card border-border',
         isRtl ? 'right-0 border-l' : 'left-0 border-r',
-        'transition-all duration-300 ease-in-out overflow-hidden',
+        'transition-all duration-300 ease-in-out',
         className
       )}
       style={{ width: sidebarWidth }}
@@ -1602,7 +1611,7 @@ export function Sidebar({ className }: SidebarProps) {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-0.5 scrollbar-thin">
+      <nav ref={navRef} onWheel={handleNavWheel} className="flex-1 overflow-y-auto py-3 px-2 space-y-0.5 scrollbar-thin">
         {navSections.map((section) => {
           // Render the dynamic Academic Sections group
           if (section.title === '__ACADEMIC_SECTIONS__') {

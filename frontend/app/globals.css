@@ -300,10 +300,19 @@
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* Allow vertical touch scroll on all mobile browsers */
+    touch-action: pan-y;
+    /* Use small viewport height so mobile browser chrome is excluded */
+    min-height: 100svh;
   }
 
   body {
     @apply bg-background text-foreground;
+    /* Ensure body can scroll on mobile — never lock it */
+    overflow-x: hidden;
+    overflow-y: auto;
+    touch-action: pan-y;
+    -webkit-overflow-scrolling: touch;
   }
 
   button, 

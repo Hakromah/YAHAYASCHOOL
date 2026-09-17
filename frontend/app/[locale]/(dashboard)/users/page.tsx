@@ -7,7 +7,7 @@ import { t as i18nT } from '@/lib/i18n-dict';
 // module-level i18n fallback
 const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Users, Shield, Plus, Search, ChevronLeft, ChevronRight, Edit2, Trash2, X, CheckCircle2 } from 'lucide-react';
 import { userService } from '@/services/user.service';
 import type { SchoolUser } from '@/types/user.types';
@@ -34,6 +34,15 @@ const [users, setUsers] = useState<SchoolUser[]>([]);
   const [formEmail, setFormEmail] = useState('');
   const [formRoleId, setFormRoleId] = useState('');
   const [formBlocked, setFormBlocked] = useState(false);
+
+  // Ref + wheel handler — forces scroll even when parent layout has overflow:hidden
+  const tableRef = useRef<HTMLDivElement>(null);
+  const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    e.stopPropagation();
+    if (tableRef.current) {
+      tableRef.current.scrollTop += e.deltaY;
+    }
+  };
 
   const loadUsers = async () => {
     setLoading(true);
@@ -160,8 +169,12 @@ const [users, setUsers] = useState<SchoolUser[]>([]);
             No system users found.
           </div>
         ) : (
-          /* Restrict height to 8 rows (~580px) and display scrollbar */
-          <div className="flex-1 max-h-[580px] overflow-y-auto overflow-x-auto relative">
+          /* Show 11 rows then scroll — JS wheel handler bypasses parent overflow:hidden */
+          <div
+            ref={tableRef}
+            onWheel={handleWheel}
+            className="flex-1 max-h-[772px] overflow-y-auto overflow-x-auto overscroll-contain relative"
+          >
             {loading && (
               <div className="absolute inset-0 bg-white/50 dark:bg-slate-900/50 backdrop-blur-[1px] z-10 flex items-center justify-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>

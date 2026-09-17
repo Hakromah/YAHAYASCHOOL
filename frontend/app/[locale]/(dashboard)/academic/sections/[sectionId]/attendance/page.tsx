@@ -59,7 +59,7 @@ const params = useParams();
 
   // Summarize stats
   const stats = records.reduce((acc, curr) => {
-    const stat = curr.status.toLowerCase();
+    const stat = (curr.status ?? '').toLowerCase();
     if (stat === 'present') acc.present++;
     else if (stat === 'absent') acc.absent++;
     else if (stat === 'late') acc.late++;
@@ -71,7 +71,7 @@ const params = useParams();
   const getPercent = (val: number) => Math.round((val / total) * 100);
 
   const getStatusBadge = (status: string) => {
-    switch(status.toLowerCase()) {
+    switch((status ?? '').toLowerCase()) {
       case 'present': return <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 dark:bg-emerald-900/30 px-2.5 py-0.5 text-xs font-medium text-emerald-700 dark:text-emerald-400"><CheckCircle className="h-3 w-3"/> Present</span>;
       case 'absent': return <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-50 dark:bg-rose-900/30 px-2.5 py-0.5 text-xs font-medium text-rose-700 dark:text-rose-400"><XCircle className="h-3 w-3"/> Absent</span>;
       case 'late': return <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 dark:bg-amber-900/30 px-2.5 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400"><Clock className="h-3 w-3"/> Late</span>;
