@@ -15,6 +15,7 @@ interface PageContainerProps {
 export function PageContainer({ children, className, noPadding }: PageContainerProps) {
   return (
     <div
+      data-lenis-prevent="true"
       className={cn(
         'flex flex-col flex-1 min-h-0',
         !noPadding && 'px-6 py-6',

@@ -6,7 +6,7 @@ import { t as i18nT } from '@/lib/i18n-dict';
 // module-level i18n fallback
 const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { useSection } from '@/providers/SectionContext';
 import { SectionSubNav } from '@/components/shared/layout/SectionSubNav';
@@ -33,9 +33,29 @@ const routeParams = useParams();
   const [rejectionReasons, setRejectionReasons] = useState<Record<string, string>>({});
   const [submittingIds, setSubmittingIds] = useState<Record<string, boolean>>({});
 
-  // Slide-over drawer state
+  // Slide-over drawer state and scroll ref
   const [selectedPlan, setSelectedPlan] = useState<any | null>(null);
   const [showDrawer, setShowDrawer] = useState(false);
+  const drawerBodyRef = useRef<HTMLDivElement>(null);
+
+  // Handle wheel scrolling inside the drawer so it never gets intercepted or blocked
+  const handleDrawerWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    e.stopPropagation();
+    if (drawerBodyRef.current) {
+      drawerBodyRef.current.scrollTop += e.deltaY;
+    }
+  };
+
+  // Lock body scroll when drawer is open so background page doesn't shift
+  useEffect(() => {
+    if (showDrawer) {
+      const original = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = original;
+      };
+    }
+  }, [showDrawer]);
 
   useEffect(() => {
     if (sectionId) {
@@ -332,60 +352,74 @@ const routeParams = useParams();
 
         {/* Slide-over Detail Drawer Panel */}
         {showDrawer && selectedPlan && (
-          <div className="fixed inset-0 z-50 bg-slate-950/60 flex items-center justify-end animate-fade-in">
+          <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-end animate-fade-in">
             <div className="absolute inset-0" onClick={() => setShowDrawer(false)} />
 
-            <div className="relative w-full max-w-xl bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 h-full p-6 shadow-2xl flex flex-col justify-between gap-6 overflow-y-auto animate-slide-in-right text-xs text-slate-800 dark:text-slate-200">
-              
-              <div className="space-y-5">
-                {/* Drawer Header */}
-                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
-                  <div className="flex items-center gap-2">
-                    <BookOpen className="w-5 h-5 text-indigo-600" />
-                    <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
-                      Lesson Plan Details
-                    </h3>
+            <div 
+              data-lenis-prevent="true"
+              className={cn(
+                "relative w-full max-w-xl bg-white dark:bg-slate-900 h-full shadow-2xl flex flex-col animate-slide-in-right text-xs text-slate-800 dark:text-slate-200 z-10",
+                locale === 'ar' ? 'border-r border-slate-200 dark:border-slate-800' : 'border-l border-slate-200 dark:border-slate-800'
+              )}
+            >
+              {/* Drawer Header — Pinned at top */}
+              <div className="flex items-center justify-between px-6 py-4.5 border-b border-slate-100 dark:border-slate-800 shrink-0 bg-white dark:bg-slate-900">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+                    <BookOpen className="w-4.5 h-4.5" />
                   </div>
-                  <button 
-                    onClick={() => setShowDrawer(false)}
-                    className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full cursor-pointer text-slate-400 hover:text-slate-600 border-none bg-transparent"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
+                  <h3 className="text-base font-extrabold text-slate-900 dark:text-white truncate">
+                    {t('Lesson Plan Details')}
+                  </h3>
                 </div>
+                <button 
+                  onClick={() => setShowDrawer(false)}
+                  className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl cursor-pointer text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors border-none bg-transparent"
+                  title={t('Close')}
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
 
+              {/* Drawer Content Body — Scrollable with native & mouse wheel handling */}
+              <div 
+                ref={drawerBodyRef}
+                onWheel={handleDrawerWheel}
+                data-lenis-prevent="true"
+                className="flex-1 overflow-y-auto overscroll-contain p-6 space-y-5 scrollbar-thin"
+              >
                 {/* Plan Title & Lesson Number */}
-                <div>
-                  <h4 className="text-lg font-black text-slate-900 dark:text-white">{selectedPlan.title}</h4>
-                  <p className="text-slate-500 font-mono text-xs mt-1">Lesson #{selectedPlan.lessonNumber || '1'}</p>
+                <div className="space-y-1">
+                  <h4 className="text-lg font-black text-slate-900 dark:text-white leading-tight">{selectedPlan.title}</h4>
+                  <p className="text-slate-500 font-mono text-xs">Lesson #{selectedPlan.lessonNumber || '1'}</p>
                 </div>
 
                 {/* 2-Column Metadata Grid */}
-                <div className="grid grid-cols-2 gap-4 bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 text-xs">
+                <div className="grid grid-cols-2 gap-4 bg-slate-50 dark:bg-slate-950/60 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 text-xs">
                   <div>
-                    <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">SUBJECT</span>
+                    <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">{t('Subject')}</span>
                     <strong className="text-slate-800 dark:text-slate-200 font-extrabold">{selectedPlan.subject?.name || 'N/A'}</strong>
                   </div>
                   <div>
-                    <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">CLASS SECTION</span>
+                    <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">{t('Class Section')}</span>
                     <strong className="text-slate-800 dark:text-slate-200 font-extrabold">{selectedPlan.section?.code || section?.code || 'N/A'}</strong>
                   </div>
                   <div>
-                    <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">SYLLABUS CURRICULUM</span>
+                    <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">{t('Syllabus Curriculum')}</span>
                     <strong className="text-slate-800 dark:text-slate-200 font-extrabold">{selectedPlan.curriculum?.name || 'N/A'}</strong>
                   </div>
                   <div>
-                    <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">ACADEMIC CYCLE</span>
+                    <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">{t('Academic Cycle')}</span>
                     <strong className="text-slate-800 dark:text-slate-200 font-extrabold">
                       {selectedPlan.academicYear?.name || '2026-2027 Academic Year'} ({selectedPlan.academicTerm?.name || 'Current Term'})
                     </strong>
                   </div>
                   <div>
-                    <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">ASSIGNED FACULTY</span>
+                    <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">{t('Assigned Faculty')}</span>
                     <strong className="text-slate-800 dark:text-slate-200 font-extrabold">{selectedPlan.teacher?.displayName || selectedPlan.teacher?.name || 'N/A'}</strong>
                   </div>
                   <div>
-                    <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">VERIFICATION STATUS</span>
+                    <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">{t('Verification Status')}</span>
                     <strong className={cn(
                       "font-black uppercase text-xs",
                       selectedPlan.recordStatus === 'Approved' ? 'text-emerald-600 dark:text-emerald-400' :
@@ -397,28 +431,28 @@ const routeParams = useParams();
                 {/* Detail Blocks */}
                 <div className="space-y-4">
                   <div>
-                    <span className="font-extrabold text-slate-900 dark:text-white block mb-1.5 text-xs">Learning Objectives:</span>
+                    <span className="font-extrabold text-slate-900 dark:text-white block mb-1.5 text-xs">{t('Learning Objectives')}:</span>
                     <p className="p-3.5 bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-xl leading-relaxed whitespace-pre-line text-slate-700 dark:text-slate-300">
                       {selectedPlan.objectives || 'No learning objectives specified.'}
                     </p>
                   </div>
 
                   <div>
-                    <span className="font-extrabold text-slate-900 dark:text-white block mb-1.5 text-xs">Teaching Methods / Syllabi:</span>
+                    <span className="font-extrabold text-slate-900 dark:text-white block mb-1.5 text-xs">{t('Teaching Methods / Syllabi')}:</span>
                     <p className="p-3.5 bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-xl leading-relaxed whitespace-pre-line text-slate-700 dark:text-slate-300">
                       {selectedPlan.teachingMethod || 'No teaching methodology documented.'}
                     </p>
                   </div>
 
                   <div>
-                    <span className="font-extrabold text-slate-900 dark:text-white block mb-1.5 text-xs">Homework & Classwork Assignments:</span>
+                    <span className="font-extrabold text-slate-900 dark:text-white block mb-1.5 text-xs">{t('Homework & Classwork Assignments')}:</span>
                     <p className="p-3.5 bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-xl leading-relaxed whitespace-pre-line text-slate-700 dark:text-slate-300">
                       {selectedPlan.homework || 'No homework assigned.'}
                     </p>
                   </div>
 
                   <div>
-                    <span className="font-extrabold text-slate-900 dark:text-white block mb-1.5 text-xs">Assessment Criteria:</span>
+                    <span className="font-extrabold text-slate-900 dark:text-white block mb-1.5 text-xs">{t('Assessment Criteria')}:</span>
                     <p className="p-3.5 bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-xl leading-relaxed whitespace-pre-line text-slate-700 dark:text-slate-300">
                       {selectedPlan.assessmentMethod || 'No assessment method defined.'}
                     </p>
@@ -427,51 +461,51 @@ const routeParams = useParams();
                   {/* Rejection Alert Box inside drawer */}
                   {selectedPlan.recordStatus === 'Rejected' && selectedPlan.rejectionReason && (
                     <div className="p-4 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/40 rounded-xl text-rose-800 dark:text-rose-200 space-y-1">
-                      <span className="font-black block">Section Head Rejection Notes:</span>
+                      <span className="font-black block">{t('Section Head Rejection Notes')}:</span>
                       <p className="italic">"{selectedPlan.rejectionReason}"</p>
                     </div>
                   )}
                 </div>
               </div>
 
-              {/* Section Head Action Module Footer */}
-              <div className="pt-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl space-y-3">
-                <span className="font-black text-xs text-slate-800 dark:text-white block">Section Head Decision & Status Control</span>
+              {/* Section Head Action Module Footer — Pinned at bottom */}
+              <div className="shrink-0 p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/80 space-y-3">
+                <span className="font-black text-xs text-slate-800 dark:text-white block">{t('Section Head Decision & Status Control')}</span>
                 
-                <div className="flex flex-col sm:flex-row gap-3">
+                <div className="flex flex-col sm:flex-row gap-2.5">
                   <button
                     onClick={() => handleUpdateStatus(selectedPlan.documentId || selectedPlan.id, 'Approved')}
                     disabled={submittingIds[selectedPlan.documentId || selectedPlan.id]}
                     className={cn(
-                      "flex-1 py-2.5 px-4 rounded-xl font-extrabold text-xs text-white transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer border-none",
+                      "flex-1 py-2.5 px-4 rounded-xl font-extrabold text-xs text-white transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer border-none",
                       selectedPlan.recordStatus === 'Approved' ? "bg-emerald-700 opacity-90" : "bg-emerald-600 hover:bg-emerald-700 active:scale-95"
                     )}
                   >
                     <CheckCircle2 className="w-4 h-4" />
-                    <span>{selectedPlan.recordStatus === 'Approved' ? 'Already Approved' : 'Approve & Publish'}</span>
+                    <span>{selectedPlan.recordStatus === 'Approved' ? t('Already Approved') : t('Approve & Publish')}</span>
                   </button>
 
                   <button
                     onClick={() => {
                       const reason = rejectionReasons[selectedPlan.documentId || selectedPlan.id];
                       if (!reason?.trim()) {
-                        toast.error('Please enter a rejection reason below before rejecting.');
+                        toast.error(t('Please enter a rejection reason below before rejecting.'));
                         return;
                       }
                       handleUpdateStatus(selectedPlan.documentId || selectedPlan.id, 'Rejected', reason);
                     }}
                     disabled={submittingIds[selectedPlan.documentId || selectedPlan.id]}
-                    className="py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-extrabold text-xs transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer border-none"
+                    className="py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-extrabold text-xs transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer border-none"
                   >
                     <XCircle className="w-4 h-4" />
-                    <span>Reject Plan</span>
+                    <span>{t('Reject Plan')}</span>
                   </button>
                 </div>
 
                 <input
                   type="text"
-                  placeholder="Rejection reason / feedback notes for teacher..."
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs text-slate-800 dark:text-slate-200"
+                  placeholder={t('Rejection reason / feedback notes for teacher...')}
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-500"
                   value={rejectionReasons[selectedPlan.documentId || selectedPlan.id] || ''}
                   onChange={(e) => setRejectionReasons({ ...rejectionReasons, [selectedPlan.documentId || selectedPlan.id]: e.target.value })}
                 />
