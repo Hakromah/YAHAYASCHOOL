@@ -11,9 +11,11 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   Plus, Calendar, Clock, MapPin, RefreshCw, Search, BookOpen, Users,
   Grid3X3, List, Trash2, Pencil, X, Building2, AlertTriangle,
-  Filter, Download, CheckCircle2, User
+  Filter, Download, CheckCircle2, User, GraduationCap, Eye, Printer, CalendarDays,
 } from 'lucide-react';
 import { apiClient } from '@/services/api.service';
+import { useAuth } from '@/hooks/useAuth';
+import { UserRoleEnum } from '@/types/enums';
 import { toast } from 'sonner';
 import qs from 'qs';
 
@@ -58,6 +60,7 @@ interface TimetableSlot {
   academicTerm: any;
   courseOffering: any;
   subjectName: string;
+  subjectCode?: string;
   teacherName: string;
   sectionName: string;
   roomName: string;
@@ -99,6 +102,7 @@ function getSubjectColor(subjectId: string | number): string {
 function mapSlot(item: any): TimetableSlot {
   const co = item.courseOffering;
   const subjectName = item.subject?.name || co?.subject?.name || 'No Subject';
+  const subjectCode = item.subject?.code || co?.subject?.code || '';
   const subjectId = item.subject?.id || co?.subject?.id || item.id;
   const teacherRaw = item.teacher || co?.teacher;
   const teacherName = teacherRaw
@@ -111,6 +115,7 @@ function mapSlot(item: any): TimetableSlot {
   return {
     ...item,
     subjectName,
+    subjectCode,
     teacherName,
     sectionName,
     roomName,
@@ -126,20 +131,23 @@ function mapSlot(item: any): TimetableSlot {
 // Slot Card
 // ─────────────────────────────────────────────────────────────────────────────
 
-function SlotCard({ slot, onEdit, onDelete, canModify }: {
+function SlotCard({ slot, onSelect, onEdit, onDelete, canModify }: {
   slot: TimetableSlot;
+  onSelect?: (s: TimetableSlot) => void;
   onEdit: (s: TimetableSlot) => void;
   onDelete: (s: TimetableSlot) => void;
   canModify: boolean;
 }) {
   const [hovered, setHovered] = useState(false);
   const isCancelled = slot.recordStatus === 'Cancelled';
+  const isRescheduled = slot.recordStatus === 'Rescheduled';
 
   return (
     <div
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      className={`relative rounded-xl border px-2.5 py-2 text-xs transition-all ${slot.colorClass} ${isCancelled ? 'opacity-50' : ''}`}
+      onClick={() => onSelect?.(slot)}
+      className={`relative rounded-xl border px-2.5 py-2 text-xs transition-all cursor-pointer shadow-xs hover:shadow-md ${slot.colorClass} ${isCancelled ? 'opacity-50' : ''}`}
     >
       <div className={`font-extrabold truncate ${isCancelled ? 'line-through' : ''}`}>{slot.subjectName}</div>
       <div className="flex items-center gap-1 text-[10px] opacity-70 mt-0.5">
@@ -161,18 +169,23 @@ function SlotCard({ slot, onEdit, onDelete, canModify }: {
           {slot.sectionName}
         </span>
       )}
+      {/* Edit / Delete — staff only */}
       {canModify && hovered && (
-        <div className="absolute top-1 right-1 flex gap-1">
-          <button onClick={() => onEdit(slot)} className="p-1 rounded-md bg-white/80 dark:bg-slate-900/80 text-indigo-600 cursor-pointer border-none shadow-xs">
+        <div className="absolute top-1 right-1 flex gap-1 z-10" onClick={(e) => e.stopPropagation()}>
+          <button onClick={() => onEdit(slot)} className="p-1 rounded-md bg-white/80 dark:bg-slate-900/80 text-indigo-600 cursor-pointer border-none shadow-xs hover:bg-white dark:hover:bg-slate-900">
             <Pencil className="w-2.5 h-2.5" />
           </button>
-          <button onClick={() => onDelete(slot)} className="p-1 rounded-md bg-white/80 dark:bg-slate-900/80 text-rose-600 cursor-pointer border-none shadow-xs">
+          <button onClick={() => onDelete(slot)} className="p-1 rounded-md bg-white/80 dark:bg-slate-900/80 text-rose-600 cursor-pointer border-none shadow-xs hover:bg-white dark:hover:bg-slate-900">
             <Trash2 className="w-2.5 h-2.5" />
           </button>
         </div>
       )}
-      {slot.recordStatus !== 'Active' && (
-        <span className="absolute bottom-1 right-1 text-[8px] font-extrabold uppercase opacity-70">{slot.recordStatus}</span>
+      {/* Status badge */}
+      {(isCancelled || isRescheduled) && (
+        <span className={`absolute bottom-1 right-1 text-[8px] font-extrabold uppercase px-1 py-0.5 rounded-md
+          ${isCancelled ? 'bg-rose-200 text-rose-700 dark:bg-rose-900/60 dark:text-rose-300' : 'bg-amber-200 text-amber-700 dark:bg-amber-900/60 dark:text-amber-300'}`}>
+          {slot.recordStatus}
+        </span>
       )}
     </div>
   );
@@ -428,17 +441,220 @@ function ScheduleModal({ editItem, onClose, onSaved, sections, subjects, teacher
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Session Details Modal (For Students & Staff inspection)
+// ─────────────────────────────────────────────────────────────────────────────
+
+function SessionDetailModal({
+  slot,
+  onClose,
+  onEdit,
+  canModify,
+}: {
+  slot: TimetableSlot;
+  onClose: () => void;
+  onEdit?: (s: TimetableSlot) => void;
+  canModify: boolean;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col">
+        {/* Header */}
+        <div className="flex items-start justify-between p-5 border-b border-slate-100 dark:border-slate-800">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border ${slot.colorClass}`}>
+                {slot.subjectCode || 'SESSION'}
+              </span>
+              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                slot.recordStatus === 'Active'
+                  ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
+                  : slot.recordStatus === 'Cancelled'
+                  ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300'
+                  : 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300'
+              }`}>
+                {slot.recordStatus}
+              </span>
+            </div>
+            <h3 className="font-black text-slate-900 dark:text-white text-base mt-1">
+              {slot.subjectName}
+            </h3>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Content Details */}
+        <div className="p-5 space-y-3.5">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 space-y-1">
+              <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                <Calendar className="w-3.5 h-3.5 text-indigo-500" /> Day & Time
+              </div>
+              <p className="text-xs font-black text-slate-900 dark:text-white">
+                {slot.dayOfWeek}
+              </p>
+              <p className="text-[11px] font-mono text-indigo-600 dark:text-indigo-400 font-bold">
+                {formatTime(slot.startTime)} – {formatTime(slot.endTime)} ({slot.durationMinutes} min)
+              </p>
+            </div>
+
+            <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 space-y-1">
+              <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                <Building2 className="w-3.5 h-3.5 text-emerald-500" /> Classroom & Room
+              </div>
+              <p className="text-xs font-black text-slate-900 dark:text-white truncate">
+                {slot.roomName}
+              </p>
+              {slot.classroom?.capacity && (
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  Capacity: {slot.classroom.capacity} seats
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-8 h-8 rounded-xl bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-300 shrink-0">
+                <User className="w-4 h-4" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[10px] font-bold text-slate-400 uppercase">Faculty Member</p>
+                <p className="text-xs font-black text-slate-900 dark:text-white truncate">{slot.teacherName}</p>
+              </div>
+            </div>
+            {slot.sectionName && (
+              <div className="text-right shrink-0">
+                <p className="text-[10px] font-bold text-slate-400 uppercase">Section</p>
+                <p className="text-xs font-black text-indigo-600 dark:text-indigo-400">{slot.sectionName}</p>
+              </div>
+            )}
+          </div>
+
+          {(slot.academicTerm || slot.academicYear) && (
+            <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 px-1">
+              <span>Term: <strong className="text-slate-700 dark:text-slate-200">{slot.academicTerm?.name || 'Current Term'}</strong></span>
+              <span>Year: <strong className="text-slate-700 dark:text-slate-200">{slot.academicYear?.name || 'Academic Session'}</strong></span>
+            </div>
+          )}
+
+          {/* Institutional note */}
+          <div className="p-2.5 rounded-xl bg-indigo-50/70 dark:bg-indigo-950/20 border border-indigo-100/80 dark:border-indigo-900/40 text-[11px] text-indigo-700 dark:text-indigo-300 flex items-center gap-2">
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+            <span>Official academic session verified and published by the school registrar.</span>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-between p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+          {canModify && onEdit ? (
+            <button
+              onClick={() => {
+                onClose();
+                onEdit(slot);
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition-colors cursor-pointer"
+            >
+              <Pencil className="w-3 h-3" /> Edit Session
+            </button>
+          ) : (
+            <div className="text-[11px] text-slate-400 flex items-center gap-1">
+              <Eye className="w-3.5 h-3.5 text-indigo-500" /> Read-Only Record
+            </div>
+          )}
+          <button
+            onClick={onClose}
+            className="px-4 py-1.5 rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold transition-colors cursor-pointer"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Student Read-Only Banner
+// ─────────────────────────────────────────────────────────────────────────────
+
+function StudentBanner({
+  activeSessions,
+  totalHours,
+  studentSection,
+}: {
+  activeSessions: number;
+  totalHours?: string;
+  studentSection?: string;
+}) {
+  return (
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-r from-indigo-900 via-indigo-800 to-sky-900 text-white rounded-2xl p-5 shadow-md relative overflow-hidden">
+      <div className="flex items-center gap-3.5 z-10">
+        <div className="p-3 bg-white/10 backdrop-blur-md rounded-xl border border-white/20 text-white shrink-0">
+          <GraduationCap className="w-6 h-6 text-sky-300" />
+        </div>
+        <div className="space-y-0.5">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="font-black text-sm text-white">
+              Official Class Timetable {studentSection ? `• Section ${studentSection}` : ''}
+            </span>
+            <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-[9px] font-black uppercase tracking-wider">
+              Verified & Published
+            </span>
+          </div>
+          <p className="text-xs text-indigo-200/90 leading-relaxed max-w-xl">
+            This schedule is directly generated by the school academic administration. Students have read-only access to synchronize classes, venues, and timings.
+          </p>
+        </div>
+      </div>
+      <div className="flex items-center gap-3 self-start sm:self-auto z-10">
+        <div className="bg-white/10 backdrop-blur-md border border-white/10 rounded-xl px-3.5 py-1.5 text-center">
+          <p className="text-lg font-black text-white">{activeSessions}</p>
+          <p className="text-[10px] font-semibold text-indigo-200">Classes / Wk</p>
+        </div>
+        {totalHours && (
+          <div className="bg-white/10 backdrop-blur-md border border-white/10 rounded-xl px-3.5 py-1.5 text-center">
+            <p className="text-lg font-black text-sky-300">{totalHours}h</p>
+            <p className="text-[10px] font-semibold text-indigo-200">Hours / Wk</p>
+          </div>
+        )}
+        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white/15 border border-white/20 rounded-xl text-[10px] font-extrabold text-white uppercase tracking-wider shrink-0">
+          <Eye className="w-3.5 h-3.5 text-sky-300" />
+          <span>Read Only</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Main Page
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function TimetablesPage() {
   const locale = useLocale();
   const t = (key: string, loc?: string) => i18nT(key, loc || locale);
-const [slots, setSlots] = useState<TimetableSlot[]>([]);
+  const { user, role } = useAuth();
+
+  // ── Role gate: students and parents are read-only ─────────────────────────
+  const isStudent = role === UserRoleEnum.Student;
+  const isParent  = role === UserRoleEnum.Parent;
+  const canModify = !isStudent && !isParent && role !== null;
+
+  // Student linked section (if any)
+  const studentProfile = (user?.profile as any) || null;
+  const studentSection = studentProfile?.section?.name || studentProfile?.academicSection?.name || '';
+
+  const [slots, setSlots] = useState<TimetableSlot[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>('week');
   const [showModal, setShowModal] = useState(false);
   const [editSlot, setEditSlot] = useState<TimetableSlot | null>(null);
+  const [selectedSlot, setSelectedSlot] = useState<TimetableSlot | null>(null);
   const [query, setQuery] = useState('');
   const [filterSection, setFilterSection] = useState('');
   const [filterTeacher, setFilterTeacher] = useState('');
@@ -543,13 +759,18 @@ const [slots, setSlots] = useState<TimetableSlot[]>([]);
     setShowModal(true);
   };
 
-  const stats = useMemo(() => ({
-    total: slots.length,
-    active: slots.filter(s => s.recordStatus === 'Active').length,
-    cancelled: slots.filter(s => s.recordStatus === 'Cancelled').length,
-    uniqueSubjects: new Set(slots.map(s => s.subjectName)).size,
-    uniqueTeachers: new Set(slots.map(s => s.teacherName)).size,
-  }), [slots]);
+  const stats = useMemo(() => {
+    const active = filtered.filter(s => s.recordStatus === 'Active');
+    const totalMinutes = active.reduce((acc, curr) => acc + (curr.durationMinutes || 0), 0);
+    return {
+      total: filtered.length,
+      active: active.length,
+      cancelled: filtered.filter(s => s.recordStatus === 'Cancelled').length,
+      uniqueSubjects: new Set(filtered.map(s => s.subjectName)).size,
+      uniqueTeachers: new Set(filtered.map(s => s.teacherName)).size,
+      totalHours: (totalMinutes / 60).toFixed(1),
+    };
+  }, [filtered]);
 
   const exportCSV = () => {
     const rows = [
@@ -566,7 +787,6 @@ const [slots, setSlots] = useState<TimetableSlot[]>([]);
     URL.revokeObjectURL(url);
   };
 
-  const canModify = true;
   const sel = 'px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 text-xs font-semibold focus:outline-none focus:border-indigo-500';
 
   return (
@@ -579,38 +799,57 @@ const [slots, setSlots] = useState<TimetableSlot[]>([]);
             <div className="p-2 bg-indigo-600 rounded-xl shadow-md shadow-indigo-200 dark:shadow-indigo-950">
               <Calendar className="w-5 h-5 text-white" />
             </div>
-            <h1 className="text-xl font-black text-slate-900 dark:text-white">Class Timetable</h1>
+            <h1 className="text-xl font-black text-slate-900 dark:text-white">
+              {isStudent ? t('My Class Timetable') : t('Class Timetable')}
+            </h1>
           </div>
           <p className="text-sm text-slate-500 dark:text-slate-400 ml-11">
-            Schedule and manage academic sessions across all sections and faculty members.
+            {isStudent
+              ? t('Your official weekly class schedule published by the administration.')
+              : t('Schedule and manage academic sessions across all sections and faculty members.')}
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <button onClick={loadSlots} disabled={loading} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer transition-colors">
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
+            {t('Refresh')}
+          </button>
+          <button onClick={() => window.print()} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer transition-colors" title="Print timetable">
+            <Printer className="w-3.5 h-3.5" />
+            {t('Print')}
           </button>
           <button onClick={exportCSV} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer transition-colors">
             <Download className="w-3.5 h-3.5" />
-            Export CSV
+            {t('Export CSV')}
           </button>
           {canModify && (
             <button onClick={() => { setEditSlot(null); setShowModal(true); }} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md shadow-indigo-200 dark:shadow-indigo-950 cursor-pointer border-none transition-colors">
               <Plus className="w-4 h-4" />
-              Schedule Session
+              {t('Schedule Session')}
             </button>
           )}
         </div>
       </div>
 
+      {/* Student Official Read-Only Banner */}
+      {isStudent && (
+        <StudentBanner
+          activeSessions={stats.active}
+          totalHours={stats.totalHours}
+          studentSection={studentSection}
+        />
+      )}
+
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+      <div className={`grid gap-3 ${isStudent ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-2 sm:grid-cols-5'}`}>
         {[
-          { label: 'Total Sessions', value: stats.total, icon: <Calendar className="w-4 h-4 text-indigo-600" />, bg: 'bg-indigo-50 dark:bg-indigo-950/30' },
-          { label: 'Active', value: stats.active, icon: <CheckCircle2 className="w-4 h-4 text-emerald-600" />, bg: 'bg-emerald-50 dark:bg-emerald-950/30' },
-          { label: 'Cancelled', value: stats.cancelled, icon: <X className="w-4 h-4 text-rose-600" />, bg: 'bg-rose-50 dark:bg-rose-950/30' },
-          { label: 'Subjects', value: stats.uniqueSubjects, icon: <BookOpen className="w-4 h-4 text-amber-600" />, bg: 'bg-amber-50 dark:bg-amber-950/30' },
-          { label: 'Faculty', value: stats.uniqueTeachers, icon: <Users className="w-4 h-4 text-sky-600" />, bg: 'bg-sky-50 dark:bg-sky-950/30' },
+          { label: t('Total Sessions'), value: stats.total, icon: <Calendar className="w-4 h-4 text-indigo-600" />, bg: 'bg-indigo-50 dark:bg-indigo-950/30' },
+          { label: t('Active'), value: stats.active, icon: <CheckCircle2 className="w-4 h-4 text-emerald-600" />, bg: 'bg-emerald-50 dark:bg-emerald-950/30' },
+          { label: t('Hours / Wk'), value: `${stats.totalHours}h`, icon: <Clock className="w-4 h-4 text-sky-600" />, bg: 'bg-sky-50 dark:bg-sky-950/30' },
+          { label: t('Cancelled'), value: stats.cancelled, icon: <X className="w-4 h-4 text-rose-600" />, bg: 'bg-rose-50 dark:bg-rose-950/30' },
+          ...(!isStudent ? [
+            { label: t('Faculty'), value: stats.uniqueTeachers, icon: <Users className="w-4 h-4 text-purple-600" />, bg: 'bg-purple-50 dark:bg-purple-950/30' },
+          ] : []),
         ].map(s => (
           <div key={s.label} className={`p-4 rounded-2xl border border-slate-100 dark:border-slate-800 ${s.bg} flex items-center gap-3`}>
             <div className="p-2 bg-white dark:bg-slate-900 rounded-xl shadow-xs">{s.icon}</div>
@@ -731,7 +970,14 @@ const [slots, setSlots] = useState<TimetableSlot[]>([]);
                   </div>
                 ) : (
                   slotsByDay[day].map(slot => (
-                    <SlotCard key={slot.id} slot={slot} onEdit={openEdit} onDelete={handleDelete} canModify={canModify} />
+                    <SlotCard
+                      key={slot.id}
+                      slot={slot}
+                      onSelect={setSelectedSlot}
+                      onEdit={openEdit}
+                      onDelete={handleDelete}
+                      canModify={canModify}
+                    />
                   ))
                 )}
                 {canModify && (
@@ -768,7 +1014,11 @@ const [slots, setSlots] = useState<TimetableSlot[]>([]);
                 <span>Status</span>
               </div>
               {filtered.map(slot => (
-                <div key={slot.id} className="grid grid-cols-8 px-5 py-3 items-center hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group text-xs">
+                <div
+                  key={slot.id}
+                  onClick={() => setSelectedSlot(slot)}
+                  className="grid grid-cols-8 px-5 py-3 items-center hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group text-xs cursor-pointer"
+                >
                   <div className="col-span-2">
                     <span className={`inline-block px-2 py-0.5 rounded-md text-[10px] font-bold border ${slot.colorClass} mb-1`}>
                       {slot.subjectName}
@@ -801,16 +1051,25 @@ const [slots, setSlots] = useState<TimetableSlot[]>([]);
                       slot.recordStatus === 'Cancelled' ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400' :
                       'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400'
                     }`}>{slot.recordStatus}</span>
-                    {canModify && (
-                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button onClick={() => openEdit(slot)} className="p-1 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-950/40 text-indigo-600 cursor-pointer border-none bg-transparent">
-                          <Pencil className="w-3 h-3" />
-                        </button>
-                        <button onClick={() => handleDelete(slot)} className="p-1 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 cursor-pointer border-none bg-transparent">
-                          <Trash2 className="w-3 h-3" />
-                        </button>
-                      </div>
-                    )}
+                    <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        onClick={() => setSelectedSlot(slot)}
+                        className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 cursor-pointer border-none bg-transparent"
+                        title="View Details"
+                      >
+                        <Eye className="w-3 h-3" />
+                      </button>
+                      {canModify && (
+                        <>
+                          <button onClick={() => openEdit(slot)} className="p-1 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-950/40 text-indigo-600 cursor-pointer border-none bg-transparent" title="Edit">
+                            <Pencil className="w-3 h-3" />
+                          </button>
+                          <button onClick={() => handleDelete(slot)} className="p-1 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 cursor-pointer border-none bg-transparent" title="Delete">
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}
@@ -820,25 +1079,39 @@ const [slots, setSlots] = useState<TimetableSlot[]>([]);
       )}
 
       {/* Empty state */}
-      {!loading && slots.length === 0 && (
+      {!loading && filtered.length === 0 && (
         <div className="flex flex-col items-center justify-center py-24 text-center">
           <div className="w-16 h-16 bg-indigo-50 dark:bg-indigo-950/30 rounded-2xl flex items-center justify-center mb-4">
             <Calendar className="w-8 h-8 text-indigo-300" />
           </div>
-          <h3 className="font-extrabold text-slate-700 dark:text-slate-300 text-base">No Timetable Sessions Yet</h3>
+          <h3 className="font-extrabold text-slate-700 dark:text-slate-300 text-base">
+            {isStudent ? t('No Timetable Published Yet') : t('No Timetable Sessions Yet')}
+          </h3>
           <p className="text-sm text-slate-400 dark:text-slate-600 mt-1 max-w-sm">
-            Start by clicking <strong>Schedule Session</strong> to add class sessions to the timetable.
+            {isStudent
+              ? t('Your class schedule has not been published by the administration yet. Please check back later.')
+              : t('Start by clicking Schedule Session to add class sessions to the timetable.')}
           </p>
           {canModify && (
-            <button onClick={() => setShowModal(true)} className="mt-5 flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-xl cursor-pointer border-none shadow-md">
-              <Plus className="w-4 h-4" /> Schedule First Session
+            <button onClick={() => { setEditSlot(null); setShowModal(true); }} className="mt-5 flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-xl cursor-pointer border-none shadow-md">
+              <Plus className="w-4 h-4" /> {t('Schedule First Session')}
             </button>
           )}
         </div>
       )}
 
-      {/* Modal */}
-      {showModal && (
+      {/* Session Detail Modal for inspection (Accessible to Student & Staff) */}
+      {selectedSlot && (
+        <SessionDetailModal
+          slot={selectedSlot}
+          onClose={() => setSelectedSlot(null)}
+          onEdit={openEdit}
+          canModify={canModify}
+        />
+      )}
+
+      {/* Schedule Modal (Staff Only) */}
+      {canModify && showModal && (
         <ScheduleModal
           editItem={editSlot}
           onClose={() => { setShowModal(false); setEditSlot(null); }}
