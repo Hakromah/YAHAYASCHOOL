@@ -72,12 +72,20 @@ export function Navbar({
 
   useEffect(() => {
     if (mobileMenuOpen) {
+      // Lock scroll when mobile menu is open
       lenis?.stop();
+      document.body.style.overflow = 'hidden';
+      document.body.style.touchAction = 'none';
     } else {
+      // Restore scroll when menu is closed
       lenis?.start();
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
     }
     return () => {
       lenis?.start();
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
     };
   }, [mobileMenuOpen, lenis]);
 
@@ -576,7 +584,7 @@ export function Navbar({
 
         {/* ── Mobile Menu Drawer ── */}
         {mobileMenuOpen && (
-          <div className="lg:hidden bg-white border-t border-gray-100 pt-4 pb-6 shadow-xl absolute w-full left-0 z-50 overflow-hidden transition-all duration-300 origin-top animate-in fade-in slide-in-from-top-2">
+          <div className="lg:hidden bg-white border-t border-gray-100 pt-4 pb-6 shadow-xl absolute w-full left-0 z-50 overflow-y-auto max-h-[80svh] transition-all duration-300 origin-top animate-in fade-in slide-in-from-top-2">
             <div className="flex flex-col">
               {(
                 rawItems.length > 0
