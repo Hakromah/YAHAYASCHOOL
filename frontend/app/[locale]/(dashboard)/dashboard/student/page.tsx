@@ -136,7 +136,7 @@ function StudentCourseRow({ course, idx }: { course: CourseRecord; idx: number }
               title={t('View assessment breakdown')}>
               {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
             </button>
-          ) : <td />}
+          ) : null}
         </td>
       </tr>
       {expanded && course.componentBreakdown.length > 0 && (
