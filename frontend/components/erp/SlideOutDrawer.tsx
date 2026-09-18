@@ -28,7 +28,7 @@ import {
   X
 } from 'lucide-react';
 import Link from 'next/link';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { Avatar } from '@/components/shared/Avatar';
 import { erpService } from '@/services/erp.service';
@@ -676,6 +676,10 @@ export function SlideOutDrawer({
   const [loadingPayroll, setLoadingPayroll] = useState(false);
   const [loadingAttendance, setLoadingAttendance] = useState(false);
   const [loadingAudit, setLoadingAudit] = useState(false);
+  // Ref to prevent re-fetching audit logs in an infinite loop when the API returns empty or fails
+  const hasFetchedAuditRef = useRef(false);
+  const hasFetchedPayrollRef = useRef(false);
+  const hasFetchedAttendanceRef = useRef(false);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && isOpen) onClose(); };
@@ -691,6 +695,10 @@ export function SlideOutDrawer({
       setPayrollRuns([]);
       setAttendanceRecords([]);
       setAuditLogs([]);
+      // Reset all fetch-guard refs so the new profile's data can be loaded
+      hasFetchedAuditRef.current = false;
+      hasFetchedPayrollRef.current = false;
+      hasFetchedAttendanceRef.current = false;
     }
   }, [record?.id, record?.documentId, isOpen]);
 
@@ -708,19 +716,22 @@ export function SlideOutDrawer({
   }, [record, category]);
 
   const loadPayrollData = useCallback(async () => {
-    if (loadingPayroll || payrollRuns.length > 0) return;
+    if (hasFetchedPayrollRef.current) return;
+    hasFetchedPayrollRef.current = true;
     setLoadingPayroll(true);
     try {
       const runs = await financeService.getPayrollRuns();
       setPayrollRuns(Array.isArray(runs) ? runs : []);
     } catch { /* noop */ }
     finally { setLoadingPayroll(false); }
-  }, [loadingPayroll, payrollRuns.length]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadAttendanceData = useCallback(async () => {
-    if (!record || loadingAttendance || attendanceRecords.length > 0) return;
+    if (!record) return;
+    if (hasFetchedAttendanceRef.current) return;
     const rid = record.id;
     if (!rid || isNaN(Number(rid))) return;
+    hasFetchedAttendanceRef.current = true;
     setLoadingAttendance(true);
     try {
       const res = await getAttendanceRecords({
@@ -733,17 +744,27 @@ export function SlideOutDrawer({
       setAttendanceRecords(arr);
     } catch { /* noop */ }
     finally { setLoadingAttendance(false); }
-  }, [record, loadingAttendance, attendanceRecords.length]);
+  }, [record]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadAuditData = useCallback(async () => {
-    if (loadingAudit || auditLogs.length > 0) return;
+    // hasFetchedAuditRef guards against re-fetching after empty/error results.
+    // Crucially, loadingAudit is NOT in deps — it was the cause of the infinite loop:
+    // loadingAudit true→false would recreate the callback → trigger useEffect → fetch again → repeat.
+    if (hasFetchedAuditRef.current) return;
+    hasFetchedAuditRef.current = true;
     setLoadingAudit(true);
     try {
-      const res = await auditService.getLogs({ entity: 'teacher', pageSize: 30 });
+      const res = await auditService.getLogs({ entity: 'teacher', pageSize: 50 });
       setAuditLogs(res.data || []);
-    } catch { /* noop */ }
-    finally { setLoadingAudit(false); }
-  }, [loadingAudit, auditLogs.length]);
+    } catch {
+      // API unavailable — show a non-disruptive notice rather than silently spinning forever
+      setAuditLogs([]);
+      toast.info('Audit logs service is unavailable. Contact your system administrator.');
+    } finally {
+      setLoadingAudit(false);
+    }
+  // Only record identity matters — not loadingAudit or auditLogs.length
+  }, []);  // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (isOpen && record && category === 'teacher') loadTeacherData();
