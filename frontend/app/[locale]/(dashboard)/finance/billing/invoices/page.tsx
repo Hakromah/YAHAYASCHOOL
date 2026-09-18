@@ -73,6 +73,8 @@ const { user, role } = useAuth();
   const [statusFilter, setStatusFilter] = useState('all');
   const [density, setDensity] = useState<TableDensity>('cozy');
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+  // Separate state for the invoice being edited — persists after the inspect drawer closes
+  const [invoiceToEdit, setInvoiceToEdit] = useState<Invoice | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
 
@@ -104,19 +106,20 @@ const { user, role } = useAuth();
   const [editNotes, setEditNotes] = useState('');
 
   useEffect(() => {
-    if (selectedInvoice) {
-      const sName = selectedInvoice.student
-        ? `${selectedInvoice.student.firstName || ''} ${selectedInvoice.student.lastName || ''}`.trim() || selectedInvoice.student.name || selectedInvoice.studentName || ''
-        : selectedInvoice.studentName || '';
+    const inv = invoiceToEdit;
+    if (inv) {
+      const sName = inv.student
+        ? `${inv.student.firstName || ''} ${inv.student.lastName || ''}`.trim() || inv.student.name || inv.studentName || ''
+        : inv.studentName || '';
       setEditStudentName(sName);
-      setEditStudentId(selectedInvoice.student?.id ? String(selectedInvoice.student.id) : '');
-      setEditTuitionAmount((selectedInvoice.subtotal || selectedInvoice.totalAmount || 0).toString());
+      setEditStudentId(inv.student?.id ? String(inv.student.id) : '');
+      setEditTuitionAmount((inv.subtotal || inv.totalAmount || 0).toString());
       setEditLibraryAmount('0');
-      setEditStatus(selectedInvoice.status || 'draft');
-      setEditDueDate(selectedInvoice.dueDate || '');
-      setEditNotes(selectedInvoice.notes || '');
+      setEditStatus(inv.status || 'draft');
+      setEditDueDate(inv.dueDate || '');
+      setEditNotes(inv.notes || '');
     }
-  }, [selectedInvoice]);
+  }, [invoiceToEdit]);
 
   const loadData = async () => {
     setLoading(true);
@@ -239,15 +242,16 @@ const { user, role } = useAuth();
 
   const handleUpdateInvoice = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedInvoice) return;
-    if (!canEditInvoice(selectedInvoice)) {
+    const inv = invoiceToEdit;
+    if (!inv) return;
+    if (!canEditInvoice(inv)) {
       toast.error(t('Your role cannot edit this invoice status.'));
       return;
     }
 
-    const targetId = selectedInvoice.documentId || selectedInvoice.id;
+    const targetId = inv.documentId || inv.id;
     const subtotal = parseFloat(editTuitionAmount || '0') + parseFloat(editLibraryAmount || '0');
-    const paidAmount = selectedInvoice.paidAmount || 0;
+    const paidAmount = inv.paidAmount || 0;
     const remainingBalance = Math.max(0, subtotal - paidAmount);
 
     try {
@@ -261,10 +265,10 @@ const { user, role } = useAuth();
         notes: editNotes || undefined,
       });
 
-      toast.success(`${t('Updated invoice')} ${selectedInvoice.invoiceNumber}!`);
+      toast.success(`${t('Updated invoice')} ${inv.invoiceNumber}!`);
       setShowEditModal(false);
+      setInvoiceToEdit(null);
       loadData();
-      setSelectedInvoice(null);
     } catch {
       toast.error(t('Failed to update invoice'));
     }
@@ -593,26 +597,34 @@ const { user, role } = useAuth();
         </div>
       )}
 
-      {/* Edit Modal */}
-      {showEditModal && selectedInvoice && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-lg w-full shadow-2xl overflow-hidden">
-            <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-800">
+      {/* Edit Modal — z-[60] so it renders above the z-50 inspect drawer */}
+      {showEditModal && invoiceToEdit && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-lg w-full shadow-2xl flex flex-col max-h-[90vh]">
+            <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-800 shrink-0">
               <div className="flex items-center gap-2.5">
                 <Edit3 className="w-6 h-6 text-sky-500" />
-                <h3 className="text-base font-black text-slate-900 dark:text-white">{t('Edit Invoice')} {selectedInvoice.invoiceNumber}</h3>
+                <div>
+                  <h3 className="text-base font-black text-slate-900 dark:text-white">{t('Edit Invoice')}</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-mono">{invoiceToEdit.invoiceNumber}</p>
+                </div>
               </div>
-              <button onClick={() => setShowEditModal(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white font-bold text-sm">✕</button>
+              <button
+                onClick={() => { setShowEditModal(false); setInvoiceToEdit(null); }}
+                className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
 
-            <form onSubmit={handleUpdateInvoice} className="p-6 space-y-4">
+            <form onSubmit={handleUpdateInvoice} className="p-6 space-y-4 overflow-y-auto flex-1">
               <div className="space-y-1">
                 <label className="text-xs font-bold text-slate-700 dark:text-slate-300">{t('Scholar / Student Name')}</label>
                 <input
                   type="text"
                   readOnly
                   value={editStudentName}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold"
+                  className="w-full px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold cursor-not-allowed"
                 />
               </div>
 
@@ -625,7 +637,7 @@ const { user, role } = useAuth();
                     required
                     value={editTuitionAmount}
                     onChange={(e) => setEditTuitionAmount(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-xs font-mono font-bold focus:outline-none focus:border-emerald-500"
+                    className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-xs font-mono font-bold focus:outline-none focus:border-sky-500"
                   />
                 </div>
                 <div className="space-y-1">
@@ -633,7 +645,7 @@ const { user, role } = useAuth();
                   <select
                     value={editStatus}
                     onChange={(e) => setEditStatus(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-xs font-bold focus:outline-none focus:border-emerald-500 cursor-pointer"
+                    className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-xs font-bold focus:outline-none focus:border-sky-500 cursor-pointer"
                   >
                     <option value="draft">{t('Draft')}</option>
                     <option value="pending_payment">{t('Pending Payment')}</option>
@@ -644,9 +656,41 @@ const { user, role } = useAuth();
                 </div>
               </div>
 
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">{t('Due Date')}</label>
+                <input
+                  type="date"
+                  value={editDueDate}
+                  onChange={(e) => setEditDueDate(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-xs font-bold focus:outline-none focus:border-sky-500 cursor-pointer"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">{t('Notes')}</label>
+                <textarea
+                  rows={3}
+                  value={editNotes}
+                  onChange={(e) => setEditNotes(e.target.value)}
+                  placeholder={t('Internal billing notes or instructions...')}
+                  className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-sky-500 resize-none"
+                />
+              </div>
+
               <div className="flex items-center justify-end gap-2 pt-4 border-t border-slate-200 dark:border-slate-800">
-                <button type="button" onClick={() => setShowEditModal(false)} className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold text-xs">{t('Cancel')}</button>
-                <button type="submit" className="px-5 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-black text-xs shadow-md">{t('Save Invoice Changes')}</button>
+                <button
+                  type="button"
+                  onClick={() => { setShowEditModal(false); setInvoiceToEdit(null); }}
+                  className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold text-xs cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                >
+                  {t('Cancel')}
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-black text-xs shadow-md cursor-pointer transition-colors"
+                >
+                  {t('Save Invoice Changes')}
+                </button>
               </div>
             </form>
           </div>
@@ -692,7 +736,14 @@ const { user, role } = useAuth();
             id: 'edit',
             label: t('Edit Invoice'),
             icon: <Edit3 className="w-3.5 h-3.5 text-sky-500" />,
-            onClick: () => setShowEditModal(true)
+            onClick: () => {
+              // Capture the current invoice BEFORE closing the drawer
+              setInvoiceToEdit(selectedInvoice);
+              // Close inspect drawer so the edit modal isn't hidden behind it (drawer is z-50)
+              setSelectedInvoice(null);
+              // Small delay ensures the drawer unmounts before the modal mounts
+              setTimeout(() => setShowEditModal(true), 50);
+            }
           }] : []),
           {
             id: 'preview',
