@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
   FileText, Printer, Scale, DollarSign,
   TrendingUp, ShieldCheck, RefreshCw, AlertTriangle,
@@ -9,9 +9,6 @@ import {
 } from 'lucide-react';
 import { useLocale } from 'next-intl';
 import { t as i18nT } from '@/lib/i18n-dict';
-
-// module-level i18n fallback
-const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
 import { financeService } from '@/services/finance.service';
 import { erpService } from '@/services/erp.service';
 import { EnterpriseModuleShell } from '@/components/erp/EnterpriseModuleShell';
@@ -25,7 +22,12 @@ import { Link } from '@/i18n/routing';
 
 export default function FinancialStatementsReportsPage() {
   const locale = useLocale();
-  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+  // Stable translate helper — stored in a ref so callbacks don't need it as a dependency
+  const translate = useCallback((key: string, loc?: string) => i18nT(key, loc || locale), [locale]);
+  const tRef = useRef(translate);
+  useEffect(() => { tRef.current = translate; }, [translate]);
+  // Convenience alias (safe for JSX - recreated every render, but NOT used in useCallback deps)
+  const t = translate;
   const { user } = useAuth();
 
   const [activeTab, setActiveTab] = useState<'income' | 'balance' | 'cashflow'>('income');
@@ -129,14 +131,14 @@ export default function FinancialStatementsReportsPage() {
         reportType: 'All'
       });
       setReportData(data);
-      toast.success(t('Financial statements ledger successfully aggregated.'));
+      toast.success(tRef.current('Financial statements ledger successfully aggregated.'));
     } catch (err: any) {
       setErrorMsg(err.message || 'Failed to aggregate ledger data.');
-      toast.error(t('Financial aggregation failed.'));
+      toast.error(tRef.current('Financial aggregation failed.'));
     } finally {
       setLoading(false);
     }
-  }, [academicYear, period, t]);
+  }, [academicYear, period]); // ← t intentionally excluded: tRef.current always has the latest translate without causing infinite re-renders
 
   useEffect(() => {
     fetchReportsData();
