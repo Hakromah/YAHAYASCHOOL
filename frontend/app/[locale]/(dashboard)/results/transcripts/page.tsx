@@ -7,7 +7,7 @@ import { t as i18nT } from '@/lib/i18n-dict';
 const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { PageContainer, PageHeader } from '@/components/shared/layout/PageContainer';
+import { PageContainer } from '@/components/shared/layout/PageContainer';
 import { apiClient } from '@/services/api.service';
 import { useAuth } from '@/hooks/useAuth';
 import {
@@ -20,9 +20,9 @@ import {
   FileBadge, Search, Printer, RefreshCw, Download,
   CheckCircle2, XCircle, AlertTriangle, ChevronDown, ChevronUp,
   BookOpen, Award, ShieldCheck, ShieldAlert, QrCode,
-  Clock, TrendingUp, Users, Layers, GraduationCap, ScrollText,
+  Clock, TrendingUp, Users, GraduationCap, ScrollText,
   Eye, Activity, UserCheck, FileSignature, Grid, Zap, Shield,
-  FileText, BarChart3, AlertCircle, X,
+  AlertCircle, BarChart3,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -232,7 +232,6 @@ export default function AdminTranscriptsPage() {
   const [studentsLoading, setStudentsLoading] = useState(true);
   const [selectedStudent, setSelectedStudent] = useState<StudentRecord | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [sectionFilter, setSectionFilter] = useState('');
 
   // Transcript mode & filters
   const [mode, setMode] = useState<TranscriptMode>('combined');
@@ -240,10 +239,15 @@ export default function AdminTranscriptsPage() {
   const [filterTermDoc, setFilterTermDoc] = useState('');
   const [selectedSectionDoc, setSelectedSectionDoc] = useState('');
 
-  // Lookup options
+  // Lookup options (Global school lookups)
   const [availableSections, setAvailableSections] = useState<{ documentId: string; name: string; sectionType?: string }[]>([]);
   const [availableYears, setAvailableYears] = useState<{ documentId: string; name: string }[]>([]);
   const [availableTerms, setAvailableTerms] = useState<{ documentId: string; name: string }[]>([]);
+
+  // Student-specific enrolled options
+  const [studentSections, setStudentSections] = useState<{ documentId: string; name: string; sectionType?: string }[]>([]);
+  const [studentYears, setStudentYears] = useState<{ documentId: string; name: string }[]>([]);
+  const [studentTerms, setStudentTerms] = useState<{ documentId: string; name: string }[]>([]);
 
   // Archive & Versions
   const [isArchiving, setIsArchiving] = useState(false);
@@ -283,7 +287,7 @@ export default function AdminTranscriptsPage() {
   const [clearanceMap, setClearanceMap] = useState<Record<string, { holds: any[] }>>({});
   const [clearanceLoading, setClearanceLoading] = useState(false);
 
-  // ── Load initial lookups (School Profile, Sections, Years, Terms, Students, Dashboard) ──
+  // ── Load initial global lookups ───────────────────────────────────────────
   const loadInitialData = useCallback(async () => {
     setStudentsLoading(true);
     try {
@@ -306,27 +310,24 @@ export default function AdminTranscriptsPage() {
         setSchoolProfile(schoolRes.data.data);
       }
 
-      setAvailableSections(
-        (sectionsRes.data?.data || []).map((sec: any) => ({
-          documentId: sec.documentId,
-          name: sec.name,
-          sectionType: sec.sectionType || sec.type || 'general',
-        }))
-      );
+      const allSecs = (sectionsRes.data?.data || []).map((sec: any) => ({
+        documentId: sec.documentId,
+        name: sec.name,
+        sectionType: sec.sectionType || sec.type || 'general',
+      }));
+      setAvailableSections(allSecs);
 
-      setAvailableYears(
-        (yearsRes.data?.data || []).map((yr: any) => ({
-          documentId: yr.documentId,
-          name: yr.name,
-        }))
-      );
+      const allYrs = (yearsRes.data?.data || []).map((yr: any) => ({
+        documentId: yr.documentId,
+        name: yr.name,
+      }));
+      setAvailableYears(allYrs);
 
-      setAvailableTerms(
-        (termsRes.data?.data || []).map((tm: any) => ({
-          documentId: tm.documentId,
-          name: tm.name,
-        }))
-      );
+      const allTms = (termsRes.data?.data || []).map((tm: any) => ({
+        documentId: tm.documentId,
+        name: tm.name,
+      }));
+      setAvailableTerms(allTms);
 
       const mappedStudents: StudentRecord[] = (studentsRes.data?.data || []).map((s: any) => ({
         id: s.id,
@@ -344,7 +345,7 @@ export default function AdminTranscriptsPage() {
 
       setStudents(mappedStudents);
       if (mappedStudents.length > 0 && !selectedStudent) {
-        // Leave unselected or keep current
+        setSelectedStudent(mappedStudents[0]);
       }
     } catch (err) {
       console.error('Initial data load error:', err);
@@ -353,6 +354,75 @@ export default function AdminTranscriptsPage() {
       setStudentsLoading(false);
     }
   }, [selectedStudent]);
+
+  // ── Fetch enrolled sections, years, and terms for selected student ────────
+  const fetchStudentEnrolledOptions = useCallback(async (studentDocId: string) => {
+    try {
+      const res = await apiClient.get('/student-enrollments', {
+        params: {
+          filters: { student: { documentId: { $eq: studentDocId } } },
+          populate: [
+            'courseOffering.academicSection',
+            'courseOffering.academicYear',
+            'courseOffering.academicTerm',
+          ],
+          pagination: { limit: 300 },
+        },
+      }).catch(() => ({ data: { data: [] } }));
+
+      const enrollments = res.data?.data || [];
+      const secMap = new Map<string, { documentId: string; name: string; sectionType?: string }>();
+      const yrMap = new Map<string, { documentId: string; name: string }>();
+      const tmMap = new Map<string, { documentId: string; name: string }>();
+
+      enrollments.forEach((enr: any) => {
+        const sec = enr.courseOffering?.academicSection;
+        const yr = enr.courseOffering?.academicYear;
+        const tm = enr.courseOffering?.academicTerm;
+        if (sec?.documentId) {
+          secMap.set(sec.documentId, {
+            documentId: sec.documentId,
+            name: sec.name,
+            sectionType: sec.sectionType || sec.type || 'general',
+          });
+        }
+        if (yr?.documentId) {
+          yrMap.set(yr.documentId, { documentId: yr.documentId, name: yr.name });
+        }
+        if (tm?.documentId) {
+          tmMap.set(tm.documentId, { documentId: tm.documentId, name: tm.name });
+        }
+      });
+
+      const secList = Array.from(secMap.values());
+      const yrList = Array.from(yrMap.values());
+      const tmList = Array.from(tmMap.values());
+
+      setStudentSections(secList);
+      setStudentYears(yrList);
+      setStudentTerms(tmList);
+
+      // Auto-populate default filters if currently empty
+      if (secList.length > 0) {
+        setSelectedSectionDoc(prev => (prev && secMap.has(prev) ? prev : secList[0].documentId));
+      }
+      if (yrList.length > 0) {
+        setFilterYearDoc(prev => (prev && yrMap.has(prev) ? prev : yrList[0].documentId));
+      }
+      if (tmList.length > 0) {
+        setFilterTermDoc(prev => (prev && tmMap.has(prev) ? prev : tmList[0].documentId));
+      }
+    } catch (err) {
+      console.error('Error fetching student enrolled options:', err);
+    }
+  }, []);
+
+  // When selected student changes, fetch their specific enrolled sections/terms
+  useEffect(() => {
+    if (selectedStudent?.documentId) {
+      fetchStudentEnrolledOptions(selectedStudent.documentId);
+    }
+  }, [selectedStudent, fetchStudentEnrolledOptions]);
 
   // ── Load dashboard KPIs ──────────────────────────────────────────────────
   const loadKPIs = useCallback(async () => {
@@ -431,17 +501,77 @@ export default function AdminTranscriptsPage() {
     if (activeTab === 'clearance') loadClearance();
   }, [activeTab, loadClearance]);
 
+  // ── Mode Switch Handler ──────────────────────────────────────────────────
+  const handleModeChange = (newMode: TranscriptMode) => {
+    setMode(newMode);
+    if (newMode === 'section') {
+      const defaultSec = selectedSectionDoc || studentSections[0]?.documentId || availableSections[0]?.documentId || '';
+      if (defaultSec && defaultSec !== selectedSectionDoc) {
+        setSelectedSectionDoc(defaultSec);
+      }
+    } else if (newMode === 'year') {
+      const defaultYr = filterYearDoc || studentYears[0]?.documentId || availableYears[0]?.documentId || '';
+      if (defaultYr && defaultYr !== filterYearDoc) {
+        setFilterYearDoc(defaultYr);
+      }
+    } else if (newMode === 'term') {
+      const defaultTm = filterTermDoc || studentTerms[0]?.documentId || availableTerms[0]?.documentId || '';
+      if (defaultTm && defaultTm !== filterTermDoc) {
+        setFilterTermDoc(defaultTm);
+      }
+    }
+  };
+
+  // ── Active Section / Options List ─────────────────────────────────────────
+  const activeSectionOptions = useMemo(() => {
+    if (studentSections.length > 0) return studentSections;
+    return availableSections;
+  }, [studentSections, availableSections]);
+
+  const activeYearOptions = useMemo(() => {
+    if (studentYears.length > 0) return studentYears;
+    return availableYears;
+  }, [studentYears, availableYears]);
+
+  const activeTermOptions = useMemo(() => {
+    if (studentTerms.length > 0) return studentTerms;
+    return availableTerms;
+  }, [studentTerms, availableTerms]);
+
   // ── Build transcript when student, mode, year, term, or section filter changes ──
   useEffect(() => {
-    if (!selectedStudent) return;
+    if (!selectedStudent?.documentId) return;
+
+    const targetSectionDoc = mode === 'section'
+      ? (selectedSectionDoc || activeSectionOptions[0]?.documentId || undefined)
+      : undefined;
+
+    const targetYearDoc = mode === 'year'
+      ? (filterYearDoc || activeYearOptions[0]?.documentId || undefined)
+      : undefined;
+
+    const targetTermDoc = mode === 'term'
+      ? (filterTermDoc || activeTermOptions[0]?.documentId || undefined)
+      : undefined;
+
     buildTranscript(
       selectedStudent.documentId,
       mode,
-      filterYearDoc || undefined,
-      filterTermDoc || undefined,
-      mode === 'section' ? selectedSectionDoc || undefined : undefined,
+      targetYearDoc,
+      targetTermDoc,
+      targetSectionDoc,
     );
-  }, [selectedStudent, mode, filterYearDoc, filterTermDoc, selectedSectionDoc, buildTranscript]);
+  }, [
+    selectedStudent,
+    mode,
+    filterYearDoc,
+    filterTermDoc,
+    selectedSectionDoc,
+    activeSectionOptions,
+    activeYearOptions,
+    activeTermOptions,
+    buildTranscript,
+  ]);
 
   // ── Filtered student list for Left Sidebar ────────────────────────────────
   const filteredStudents = useMemo(() => {
@@ -463,6 +593,12 @@ export default function AdminTranscriptsPage() {
     );
   }, [clearanceStudents, clearanceSearch]);
 
+  // ── Selected Section Name Helper ──────────────────────────────────────────
+  const activeSectionName = useMemo(() => {
+    const match = activeSectionOptions.find(s => s.documentId === selectedSectionDoc);
+    return match?.name || '';
+  }, [activeSectionOptions, selectedSectionDoc]);
+
   // ── Generate & Archive handler ────────────────────────────────────────────
   const handleGenerateAndArchive = useCallback(async () => {
     if (!selectedStudent || !transcriptData) return;
@@ -475,13 +611,14 @@ export default function AdminTranscriptsPage() {
       const nextVersion = (transcriptData.transcriptVersions[0]?.versionNumber ?? 0) + 1;
       const dataSnapshot = {
         mode,
+        sectionDocId: mode === 'section' ? selectedSectionDoc : undefined,
+        sectionName: mode === 'section' ? activeSectionName : undefined,
         studentDocId: selectedStudent.documentId,
         generatedAt: new Date().toISOString(),
         summary: transcriptData.summary,
         sectionBlocks: transcriptData.sectionBlocks,
       };
 
-      // Archive to academic-transcripts
       const transcriptNumber = `TRX-${selectedStudent.schoolId || selectedStudent.admissionNumber || selectedStudent.documentId.slice(0, 6)}-${nextVersion.toString().padStart(3, '0')}`;
       await apiClient.post('/academic-transcripts', {
         data: {
@@ -497,20 +634,22 @@ export default function AdminTranscriptsPage() {
         },
       });
 
-      // Save to transcript-versions
+      const reason = mode === 'section'
+        ? `Official Section-Specific transcript generated (${activeSectionName || 'Section'})`
+        : `Official ${mode} transcript generated by Registrar`;
+
       await apiClient.post('/transcript-versions', {
         data: {
           versionNumber: nextVersion,
           sha256Hash: transcriptData.summary.verificationHash,
           issuedDate: new Date().toISOString().split('T')[0],
-          reason: `Official ${mode} transcript generated by Registrar`,
+          reason,
           recordStatus: 'Active',
           student: selectedStudent.documentId,
           issuedBy: user?.id,
         },
       });
 
-      // Audit log
       apiClient.post('/audit-logs', {
         data: {
           action: 'Transcript Generated',
@@ -523,13 +662,12 @@ export default function AdminTranscriptsPage() {
       }).catch(console.warn);
 
       toast.success(`Official transcript v${nextVersion} archived successfully!`);
-      // Refresh transcript data to show new version
       await buildTranscript(
         selectedStudent.documentId,
         mode,
-        filterYearDoc || undefined,
-        filterTermDoc || undefined,
-        mode === 'section' ? selectedSectionDoc || undefined : undefined
+        mode === 'year' ? (filterYearDoc || undefined) : undefined,
+        mode === 'term' ? (filterTermDoc || undefined) : undefined,
+        mode === 'section' ? (selectedSectionDoc || undefined) : undefined,
       );
     } catch (err: any) {
       console.error('Archive error:', err?.response?.data || err);
@@ -537,7 +675,7 @@ export default function AdminTranscriptsPage() {
     } finally {
       setIsArchiving(false);
     }
-  }, [selectedStudent, transcriptData, mode, filterYearDoc, filterTermDoc, selectedSectionDoc, user, buildTranscript, signatories]);
+  }, [selectedStudent, transcriptData, mode, selectedSectionDoc, activeSectionName, filterYearDoc, filterTermDoc, user, buildTranscript, signatories]);
 
   // ── Print handler — generates clean data-driven HTML in isolated popup ────
   const handlePrint = useCallback(() => {
@@ -626,6 +764,10 @@ export default function AdminTranscriptsPage() {
       </div>`;
     }).join('');
 
+    const transcriptTypeLabel = mode === 'section'
+      ? `Section-Specific (${activeSectionName || 'Program Section'})`
+      : mode.replace('-', ' ').replace(/\b\w/g, c => c.toUpperCase());
+
     const infoFields = [
       ['Full Name',         studentName],
       ['Admission No.',     selectedStudent.admissionNumber || selectedStudent.schoolId || 'N/A'],
@@ -634,7 +776,7 @@ export default function AdminTranscriptsPage() {
       ['Date of Birth',     selectedStudent.dateOfBirth ? new Date(selectedStudent.dateOfBirth).toLocaleDateString('en-GB') : ''],
       ['Nationality',       selectedStudent.nationality ?? ''],
       ['Enrollment Status', selectedStudent.enrollmentStatus ?? ''],
-      ['Transcript Type',   mode.replace('-', ' ').replace(/\b\w/g, c => c.toUpperCase())],
+      ['Transcript Type',   transcriptTypeLabel],
     ].filter(([, v]) => v).map(([label, value]) => `
       <td style="padding:6px 10px;vertical-align:top;border-right:1px solid #e2e8f0;width:25%">
         <div style="font-size:6.5pt;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#94a3b8;margin-bottom:2px">${label}</div>
@@ -841,7 +983,7 @@ export default function AdminTranscriptsPage() {
     }
     win.document.write(html);
     win.document.close();
-  }, [transcriptData, selectedStudent, schoolProfile, mode, signatories]);
+  }, [transcriptData, selectedStudent, schoolProfile, mode, activeSectionName, signatories]);
 
   const tabs: { key: Tab; label: string; icon: React.ElementType }[] = [
     { key: 'viewer',      label: 'Transcript Engine',  icon: ScrollText },
@@ -870,6 +1012,7 @@ export default function AdminTranscriptsPage() {
             onClick={() => {
               loadInitialData();
               loadKPIs();
+              if (selectedStudent?.documentId) fetchStudentEnrolledOptions(selectedStudent.documentId);
               if (activeTab === 'clearance') loadClearance();
             }}
             className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-xs font-bold text-slate-700 dark:text-slate-200 transition-colors shrink-0"
@@ -998,7 +1141,7 @@ export default function AdminTranscriptsPage() {
                           <label className="text-xs font-bold text-slate-500">Type:</label>
                           <select
                             value={mode}
-                            onChange={e => setMode(e.target.value as TranscriptMode)}
+                            onChange={e => handleModeChange(e.target.value as TranscriptMode)}
                             className="px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-xl font-semibold text-xs bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none"
                           >
                             <option value="combined">Official Combined</option>
@@ -1014,12 +1157,11 @@ export default function AdminTranscriptsPage() {
                           <div className="flex items-center gap-2">
                             <label className="text-xs font-bold text-slate-500">Section:</label>
                             <select
-                              value={selectedSectionDoc}
+                              value={selectedSectionDoc || activeSectionOptions[0]?.documentId || ''}
                               onChange={e => setSelectedSectionDoc(e.target.value)}
-                              className="px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-xl text-xs bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                              className="px-3 py-1.5 border border-indigo-300 dark:border-indigo-700 rounded-xl text-xs bg-indigo-50/50 dark:bg-indigo-950/40 text-indigo-950 dark:text-indigo-200 font-bold focus:ring-2 focus:ring-indigo-500 outline-none"
                             >
-                              <option value="">All Program Sections</option>
-                              {availableSections.map(sec => (
+                              {activeSectionOptions.map(sec => (
                                 <option key={sec.documentId} value={sec.documentId}>{sec.name}</option>
                               ))}
                             </select>
@@ -1030,12 +1172,11 @@ export default function AdminTranscriptsPage() {
                           <div className="flex items-center gap-2">
                             <label className="text-xs font-bold text-slate-500">Year:</label>
                             <select
-                              value={filterYearDoc}
+                              value={filterYearDoc || activeYearOptions[0]?.documentId || ''}
                               onChange={e => setFilterYearDoc(e.target.value)}
-                              className="px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-xl text-xs bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                              className="px-3 py-1.5 border border-indigo-300 dark:border-indigo-700 rounded-xl text-xs bg-indigo-50/50 dark:bg-indigo-950/40 text-indigo-950 dark:text-indigo-200 font-bold focus:ring-2 focus:ring-indigo-500 outline-none"
                             >
-                              <option value="">All Academic Years</option>
-                              {availableYears.map(y => (
+                              {activeYearOptions.map(y => (
                                 <option key={y.documentId} value={y.documentId}>{y.name}</option>
                               ))}
                             </select>
@@ -1046,12 +1187,11 @@ export default function AdminTranscriptsPage() {
                           <div className="flex items-center gap-2">
                             <label className="text-xs font-bold text-slate-500">Term:</label>
                             <select
-                              value={filterTermDoc}
+                              value={filterTermDoc || activeTermOptions[0]?.documentId || ''}
                               onChange={e => setFilterTermDoc(e.target.value)}
-                              className="px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-xl text-xs bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                              className="px-3 py-1.5 border border-indigo-300 dark:border-indigo-700 rounded-xl text-xs bg-indigo-50/50 dark:bg-indigo-950/40 text-indigo-950 dark:text-indigo-200 font-bold focus:ring-2 focus:ring-indigo-500 outline-none"
                             >
-                              <option value="">All Semesters / Terms</option>
-                              {availableTerms.map(t => (
+                              {activeTermOptions.map(t => (
                                 <option key={t.documentId} value={t.documentId}>{t.name}</option>
                               ))}
                             </select>
@@ -1122,7 +1262,7 @@ export default function AdminTranscriptsPage() {
                       {engineLoading && (
                         <div className="print:hidden bg-white dark:bg-slate-900 rounded-2xl border shadow-sm p-12 flex flex-col items-center gap-3">
                           <div className="w-10 h-10 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin" />
-                          <p className="text-sm text-slate-500">Building enterprise transcript across all sections &amp; courses…</p>
+                          <p className="text-sm text-slate-500">Building enterprise transcript across courses…</p>
                         </div>
                       )}
 
@@ -1257,7 +1397,11 @@ export default function AdminTranscriptsPage() {
                               )}
                               <div>
                                 <p className="font-extrabold text-slate-500 uppercase text-[9px] tracking-wider">Transcript Type</p>
-                                <p className="font-bold text-indigo-600 dark:text-indigo-400 capitalize mt-0.5">{mode.replace('-', ' ')}</p>
+                                <p className="font-bold text-indigo-600 dark:text-indigo-400 capitalize mt-0.5">
+                                  {mode === 'section'
+                                    ? `Section-Specific (${activeSectionName || 'Program Section'})`
+                                    : mode.replace('-', ' ')}
+                                </p>
                               </div>
                               {transcriptData.gpaConfig && (
                                 <div>
@@ -1275,7 +1419,7 @@ export default function AdminTranscriptsPage() {
                                   No{mode !== 'progress' ? ' approved' : ''} academic records found for this student
                                   {mode === 'year' && filterYearDoc ? ' in this academic year' : ''}
                                   {mode === 'term' && filterTermDoc ? ' in this term' : ''}
-                                  {mode === 'section' && selectedSectionDoc ? ' in this section' : ''}.
+                                  {mode === 'section' && activeSectionName ? ` in ${activeSectionName}` : ''}.
                                 </p>
                                 {mode !== 'progress' && (
                                   <p className="text-xs text-slate-400 mt-1">Switch to &quot;Progress Report&quot; mode to view all records including pending grades.</p>

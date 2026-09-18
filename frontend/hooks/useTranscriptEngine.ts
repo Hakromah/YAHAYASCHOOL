@@ -296,19 +296,36 @@ export function useTranscriptEngine() {
       let enrollments: any[] = enrollRes.data?.data || [];
 
       // ── 3. Apply filters based on mode ───────────────────────────────────
-      if (mode === 'section' && sectionDocId) {
-        enrollments = enrollments.filter(
-          (e: any) => e.courseOffering?.academicSection?.documentId === sectionDocId
-        );
+      if (mode === 'section') {
+        if (sectionDocId) {
+          enrollments = enrollments.filter(
+            (e: any) =>
+              e.courseOffering?.academicSection?.documentId === sectionDocId ||
+              String(e.courseOffering?.academicSection?.id) === sectionDocId
+          );
+        } else if (enrollments.length > 0) {
+          const firstSecDocId = enrollments.find(
+            (e: any) => e.courseOffering?.academicSection?.documentId
+          )?.courseOffering?.academicSection?.documentId;
+          if (firstSecDocId) {
+            enrollments = enrollments.filter(
+              (e: any) => e.courseOffering?.academicSection?.documentId === firstSecDocId
+            );
+          }
+        }
       }
       if (mode === 'year' && filterYearDoc) {
         enrollments = enrollments.filter(
-          (e: any) => e.courseOffering?.academicYear?.documentId === filterYearDoc
+          (e: any) =>
+            e.courseOffering?.academicYear?.documentId === filterYearDoc ||
+            String(e.courseOffering?.academicYear?.id) === filterYearDoc
         );
       }
       if (mode === 'term' && filterTermDoc) {
         enrollments = enrollments.filter(
-          (e: any) => e.courseOffering?.academicTerm?.documentId === filterTermDoc
+          (e: any) =>
+            e.courseOffering?.academicTerm?.documentId === filterTermDoc ||
+            String(e.courseOffering?.academicTerm?.id) === filterTermDoc
         );
       }
       // Filter enrollments by gradebook status based on transcript mode:
