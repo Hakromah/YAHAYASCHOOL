@@ -71,8 +71,8 @@ export const generateInstitutionalPDF = async (
   const formatMoney = (val: number) => {
     const converted = (val || 0) * exchangeRate;
     if (!converted) return `${currencySymbol}0.00`;
-    return converted < 0 
-      ? `-${currencySymbol}${Math.abs(converted).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` 
+    return converted < 0
+      ? `-${currencySymbol}${Math.abs(converted).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
       : `${currencySymbol}${converted.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
