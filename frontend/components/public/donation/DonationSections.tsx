@@ -479,7 +479,9 @@ export function GiveSection({ settings }: { settings?: DonationSettingsEntity | 
               </fieldset>
 
               <fieldset className="mt-[clamp(1.25rem,1.66vw,2rem)]">
-                <legend className="font-medium text-[#121C2A] text-[1.125rem]">{settings?.formLabels?.frequencyLabel || t('frequencyLabel')}</legend>
+                <legend className="font-medium text-[#121C2A] text-[1.125rem]">
+                  {settings?.formLabels?.frequencyLabel || (t.has('frequencyLabel') ? t('frequencyLabel') : (t.has('freqTitle') ? t('freqTitle') : 'Frequency'))}
+                </legend>
                 <div className="mt-3 flex gap-4 max-sm:flex-col">
                   <label
                     className={`flex flex-1 cursor-pointer items-center justify-center rounded-[4px] border py-[clamp(0.75rem,0.8vw,1rem)] font-medium text-[clamp(0.875rem,0.9vw,1rem)] transition-all ${frequency === 'one-time'
@@ -488,7 +490,7 @@ export function GiveSection({ settings }: { settings?: DonationSettingsEntity | 
                       }`}
                   >
                     <input type="radio" name="frequency" value="one-time" className="hidden" checked={frequency === 'one-time'} onChange={(e) => setFrequency(e.target.value as any)} />
-                    {settings?.formLabels?.oneTimeLabel || t('oneTimeLabel')}
+                    {settings?.formLabels?.oneTimeLabel || (t.has('oneTimeLabel') ? t('oneTimeLabel') : (t.has('oneTime') ? t('oneTime') : 'One-time'))}
                   </label>
                   <label
                     className={`flex flex-1 cursor-pointer items-center justify-center rounded-[4px] border py-[clamp(0.75rem,0.8vw,1rem)] font-medium text-[clamp(0.875rem,0.9vw,1rem)] transition-all ${frequency === 'monthly'
@@ -497,7 +499,7 @@ export function GiveSection({ settings }: { settings?: DonationSettingsEntity | 
                       }`}
                   >
                     <input type="radio" name="frequency" value="monthly" className="hidden" checked={frequency === 'monthly'} onChange={(e) => setFrequency(e.target.value as any)} />
-                    {settings?.formLabels?.monthlyLabel || t('monthlyLabel')}
+                    {settings?.formLabels?.monthlyLabel || (t.has('monthlyLabel') ? t('monthlyLabel') : (t.has('monthly') ? t('monthly') : 'Monthly'))}
                   </label>
                 </div>
               </fieldset>

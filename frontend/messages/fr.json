@@ -930,7 +930,9 @@
       "title": "Faire une Contribution",
       "subtitle": "Soutenez notre mission via un transfert direct sécurisé.",
       "oneTime": "Une fois",
+      "oneTimeLabel": "Une fois",
       "monthly": "Mensuel",
+      "monthlyLabel": "Mensuel",
       "amountLabel": "Choisir le Montant",
       "currencyLabel": "Devise",
       "designationLabel": "Désignation",
@@ -960,6 +962,7 @@
         "Mosquée et Vie Spirituelle"
       ],
       "freqTitle": "Fréquence",
+      "frequencyLabel": "Fréquence",
       "preferBank": "Préférez-vous un virement bancaire ?",
       "donorInfo": "Informations sur le Donateur",
       "fullName": "Nom Complet",

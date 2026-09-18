@@ -930,7 +930,9 @@
       "title": "Make a Contribution",
       "subtitle": "Support our mission through a secure direct transfer.",
       "oneTime": "One-time",
+      "oneTimeLabel": "One-time",
       "monthly": "Monthly",
+      "monthlyLabel": "Monthly",
       "amountLabel": "Select Amount",
       "currencyLabel": "Currency",
       "designationLabel": "Designation",
@@ -960,6 +962,7 @@
         "Mosque & Spiritual Life"
       ],
       "freqTitle": "Frequency",
+      "frequencyLabel": "Frequency",
       "preferBank": "Prefer a bank transfer?",
       "donorInfo": "Donor Information",
       "fullName": "Full Name",

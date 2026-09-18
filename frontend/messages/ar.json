@@ -930,7 +930,9 @@
       "title": "قدم مساهمة",
       "subtitle": "ادعم مهمتنا من خلال تحويل مباشر آمن.",
       "oneTime": "لمرة واحدة",
+      "oneTimeLabel": "لمرة واحدة",
       "monthly": "شهرياً",
+      "monthlyLabel": "شهرياً",
       "amountLabel": "اختر المبلغ",
       "currencyLabel": "العملة",
       "designationLabel": "التخصيص",
@@ -960,6 +962,7 @@
         "المسجد والحياة الروحية"
       ],
       "freqTitle": "التكرار",
+      "frequencyLabel": "التكرار",
       "preferBank": "هل تفضل التحويل المصرفي؟",
       "donorInfo": "معلومات المتبرع",
       "fullName": "الاسم الكامل",

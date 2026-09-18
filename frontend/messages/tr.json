@@ -930,7 +930,9 @@
       "title": "Katkıda Bulunun",
       "subtitle": "Güvenli bir doğrudan transfer ile misyonumuzu destekleyin.",
       "oneTime": "Tek Seferlik",
+      "oneTimeLabel": "Tek Seferlik",
       "monthly": "Aylık",
+      "monthlyLabel": "Aylık",
       "amountLabel": "Miktar Seçin",
       "currencyLabel": "Para Birimi",
       "designationLabel": "Hedef",
@@ -960,6 +962,7 @@
         "Cami ve Manevi Hayat"
       ],
       "freqTitle": "Sıklık",
+      "frequencyLabel": "Sıklık",
       "preferBank": "Banka havalesi mi tercih edersiniz?",
       "donorInfo": "Bağışçı Bilgileri",
       "fullName": "Ad Soyad",
