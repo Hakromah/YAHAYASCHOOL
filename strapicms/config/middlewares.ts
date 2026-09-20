@@ -30,13 +30,13 @@ const config: Core.Config.Middlewares = [
       enabled: true,
       headers: ['*'],
       origin: [
-        'http://localhost:3000',
+        'http://localhost:3002',
         'http://localhost:3001',
-        'http://127.0.0.1:3000',
+        'http://127.0.0.1:3002',
         // ── Production frontend ──────────────────────────────────────────────
         'https://yahayaschool.vercel.app',
         'https://*.vercel.app',               // allow Vercel preview URLs
-        process.env.FRONTEND_URL || 'http://localhost:3000',
+        process.env.FRONTEND_URL || 'http://localhost:3002',
       ],
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'],
       keepHeaderOnError: true,

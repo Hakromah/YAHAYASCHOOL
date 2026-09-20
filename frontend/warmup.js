@@ -23,7 +23,7 @@ const ROUTES = [
 ];
 
 const BASE_HOST = 'localhost';
-const BASE_PORT = 3000;
+const BASE_PORT = 3002;
 const DELAY_MS = 600; // stagger to avoid overloading the compiler
 
 // A fake JWT so proxy.ts treats the request as authenticated

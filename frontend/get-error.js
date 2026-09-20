@@ -1,4 +1,4 @@
-fetch('http://localhost:3000/en/login')
+fetch('http://localhost:3002/en/login')
   .then(res => res.text())
   .then(html => {
     // Next.js injects error boundaries, look for something with "message" or stack traces.

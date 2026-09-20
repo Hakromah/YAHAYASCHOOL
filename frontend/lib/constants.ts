@@ -12,7 +12,7 @@ export const API_URL = `${STRAPI_URL}/api`;
 
 /** Frontend app URL */
 export const APP_URL =
-  process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
+  process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3002';
 
 /** Application display name */
 export const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME ?? 'YAHAYASCOOL';
