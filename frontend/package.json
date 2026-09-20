@@ -3,13 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --webpack",
-    "dev:turbo": "next dev",
-    "dev:webpack": "next dev --webpack",
-    "dev:clean": "powershell -Command \"Remove-Item -Recurse -Force .next -ErrorAction SilentlyContinue\" && next dev",
+    "dev": "next dev -p 3002 --webpack",
+    "dev:turbo": "next dev -p 3002",
+    "dev:webpack": "next dev -p 3002 --webpack",
+    "dev:clean": "powershell -Command \"Remove-Item -Recurse -Force .next -ErrorAction SilentlyContinue\" && next dev -p 3002",
     "dev:warm": "node warmup.js",
     "build": "next build",
-    "start": "next start",
+    "start": "next start -p 3002",
     "lint": "eslint"
   },
   "dependencies": {
