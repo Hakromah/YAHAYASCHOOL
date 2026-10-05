@@ -984,7 +984,183 @@ export const financeService = {
 
   // ─── 10. Cashier Sessions & Accounting Periods ──────────────────────────────
   async getCashierSessions(): Promise<CashierSession[]> {
-    return safeGetArray('/finance-receipts?populate=*');
+    const [periods, receipts] = await Promise.all([
+      safeGetArray('/finance-accounting-periods?sort=createdAt:desc'),
+      safeGetArray('/finance-receipts?populate[student]=true&populate[invoice]=true&sort=createdAt:desc')
+    ]);
+
+    let sessionMeta: Record<string, any> = {};
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('yahaya_cashier_session_meta');
+        if (stored) sessionMeta = JSON.parse(stored);
+      } catch {}
+    }
+
+    const sessionsMap = new Map<string, CashierSession>();
+
+    // 1. Build from Strapi periods
+    periods.forEach((p: any) => {
+      const code = p.periodCode || `CSH-${p.id}`;
+      const meta = sessionMeta[code] || {};
+      sessionsMap.set(code, {
+        id: p.documentId || String(p.id),
+        sessionCode: code,
+        sessionNumber: code,
+        cashierName: meta.cashierName || 'Cashier Terminal',
+        cashierUserId: meta.cashierUserId,
+        schoolId: p.schoolId || 'MAIN-CAMPUS',
+        openedAt: meta.openedAt || (p.startDate ? `${p.startDate}T08:00:00.000Z` : p.createdAt),
+        closedAt: meta.closedAt || (p.status === 'closed' ? (p.endDate ? `${p.endDate}T17:00:00.000Z` : p.updatedAt) : undefined),
+        status: meta.status || p.status || 'open',
+        openingCash: Number(meta.openingCash || 200),
+        expectedClosingCash: Number(meta.openingCash || 200),
+        actualClosingCash: meta.actualClosingCash !== undefined ? Number(meta.actualClosingCash) : undefined,
+        variance: Number(meta.variance || 0),
+        receiptsCount: 0,
+        totalCollections: 0,
+        cashCollections: 0,
+        digitalCollections: 0,
+        receipts: [],
+        notes: meta.notes || ''
+      });
+    });
+
+    // 2. Group live receipts into sessions
+    receipts.forEach((r: any) => {
+      const amt = Number(r.paymentAmount || r.amount || 0);
+      const method = (r.paymentMethod || 'Cash');
+      const isCash = method === 'Cash';
+      const cName = r.cashierName || 'Cashier Terminal';
+      const dateStr = (r.paymentDate || r.createdAt || '').slice(0, 10) || new Date().toISOString().slice(0, 10);
+      const assignedCode = r.paymentMetadata?.sessionNumber || `CSH-${dateStr.replace(/-/g, '')}-${cName.replace(/[^a-zA-Z0-9]/g, '').slice(0, 6).toUpperCase() || 'POS'}`;
+
+      if (!sessionsMap.has(assignedCode)) {
+        const meta = sessionMeta[assignedCode] || {};
+        sessionsMap.set(assignedCode, {
+          id: `derived-${assignedCode}`,
+          sessionCode: assignedCode,
+          sessionNumber: assignedCode,
+          cashierName: cName,
+          schoolId: 'MAIN-CAMPUS',
+          openedAt: meta.openedAt || `${dateStr}T08:00:00.000Z`,
+          closedAt: meta.closedAt || `${dateStr}T17:00:00.000Z`,
+          status: meta.status || 'closed',
+          openingCash: Number(meta.openingCash || 200),
+          expectedClosingCash: Number(meta.openingCash || 200),
+          actualClosingCash: meta.actualClosingCash !== undefined ? Number(meta.actualClosingCash) : Number(meta.openingCash || 200),
+          variance: Number(meta.variance || 0),
+          receiptsCount: 0,
+          totalCollections: 0,
+          cashCollections: 0,
+          digitalCollections: 0,
+          receipts: [],
+          notes: meta.notes || 'Audited cashier terminal session derived from Strapi'
+        });
+      }
+
+      const s = sessionsMap.get(assignedCode)!;
+      s.receiptsCount = (s.receiptsCount || 0) + 1;
+      s.totalCollections = (Number(s.totalCollections) || 0) + amt;
+      if (isCash) {
+        s.cashCollections = (Number(s.cashCollections) || 0) + amt;
+      } else {
+        s.digitalCollections = (Number(s.digitalCollections) || 0) + amt;
+      }
+      s.expectedClosingCash = (Number(s.openingCash) || 0) + (Number(s.cashCollections) || 0);
+      if (s.actualClosingCash !== undefined) {
+        s.variance = s.actualClosingCash - s.expectedClosingCash;
+      }
+      s.receipts.push(r);
+    });
+
+    return Array.from(sessionsMap.values()).sort((a, b) => (b.openedAt || '').localeCompare(a.openedAt || ''));
+  },
+
+  async createCashierSession(data: { cashierName: string; openingCash: number; cashierUserId?: string }): Promise<CashierSession> {
+    const today = new Date().toISOString().slice(0, 10);
+    const sessionNumber = `CSH-${today.replace(/-/g, '')}-${Math.floor(1000 + Math.random() * 9000)}`;
+
+    const res = await apiClient.post('/finance-accounting-periods', {
+      data: {
+        schoolId: 'MAIN-CAMPUS',
+        periodCode: sessionNumber,
+        startDate: today,
+        endDate: today,
+        status: 'open'
+      }
+    });
+
+    const strapiDoc = res.data?.data;
+    const session: CashierSession = {
+      id: strapiDoc?.documentId || String(strapiDoc?.id || sessionNumber),
+      sessionCode: sessionNumber,
+      sessionNumber,
+      cashierName: data.cashierName || 'Cashier Terminal',
+      cashierUserId: data.cashierUserId,
+      schoolId: 'MAIN-CAMPUS',
+      openedAt: new Date().toISOString(),
+      status: 'open',
+      openingCash: Number(data.openingCash || 0),
+      expectedClosingCash: Number(data.openingCash || 0),
+      variance: 0,
+      receiptsCount: 0,
+      totalCollections: 0,
+      cashCollections: 0,
+      digitalCollections: 0,
+      receipts: []
+    };
+
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('yahaya_cashier_session_meta');
+        const meta = stored ? JSON.parse(stored) : {};
+        meta[sessionNumber] = {
+          cashierName: data.cashierName,
+          cashierUserId: data.cashierUserId,
+          openingCash: data.openingCash,
+          status: 'open',
+          openedAt: session.openedAt
+        };
+        localStorage.setItem('yahaya_cashier_session_meta', JSON.stringify(meta));
+      } catch {}
+    }
+
+    return session;
+  },
+
+  async closeCashierSession(sessionId: string, sessionCode: string, actualClosingCash: number, expectedCash: number, notes?: string): Promise<boolean> {
+    const today = new Date().toISOString().slice(0, 10);
+    const variance = actualClosingCash - expectedCash;
+    try {
+      if (!sessionId.startsWith('derived-')) {
+        await apiClient.put(`/finance-accounting-periods/${sessionId}`, {
+          data: {
+            status: 'closed',
+            endDate: today
+          }
+        });
+      }
+    } catch {}
+
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('yahaya_cashier_session_meta');
+        const meta = stored ? JSON.parse(stored) : {};
+        const existing = meta[sessionCode] || {};
+        meta[sessionCode] = {
+          ...existing,
+          actualClosingCash,
+          variance,
+          notes,
+          status: 'closed',
+          closedAt: new Date().toISOString()
+        };
+        localStorage.setItem('yahaya_cashier_session_meta', JSON.stringify(meta));
+      } catch {}
+    }
+
+    return true;
   },
 
   async getAccountingPeriods(): Promise<AccountingPeriod[]> {

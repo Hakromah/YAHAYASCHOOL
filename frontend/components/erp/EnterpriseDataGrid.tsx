@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   useReactTable, getCoreRowModel, getFilteredRowModel,
   getPaginationRowModel, getSortedRowModel, getExpandedRowModel,
@@ -113,11 +113,18 @@ export function EnterpriseDataGrid<TData>({
     initialState: { pagination: { pageSize: 15 } },
   });
 
+  // Derive a stable key from column IDs — reset table state only when the
+  // actual column structure changes, NOT on every render that recreates the array.
+  const columnsKey = useMemo(
+    () => (columns as any[]).map((c, i) => c.id ?? c.accessorKey ?? c.key ?? `col_${i}`).join('|'),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [columns]
+  );
   useEffect(() => {
     setSorting([]);
     setRowSelection({});
     setExpanded({});
-  }, [columns]);
+  }, [columnsKey]);
 
   useEffect(() => {
     if (onSelectionChange) {
@@ -239,7 +246,7 @@ export function EnterpriseDataGrid<TData>({
           </thead>
 
           {/* Table Body with Hover, Right-Click, and Keyboard Navigation */}
-          <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 text-slate-800 dark:text-slate-205">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 text-slate-800 dark:text-slate-200">
             {table.getRowModel().rows.map((row) => {
               const rowOriginal = row.original;
               const isSelected = row.getIsSelected();
