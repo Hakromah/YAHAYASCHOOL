@@ -548,6 +548,8 @@ const params = useParams();
         columns={columns}
         isLoading={loading}
         density={density}
+        maxHeight={570}
+        pageSize={50}
         onRowInspect={(row: any) => setSelectedRow(row)}
         onRowClick={(row: any) => setSelectedRow(row)}
         onRowEdit={(row: any) => handleEditOpen(row)}

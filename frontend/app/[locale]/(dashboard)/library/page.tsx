@@ -10,7 +10,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import {
   BookOpen, BookCheck, QrCode, Plus, Eye, RotateCcw, AlertTriangle, FileText,
   X, User, Calendar, Barcode, MapPin, Tag, Hash, Clock, Printer, ShieldCheck,
-  BookMarked, DollarSign, CheckCircle2, XCircle, Settings, RefreshCw
+  BookMarked, DollarSign, CheckCircle2, XCircle, Settings, RefreshCw, Edit, Trash2
 } from 'lucide-react';
 import { libraryService } from '@/services/library.service';
 import { financeService } from '@/services/finance.service';
@@ -84,6 +84,23 @@ const [books, setBooks] = useState<LibraryBook[]>([]);
     gradeLevel: ''
   });
   const [addBookLoading, setAddBookLoading] = useState(false);
+
+  // Edit Book state
+  const [editingBook, setEditingBook] = useState<LibraryBook | null>(null);
+  const [showEditBookModal, setShowEditBookModal] = useState(false);
+  const [editBookForm, setEditBookForm] = useState({
+    title: '',
+    author: '',
+    isbn: '',
+    publisher: '',
+    category: 'General Reference',
+    totalCopies: 1,
+    rackLocation: '',
+    isDigital: false,
+    section: '',
+    gradeLevel: ''
+  });
+  const [editBookLoading, setEditBookLoading] = useState(false);
 
   // Settings state
   const [librarySettings, setLibrarySettings] = useState({ dailyFine: 0.50, currency: 'USD' });
@@ -273,6 +290,78 @@ const [books, setBooks] = useState<LibraryBook[]>([]);
       toast.error(err?.response?.data?.error?.message || 'Failed to add book.');
     } finally {
       setAddBookLoading(false);
+    }
+  };
+
+  // ── Edit & Delete Book Handlers ──────────────────────────────────────────────
+  const handleEditBookOpen = (book: LibraryBook) => {
+    setEditingBook(book);
+    setEditBookForm({
+      title: book.title || '',
+      author: book.author || '',
+      isbn: book.isbn || '',
+      publisher: book.publisher || '',
+      category: book.category || 'General Reference',
+      totalCopies: book.totalCopies || 1,
+      rackLocation: book.rackLocation || '',
+      isDigital: Boolean(book.isDigital),
+      section: (book as any).section?.id || (book as any).section?.documentId || (book as any).section || '',
+      gradeLevel: (book as any).gradeLevel?.id || (book as any).gradeLevel?.documentId || (book as any).gradeLevel || '',
+    });
+    setShowEditBookModal(true);
+  };
+
+  const handleEditBookSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingBook) return;
+    setEditBookLoading(true);
+    try {
+      const copiesDiff = Number(editBookForm.totalCopies) - Number(editingBook.totalCopies);
+      const updatedAvailable = Math.max(0, Number(editingBook.availableCopies || 0) + copiesDiff);
+      const payload: any = {
+        title: editBookForm.title,
+        isbn: editBookForm.isbn,
+        author: editBookForm.author,
+        publisher: editBookForm.publisher,
+        category: editBookForm.category,
+        totalCopies: Number(editBookForm.totalCopies),
+        availableCopies: updatedAvailable,
+        rackLocation: editBookForm.rackLocation,
+        isDigital: editBookForm.isDigital,
+      };
+      if (editBookForm.section) payload.section = editBookForm.section;
+      else payload.section = null;
+      if (editBookForm.gradeLevel) payload.gradeLevel = editBookForm.gradeLevel;
+      else payload.gradeLevel = null;
+
+      const updated = await libraryService.updateBook(editingBook.id, payload);
+      setBooks(prev => prev.map(b => b.id === editingBook.id ? updated : b));
+      setShowEditBookModal(false);
+      setEditingBook(null);
+      toast.success(`Book "${updated.title}" updated successfully.`);
+    } catch (err: any) {
+      toast.error(err?.response?.data?.error?.message || 'Failed to update book.');
+    } finally {
+      setEditBookLoading(false);
+    }
+  };
+
+  const handleDeleteBook = async (book: LibraryBook) => {
+    const hasActiveBorrows = borrowRecords.some(
+      r => (r.bookId === book.id || r.isbn === book.isbn) && (r.status === 'issued' || r.status === 'overdue')
+    );
+    const confirmMsg = hasActiveBorrows
+      ? `Warning: "${book.title}" has active borrow records in circulation. Deleting this book will remove it from the catalog. Do you still want to proceed?`
+      : `Are you sure you want to delete "${book.title}" (ISBN: ${book.isbn}) from the library catalog?`;
+    
+    if (!confirm(confirmMsg)) return;
+
+    try {
+      await libraryService.deleteBook(book.id);
+      setBooks(prev => prev.filter(b => b.id !== book.id));
+      toast.success(`Book "${book.title}" deleted from catalog.`);
+    } catch (err: any) {
+      toast.error(err?.response?.data?.error?.message || 'Failed to delete book.');
     }
   };
 
@@ -583,8 +672,33 @@ const [books, setBooks] = useState<LibraryBook[]>([]);
       accessorKey: 'publisher',
       header: t('Publisher'),
       cell: ({ row }) => <span className="text-xs text-slate-600 dark:text-slate-300 font-semibold">{row.original.publisher}</span>
+    },
+    {
+      id: 'actions',
+      header: t('Actions'),
+      cell: ({ row }) => {
+        const b = row.original;
+        return (
+          <div className="flex items-center justify-end gap-1.5">
+            <button
+              onClick={(e) => { e.stopPropagation(); handleEditBookOpen(b); }}
+              className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 cursor-pointer transition-colors shadow-2xs"
+              title={t('Edit Book Details')}
+            >
+              <Edit className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); handleDeleteBook(b); }}
+              className="p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/20 text-slate-400 hover:text-rose-600 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 cursor-pointer transition-colors shadow-2xs"
+              title={t('Delete Book')}
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        );
+      }
     }
-  ], []);
+  ], [handleEditBookOpen, handleDeleteBook]);
 
   return (
     <EnterpriseModuleShell
@@ -652,6 +766,8 @@ const [books, setBooks] = useState<LibraryBook[]>([]);
           columns={circulationColumns}
           isLoading={loading}
           density={density}
+          maxHeight={570}
+          pageSize={50}
           onRowInspect={(row) => setSelectedRecord(row)}
         />
       ) : (
@@ -660,6 +776,8 @@ const [books, setBooks] = useState<LibraryBook[]>([]);
           columns={catalogColumns}
           isLoading={loading}
           density={density}
+          maxHeight={570}
+          pageSize={50}
         />
       )}
 
@@ -882,6 +1000,167 @@ const [books, setBooks] = useState<LibraryBook[]>([]);
                   className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl flex items-center gap-2 transition border-none cursor-pointer disabled:opacity-60"
                 >
                   {addBookLoading ? 'Adding...' : 'Add to Catalog'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ─── MODAL: Edit Book ─── */}
+      {showEditBookModal && editingBook && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-2xl shadow-2xl flex flex-col max-h-[90vh]">
+            <div className="flex items-center justify-between p-5 border-b border-slate-200 dark:border-slate-800 shrink-0">
+              <div>
+                <h3 className="font-black text-slate-900 dark:text-white text-base">Edit Book Details</h3>
+                <p className="text-xs text-slate-500 mt-0.5">Modify book cataloging parameters, location, and inventory copies.</p>
+              </div>
+              <button
+                onClick={() => { setShowEditBookModal(false); setEditingBook(null); }}
+                className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-900 transition-colors cursor-pointer border-none bg-transparent"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleEditBookSubmit} className="flex-1 overflow-y-auto p-6 grid grid-cols-2 gap-4">
+              <div className="col-span-2 space-y-1.5">
+                <label className="text-xs font-extrabold text-slate-500 uppercase tracking-wide">Book Title *</label>
+                <input
+                  type="text"
+                  required
+                  value={editBookForm.title}
+                  onChange={e => setEditBookForm(prev => ({ ...prev, title: e.target.value }))}
+                  placeholder="e.g. Campbell Biology"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-850 text-slate-900 dark:text-white text-xs font-semibold focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-extrabold text-slate-500 uppercase tracking-wide">Author</label>
+                <input
+                  type="text"
+                  value={editBookForm.author}
+                  onChange={e => setEditBookForm(prev => ({ ...prev, author: e.target.value }))}
+                  placeholder="e.g. Lisa A. Urry"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-850 text-slate-900 dark:text-white text-xs font-semibold focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-extrabold text-slate-500 uppercase tracking-wide">ISBN *</label>
+                <input
+                  type="text"
+                  required
+                  value={editBookForm.isbn}
+                  onChange={e => setEditBookForm(prev => ({ ...prev, isbn: e.target.value }))}
+                  placeholder="e.g. 978-0134083186"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-850 text-slate-900 dark:text-white text-xs font-semibold focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-extrabold text-slate-500 uppercase tracking-wide">Publisher</label>
+                <input
+                  type="text"
+                  value={editBookForm.publisher}
+                  onChange={e => setEditBookForm(prev => ({ ...prev, publisher: e.target.value }))}
+                  placeholder="e.g. Pearson Education"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-850 text-slate-900 dark:text-white text-xs font-semibold focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-extrabold text-slate-500 uppercase tracking-wide">Category</label>
+                <select
+                  value={editBookForm.category}
+                  onChange={e => setEditBookForm(prev => ({ ...prev, category: e.target.value }))}
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-850 text-slate-900 dark:text-white text-xs font-semibold focus:outline-none focus:border-indigo-500"
+                >
+                  {['Islamic Studies', 'STEM & Sciences', 'Languages', 'Literature', 'History', 'General Reference'].map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-extrabold text-slate-500 uppercase tracking-wide">Total Inventory Copies</label>
+                <input
+                  type="number"
+                  min="1"
+                  required
+                  value={editBookForm.totalCopies}
+                  onChange={e => setEditBookForm(prev => ({ ...prev, totalCopies: Number(e.target.value) }))}
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-850 text-slate-900 dark:text-white text-xs font-semibold focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-extrabold text-slate-500 uppercase tracking-wide">Rack Location</label>
+                <input
+                  type="text"
+                  value={editBookForm.rackLocation}
+                  onChange={e => setEditBookForm(prev => ({ ...prev, rackLocation: e.target.value }))}
+                  placeholder="e.g. Rack ST-08"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-850 text-slate-900 dark:text-white text-xs font-semibold focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-extrabold text-slate-500 uppercase tracking-wide">Academic Section (Optional)</label>
+                <select
+                  value={editBookForm.section}
+                  onChange={e => setEditBookForm(prev => ({ ...prev, section: e.target.value }))}
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-850 text-slate-900 dark:text-white text-xs font-semibold focus:outline-none focus:border-indigo-500"
+                >
+                  <option value="">-- Global / No Section --</option>
+                  {sections.map(s => (
+                    <option key={s.id} value={s.id}>{s.name} ({s.code})</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-extrabold text-slate-500 uppercase tracking-wide">Grade Level (Optional)</label>
+                <select
+                  value={editBookForm.gradeLevel}
+                  onChange={e => setEditBookForm(prev => ({ ...prev, gradeLevel: e.target.value }))}
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-850 text-slate-900 dark:text-white text-xs font-semibold focus:outline-none focus:border-indigo-500"
+                >
+                  <option value="">-- All Grades --</option>
+                  {gradeLevels.map(gl => (
+                    <option key={gl.id} value={gl.id}>{gl.name} ({gl.code})</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="col-span-2 mt-2">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={editBookForm.isDigital}
+                    onChange={e => setEditBookForm(prev => ({ ...prev, isDigital: e.target.checked }))}
+                    className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-600"
+                  />
+                  <span className="text-sm font-bold text-slate-700 dark:text-slate-200">Has Digital PDF Version</span>
+                </label>
+              </div>
+
+              <div className="col-span-2 flex justify-end gap-2 mt-4 pt-4 border-t border-slate-200 dark:border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => { setShowEditBookModal(false); setEditingBook(null); }}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-xl transition border-none cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={editBookLoading}
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl flex items-center gap-2 transition border-none cursor-pointer disabled:opacity-60"
+                >
+                  {editBookLoading ? 'Saving...' : 'Save Changes'}
                 </button>
               </div>
             </form>

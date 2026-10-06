@@ -72,6 +72,27 @@ export const libraryService = {
   },
 
   /**
+   * Update an existing Book in the Catalog.
+   */
+  async updateBook(bookId: string | number, payload: any): Promise<LibraryBook> {
+    const res = await apiClient.put(`/library-books/${bookId}`, { data: payload });
+    const b = res.data.data;
+    return {
+      ...b,
+      id: b.documentId || b.id,
+      sectionName: b.section?.name,
+      gradeLevelName: b.gradeLevel?.name
+    };
+  },
+
+  /**
+   * Delete a Book from the Catalog.
+   */
+  async deleteBook(bookId: string | number): Promise<void> {
+    await apiClient.delete(`/library-books/${bookId}`);
+  },
+
+  /**
    * Issue / Borrow a Book from the Circulation Desk.
    * Decrements availableCopies in the in-memory catalog.
    * @param loanDays   Number of days for borrowing period (default: 14)

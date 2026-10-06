@@ -573,12 +573,13 @@ export default function PeopleDirectoryPage() {
         }
       />
 
-      {/* Registry Grid */}
+      {/* Registry Grid with max 8 lines visible before scrollbar */}
       <EnterpriseDataGrid
         data={currentList}
         columns={columns}
         isLoading={loading}
         density={density}
+        maxHeight={510}
         onRowInspect={(row: any) => handleInspectOpen(row)}
         onRowClick={(row: any) => handleInspectOpen(row)}
         onRowEdit={handleCreateRedirect}

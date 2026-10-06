@@ -559,10 +559,10 @@ export default function ParentsListPage() {
           ) : filteredParents.length === 0 ? (
             <div className="p-12 text-center text-slate-500 dark:text-slate-400 text-sm italic">{t('no_guardians')}</div>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto max-h-[570px] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-700 scrollbar-track-transparent">
               <table className={cn("w-full border-collapse text-sm", isRtl ? "text-right" : "text-left")}>
                 <thead>
-                  <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider bg-slate-50 dark:bg-slate-800/50">
+                  <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider bg-slate-50 dark:bg-slate-800/90 sticky top-0 z-10 shadow-2xs">
                     <th className="py-3.5 px-4">{t('col_profile')}</th>
                     <th className="py-3.5 px-4">{t('col_scholars')}</th>
                     <th className="py-3.5 px-4">{t('col_contact')}</th>

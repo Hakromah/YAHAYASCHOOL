@@ -518,10 +518,10 @@ const [workers, setWorkers] = useState<Worker[]>([]);
         ) : filteredWorkers.length === 0 ? (
           <div className="p-12 text-center text-slate-550 italic text-sm">{t('No support workers found.', locale)}</div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto max-h-[570px] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-700 scrollbar-track-transparent">
             <table className="w-full text-left border-collapse text-sm">
               <thead>
-                <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider bg-slate-50 dark:bg-slate-800/50">
+                <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider bg-slate-50 dark:bg-slate-800/90 sticky top-0 z-10 shadow-2xs">
                   <th className="py-3.5 px-4">{t('Support Employee & ID Code', locale)}</th>
                   <th className="py-3.5 px-4">{t('Operational Category & Role', locale)}</th>
                   <th className="py-3.5 px-4">{t('Assigned Shift & Supervisor', locale)}</th>

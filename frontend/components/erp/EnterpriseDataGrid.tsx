@@ -36,6 +36,9 @@ export interface EnterpriseDataGridProps<TData> {
   getRowColor?: (row: TData) => string;
   emptyStateProps?: EnterpriseEmptyStateProps;
   className?: string;
+  maxHeight?: string | number;
+  tableContainerClassName?: string;
+  pageSize?: number;
 }
 
 export function EnterpriseDataGrid<TData>({
@@ -54,6 +57,9 @@ export function EnterpriseDataGrid<TData>({
   getRowColor,
   emptyStateProps,
   className,
+  maxHeight,
+  tableContainerClassName,
+  pageSize = 25,
 }: EnterpriseDataGridProps<TData>) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
@@ -110,7 +116,7 @@ export function EnterpriseDataGrid<TData>({
     getRowId: (originalRow, index) => getRowId(originalRow, index),
     enableRowSelection: true,
     enableMultiSort: true,
-    initialState: { pagination: { pageSize: 15 } },
+    initialState: { pagination: { pageSize } },
   });
 
   // Derive a stable key from column IDs — reset table state only when the
@@ -198,8 +204,15 @@ export function EnterpriseDataGrid<TData>({
   }
 
   return (
-    <div className={cn("rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden shadow-2xs relative flex flex-col min-h-[550px]", className)}>
-      <div className="overflow-x-auto flex-1">
+    <div className={cn("rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden shadow-2xs relative flex flex-col", maxHeight ? "min-h-0" : "min-h-[550px]", className)}>
+      <div
+        className={cn(
+          "overflow-x-auto flex-1 overscroll-contain",
+          maxHeight ? "overflow-y-auto scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-700 scrollbar-track-transparent" : "",
+          tableContainerClassName
+        )}
+        style={maxHeight ? { maxHeight: typeof maxHeight === 'number' ? `${maxHeight}px` : maxHeight } : undefined}
+      >
         <table className={cn("w-full border-collapse font-sans", isRtl ? "text-right" : "text-left")} role="grid">
           {/* Sticky Table Header */}
           <thead>
