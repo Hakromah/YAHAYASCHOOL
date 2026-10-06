@@ -57,10 +57,9 @@ export function useNotifications() {
     if (!isAuthenticated || !user?.id) return;
     setLoading(true);
     try {
-      // 1. Try API with current user's ID
       const res = await notificationService.getMyNotifications({ 
         recipientId: user.id,
-        pageSize: 50 
+        pageSize: 100,
       });
       const apiList = (res?.data || []).map(n => ({
         ...n,
@@ -69,14 +68,18 @@ export function useNotifications() {
       }));
       
       setNotifications(apiList);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(apiList));
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(apiList));
+      }
     } catch (err) {
       // Offline fallback
-      const localStr = localStorage.getItem(STORAGE_KEY);
-      if (localStr) {
-        setNotifications(JSON.parse(localStr));
-      } else {
-        setNotifications([]);
+      if (typeof window !== 'undefined') {
+        const localStr = localStorage.getItem(STORAGE_KEY);
+        if (localStr) {
+          try { setNotifications(JSON.parse(localStr)); } catch { setNotifications([]); }
+        } else {
+          setNotifications([]);
+        }
       }
     } finally {
       setLoading(false);
@@ -88,43 +91,51 @@ export function useNotifications() {
 
     const handleUpdate = (e?: any) => {
       const detail = e?.detail;
+      if (detail?.action === 'new' || detail?.action === 'refresh') {
+        loadNotifications();
+        return;
+      }
+
       if (detail?.action === 'read' && (detail.id || detail.documentId)) {
         setNotifications(prev => {
           const next = prev.map(n => 
-            (n.id === detail.id || n.documentId === detail.documentId || n.id === detail.documentId)
+            (n.id === detail.id || n.documentId === detail.documentId || String(n.id) === String(detail.id))
               ? { ...n, status: NotificationStatusEnum.Read, recordStatus: NotificationStatusEnum.Read, readAt: new Date().toISOString() }
               : n
           );
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+          if (typeof window !== 'undefined') {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+          }
           return next;
         });
       } else if (detail?.action === 'read-all') {
         setNotifications(prev => {
           const next = prev.map(n => ({ ...n, status: NotificationStatusEnum.Read, recordStatus: NotificationStatusEnum.Read, readAt: new Date().toISOString() }));
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+          if (typeof window !== 'undefined') {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+          }
           return next;
         });
       } else if (detail?.action === 'delete' && (detail.id || detail.documentId)) {
         setNotifications(prev => {
-          const next = prev.filter(n => n.id !== detail.id && n.documentId !== detail.documentId);
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+          const next = prev.filter(n => n.id !== detail.id && n.documentId !== detail.documentId && String(n.id) !== String(detail.id));
+          if (typeof window !== 'undefined') {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+          }
           return next;
         });
       } else {
-        const localStr = localStorage.getItem(STORAGE_KEY);
-        if (localStr) {
-          try { setNotifications(JSON.parse(localStr)); } catch { /* ignore */ }
-        }
+        loadNotifications();
       }
     };
 
     window.addEventListener('notifications-update', handleUpdate);
     window.addEventListener('focus', () => loadNotifications());
 
-    // Periodic background sync every 30s
+    // Periodic background sync every 15s
     const timer = setInterval(() => {
       loadNotifications();
-    }, 30000);
+    }, 15000);
 
     return () => {
       window.removeEventListener('notifications-update', handleUpdate);
@@ -134,19 +145,25 @@ export function useNotifications() {
   }, [loadNotifications]);
 
   const notifyChange = (detail?: any) => {
-    window.dispatchEvent(new CustomEvent('notifications-update', { detail }));
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('notifications-update', { detail }));
+    }
   };
 
   const markAsRead = async (id: number | string) => {
     const updated = notifications.map(n => 
-      (n.id === id || n.documentId === id) ? { ...n, status: NotificationStatusEnum.Read, recordStatus: NotificationStatusEnum.Read, readAt: new Date().toISOString() } : n
+      (n.id === id || n.documentId === id || String(n.id) === String(id))
+        ? { ...n, status: NotificationStatusEnum.Read, recordStatus: NotificationStatusEnum.Read, readAt: new Date().toISOString() }
+        : n
     );
     setNotifications(updated);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    }
     notifyChange({ id, action: 'read' });
 
     try {
-      const match = notifications.find(n => n.id === id || n.documentId === id);
+      const match = notifications.find(n => n.id === id || n.documentId === id || String(n.id) === String(id));
       const target = match?.documentId || id;
       await notificationService.markAsRead(target);
     } catch {
@@ -162,7 +179,9 @@ export function useNotifications() {
       readAt: new Date().toISOString() 
     }));
     setNotifications(updated);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    }
     notifyChange({ action: 'read-all' });
 
     try {
@@ -175,13 +194,15 @@ export function useNotifications() {
   };
 
   const deleteNotification = async (id: number | string) => {
-    const updated = notifications.filter(n => n.id !== id && n.documentId !== id);
+    const updated = notifications.filter(n => n.id !== id && n.documentId !== id && String(n.id) !== String(id));
     setNotifications(updated);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    }
     notifyChange({ id, action: 'delete' });
 
     try {
-      const match = notifications.find(n => n.id === id || n.documentId === id);
+      const match = notifications.find(n => n.id === id || n.documentId === id || String(n.id) === String(id));
       const target = match?.documentId || id;
       await apiClient.delete(`/notifications/${target}`);
     } catch {
@@ -189,12 +210,21 @@ export function useNotifications() {
     }
   };
 
-  const unreadCount = notifications.filter(n => 
-    n.status !== NotificationStatusEnum.Read && 
-    n.recordStatus !== NotificationStatusEnum.Read &&
-    (n as any).status !== 'read' &&
-    (n as any).recordStatus !== 'read'
-  ).length;
+  const unreadCount = notifications.filter(n => {
+    const isRead = n.status === NotificationStatusEnum.Read || 
+      n.recordStatus === NotificationStatusEnum.Read ||
+      (n as any).status === 'read' ||
+      (n as any).recordStatus === 'read' ||
+      Boolean(n.readAt);
+    if (isRead) return false;
+
+    // If current user is the sender of a 1-to-1 message to someone else, do not count as unread for the sender
+    const isSender = (n.sender?.id === user?.id || (n.metadata as any)?.senderId === user?.id);
+    const hasOtherRecipient = n.recipient && n.recipient.id !== user?.id;
+    if (isSender && hasOtherRecipient) return false;
+
+    return true;
+  }).length;
 
   return {
     notifications,

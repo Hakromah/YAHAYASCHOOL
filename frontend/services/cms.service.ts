@@ -1,5 +1,6 @@
 import axios from 'axios';
 import qs from 'qs';
+import { apiClient } from './api.service';
 import type {
   HomepageEntity,
   CustomPageEntity,
@@ -373,10 +374,10 @@ export const cmsService = {
     return data || [];
   },
   
-  async getAnnouncements(locale = 'en'): Promise<AnnouncementEntity[]> {
+  async getAnnouncements(locale = 'en', limit = 100): Promise<AnnouncementEntity[]> {
     const query = {
       locale,
-      pagination: { limit: 5 },
+      pagination: { limit },
       sort: ['createdAt:desc']
     };
     const data = await this.fetchStrapi<AnnouncementEntity[]>('/announcements', query);
@@ -599,8 +600,24 @@ export const cmsService = {
    * Create a new announcement
    */
   async createAnnouncement(payload: Partial<AnnouncementEntity>): Promise<AnnouncementEntity> {
-    const res = await cmsClient.post('/announcements', { data: payload });
+    const res = await cmsClient.post('/announcements', {
+      data: {
+        ...payload,
+        publishedAt: new Date().toISOString(),
+      },
+    });
     return res.data?.data || res.data;
+  },
+
+  /**
+   * Delete an announcement permanently
+   */
+  async deleteAnnouncement(idOrDocId: number | string): Promise<void> {
+    try {
+      await apiClient.delete(`/announcements/${idOrDocId}`);
+    } catch {
+      await cmsClient.delete(`/announcements/${idOrDocId}`);
+    }
   },
 
   async getPursuitCta(locale = 'en'): Promise<PursuitCtaEntity | null> {

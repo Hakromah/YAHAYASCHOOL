@@ -627,6 +627,9 @@ export interface AnnouncementEntity {
   publishDate?: string;
   expiryDate?: string;
   targetAudience: 'all' | 'students' | 'parents' | 'teachers' | 'public';
+  createdAt?: string;
+  updatedAt?: string;
+  publishedAt?: string;
 }
 
 export interface TestimonialEntity {

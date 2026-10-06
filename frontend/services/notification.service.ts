@@ -10,7 +10,7 @@ import { PAGINATION } from '@/lib/constants';
 
 export const notificationService = {
   /**
-   * Get notifications for the current user.
+   * Get notifications for the current user (both direct messages and broadcast bulletins).
    */
   async getMyNotifications(filters: NotificationFilters = {}): Promise<PaginatedResponse<Notification>> {
     try {
@@ -27,25 +27,36 @@ export const notificationService = {
       if (status) queryFilters.recordStatus = { $eq: status };
       if (channel) queryFilters.channel = { $eq: channel };
       if (priority) queryFilters.priority = { $eq: priority };
-      if (recipientId) queryFilters.recipient = { id: { $eq: recipientId } };
+      if (recipientId) {
+        queryFilters.$or = [
+          { recipient: { id: { $eq: recipientId } } },
+          { recipient: { $null: true } },
+        ];
+      }
 
       const { data } = await apiClient.get('/notifications', {
         params: {
           filters: queryFilters,
           pagination: { page, pageSize },
           sort: 'createdAt:desc',
-          populate: ['sender'],
+          populate: ['sender', 'recipient'],
         },
       });
 
       const notifications = (data.data as Notification[]).map(n => ({
         ...n,
-        status: (n.status || n.recordStatus || 'pending') as NotificationStatusEnum
+        status: (n.status || n.recordStatus || 'pending') as NotificationStatusEnum,
+        recordStatus: (n.recordStatus || n.status || 'pending') as NotificationStatusEnum,
       }));
 
       return {
         data: notifications,
-        pagination: data.meta.pagination,
+        pagination: data.meta?.pagination || {
+          page: 1,
+          pageSize: notifications.length,
+          total: notifications.length,
+          pageCount: 1,
+        },
       };
     } catch (error) {
       throw normalizeError(error);
@@ -53,13 +64,16 @@ export const notificationService = {
   },
 
   /**
-   * Get count of unread notifications.
+   * Get count of unread notifications for a user.
    */
   async getUnreadCount(recipientId?: number): Promise<number> {
     try {
       const queryFilters: any = { recordStatus: { $in: ['pending', 'sent'] } };
       if (recipientId) {
-        queryFilters.recipient = { id: { $eq: recipientId } };
+        queryFilters.$or = [
+          { recipient: { id: { $eq: recipientId } } },
+          { recipient: { $null: true } },
+        ];
       }
       const { data } = await apiClient.get('/notifications', {
         params: {
@@ -94,7 +108,10 @@ export const notificationService = {
     try {
       const queryFilters: any = { recordStatus: { $in: ['pending', 'sent'] } };
       if (recipientId) {
-        queryFilters.recipient = { id: { $eq: recipientId } };
+        queryFilters.$or = [
+          { recipient: { id: { $eq: recipientId } } },
+          { recipient: { $null: true } },
+        ];
       }
 
       // Get all unread notification IDs
@@ -108,9 +125,20 @@ export const notificationService = {
 
       const items = (data.data as Array<{ id: number; documentId?: string }>);
 
-      await Promise.all(
+      await Promise.allSettled(
         items.map((n) => notificationService.markAsRead(n.documentId || n.id))
       );
+    } catch (error) {
+      throw normalizeError(error);
+    }
+  },
+
+  /**
+   * Delete a notification permanently.
+   */
+  async deleteNotification(idOrDocId: number | string): Promise<void> {
+    try {
+      await apiClient.delete(`/notifications/${idOrDocId}`);
     } catch (error) {
       throw normalizeError(error);
     }

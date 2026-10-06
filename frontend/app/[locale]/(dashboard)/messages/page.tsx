@@ -1,18 +1,16 @@
 'use client';
 
+import React, {
+  useState, useEffect, useMemo, useCallback, useRef, Suspense,
+} from 'react';
 import { useLocale } from 'next-intl';
-import { t as i18nT } from '@/lib/i18n-dict';
-
-// module-level i18n fallback
-const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
-
-import React, { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import {
   MessageSquare, Send, Search, Star, Trash2, CheckCheck,
-  Plus, RefreshCw, X, Inbox, Mail,
-  Users, UserCheck, Reply,
-  Bell, Archive, Eye, EyeOff, Circle
+  Plus, RefreshCw, X, Inbox, Mail, Users, UserCheck, Reply,
+  Bell, Archive, Eye, EyeOff, Circle, Paperclip, Edit2,
+  Download, File as FileIcon, Image as ImageIcon, AlertTriangle,
+  Clock, Check,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageContainer, PageHeader } from '@/components/shared/layout/PageContainer';
@@ -22,7 +20,22 @@ import { useAuth } from '@/hooks/useAuth';
 import { usePermissions } from '@/hooks/usePermissions';
 import { cn } from '@/lib/utils';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// ─── Constants ────────────────────────────────────────────────────────────────
+const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1339';
+const EDIT_WINDOW_MS   = 5  * 60 * 1000; // 5 minutes
+const DELETE_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+
+// ─── Types ─────────────────────────────────────────────────────────────────────
+
+interface StrapiFile {
+  id: number;
+  documentId?: string;
+  name: string;
+  url: string;
+  mime: string;
+  size: number;
+  ext?: string;
+}
 
 interface MessageThread {
   id: string | number;
@@ -45,6 +58,7 @@ interface MessageThread {
   readAt?: string;
   relatedEntity?: string;
   relatedEntityId?: string;
+  attachments?: StrapiFile[];
 }
 
 interface ContactUser {
@@ -72,6 +86,20 @@ function timeAgo(isoStr: string): string {
     if (days < 7) return `${days}d ago`;
     return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
   } catch { return ''; }
+}
+
+function msLeft(isoStr: string, windowMs: number): number {
+  return windowMs - (Date.now() - new Date(isoStr).getTime());
+}
+
+function canEdit(msg: MessageThread, currentUserId?: number): boolean {
+  if (!currentUserId || msg.senderId !== currentUserId) return false;
+  return msLeft(msg.sentAt, EDIT_WINDOW_MS) > 0;
+}
+
+function canDelete(msg: MessageThread, currentUserId?: number): boolean {
+  if (!currentUserId || msg.senderId !== currentUserId) return false;
+  return msLeft(msg.sentAt, DELETE_WINDOW_MS) > 0;
 }
 
 function priorityColor(p: string) {
@@ -114,6 +142,17 @@ function roleLabelFromType(type: string): string {
   return map[type] || type.charAt(0).toUpperCase() + type.slice(1);
 }
 
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function fileIcon(mime: string) {
+  if (mime.startsWith('image/')) return <ImageIcon className="w-4 h-4 text-sky-500" />;
+  return <FileIcon className="w-4 h-4 text-slate-400" />;
+}
+
 // ─── Channel Badge ─────────────────────────────────────────────────────────────
 function ChannelBadge({ channel }: { channel: string }) {
   const cfg: Record<string, { label: string; cls: string }> = {
@@ -131,101 +170,185 @@ function ChannelBadge({ channel }: { channel: string }) {
   );
 }
 
-// ─── Fallback Data ────────────────────────────────────────────────────────────
-const FALLBACK_MESSAGES: MessageThread[] = [
-  {
-    id: 'MSG-001',
-    subject: 'Juz 15 Memorization Assessment Results — SS3',
-    body: `Assalamu Alaikum wa Rahmatullahi wa Barakatuh,\n\nThe oral evaluation scores for Juz 15 and Tajweed articulation have been published across the portal. All scholars in SS3 - Section A have been assessed on Madd, Ghunnah, Ikhfa, and Qalqalah rules.\n\nThe top performers have been nominated for the annual Hifz Shield. Please log into the LMS portal to view individual score breakdowns and progress tracking charts.\n\nWas-Salamu Alaikum,\nUstadh Ahmad Al-Razi\nHifz & Quranic Studies Lead`,
-    senderId: 2, senderName: 'Ustadh Ahmad Al-Razi', senderRole: 'Hifz & Quranic Studies Lead', senderInitials: 'UA',
-    recipientGroup: 'All Faculty & Staff', channel: 'dashboard', priority: 'high',
-    recordStatus: 'pending', isStarred: true, isArchived: false,
-    sentAt: new Date(Date.now() - 2 * 3600000).toISOString(),
-  },
-  {
-    id: 'MSG-002',
-    subject: 'Term 2 Tuition Clearance — Ref #INV-8891',
-    body: `Respected Administration,\n\nAssalamu Alaikum. We have initiated the bank wire transfer for Term 2 tuition fees for our ward Zaid Al-Mansoor (Adm #AC00000042). Reference number: INV-8891.\n\nKindly confirm receipt and update the clearance status in the student portal so that examination clearance can proceed accordingly.\n\nJazakAllahu Khairan,\nFatima Al-Mansoor\nParent Guardian`,
-    senderId: 3, senderName: 'Fatima Al-Mansoor', senderRole: 'Parent / Guardian', senderInitials: 'FA',
-    recipientGroup: 'Finance Department', channel: 'dashboard', priority: 'normal',
-    recordStatus: 'pending', isStarred: false, isArchived: false,
-    sentAt: new Date(Date.now() - 86400000).toISOString(),
-  },
-  {
-    id: 'MSG-003',
-    subject: 'AY 2026/2027 Mid-Term Examination Timetable — Finalized',
-    body: `Dear All Faculty & Supervisors,\n\nThe Mid-Term Examination timetable for AY 2026/2027 has been finalized and is now live in the Academic Calendar module.\n\nAll homeroom supervisors and subject teachers are requested to:\n1. Verify invigilation schedules before this Friday\n2. Ensure examination room assignments are confirmed with the Academic Registrar\n3. Submit any timetable conflict reports no later than 48 hours before commencement\n\nThe examination hall seating plans will be distributed by Thursday morning.\n\nAcademic Registrar\nYahaya Camara Islamic School`,
-    senderId: 4, senderName: 'Central Academic Registrar', senderRole: 'Academic Administration', senderInitials: 'CA',
-    recipientGroup: 'All Teachers & Staff', channel: 'dashboard', priority: 'urgent',
-    recordStatus: 'read', isStarred: false, isArchived: false,
-    sentAt: new Date(Date.now() - 3 * 86400000).toISOString(),
-    readAt: new Date(Date.now() - 2 * 86400000).toISOString(),
-  },
-  {
-    id: 'MSG-004',
-    subject: 'Friday Jumuah Prayer & Gate 1 Logistics',
-    body: `Assalamu Alaikum,\n\nPlease be advised that Gate 1 entry will be dedicated exclusively to scholar shuttle buses from 11:30 AM onwards every Friday.\n\nStaff and parent vehicles are requested to use Gate 2 (Eastern Campus Entrance) during Jumuah prayer hours (11:30 AM – 2:00 PM).\n\nBarakallahu Fiikum,\nDirector of Operations\nCampus Management`,
-    senderId: 5, senderName: 'Director of Operations', senderRole: 'Campus Management', senderInitials: 'DO',
-    recipientGroup: 'All Campus Members', channel: 'dashboard', priority: 'normal',
-    recordStatus: 'read', isStarred: true, isArchived: false,
-    sentAt: new Date(Date.now() - 5 * 86400000).toISOString(),
-    readAt: new Date(Date.now() - 4 * 86400000).toISOString(),
-  },
-];
+// ─── Attachment Row ────────────────────────────────────────────────────────────
+function AttachmentRow({ file }: { file: StrapiFile }) {
+  const href = file.url.startsWith('http') ? file.url : `${STRAPI_URL}${file.url}`;
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-emerald-400 dark:hover:border-emerald-600 bg-white dark:bg-slate-900 transition-colors group"
+    >
+      {fileIcon(file.mime)}
+      <div className="flex-1 min-w-0">
+        <p className="text-xs font-bold text-slate-900 dark:text-white truncate">{file.name}</p>
+        <p className="text-[10px] text-slate-400">{formatFileSize(file.size)}</p>
+      </div>
+      <Download className="w-3.5 h-3.5 text-slate-400 group-hover:text-emerald-500 transition-colors shrink-0" />
+    </a>
+  );
+}
 
-// ─── Main Content Component ───────────────────────────────────────────────────
+// ─── Compose / Edit File Picker ────────────────────────────────────────────────
+function FilePicker({
+  attachedFiles,
+  onAdd,
+  onRemove,
+  uploading,
+}: {
+  attachedFiles: File[];
+  onAdd: (files: File[]) => void;
+  onRemove: (idx: number) => void;
+  uploading: boolean;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center gap-2">
+        <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Attachments</label>
+        {uploading && <span className="text-[10px] text-emerald-500 font-bold animate-pulse">Uploading…</span>}
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {attachedFiles.map((f, i) => (
+          <div key={i} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs">
+            <Paperclip className="w-3 h-3 text-slate-400" />
+            <span className="text-slate-800 dark:text-slate-200 font-medium max-w-[120px] truncate">{f.name}</span>
+            <span className="text-slate-400 font-mono">({formatFileSize(f.size)})</span>
+            <button
+              type="button"
+              onClick={() => onRemove(i)}
+              className="text-rose-400 hover:text-rose-600 transition-colors cursor-pointer ml-1"
+            >
+              <X className="w-3 h-3" />
+            </button>
+          </div>
+        ))}
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-dashed border-slate-300 dark:border-slate-600 hover:border-emerald-500 text-slate-500 dark:text-slate-400 hover:text-emerald-600 text-xs font-bold transition-colors cursor-pointer"
+        >
+          <Paperclip className="w-3 h-3" />
+          Attach file
+        </button>
+      </div>
+      <input
+        ref={inputRef}
+        type="file"
+        multiple
+        className="hidden"
+        onChange={e => {
+          if (e.target.files) {
+            onAdd(Array.from(e.target.files));
+            e.target.value = '';
+          }
+        }}
+      />
+    </div>
+  );
+}
+
+// ─── Edit Window Timer ─────────────────────────────────────────────────────────
+function EditTimer({ sentAt, windowMs, label }: { sentAt: string; windowMs: number; label: string }) {
+  const [remaining, setRemaining] = useState(msLeft(sentAt, windowMs));
+  useEffect(() => {
+    const id = setInterval(() => setRemaining(msLeft(sentAt, windowMs)), 5000);
+    return () => clearInterval(id);
+  }, [sentAt, windowMs]);
+  if (remaining <= 0) return null;
+  const mins = Math.ceil(remaining / 60000);
+  return (
+    <span className="flex items-center gap-1 text-[10px] text-slate-400 font-mono">
+      <Clock className="w-3 h-3" /> {label} available for {mins}m
+    </span>
+  );
+}
+
+// ─── Main Content ─────────────────────────────────────────────────────────────
 function MessagesCenterContent() {
   const searchParams = useSearchParams();
-  const targetMsgId = searchParams.get('id');
-  const targetRecipientId = searchParams.get('recipientId');
-  const shouldCompose = searchParams.get('compose') === 'true';
+  const targetMsgId      = searchParams.get('id');
+  const targetRecipId    = searchParams.get('recipientId');
+  const shouldCompose    = searchParams.get('compose') === 'true';
 
-  const { user, role } = useAuth();
-  const { userRole } = usePermissions();
-  const userRoleStr = String(userRole || role || '');
-  const canBroadcast = !['student', 'parent'].includes(userRoleStr);
-
-  const [messages, setMessages] = useState<MessageThread[]>([]);
-  const [contacts, setContacts] = useState<ContactUser[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-
-  const [activeFolder, setActiveFolder] = useState<'inbox' | 'unread' | 'starred' | 'sent' | 'archive'>('inbox');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [priorityFilter, setPriorityFilter] = useState<string>('all');
-  const [selectedMsg, setSelectedMsg] = useState<MessageThread | null>(null);
-
-  const [isComposing, setIsComposing] = useState(false);
-  const [replyText, setReplyText] = useState('');
-  const [isSendingReply, setIsSendingReply] = useState(false);
-
-  const [composeRecipientType, setComposeRecipientType] = useState<'group' | 'individual'>(canBroadcast ? 'group' : 'individual');
-  const [composeGroup, setComposeGroup] = useState('');
-  const [composeIndividualId, setComposeIndividualId] = useState<number | ''>('');
-  const [composeContactSearch, setComposeContactSearch] = useState('');
-  const [composeSubject, setComposeSubject] = useState('');
-  const [composeBody, setComposeBody] = useState('');
-  const [composePriority, setComposePriority] = useState<'low' | 'normal' | 'high' | 'urgent'>('normal');
-  const [composeChannel, setComposeChannel] = useState<'dashboard' | 'email' | 'sms'>('dashboard');
-  const [isSendingBroadcast, setIsSendingBroadcast] = useState(false);
+  const { user, role }  = useAuth();
+  const { userRole }    = usePermissions();
+  const userRoleStr     = String(userRole || role || '');
+  const canBroadcast    = !['student', 'parent'].includes(userRoleStr);
 
   const currentUserId = (user as any)?.id as number | undefined;
   const myName = (user as any)?.firstName
     ? `${(user as any).firstName} ${(user as any).lastName || ''}`.trim()
     : (user as any)?.username || 'Staff Member';
 
-  // ── Load ──────────────────────────────────────────────────────────────────
+  // ── State ───────────────────────────────────────────────────────────────────
+  const [messages, setMessages]       = useState<MessageThread[]>([]);
+  const [contacts, setContacts]       = useState<ContactUser[]>([]);
+  const [isLoading, setIsLoading]     = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const [activeFolder, setActiveFolder] = useState<'inbox' | 'unread' | 'starred' | 'sent' | 'archive'>('inbox');
+  const [searchQuery, setSearchQuery]   = useState('');
+  const [priorityFilter, setPriorityFilter] = useState('all');
+  const [selectedMsg, setSelectedMsg]   = useState<MessageThread | null>(null);
+
+  // Compose / edit state
+  const [isComposing, setIsComposing]     = useState(false);
+  const [editingMsgId, setEditingMsgId]   = useState<string | number | null>(null);
+  const [replyText, setReplyText]         = useState('');
+  const [isSendingReply, setIsSendingReply] = useState(false);
+  const [composePendingFiles, setComposePendingFiles] = useState<File[]>([]);
+  const [isUploading, setIsUploading]     = useState(false);
+
+  const [composeRecipientType, setComposeRecipientType] = useState<'group' | 'individual'>(
+    canBroadcast ? 'group' : 'individual'
+  );
+  const [composeGroup, setComposeGroup]           = useState('');
+  const [composeIndividualId, setComposeIndividualId] = useState<number | ''>('');
+  const [composeContactSearch, setComposeContactSearch] = useState('');
+  const [composeSubject, setComposeSubject]       = useState('');
+  const [composeBody, setComposeBody]             = useState('');
+  const [composePriority, setComposePriority]     = useState<'low' | 'normal' | 'high' | 'urgent'>('normal');
+  const [composeChannel, setComposeChannel]       = useState<'dashboard' | 'email' | 'sms'>('dashboard');
+  const [isSendingBroadcast, setIsSendingBroadcast] = useState(false);
+
+  // Confirm delete
+  const [confirmDeleteId, setConfirmDeleteId]     = useState<string | number | null>(null);
+
+  // ── Upload helper ────────────────────────────────────────────────────────────
+  const uploadFiles = useCallback(async (files: File[]): Promise<StrapiFile[]> => {
+    if (!files.length) return [];
+    setIsUploading(true);
+    try {
+      const form = new FormData();
+      files.forEach(f => form.append('files', f));
+      const resp = await apiClient.post('/upload', form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      return Array.isArray(resp.data) ? resp.data : [];
+    } catch (err: any) {
+      toast.error('File upload failed: ' + (err?.message || 'Unknown error'));
+      return [];
+    } finally {
+      setIsUploading(false);
+    }
+  }, []);
+
+  // ── Load ─────────────────────────────────────────────────────────────────────
   const loadData = useCallback(async (silent = false) => {
     if (!silent) setIsLoading(true);
     else setIsRefreshing(true);
     try {
       const [notifRes, usersRes] = await Promise.allSettled([
-        apiClient.get('/notifications?populate[sender][populate]=role&populate[recipient][populate]=role&sort=createdAt:desc&pagination[pageSize]=100')
-          .catch(() => ({ data: { data: [] } })),
+        apiClient.get(
+          '/notifications?populate[sender]=true&populate[recipient]=true&sort=createdAt:desc&pagination[pageSize]=200'
+        ).catch(() => ({ data: { data: [] } })),
         apiClient.get('/users?populate=role&pagination[pageSize]=200')
           .catch(() => ({ data: [] })),
       ]);
 
+      // ── Contacts ─────────────────────────────────────────────────────────────
       const rawU = (usersRes.status === 'fulfilled'
         ? (Array.isArray(usersRes.value?.data) ? usersRes.value.data : usersRes.value?.data?.data)
         : null) || [];
@@ -239,105 +362,118 @@ function MessagesCenterContent() {
       }));
       setContacts(parsedContacts);
 
+      // ── Messages ──────────────────────────────────────────────────────────────
       const rawNotifs = (notifRes.status === 'fulfilled' ? notifRes.value?.data?.data : null) || [];
 
-      if (rawNotifs.length > 0) {
-        const parsed: MessageThread[] = rawNotifs.map((n: any) => {
-          const s = n.sender || {};
-          const sMeta = (n.metadata as any) || {};
-          let sName = [s.firstName, s.lastName].filter(Boolean).join(' ') || s.username || s.email || sMeta.senderName;
-          let sRole = s.role?.type ? roleLabelFromType(s.role.type) : (sMeta.senderRole || '');
-          let sId = s.id || sMeta.senderId || 0;
+      // IMPORTANT: Never fall back to hardcoded data — show empty inbox if no results
+      const parsed: MessageThread[] = rawNotifs.map((n: any) => {
+        const s    = n.sender || {};
+        const sMeta = (n.metadata as any) || {};
+        let sName  = [s.firstName, s.lastName].filter(Boolean).join(' ') || s.username || s.email || sMeta.senderName;
+        let sRole  = s.role?.type ? roleLabelFromType(s.role.type) : (sMeta.senderRole || '');
+        let sId    = s.id || sMeta.senderId || 0;
 
-          // If sender was not populated in relation, resolve from contacts if known or fallback gracefully
-          if (!sName) {
-            if (sMeta.isBroadcast) {
-              sName = sMeta.group ? `Faculty (${sMeta.group})` : 'Institutional Announcement';
-              sRole = 'Broadcast Sender';
-            } else {
-              sName = 'Teacher / Faculty Staff';
-              sRole = 'Instructor';
-            }
-          }
-          if (!sRole) {
-            sRole = 'Faculty Member';
-          }
-
-          const r = n.recipient || {};
-          const rName = [r.firstName, r.lastName].filter(Boolean).join(' ') || r.username || undefined;
-
-          return {
-            id: n.id,
-            documentId: n.documentId,
-            subject: n.title || 'No Subject',
-            body: n.body || '',
-            senderId: sId,
-            senderName: sName,
-            senderRole: sRole,
-            senderInitials: initials(sName),
-            recipientId: r.id,
-            recipientName: rName,
-            recipientGroup: sMeta?.group,
-            channel: (n.channel || 'dashboard') as MessageThread['channel'],
-            priority: (n.priority || 'normal') as MessageThread['priority'],
-            recordStatus: (n.recordStatus || 'pending') as MessageThread['recordStatus'],
-            isStarred: Boolean(sMeta?.starred),
-            isArchived: Boolean(sMeta?.archived),
-            sentAt: n.sentAt || n.createdAt || new Date().toISOString(),
-            readAt: n.readAt || undefined,
-            relatedEntity: n.relatedEntity || undefined,
-            relatedEntityId: n.relatedEntityId || undefined,
-          };
-        });
-        setMessages(parsed);
-
-        // Check if a specific message ID was requested via query param
-        let initialMsg: MessageThread | null = null;
-        if (targetMsgId) {
-          initialMsg = parsed.find(m => String(m.id) === targetMsgId || m.documentId === targetMsgId) || parsed[0] || null;
-        } else {
-          initialMsg = parsed[0] || null;
+        if (!sName) {
+          sName = sMeta.isBroadcast ? 'Institutional Broadcast' : 'Staff Member';
+          sRole = sMeta.isBroadcast ? 'Broadcast' : 'Faculty Member';
         }
-        setSelectedMsg(initialMsg);
+        if (!sRole) sRole = 'Faculty Member';
 
-        // Auto mark selected initial message as read if it's currently unread
-        if (initialMsg && initialMsg.recordStatus !== 'read') {
-          const targetDocId = initialMsg.documentId || initialMsg.id;
-          initialMsg.recordStatus = 'read';
-          window.dispatchEvent(new CustomEvent('notifications-update', { detail: { id: initialMsg.id, documentId: initialMsg.documentId, action: 'read' } }));
-          if (targetDocId) {
-            apiClient.put(`/notifications/${targetDocId}`, { data: { recordStatus: 'read', readAt: new Date().toISOString() } }).catch(() => null);
-          }
+        const r     = n.recipient || {};
+        const rName = [r.firstName, r.lastName].filter(Boolean).join(' ') || r.username || undefined;
+
+        // Attachments are stored as JSON objects in metadata.attachments
+        // (the schema has no native attachments relation field)
+        let attachments: StrapiFile[] = [];
+        if (Array.isArray(sMeta?.attachments)) {
+          attachments = sMeta.attachments.map((a: any) => ({
+            id: a.id,
+            name: a.name || 'file',
+            url: a.url || '',
+            mime: a.mime || 'application/octet-stream',
+            size: a.size || 0,
+          }));
         }
+
+        return {
+          id: n.id,
+          documentId: n.documentId,
+          subject: n.title || 'No Subject',
+          body: n.body || '',
+          senderId: sId,
+          senderName: sName,
+          senderRole: sRole,
+          senderInitials: initials(sName),
+          recipientId: r.id,
+          recipientName: rName,
+          recipientGroup: sMeta?.group,
+          channel: (n.channel || 'dashboard') as MessageThread['channel'],
+          priority: (n.priority || 'normal') as MessageThread['priority'],
+          recordStatus: (n.recordStatus || 'pending') as MessageThread['recordStatus'],
+          isStarred: Boolean(sMeta?.starred),
+          isArchived: Boolean(sMeta?.archived),
+          sentAt: n.sentAt || n.createdAt || new Date().toISOString(),
+          readAt: n.readAt || undefined,
+          relatedEntity: n.relatedEntity || undefined,
+          relatedEntityId: n.relatedEntityId || undefined,
+          attachments,
+        };
+      });
+
+      setMessages(parsed);
+
+      // Auto-select
+      let initialMsg: MessageThread | null = null;
+      if (targetMsgId) {
+        initialMsg = parsed.find(m => String(m.id) === targetMsgId || m.documentId === targetMsgId) || parsed[0] || null;
       } else {
-        setMessages(FALLBACK_MESSAGES);
-        setSelectedMsg(prev => prev ?? FALLBACK_MESSAGES[0]);
+        initialMsg = parsed[0] || null;
+      }
+      setSelectedMsg(prev => {
+        // If already viewing a message that still exists, keep it (just update data)
+        if (prev) {
+          const stillExists = parsed.find(m => m.id === prev.id || m.documentId === prev.documentId);
+          return stillExists ?? initialMsg;
+        }
+        return initialMsg;
+      });
+
+      // Auto mark initial as read
+      if (initialMsg && initialMsg.recordStatus !== 'read') {
+        const docId = initialMsg.documentId || initialMsg.id;
+        setMessages(prev => prev.map(m => m.id === initialMsg.id
+          ? { ...m, recordStatus: 'read', readAt: new Date().toISOString() }
+          : m
+        ));
+        window.dispatchEvent(new CustomEvent('notifications-update', { detail: { id: initialMsg.id, documentId: initialMsg.documentId, action: 'read' } }));
+        if (docId) {
+          apiClient.put(`/notifications/${docId}`, { data: { recordStatus: 'read', readAt: new Date().toISOString() } }).catch(() => null);
+        }
       }
 
-      // Pre-select recipient if specified in URL query params
-      if (targetRecipientId) {
-        const selUser = parsedContacts.find(c => String(c.id) === targetRecipientId);
+      // Pre-select recipient from URL
+      if (targetRecipId) {
+        const selUser = parsedContacts.find(c => String(c.id) === targetRecipId);
         if (selUser) {
           setComposeRecipientType('individual');
           setComposeIndividualId(selUser.id);
           setComposeContactSearch(selUser.fullName);
           setIsComposing(true);
         }
-      } else if (shouldCompose) {
+      } else if (shouldCompose && !silent) {
         setIsComposing(true);
       }
     } catch {
-      setMessages(FALLBACK_MESSAGES);
-      setSelectedMsg(prev => prev ?? FALLBACK_MESSAGES[0]);
+      toast.error('Failed to load messages.');
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, [targetMsgId, targetRecipientId, shouldCompose]);
+  }, [targetMsgId, targetRecipId, shouldCompose]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
-  // ── Derived ───────────────────────────────────────────────────────────────
+  // ── Derived ──────────────────────────────────────────────────────────────────
   const filteredMessages = useMemo(() => messages.filter(m => {
     if (activeFolder === 'unread' && m.recordStatus === 'read') return false;
     if (activeFolder === 'starred' && !m.isStarred) return false;
@@ -347,12 +483,14 @@ function MessagesCenterContent() {
     if (priorityFilter !== 'all' && m.priority !== priorityFilter) return false;
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
-      return m.subject.toLowerCase().includes(q) || m.senderName.toLowerCase().includes(q) || m.body.toLowerCase().includes(q);
+      return m.subject.toLowerCase().includes(q) ||
+        m.senderName.toLowerCase().includes(q) ||
+        m.body.toLowerCase().includes(q);
     }
     return true;
   }), [messages, activeFolder, priorityFilter, searchQuery, currentUserId]);
 
-  const unreadCount = useMemo(() => messages.filter(m => m.recordStatus !== 'read' && !m.isArchived).length, [messages]);
+  const unreadCount  = useMemo(() => messages.filter(m => m.recordStatus !== 'read' && !m.isArchived).length, [messages]);
   const starredCount = useMemo(() => messages.filter(m => m.isStarred).length, [messages]);
 
   const filteredContacts = useMemo(() => {
@@ -365,18 +503,20 @@ function MessagesCenterContent() {
     ).slice(0, 20);
   }, [contacts, composeContactSearch]);
 
-  // ── Actions ────────────────────────────────────────────────────────────────
+  // ── Actions ──────────────────────────────────────────────────────────────────
   const handleSelectMessage = async (msg: MessageThread) => {
     setSelectedMsg(msg);
     setReplyText('');
+    setEditingMsgId(null);
     if (msg.recordStatus !== 'read') {
-      setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, recordStatus: 'read' as const, readAt: new Date().toISOString() } : m));
-      const targetDocId = msg.documentId || msg.id;
+      setMessages(prev => prev.map(m => m.id === msg.id
+        ? { ...m, recordStatus: 'read' as const, readAt: new Date().toISOString() }
+        : m
+      ));
+      const docId = msg.documentId || msg.id;
       window.dispatchEvent(new CustomEvent('notifications-update', { detail: { id: msg.id, documentId: msg.documentId, action: 'read' } }));
       try {
-        if (targetDocId) {
-          await apiClient.put(`/notifications/${targetDocId}`, { data: { recordStatus: 'read', readAt: new Date().toISOString() } });
-        }
+        if (docId) await apiClient.put(`/notifications/${docId}`, { data: { recordStatus: 'read', readAt: new Date().toISOString() } });
       } catch { /* silent */ }
     }
   };
@@ -387,10 +527,9 @@ function MessagesCenterContent() {
     setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, isStarred: starred } : m));
     if (selectedMsg?.id === msg.id) setSelectedMsg(p => p ? { ...p, isStarred: starred } : p);
     try {
-      const targetDocId = msg.documentId || msg.id;
-      if (targetDocId) {
-        await apiClient.put(`/notifications/${targetDocId}`, { data: { metadata: { starred } } });
-      }
+      const docId = msg.documentId || msg.id;
+      const existing = (msg as any).metadata || {};
+      if (docId) await apiClient.put(`/notifications/${docId}`, { data: { metadata: { ...existing, starred } } });
     } catch { /* silent */ }
   };
 
@@ -398,29 +537,33 @@ function MessagesCenterContent() {
     const archived = !msg.isArchived;
     setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, isArchived: archived } : m));
     if (selectedMsg?.id === msg.id) {
-      const next = filteredMessages.find(m => m.id !== msg.id) || null;
-      setSelectedMsg(next);
+      setSelectedMsg(filteredMessages.find(m => m.id !== msg.id) || null);
     }
     toast.success(archived ? 'Message archived.' : 'Message restored to inbox.');
     try {
-      const targetDocId = msg.documentId || msg.id;
-      if (targetDocId) {
-        await apiClient.put(`/notifications/${targetDocId}`, { data: { metadata: { archived } } });
-      }
+      const docId = msg.documentId || msg.id;
+      const existing = (msg as any).metadata || {};
+      if (docId) await apiClient.put(`/notifications/${docId}`, { data: { metadata: { ...existing, archived } } });
     } catch { /* silent */ }
   };
 
+  // Permanent delete — removes from Strapi so it's gone on refresh
   const handleDelete = async (msg: MessageThread) => {
+    setConfirmDeleteId(null);
     setMessages(prev => prev.filter(m => m.id !== msg.id));
     if (selectedMsg?.id === msg.id) {
       setSelectedMsg(filteredMessages.find(m => m.id !== msg.id) || null);
     }
     window.dispatchEvent(new CustomEvent('notifications-update', { detail: { id: msg.id, documentId: msg.documentId, action: 'delete' } }));
-    toast.success('Message deleted.');
+    toast.success('Message permanently deleted.');
     try {
-      const targetDocId = msg.documentId || msg.id;
-      if (targetDocId) await apiClient.delete(`/notifications/${targetDocId}`);
-    } catch { /* silent */ }
+      const docId = msg.documentId || msg.id;
+      if (docId) await apiClient.delete(`/notifications/${docId}`);
+    } catch (err: any) {
+      toast.error('Delete failed on server: ' + (err?.message || 'Please try again.'));
+      // Reload to sync with server truth
+      loadData(true);
+    }
   };
 
   const handleMarkAllRead = async () => {
@@ -430,32 +573,55 @@ function MessagesCenterContent() {
     try { await notificationService.markAllAsRead(currentUserId); } catch { /* silent */ }
   };
 
+  // Edit message (5-min window)
+  const handleSaveEdit = async (msg: MessageThread, newSubject: string, newBody: string) => {
+    if (!canEdit(msg, currentUserId)) { toast.error('Edit window has expired.'); return; }
+    const docId = msg.documentId || msg.id;
+    if (!docId) { toast.error('Cannot edit: no document ID.'); return; }
+    try {
+      await apiClient.put(`/notifications/${docId}`, {
+        data: { title: newSubject, body: newBody },
+      });
+      const updated = { ...msg, subject: newSubject, body: newBody };
+      setMessages(prev => prev.map(m => m.id === msg.id ? updated : m));
+      if (selectedMsg?.id === msg.id) setSelectedMsg(updated);
+      setEditingMsgId(null);
+      toast.success('Message updated.');
+    } catch (err: any) {
+      toast.error('Edit failed: ' + (err?.message || 'Unknown error'));
+    }
+  };
+
   const handleSendReply = async () => {
     if (!replyText.trim() || !selectedMsg) return;
     setIsSendingReply(true);
     try {
-      let targetRecipientId = selectedMsg.senderId;
-      if (!targetRecipientId || targetRecipientId <= 0) {
+      let recipId = selectedMsg.senderId;
+      if (!recipId || recipId <= 0) {
         const matched = contacts.find(c =>
           c.fullName.toLowerCase() === selectedMsg.senderName.toLowerCase() ||
-          c.username.toLowerCase() === selectedMsg.senderName.toLowerCase() ||
           c.email.toLowerCase() === selectedMsg.senderName.toLowerCase()
         );
-        if (matched) targetRecipientId = matched.id;
+        if (matched) recipId = matched.id;
       }
+
+      // Upload attachments if any
+      const uploaded = await uploadFiles(composePendingFiles);
 
       await notificationService.sendNotification({
         title: `Re: ${selectedMsg.subject}`,
         body: replyText,
         channel: 'dashboard' as any,
         priority: 'normal' as any,
-        recipientId: targetRecipientId && targetRecipientId > 0 ? targetRecipientId : undefined,
+        recipientId: recipId && recipId > 0 ? recipId : undefined,
         senderId: currentUserId && currentUserId > 0 ? currentUserId : undefined,
         metadata: {
           replyToId: selectedMsg.id,
           senderName: myName,
           senderRole: roleLabelFromType(userRoleStr),
           senderId: currentUserId,
+          // Store full file objects so they render when reloaded from Strapi
+          attachments: uploaded.map(f => ({ id: f.id, name: f.name, url: f.url, mime: f.mime, size: f.size })),
         },
         relatedEntity: 'notification',
         relatedEntityId: String(selectedMsg.documentId || selectedMsg.id),
@@ -469,7 +635,7 @@ function MessagesCenterContent() {
         senderName: myName,
         senderRole: roleLabelFromType(userRoleStr),
         senderInitials: initials(myName),
-        recipientId: targetRecipientId,
+        recipientId: recipId,
         recipientName: selectedMsg.senderName,
         channel: 'dashboard',
         priority: 'normal',
@@ -477,13 +643,17 @@ function MessagesCenterContent() {
         isStarred: false,
         isArchived: false,
         sentAt: new Date().toISOString(),
+        attachments: uploaded,
       };
       setMessages(prev => [sent, ...prev]);
       setReplyText('');
+      setComposePendingFiles([]);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('notifications-update', { detail: { action: 'new' } }));
+      }
       toast.success(`Reply dispatched to ${selectedMsg.senderName}.`);
     } catch (err: any) {
-      console.error(err);
-      toast.error(err?.message || 'Failed to send reply. Please try again.');
+      toast.error(err?.message || 'Failed to send reply.');
     } finally {
       setIsSendingReply(false);
     }
@@ -495,6 +665,10 @@ function MessagesCenterContent() {
     if (composeRecipientType === 'individual' && !composeIndividualId) { toast.error('Please select a recipient.'); return; }
     setIsSendingBroadcast(true);
     try {
+      // Upload attachments
+      const uploaded = await uploadFiles(composePendingFiles);
+      const attachmentIds = uploaded.map(f => f.id);
+
       if (composeRecipientType === 'individual' && composeIndividualId) {
         await notificationService.sendNotification({
           title: composeSubject,
@@ -507,6 +681,7 @@ function MessagesCenterContent() {
             senderName: myName,
             senderRole: roleLabelFromType(userRoleStr),
             senderId: currentUserId,
+            attachmentIds,
           },
         });
       } else {
@@ -523,13 +698,14 @@ function MessagesCenterContent() {
             senderName: myName,
             senderRole: roleLabelFromType(userRoleStr),
             senderId: currentUserId,
+            // Store Strapi upload file objects in metadata for later display
+            attachments: uploaded.map(f => ({ id: f.id, name: f.name, url: f.url, mime: f.mime, size: f.size })),
           },
         };
-        if (currentUserId && currentUserId > 0) {
-          postData.sender = currentUserId;
-        }
+        if (currentUserId && currentUserId > 0) postData.sender = currentUserId;
         await apiClient.post('/notifications', { data: postData });
       }
+
       const sent: MessageThread = {
         id: `SENT-${Date.now()}`,
         subject: composeSubject, body: composeBody,
@@ -542,12 +718,17 @@ function MessagesCenterContent() {
         channel: composeChannel, priority: composePriority,
         recordStatus: 'sent', isStarred: false, isArchived: false,
         sentAt: new Date().toISOString(),
+        attachments: uploaded,
       };
       setMessages(prev => [sent, ...prev]);
       setIsComposing(false);
       setComposeSubject(''); setComposeBody(''); setComposeGroup('');
       setComposeIndividualId(''); setComposeContactSearch('');
       setComposePriority('normal'); setComposeChannel('dashboard');
+      setComposePendingFiles([]);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('notifications-update', { detail: { action: 'new' } }));
+      }
       toast.success('Message dispatched successfully.');
     } catch {
       toast.error('Failed to send message.');
@@ -557,19 +738,29 @@ function MessagesCenterContent() {
   };
 
   const folders = [
-    { id: 'inbox', label: 'All Inbox', icon: Inbox, count: messages.filter(m => !m.isArchived).length },
-    { id: 'unread', label: 'Unread', icon: Circle, count: unreadCount },
-    { id: 'starred', label: 'Starred', icon: Star, count: starredCount },
-    { id: 'sent', label: 'Sent', icon: Send, count: messages.filter(m => m.senderId === currentUserId).length },
-    { id: 'archive', label: 'Archive', icon: Archive, count: messages.filter(m => m.isArchived).length },
+    { id: 'inbox',   label: 'All Inbox', icon: Inbox,   count: messages.filter(m => !m.isArchived).length },
+    { id: 'unread',  label: 'Unread',    icon: Circle,  count: unreadCount },
+    { id: 'starred', label: 'Starred',   icon: Star,    count: starredCount },
+    { id: 'sent',    label: 'Sent',      icon: Send,    count: messages.filter(m => m.senderId === currentUserId).length },
+    { id: 'archive', label: 'Archive',   icon: Archive, count: messages.filter(m => m.isArchived).length },
   ];
 
-  // ── Render ─────────────────────────────────────────────────────────────────
+  // ── Inline edit form state for reader panel ──────────────────────────────────
+  const [editSubject, setEditSubject] = useState('');
+  const [editBody, setEditBody]       = useState('');
+
+  const startEdit = (msg: MessageThread) => {
+    setEditSubject(msg.subject);
+    setEditBody(msg.body);
+    setEditingMsgId(msg.id);
+  };
+
+  // ── Render ────────────────────────────────────────────────────────────────────
   return (
     <PageContainer>
       <PageHeader
-        title={t('Institutional Communication Hub')}
-        description={t('Secure intra-school messaging linking faculty, parents, scholars, and executive administration.')}
+        title="Institutional Communication Hub"
+        description="Secure intra-school messaging linking faculty, parents, scholars, and executive administration."
       >
         <div className="flex items-center gap-2">
           <button
@@ -591,7 +782,7 @@ function MessagesCenterContent() {
           )}
           {canBroadcast && (
             <button
-              onClick={() => setIsComposing(true)}
+              onClick={() => { setIsComposing(true); setComposePendingFiles([]); }}
               className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all shadow-md cursor-pointer"
             >
               <Plus className="w-4 h-4" />
@@ -607,7 +798,7 @@ function MessagesCenterContent() {
           { label: 'Total Messages', val: messages.length, color: 'text-slate-900 dark:text-white' },
           { label: 'Unread', val: unreadCount, color: 'text-emerald-600 dark:text-emerald-400' },
           { label: 'Starred', val: starredCount, color: 'text-amber-500' },
-          { label: 'Contacts Available', val: contacts.length, color: 'text-sky-500' },
+          { label: 'Contacts', val: contacts.length, color: 'text-sky-500' },
         ].map(k => (
           <div key={k.label} className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm space-y-0.5">
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">{k.label}</p>
@@ -619,8 +810,9 @@ function MessagesCenterContent() {
       {/* Main Interface */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 min-h-[640px]">
 
-        {/* ── Sidebar ──────────────────────────────────────────────────────── */}
+        {/* ── Sidebar ─────────────────────────────────────────────────────────── */}
         <div className="lg:col-span-3 flex flex-col gap-3">
+          {/* Search */}
           <div className="relative">
             <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
@@ -668,11 +860,11 @@ function MessagesCenterContent() {
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-3 space-y-1 shadow-sm">
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider px-2 pb-1">Priority</p>
             {[
-              { val: 'all', label: 'All Priorities', dot: 'bg-emerald-500' },
-              { val: 'urgent', label: 'Urgent', dot: 'bg-rose-500' },
-              { val: 'high', label: 'High', dot: 'bg-amber-500' },
-              { val: 'normal', label: 'Normal', dot: 'bg-sky-500' },
-              { val: 'low', label: 'Low', dot: 'bg-slate-400' },
+              { val: 'all',    label: 'All Priorities', dot: 'bg-emerald-500' },
+              { val: 'urgent', label: 'Urgent',         dot: 'bg-rose-500' },
+              { val: 'high',   label: 'High',           dot: 'bg-amber-500' },
+              { val: 'normal', label: 'Normal',         dot: 'bg-sky-500' },
+              { val: 'low',    label: 'Low',            dot: 'bg-slate-400' },
             ].map(p => (
               <button
                 key={p.val}
@@ -690,16 +882,16 @@ function MessagesCenterContent() {
             ))}
           </div>
 
-          {/* Status */}
+          {/* Status chip */}
           <div className="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/40 text-xs text-emerald-800 dark:text-emerald-300">
             <span className="font-black flex items-center gap-1 mb-0.5">
               <Bell className="w-3 h-3" /> Push Alerts Active
             </span>
-            SMS & email delivery enabled for urgent priority channels.
+            SMS &amp; email delivery enabled for urgent priority channels.
           </div>
         </div>
 
-        {/* ── Message List ─────────────────────────────────────────────────── */}
+        {/* ── Message List ───────────────────────────────────────────────────── */}
         <div className="lg:col-span-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm flex flex-col overflow-hidden">
           <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
@@ -727,7 +919,11 @@ function MessagesCenterContent() {
               <div className="space-y-2">
                 <Mail className="w-8 h-8 text-slate-300 dark:text-slate-700 mx-auto" />
                 <p className="text-xs font-bold text-slate-500">No messages here</p>
-                <p className="text-[11px] text-slate-400">Try a different folder or filter.</p>
+                <p className="text-[11px] text-slate-400">
+                  {searchQuery || priorityFilter !== 'all'
+                    ? 'Try a different folder or filter.'
+                    : 'Your inbox is empty.'}
+                </p>
               </div>
             </div>
           ) : (
@@ -750,7 +946,11 @@ function MessagesCenterContent() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-1 mb-0.5">
-                        <span className={cn('text-xs truncate flex items-center gap-1', msg.recordStatus !== 'read' ? 'font-black text-slate-900 dark:text-white' : 'font-semibold text-slate-700 dark:text-slate-300')}>
+                        <span className={cn('text-xs truncate flex items-center gap-1',
+                          msg.recordStatus !== 'read'
+                            ? 'font-black text-slate-900 dark:text-white'
+                            : 'font-semibold text-slate-700 dark:text-slate-300'
+                        )}>
                           {msg.recordStatus !== 'read' && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0 inline-block" />}
                           {msg.senderName}
                         </span>
@@ -761,7 +961,11 @@ function MessagesCenterContent() {
                           <span className="text-[10px] text-slate-400 font-mono">{timeAgo(msg.sentAt)}</span>
                         </div>
                       </div>
-                      <p className={cn('text-[11px] truncate mb-1', msg.recordStatus !== 'read' ? 'font-bold text-slate-800 dark:text-slate-200' : 'text-slate-500 dark:text-slate-400')}>
+                      <p className={cn('text-[11px] truncate mb-1',
+                        msg.recordStatus !== 'read'
+                          ? 'font-bold text-slate-800 dark:text-slate-200'
+                          : 'text-slate-500 dark:text-slate-400'
+                      )}>
                         {msg.subject}
                       </p>
                       <p className="text-[10px] text-slate-400 line-clamp-1 mb-1.5">
@@ -772,6 +976,12 @@ function MessagesCenterContent() {
                         {msg.priority !== 'normal' && (
                           <span className={cn('inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-extrabold border', priorityColor(msg.priority))}>
                             {msg.priority.charAt(0).toUpperCase() + msg.priority.slice(1)}
+                          </span>
+                        )}
+                        {msg.attachments && msg.attachments.length > 0 && (
+                          <span className="flex items-center gap-0.5 text-[9px] text-slate-400">
+                            <Paperclip className="w-2.5 h-2.5" />
+                            {msg.attachments.length}
                           </span>
                         )}
                         {(msg.recipientGroup || msg.recipientName) && (
@@ -788,28 +998,105 @@ function MessagesCenterContent() {
           )}
         </div>
 
-        {/* ── Message Reader ───────────────────────────────────────────────── */}
+        {/* ── Message Reader ─────────────────────────────────────────────────── */}
         <div className="lg:col-span-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm flex flex-col overflow-hidden">
           {selectedMsg ? (
             <>
               {/* Reader Header */}
               <div className="p-5 border-b border-slate-100 dark:border-slate-800 space-y-3">
                 <div className="flex items-start justify-between gap-3">
-                  <h2 className="text-sm font-black text-slate-900 dark:text-white leading-snug flex-1">
-                    {selectedMsg.subject}
-                  </h2>
+                  {editingMsgId === selectedMsg.id ? (
+                    <input
+                      value={editSubject}
+                      onChange={e => setEditSubject(e.target.value)}
+                      className="flex-1 text-sm font-black text-slate-900 dark:text-white bg-slate-50 dark:bg-slate-800 border border-emerald-400 rounded-lg px-2 py-1 focus:outline-none"
+                    />
+                  ) : (
+                    <h2 className="text-sm font-black text-slate-900 dark:text-white leading-snug flex-1">
+                      {selectedMsg.subject}
+                    </h2>
+                  )}
                   <div className="flex items-center gap-1 shrink-0">
-                    <button onClick={e => handleStar(selectedMsg, e)} className="p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer" title={t('Star')}>
+                    {/* Edit button — only for own messages within 5 min */}
+                    {canEdit(selectedMsg, currentUserId) && editingMsgId !== selectedMsg.id && (
+                      <button
+                        onClick={() => startEdit(selectedMsg)}
+                        className="p-1.5 rounded-xl hover:bg-sky-50 dark:hover:bg-sky-950/30 text-sky-500 transition-colors cursor-pointer"
+                        title="Edit message (5-min window)"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                    {editingMsgId === selectedMsg.id && (
+                      <>
+                        <button
+                          onClick={() => handleSaveEdit(selectedMsg, editSubject, editBody)}
+                          className="p-1.5 rounded-xl hover:bg-emerald-50 dark:hover:bg-emerald-950/30 text-emerald-500 transition-colors cursor-pointer"
+                          title="Save edits"
+                        >
+                          <Check className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => setEditingMsgId(null)}
+                          className="p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 transition-colors cursor-pointer"
+                          title="Cancel edit"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </>
+                    )}
+                    <button onClick={e => handleStar(selectedMsg, e)} className="p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer" title="Star">
                       <Star className={cn('w-3.5 h-3.5', selectedMsg.isStarred ? 'text-amber-400 fill-amber-400' : 'text-slate-400')} />
                     </button>
-                    <button onClick={() => handleArchive(selectedMsg)} className="p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer" title={t('Archive')}>
+                    <button onClick={() => handleArchive(selectedMsg)} className="p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer" title="Archive">
                       <Archive className="w-3.5 h-3.5 text-slate-400" />
                     </button>
-                    <button onClick={() => handleDelete(selectedMsg)} className="p-1.5 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer" title={t('Delete')}>
-                      <Trash2 className="w-3.5 h-3.5 text-rose-400" />
-                    </button>
+                    {/* Delete button — permanent, only within 15-min window */}
+                    {canDelete(selectedMsg, currentUserId) ? (
+                      confirmDeleteId === selectedMsg.id ? (
+                        <div className="flex items-center gap-1">
+                          <span className="text-[10px] text-rose-500 font-bold">Confirm?</span>
+                          <button
+                            onClick={() => handleDelete(selectedMsg)}
+                            className="px-2 py-1 rounded-lg bg-rose-500 text-white text-[10px] font-bold cursor-pointer"
+                          >Yes</button>
+                          <button
+                            onClick={() => setConfirmDeleteId(null)}
+                            className="px-2 py-1 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-[10px] font-bold cursor-pointer"
+                          >No</button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => setConfirmDeleteId(selectedMsg.id)}
+                          className="p-1.5 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
+                          title="Delete for everyone (15-min window)"
+                        >
+                          <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+                        </button>
+                      )
+                    ) : (
+                      // After 15 min — still allow archiving but not hard delete
+                      <button
+                        className="p-1.5 rounded-xl opacity-30 cursor-not-allowed"
+                        title="Delete window expired (15 min)"
+                        disabled
+                      >
+                        <Trash2 className="w-3.5 h-3.5 text-rose-300" />
+                      </button>
+                    )}
                   </div>
                 </div>
+
+                {/* Edit/delete window timers */}
+                <div className="flex flex-wrap gap-3">
+                  {canEdit(selectedMsg, currentUserId) && (
+                    <EditTimer sentAt={selectedMsg.sentAt} windowMs={EDIT_WINDOW_MS} label="Edit" />
+                  )}
+                  {canDelete(selectedMsg, currentUserId) && (
+                    <EditTimer sentAt={selectedMsg.sentAt} windowMs={DELETE_WINDOW_MS} label="Delete" />
+                  )}
+                </div>
+
                 <div className="flex items-center gap-2 flex-wrap">
                   <ChannelBadge channel={selectedMsg.channel} />
                   <span className={cn('inline-flex items-center px-2 py-0.5 rounded text-[10px] font-extrabold border', priorityColor(selectedMsg.priority))}>
@@ -820,6 +1107,7 @@ function MessagesCenterContent() {
                     : <span className="flex items-center gap-1 text-[10px] text-emerald-600"><EyeOff className="w-3 h-3" /> Unread</span>}
                   <span className="text-[10px] text-slate-400 font-mono ml-auto">{timeAgo(selectedMsg.sentAt)}</span>
                 </div>
+
                 <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700">
                   <div className={cn('w-9 h-9 rounded-xl text-white font-black text-xs flex items-center justify-center shrink-0', roleColor(selectedMsg.senderRole))}>
                     {selectedMsg.senderInitials}
@@ -831,23 +1119,49 @@ function MessagesCenterContent() {
                   {(selectedMsg.recipientGroup || selectedMsg.recipientName) && (
                     <div className="text-right shrink-0">
                       <p className="text-[10px] text-slate-400">To</p>
-                      <p className="text-[11px] font-bold text-slate-700 dark:text-slate-300">{selectedMsg.recipientGroup || selectedMsg.recipientName}</p>
+                      <p className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                        {selectedMsg.recipientGroup || selectedMsg.recipientName}
+                      </p>
                     </div>
                   )}
                 </div>
               </div>
 
               {/* Body */}
-              <div className="flex-1 overflow-y-auto p-5">
-                <div className="text-xs text-slate-800 dark:text-slate-200 leading-relaxed whitespace-pre-wrap font-medium">
-                  {selectedMsg.body}
-                </div>
+              <div className="flex-1 overflow-y-auto p-5 space-y-4">
+                {editingMsgId === selectedMsg.id ? (
+                  <textarea
+                    value={editBody}
+                    onChange={e => setEditBody(e.target.value)}
+                    rows={8}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-emerald-400 text-xs font-medium resize-none focus:outline-none text-slate-900 dark:text-white"
+                  />
+                ) : (
+                  <div className="text-xs text-slate-800 dark:text-slate-200 leading-relaxed whitespace-pre-wrap font-medium">
+                    {selectedMsg.body}
+                  </div>
+                )}
+
                 {selectedMsg.relatedEntity && (
-                  <div className="mt-4 p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/30 text-xs">
+                  <div className="p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/30 text-xs">
                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-0.5">Related Record</span>
                     <span className="font-bold text-slate-700 dark:text-slate-300">
                       {selectedMsg.relatedEntity} #{selectedMsg.relatedEntityId}
                     </span>
+                  </div>
+                )}
+
+                {/* Attachments */}
+                {selectedMsg.attachments && selectedMsg.attachments.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                      <Paperclip className="w-3 h-3" /> Attachments ({selectedMsg.attachments.length})
+                    </p>
+                    <div className="space-y-1.5">
+                      {selectedMsg.attachments.map(f => (
+                        <AttachmentRow key={f.id} file={f} />
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
@@ -867,11 +1181,17 @@ function MessagesCenterContent() {
                   rows={3}
                   className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-medium resize-none focus:outline-none focus:border-emerald-500 text-slate-900 dark:text-white"
                 />
+                <FilePicker
+                  attachedFiles={composePendingFiles}
+                  onAdd={files => setComposePendingFiles(prev => [...prev, ...files])}
+                  onRemove={idx => setComposePendingFiles(prev => prev.filter((_, i) => i !== idx))}
+                  uploading={isUploading}
+                />
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] text-slate-400 font-mono">{replyText.length} chars</span>
                   <button
                     onClick={handleSendReply}
-                    disabled={!replyText.trim() || isSendingReply}
+                    disabled={!replyText.trim() || isSendingReply || isUploading}
                     className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-colors"
                   >
                     <Send className="w-3.5 h-3.5" />
@@ -892,7 +1212,7 @@ function MessagesCenterContent() {
         </div>
       </div>
 
-      {/* ── Compose Modal ──────────────────────────────────────────────────── */}
+      {/* ── Compose Modal ──────────────────────────────────────────────────────── */}
       {isComposing && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-in fade-in duration-150">
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-2xl shadow-2xl flex flex-col max-h-[92vh]">
@@ -901,7 +1221,7 @@ function MessagesCenterContent() {
                 <Send className="w-4 h-4 text-emerald-600" />
                 Compose New Message
               </h3>
-              <button onClick={() => setIsComposing(false)} className="p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 cursor-pointer">
+              <button onClick={() => { setIsComposing(false); setComposePendingFiles([]); }} className="p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 cursor-pointer">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -933,15 +1253,15 @@ function MessagesCenterContent() {
                   <select
                     value={composeGroup}
                     onChange={e => setComposeGroup(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-transparent font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-emerald-500"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-emerald-500"
                   >
                     <option value="">-- Select Audience Group --</option>
                     <optgroup label="Faculty & Staff">
-                      <option value="All Faculty & Teachers">All Faculty & Teachers (Broadcast)</option>
+                      <option value="All Faculty & Teachers">All Faculty &amp; Teachers (Broadcast)</option>
                       <option value="Senior Teachers">Senior Subject Teachers</option>
                       <option value="Hifz Track Mentors">Intensive Hifz Track Mentors</option>
                       <option value="Homeroom Supervisors">Homeroom Supervisors</option>
-                      <option value="Finance Staff">Finance & Accounts Team</option>
+                      <option value="Finance Staff">Finance &amp; Accounts Team</option>
                       <option value="Administrative Staff">Administrative Staff</option>
                     </optgroup>
                     <optgroup label="Students / Scholars">
@@ -964,7 +1284,7 @@ function MessagesCenterContent() {
 
               {composeRecipientType === 'individual' && (
                 <div>
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1.5">Search & Select Recipient</label>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1.5">Search &amp; Select Recipient</label>
                   <div className="relative mb-2">
                     <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                     <input
@@ -972,11 +1292,11 @@ function MessagesCenterContent() {
                       value={composeContactSearch}
                       onChange={e => { setComposeContactSearch(e.target.value); setComposeIndividualId(''); }}
                       placeholder="Search by name, email, or role…"
-                      className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-transparent font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:border-emerald-500"
+                      className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:border-emerald-500"
                     />
                   </div>
                   {contacts.length === 0 ? (
-                    <div className="p-3 rounded-xl border border-slate-200 dark:border-slate-700 text-center text-slate-400 text-xs">
+                    <div className="p-3 rounded-xl border border-slate-200 dark:border-slate-700 text-center text-slate-400">
                       No contacts loaded. Try group broadcast instead.
                     </div>
                   ) : (
@@ -1012,7 +1332,7 @@ function MessagesCenterContent() {
                   value={composeSubject}
                   onChange={e => setComposeSubject(e.target.value)}
                   placeholder="e.g. Urgent: Term 2 Examination Guidelines — All Scholars"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-transparent font-bold text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-bold text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
                 />
               </div>
 
@@ -1023,10 +1343,18 @@ function MessagesCenterContent() {
                   onChange={e => setComposeBody(e.target.value)}
                   rows={6}
                   placeholder="Write your full message here…"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-transparent font-medium text-slate-800 dark:text-slate-200 resize-none focus:outline-none focus:border-emerald-500"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-medium text-slate-800 dark:text-slate-200 resize-none focus:outline-none focus:border-emerald-500"
                 />
                 <p className="text-[10px] text-slate-400 text-right mt-0.5 font-mono">{composeBody.length} chars</p>
               </div>
+
+              {/* File attachments */}
+              <FilePicker
+                attachedFiles={composePendingFiles}
+                onAdd={files => setComposePendingFiles(prev => [...prev, ...files])}
+                onRemove={idx => setComposePendingFiles(prev => prev.filter((_, i) => i !== idx))}
+                uploading={isUploading}
+              />
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -1034,7 +1362,7 @@ function MessagesCenterContent() {
                   <select
                     value={composePriority}
                     onChange={e => setComposePriority(e.target.value as any)}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-transparent font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-emerald-500"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-emerald-500"
                   >
                     <option value="low">Low</option>
                     <option value="normal">Normal</option>
@@ -1047,7 +1375,7 @@ function MessagesCenterContent() {
                   <select
                     value={composeChannel}
                     onChange={e => setComposeChannel(e.target.value as any)}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-transparent font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-emerald-500"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-emerald-500"
                   >
                     <option value="dashboard">Portal Dashboard</option>
                     <option value="email">Email</option>
@@ -1055,19 +1383,30 @@ function MessagesCenterContent() {
                   </select>
                 </div>
               </div>
+
+              {/* Info banner about windows */}
+              <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/40 text-xs text-amber-800 dark:text-amber-300">
+                <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                <p>
+                  Once sent, you can <strong>edit within 5 minutes</strong> and <strong>permanently delete within 15 minutes</strong>.
+                </p>
+              </div>
             </div>
 
             <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-800 flex justify-end gap-2 bg-slate-50 dark:bg-slate-950 rounded-b-3xl">
-              <button onClick={() => setIsComposing(false)} className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 cursor-pointer">
+              <button
+                onClick={() => { setIsComposing(false); setComposePendingFiles([]); }}
+                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 cursor-pointer"
+              >
                 Cancel
               </button>
               <button
                 onClick={handleSendBroadcast}
-                disabled={isSendingBroadcast}
+                disabled={isSendingBroadcast || isUploading}
                 className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 text-white font-bold text-xs flex items-center gap-1.5 shadow-md cursor-pointer"
               >
                 <Send className="w-3.5 h-3.5" />
-                <span>{isSendingBroadcast ? 'Sending…' : 'Send Message'}</span>
+                <span>{isSendingBroadcast ? 'Sending…' : isUploading ? 'Uploading…' : 'Send Message'}</span>
               </button>
             </div>
           </div>
@@ -1077,10 +1416,9 @@ function MessagesCenterContent() {
   );
 }
 
+// ─── Page Export ──────────────────────────────────────────────────────────────
 export default function MessagesCenterPage() {
-  const locale = useLocale();
-  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
-return (
+  return (
     <Suspense fallback={
       <div className="flex items-center justify-center min-h-[400px] text-xs font-bold text-slate-400">
         <RefreshCw className="w-5 h-5 animate-spin text-emerald-500 mr-2" />
@@ -1091,4 +1429,3 @@ return (
     </Suspense>
   );
 }
-

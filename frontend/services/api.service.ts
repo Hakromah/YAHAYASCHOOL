@@ -95,15 +95,21 @@ const createApiClient = (): AxiosInstance => {
         config.headers.Authorization = `Bearer ${token}`;
       }
 
-      const isProfileEndpoint = config.url && (
+      // Endpoints that do NOT have Strapi i18n enabled — never inject ?locale=
+      const isNonLocalizableEndpoint = config.url && (
         config.url.startsWith('/teachers') ||
         config.url.startsWith('/students') ||
         config.url.startsWith('/parents') ||
-        config.url.startsWith('/workers')
+        config.url.startsWith('/workers') ||
+        config.url.startsWith('/notifications') ||
+        config.url.startsWith('/upload') ||
+        config.url.startsWith('/users') ||
+        config.url.startsWith('/roles') ||
+        config.url.startsWith('/auth')
       );
 
       // Auto-inject locale for Strapi query strings — always wins over default 'en'
-      if (typeof window !== 'undefined' && !config._retryWithoutLocale && !isProfileEndpoint) {
+      if (typeof window !== 'undefined' && !config._retryWithoutLocale && !isNonLocalizableEndpoint) {
         const path = window.location.pathname;
         const match = path.match(/^\/(en|ar|fr|tr)\b/);
         if (match) {
@@ -203,17 +209,6 @@ uploadClient.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
-
-  // Auto-inject locale for upload request parameters
-  if (typeof window !== 'undefined') {
-    const path = window.location.pathname;
-    const match = path.match(/^\/(en|ar|fr|tr)\b/);
-    if (match) {
-      config.params = {
-        locale: match[1],
-        ...config.params,
-      };
-    }
-  }
+  // NOTE: Do NOT inject ?locale= for upload endpoint — Strapi /upload is non-localizable
   return config;
 });
