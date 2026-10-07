@@ -2751,8 +2751,16 @@ async function seedPublicPermissions(strapi: Core.Strapi): Promise<void> {
       'api::memorization.memorization',
       'api::murajaah.murajaah',
       'api::tajweed-evaluation.tajweed-evaluation',
+      'api::halaqah.halaqah',
+      'api::quran-achievement.quran-achievement',
+      'api::quran-certificate.quran-certificate',
+      'api::quran-competition.quran-competition',
+      'api::quran-attendance.quran-attendance',
+      'api::dawah-activity.dawah-activity',
+      'api::quran-assessment.quran-assessment',
       'api::memorization-plan.memorization-plan',
       'api::quran-progress.quran-progress',
+      'api::course-offering.course-offering',
       'api::student.student',
       'api::teacher.teacher',
       'api::finance-expense.finance-expense',
@@ -2791,7 +2799,7 @@ async function seedPublicPermissions(strapi: Core.Strapi): Promise<void> {
       'api::language-certificate.language-certificate',
     ];
 
-    const actions = ['find', 'findOne', 'create', 'update'];
+    const actions = ['find', 'findOne', 'create', 'update', 'delete'];
 
     for (const controller of publicControllers) {
       for (const action of actions) {
@@ -2818,11 +2826,11 @@ async function seedPublicPermissions(strapi: Core.Strapi): Promise<void> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Bootstrap: Seed Finance Permissions for Authenticated and Custom Roles
+// Bootstrap: Seed Finance & Module Permissions for Authenticated and Custom Roles
 // ─────────────────────────────────────────────────────────────────────────────
 
 async function seedFinancePermissions(strapi: Core.Strapi): Promise<void> {
-  strapi.log.info('[YAHAYASCOOL] Seeding finance permissions for all roles...');
+  strapi.log.info('[YAHAYASCOOL] Seeding finance & module permissions for all roles...');
 
   try {
     const roles = await strapi.db.query('plugin::users-permissions.role').findMany({});
@@ -2841,6 +2849,25 @@ async function seedFinancePermissions(strapi: Core.Strapi): Promise<void> {
       'api::finance-currency.finance-currency',
       'api::finance-account.finance-account',
       'api::finance-financial-statement.finance-financial-statement',
+      'api::quran-program.quran-program',
+      'api::quran-group.quran-group',
+      'api::memorization.memorization',
+      'api::murajaah.murajaah',
+      'api::tajweed-evaluation.tajweed-evaluation',
+      'api::halaqah.halaqah',
+      'api::quran-achievement.quran-achievement',
+      'api::quran-certificate.quran-certificate',
+      'api::quran-competition.quran-competition',
+      'api::quran-attendance.quran-attendance',
+      'api::dawah-activity.dawah-activity',
+      'api::quran-assessment.quran-assessment',
+      'api::memorization-plan.memorization-plan',
+      'api::quran-progress.quran-progress',
+      'api::course-offering.course-offering',
+      'api::student.student',
+      'api::teacher.teacher',
+      'api::academic-year.academic-year',
+      'api::academic-term.academic-term',
       'api::library-book.library-book',
       'api::library-borrow-record.library-borrow-record',
       'api::inventory-warehouse.inventory-warehouse',
@@ -3257,6 +3284,174 @@ async function seedGradingPoliciesAndBlueprints(strapi: Core.Strapi): Promise<vo
   }
 }
 
+async function seedQuranData(strapi: Core.Strapi): Promise<void> {
+  strapi.log.info('[YAHAYASCOOL] Checking and ensuring Quran Management System data...');
+  try {
+    const students = await strapi.db.query('api::student.student').findMany({ limit: 10 });
+    const teachers = await strapi.db.query('api::teacher.teacher').findMany({ limit: 10 });
+
+    if (students.length === 0 || teachers.length === 0) {
+      strapi.log.warn('[YAHAYASCOOL] No students or teachers found. Skipping Quran data seed.');
+      return;
+    }
+
+    const s1 = students[0]?.id;
+    const s2 = students[1]?.id || s1;
+    const s3 = students[2]?.id || s1;
+
+    const t1 = teachers[0]?.id;
+    const t2 = teachers[1]?.id || t1;
+    const t3 = teachers[2]?.id || t1;
+
+    // 1. Quran Programs
+    const programCount = await strapi.db.query('api::quran-program.quran-program').count({});
+    if (programCount === 0) {
+      strapi.log.info('[YAHAYASCOOL] Seeding Quran Programs...');
+      const programs = [
+        {
+          name: 'Tajweed Mastery & Pronunciation (Tahsin)',
+          code: 'PROG-TAHSIN-01',
+          description: 'Comprehensive foundation covering Makharij (points of articulation), Sifaat (characteristics of letters), Ahkam Nun & Mim Sakinah, and Madd elongation rules with practical oral application.',
+          durationMonths: 6,
+          targetJuz: 1,
+          ageGroup: 'All Ages',
+          isActive: true,
+          teachers: [t1, t2],
+          students: [s1, s2, s3],
+          publishedAt: new Date()
+        },
+        {
+          name: 'Junior Hifz Intensive (Juz 1 to 5)',
+          code: 'PROG-HIFZ-JR',
+          description: 'Structured daily memorization and retention for young scholars covering Juz 26 to 30 (Juz Amma, Tabarak, Qadd Sami, Adh-Dhariyat, Al-Ahqaf) with daily sabqi and manzil revision.',
+          durationMonths: 12,
+          targetJuz: 5,
+          ageGroup: '6-12 Years',
+          isActive: true,
+          teachers: [t2, t3],
+          students: [s2, s3],
+          publishedAt: new Date()
+        },
+        {
+          name: 'Senior Hifz Program (Juz 1 to 30)',
+          code: 'PROG-HIFZ-SR',
+          description: 'Full Quran memorization track with Sanad preparation, rigorous daily Murajaah (Sabqi & Manzil), and Waqf/Ibtida mastery under qualified Sheikhs.',
+          durationMonths: 36,
+          targetJuz: 30,
+          ageGroup: '12-18 Years',
+          isActive: true,
+          teachers: [t1, t3],
+          students: [s1, s2, s3],
+          publishedAt: new Date()
+        },
+        {
+          name: 'Murajaah & Retention Circle',
+          code: 'PROG-MURAJ-01',
+          description: 'Continuous revision cycle designed for Huffaz to maintain their memorization with daily multi-juz test cycles and error tracking.',
+          durationMonths: 12,
+          targetJuz: 30,
+          ageGroup: 'Huffaz',
+          isActive: true,
+          teachers: [t1],
+          students: [s1, s3],
+          publishedAt: new Date()
+        },
+        {
+          name: "Qira'at & Classical Recitation",
+          code: 'PROG-QIRAAT-01',
+          description: "Advanced study of the 10 Minor and Major Recitation Styles (Hafs 'an Asim, Warsh 'an Nafi', Qalun, Ad-Duri) with scholarly Sanad.",
+          durationMonths: 24,
+          targetJuz: 30,
+          ageGroup: 'Advanced',
+          isActive: true,
+          teachers: [t1, t2],
+          students: [s1],
+          publishedAt: new Date()
+        }
+      ];
+
+      for (const p of programs) {
+        await strapi.db.query('api::quran-program.quran-program').create({ data: p });
+      }
+      strapi.log.info('[YAHAYASCOOL] ✅ Quran Programs seeded.');
+    }
+
+    // 2. Quran Groups
+    const groupCount = await strapi.db.query('api::quran-group.quran-group').count({});
+    if (groupCount <= 2) {
+      strapi.log.info('[YAHAYASCOOL] Seeding Quran Groups...');
+      const dbPrograms = await strapi.db.query('api::quran-program.quran-program').findMany({});
+      const progTahsin = dbPrograms.find((p: any) => p.code === 'PROG-TAHSIN-01')?.id || dbPrograms[0]?.id;
+      const progJr = dbPrograms.find((p: any) => p.code === 'PROG-HIFZ-JR')?.id || dbPrograms[0]?.id;
+      const progSr = dbPrograms.find((p: any) => p.code === 'PROG-HIFZ-SR')?.id || dbPrograms[0]?.id;
+      const progMuraj = dbPrograms.find((p: any) => p.code === 'PROG-MURAJ-01')?.id || dbPrograms[0]?.id;
+
+      const groups = [
+        {
+          name: 'Halaqah Imam Nafi (Advanced Hifz)',
+          code: 'GRP-NAFI-01',
+          capacity: 15,
+          meetingSchedule: 'Mon-Fri 07:30 - 09:30 AM',
+          location: 'Main Quran Hall - Pillar 1',
+          isActive: true,
+          teacher: t1,
+          quran_program: progSr,
+          students: [s1, s2, s3],
+          publishedAt: new Date()
+        },
+        {
+          name: 'Halaqah Imam Asim (Beginner Tahsin)',
+          code: 'GRP-ASIM-01',
+          capacity: 20,
+          meetingSchedule: 'Mon, Wed, Fri 10:00 - 11:30 AM',
+          location: 'Tahsin Lab B',
+          isActive: true,
+          teacher: t2,
+          quran_program: progTahsin,
+          students: [s1, s2],
+          publishedAt: new Date()
+        },
+        {
+          name: 'Halaqah Imam Warsh (Junior Hifz)',
+          code: 'GRP-WARSH-01',
+          capacity: 12,
+          meetingSchedule: 'Mon-Thu 02:00 - 04:00 PM',
+          location: 'West Wing Hifz Suite',
+          isActive: true,
+          teacher: t3,
+          quran_program: progJr,
+          students: [s2, s3],
+          publishedAt: new Date()
+        },
+        {
+          name: 'Halaqah Ibn Kathir (Evening Revision Circle)',
+          code: 'GRP-KATHIR-01',
+          capacity: 25,
+          meetingSchedule: 'Sat-Sun 04:30 - 06:30 PM',
+          location: 'Central Musalla',
+          isActive: true,
+          teacher: t1,
+          quran_program: progMuraj,
+          students: [s1, s3],
+          publishedAt: new Date()
+        }
+      ];
+
+      for (const g of groups) {
+        const exist = await strapi.db.query('api::quran-group.quran-group').findOne({ where: { code: g.code } });
+        if (!exist) {
+          await strapi.db.query('api::quran-group.quran-group').create({ data: g });
+        }
+      }
+      strapi.log.info('[YAHAYASCOOL] ✅ Quran Groups seeded.');
+    }
+
+    strapi.log.info('[YAHAYASCOOL] ✅ Quran Management System synchronization verified.');
+  } catch (err: any) {
+    strapi.log.error('[YAHAYASCOOL] Failed to seed Quran data: ' + err.message);
+  }
+}
+
 // Strapi Application Entry Point
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -3279,6 +3474,7 @@ export default {
     await seedWallOfGratitude(strapi);
     await migrateLegacyAcademicData(strapi);
     await seedGradingPoliciesAndBlueprints(strapi);
+    await seedQuranData(strapi);
     await seedNewsPage(strapi);
     await seedSchoolAcademicPrograms(strapi);
     await seedOnlineLearning(strapi);
@@ -3287,4 +3483,5 @@ export default {
     await seedPrivacyPage(strapi);
   },
 };
+
 
