@@ -6,13 +6,10 @@ import { Link } from '@/i18n/routing';
 import {
   FileText, Plus, Download, Eye, CheckCircle2, X,
   Clock, Scale, ScrollText, AlertTriangle, ChevronDown,
-  Trash2, RefreshCw, BookOpen, Hash, Calendar
+  Trash2, RefreshCw, BookOpen, Hash, Calendar, DollarSign, Layers
 } from 'lucide-react';
 import { useLocale } from 'next-intl';
 import { t as i18nT } from '@/lib/i18n-dict';
-
-// module-level i18n fallback
-const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
 import { financeService } from '@/services/finance.service';
 import type { JournalEntry, ChartOfAccount, AccountingPeriod } from '@/types/finance.types';
 import { EnterpriseModuleShell } from '@/components/erp/EnterpriseModuleShell';
@@ -22,7 +19,7 @@ import { EnterpriseDataGrid, type ColumnDef } from '@/components/erp/EnterpriseD
 import { StatusBadge } from '@/components/erp/StatusBadge';
 import { toast } from 'sonner';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// ─── Types & Defaults ─────────────────────────────────────────────────────────
 
 interface JournalLine {
   id: string;
@@ -34,7 +31,7 @@ interface JournalLine {
 }
 
 const emptyLine = (): JournalLine => ({
-  id: crypto.randomUUID(),
+  id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `line_${Date.now()}_${Math.random()}`,
   accountCode: '',
   accountName: '',
   debit: '',
@@ -43,14 +40,29 @@ const emptyLine = (): JournalLine => ({
 });
 
 function fmt(n: number) {
-  return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 function todayISO() {
   return new Date().toISOString().split('T')[0];
 }
 
-// ─── Account Picker ───────────────────────────────────────────────────────────
+const DEFAULT_COA: ChartOfAccount[] = [
+  { id: '1010', accountCode: '1010', accountName: 'Cash & Bank', accountType: 'Asset', isControlAccount: false, isActive: true, currentBalance: 0, currency: 'USD', description: 'Operating cash and bank accounts' },
+  { id: '1100', accountCode: '1100', accountName: 'Accounts Receivable', accountType: 'Asset', isControlAccount: true, isActive: true, currentBalance: 0, currency: 'USD', description: 'Tuition fees receivable' },
+  { id: '1200', accountCode: '1200', accountName: 'Prepaid Expenses', accountType: 'Asset', isControlAccount: false, isActive: true, currentBalance: 0, currency: 'USD', description: 'Prepaid expenses' },
+  { id: '1500', accountCode: '1500', accountName: 'Fixed Assets', accountType: 'Asset', isControlAccount: false, isActive: true, currentBalance: 0, currency: 'USD', description: 'Equipment and property' },
+  { id: '2010', accountCode: '2010', accountName: 'Accounts Payable', accountType: 'Liability', isControlAccount: true, isActive: true, currentBalance: 0, currency: 'USD', description: 'Vendor payables' },
+  { id: '2100', accountCode: '2100', accountName: 'Salaries Payable', accountType: 'Liability', isControlAccount: false, isActive: true, currentBalance: 0, currency: 'USD', description: 'Accrued staff salaries' },
+  { id: '3010', accountCode: '3010', accountName: 'Retained Earnings', accountType: 'Equity', isControlAccount: false, isActive: true, currentBalance: 0, currency: 'USD', description: 'Accumulated surplus' },
+  { id: '4010', accountCode: '4010', accountName: 'Tuition Revenue', accountType: 'Revenue', isControlAccount: false, isActive: true, currentBalance: 0, currency: 'USD', description: 'Student tuition income' },
+  { id: '4020', accountCode: '4020', accountName: 'Hostel Revenue', accountType: 'Revenue', isControlAccount: false, isActive: true, currentBalance: 0, currency: 'USD', description: 'Boarding and accommodation' },
+  { id: '5010', accountCode: '5010', accountName: 'Staff Salaries', accountType: 'Expense', isControlAccount: false, isActive: true, currentBalance: 0, currency: 'USD', description: 'Teaching & admin payroll' },
+  { id: '5020', accountCode: '5020', accountName: 'Utilities Expense', accountType: 'Expense', isControlAccount: false, isActive: true, currentBalance: 0, currency: 'USD', description: 'Electricity, water, internet' },
+  { id: '5030', accountCode: '5030', accountName: 'Operating Expenses', accountType: 'Expense', isControlAccount: false, isActive: true, currentBalance: 0, currency: 'USD', description: 'General operating costs' },
+];
+
+// ─── Account Picker Component ─────────────────────────────────────────────────
 
 function AccountPicker({
   value, onChange, accounts, placeholder,
@@ -61,17 +73,18 @@ function AccountPicker({
   placeholder?: string;
 }) {
   const locale = useLocale();
-  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
-const defaultPlaceholder = placeholder || t('Search account...');
+  const t = (key: string) => i18nT(key, locale);
+  const defaultPlaceholder = placeholder || t('Search account...');
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState('');
 
-  const selected = accounts.find(a => a.accountCode === value);
+  const effectiveAccounts = accounts.length > 0 ? accounts : DEFAULT_COA;
+  const selected = effectiveAccounts.find(a => a.accountCode === value);
   const filtered = useMemo(() =>
-    accounts.filter(a =>
+    effectiveAccounts.filter(a =>
       !q || a.accountCode.includes(q) || a.accountName.toLowerCase().includes(q.toLowerCase())
     ).slice(0, 30),
-    [accounts, q]
+    [effectiveAccounts, q]
   );
 
   return (
@@ -79,7 +92,7 @@ const defaultPlaceholder = placeholder || t('Search account...');
       <button
         type="button"
         onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center justify-between px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-left text-xs font-mono hover:border-emerald-500 focus:outline-none focus:border-emerald-500 transition-colors"
+        className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-left text-xs font-mono hover:border-emerald-500 focus:outline-none focus:border-emerald-500 transition-colors shadow-sm"
       >
         {selected
           ? <span className="text-slate-900 dark:text-white font-bold truncate">{selected.accountCode} — {selected.accountName}</span>
@@ -96,7 +109,7 @@ const defaultPlaceholder = placeholder || t('Search account...');
               value={q}
               onChange={e => setQ(e.target.value)}
               placeholder={t('Filter accounts...')}
-              className="w-full px-3 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs focus:outline-none focus:border-emerald-500"
+              className="w-full px-3 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
             />
           </div>
           <div className="max-h-48 overflow-y-auto">
@@ -108,9 +121,9 @@ const defaultPlaceholder = placeholder || t('Search account...');
                 key={a.accountCode}
                 type="button"
                 onClick={() => { onChange(a.accountCode, a.accountName); setOpen(false); setQ(''); }}
-                className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition-colors"
+                className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition-colors cursor-pointer"
               >
-                <span className="font-mono font-black text-[10px] text-emerald-600 dark:text-emerald-400 w-10 shrink-0">{a.accountCode}</span>
+                <span className="font-mono font-black text-[10px] text-emerald-600 dark:text-emerald-400 w-12 shrink-0">{a.accountCode}</span>
                 <span className="text-xs text-slate-800 dark:text-white truncate">{a.accountName}</span>
                 <span className="ml-auto text-[10px] text-slate-400 shrink-0">{a.accountType}</span>
               </button>
@@ -132,16 +145,16 @@ function JournalDetailPanel({
   onClose: () => void;
 }) {
   const locale = useLocale();
-  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
-const isBalanced = Math.abs(journal.totalDebit - journal.totalCredit) < 0.01;
+  const t = (key: string) => i18nT(key, locale);
+  const isBalanced = Math.abs((journal.totalDebit || 0) - (journal.totalCredit || 0)) < 0.01;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-150">
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl">
         <div className="flex items-center justify-between p-5 border-b border-slate-200 dark:border-slate-800 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/40">
-              <ScrollText className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+            <div className="p-2.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400">
+              <ScrollText className="w-5 h-5" />
             </div>
             <div>
               <span className="font-mono text-xs font-black text-emerald-600 dark:text-emerald-400 block">{journal.journalNumber}</span>
@@ -157,60 +170,69 @@ const isBalanced = Math.abs(journal.totalDebit - journal.totalCredit) < 0.01;
           {[
             { label: t('Posting Date'), value: journal.postingDate || '—' },
             { label: t('Reference'), value: journal.referenceNumber || 'SYSTEM-AUTO' },
-            { label: t('Period'), value: journal.academicYearCode || '—' },
+            { label: t('Source Lifecycle'), value: (journal.sourceModule || 'manual_journal').replace('_', ' ').toUpperCase() },
             { label: t('Status'), value: (journal.status || 'posted').toUpperCase() },
           ].map(({ label, value }) => (
             <div key={label} className="bg-white dark:bg-slate-900 p-3">
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{label}</p>
-              <p className="text-xs font-black text-slate-900 dark:text-white mt-0.5 font-mono">{value}</p>
+              <p className="text-xs font-black text-slate-900 dark:text-white mt-0.5 font-mono truncate">{value}</p>
             </div>
           ))}
         </div>
 
-        <div className="overflow-y-auto flex-1 p-5 space-y-2">
-          <div className="flex items-center justify-between mb-3">
+        <div className="overflow-y-auto flex-1 p-5 space-y-3">
+          <div className="flex items-center justify-between">
             <h4 className="text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider">{t('Double-Entry GL Lines')}</h4>
-            <span className={`px-2 py-0.5 rounded-full text-[10px] font-black border ${isBalanced ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-700' : 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-700'}`}>
+            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black border ${isBalanced ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-700' : 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-700'}`}>
               {isBalanced ? `✓ ${t('BALANCED')}` : `⚠ ${t('VARIANCE')}`}
             </span>
           </div>
 
-          <div className="rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
             <table className="w-full text-xs">
               <thead className="bg-slate-50 dark:bg-slate-800/60">
                 <tr>
-                  <th className="text-left px-3 py-2 font-bold text-slate-500 dark:text-slate-400">{t('Account')}</th>
-                  <th className="text-left px-3 py-2 font-bold text-slate-500 dark:text-slate-400">{t('Memo')}</th>
-                  <th className="text-right px-3 py-2 font-bold text-sky-600 dark:text-sky-400">DR ($)</th>
-                  <th className="text-right px-3 py-2 font-bold text-emerald-600 dark:text-emerald-400">CR ($)</th>
+                  <th className="text-left px-3.5 py-2.5 font-bold text-slate-600 dark:text-slate-300">{t('Account')}</th>
+                  <th className="text-left px-3.5 py-2.5 font-bold text-slate-600 dark:text-slate-300">{t('Memo / Description')}</th>
+                  <th className="text-right px-3.5 py-2.5 font-bold text-sky-600 dark:text-sky-400">DR ($)</th>
+                  <th className="text-right px-3.5 py-2.5 font-bold text-emerald-600 dark:text-emerald-400">CR ($)</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {(journal.lines || []).map((l: any, i: number) => (
-                  <tr key={i} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
-                    <td className="px-3 py-2">
-                      <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">{l.accountCode}</span>
-                      <span className="text-slate-600 dark:text-slate-300 ml-1.5">{l.accountName}</span>
+                  <tr key={i} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors">
+                    <td className="px-3.5 py-2.5">
+                      <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400 mr-1.5">{l.accountCode}</span>
+                      <span className="text-slate-700 dark:text-slate-200 font-medium">{l.accountName}</span>
                     </td>
-                    <td className="px-3 py-2 text-slate-400 italic">{l.memo || '—'}</td>
-                    <td className="px-3 py-2 text-right font-mono font-black text-sky-600 dark:text-sky-400">
-                      {l.debit > 0 ? fmt(l.debit) : '—'}
+                    <td className="px-3.5 py-2.5 text-slate-500 dark:text-slate-400 italic">{l.memo || '—'}</td>
+                    <td className="px-3.5 py-2.5 text-right font-mono font-black text-sky-600 dark:text-sky-400">
+                      {l.debit > 0 ? `$${fmt(l.debit)}` : '—'}
                     </td>
-                    <td className="px-3 py-2 text-right font-mono font-black text-emerald-600 dark:text-emerald-400">
-                      {l.credit > 0 ? fmt(l.credit) : '—'}
+                    <td className="px-3.5 py-2.5 text-right font-mono font-black text-emerald-600 dark:text-emerald-400">
+                      {l.credit > 0 ? `$${fmt(l.credit)}` : '—'}
                     </td>
                   </tr>
                 ))}
               </tbody>
               <tfoot className="bg-slate-50 dark:bg-slate-800/60 border-t-2 border-slate-200 dark:border-slate-700">
                 <tr>
-                  <td colSpan={2} className="px-3 py-2 font-black text-slate-700 dark:text-slate-200">{t('TOTALS')}</td>
-                  <td className="px-3 py-2 text-right font-mono font-black text-sky-600 dark:text-sky-400">{fmt(journal.totalDebit)}</td>
-                  <td className="px-3 py-2 text-right font-mono font-black text-emerald-600 dark:text-emerald-400">{fmt(journal.totalCredit)}</td>
+                  <td colSpan={2} className="px-3.5 py-2.5 font-black text-slate-900 dark:text-white">{t('TOTALS')}</td>
+                  <td className="px-3.5 py-2.5 text-right font-mono font-black text-sky-600 dark:text-sky-400">${fmt(journal.totalDebit)}</td>
+                  <td className="px-3.5 py-2.5 text-right font-mono font-black text-emerald-600 dark:text-emerald-400">${fmt(journal.totalCredit)}</td>
                 </tr>
               </tfoot>
             </table>
           </div>
+        </div>
+
+        <div className="flex items-center justify-end p-4 border-t border-slate-200 dark:border-slate-800 shrink-0">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs cursor-pointer transition-colors"
+          >
+            {t('Close')}
+          </button>
         </div>
       </div>
     </div>
@@ -231,8 +253,8 @@ function CreateJournalModal({
   onSaved: () => void;
 }) {
   const locale = useLocale();
-  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
-const [description, setDescription] = useState('');
+  const t = (key: string) => i18nT(key, locale);
+  const [description, setDescription] = useState('');
   const [reference, setReference] = useState('');
   const [postingDate, setPostingDate] = useState(todayISO());
   const [periodId, setPeriodId] = useState(periods[0]?.id || '');
@@ -243,7 +265,7 @@ const [description, setDescription] = useState('');
 
   const totalDebit  = lines.reduce((s, l) => s + (parseFloat(l.debit)  || 0), 0);
   const totalCredit = lines.reduce((s, l) => s + (parseFloat(l.credit) || 0), 0);
-  const isBalanced  = Math.abs(totalDebit - totalCredit) < 0.01;
+  const isBalanced  = Math.abs(totalDebit - totalCredit) < 0.01 && totalDebit > 0;
   const hasLines    = lines.some(l => l.accountCode && (parseFloat(l.debit) > 0 || parseFloat(l.credit) > 0));
 
   const updateLine = (id: string, field: keyof JournalLine, val: string) => {
@@ -307,16 +329,16 @@ const [description, setDescription] = useState('');
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-in fade-in duration-150">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-150">
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-3xl max-h-[92vh] flex flex-col shadow-2xl">
         <div className="flex items-center justify-between p-5 border-b border-slate-200 dark:border-slate-800 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/40">
-              <ScrollText className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+            <div className="p-2.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400">
+              <ScrollText className="w-5 h-5" />
             </div>
             <div>
               <h3 className="font-black text-slate-900 dark:text-white text-base">{t('Post Manual Journal Entry')}</h3>
-              <p className="text-[11px] text-slate-400 font-mono">{t('Debits must equal Credits (double-entry rule)')}</p>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 font-mono">{t('Debits must equal Credits (double-entry rule)')}</p>
             </div>
           </div>
           <button onClick={onClose} className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer">
@@ -328,23 +350,23 @@ const [description, setDescription] = useState('');
           <div className="p-5 space-y-5">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1">
-                <label className="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wide">{t('Description / Memo')} <span className="text-rose-500">*</span></label>
+                <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide">{t('Description / Memo')} <span className="text-rose-500">*</span></label>
                 <input
                   type="text"
                   required
                   value={description}
                   onChange={e => setDescription(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-emerald-500 transition-colors"
+                  className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-emerald-500 transition-colors shadow-sm"
                   placeholder={t('e.g. Tuition fee revenue recognition')}
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wide">{t('Source Reference')}</label>
+                <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide">{t('Source Reference')}</label>
                 <input
                   type="text"
                   value={reference}
                   onChange={e => setReference(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-mono text-xs focus:outline-none focus:border-emerald-500 transition-colors"
+                  className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white font-mono text-xs focus:outline-none focus:border-emerald-500 transition-colors shadow-sm"
                   placeholder="INV-2026-XXXX / RCP-XXXX"
                 />
               </div>
@@ -352,25 +374,25 @@ const [description, setDescription] = useState('');
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1">
-                <label className="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wide flex items-center gap-1">
-                  <Calendar className="w-3 h-3" /> {t('Posting Date')}
+                <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide flex items-center gap-1">
+                  <Calendar className="w-3 h-3 text-emerald-600 dark:text-emerald-400" /> {t('Posting Date')}
                 </label>
                 <input
                   type="date"
                   value={postingDate}
                   onChange={e => setPostingDate(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-emerald-500 transition-colors"
+                  className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-emerald-500 transition-colors shadow-sm"
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wide flex items-center gap-1">
-                  <Clock className="w-3 h-3" /> {t('Accounting Period')}
+                <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide flex items-center gap-1">
+                  <Clock className="w-3 h-3 text-sky-600 dark:text-sky-400" /> {t('Accounting Period')}
                 </label>
                 {periods.length > 0 ? (
                   <select
                     value={periodId}
                     onChange={e => setPeriodId(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-emerald-500 transition-colors"
+                    className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-xs font-bold focus:outline-none focus:border-emerald-500 transition-colors cursor-pointer shadow-sm"
                   >
                     {periods.map(p => (
                       <option key={p.id} value={p.id}>
@@ -391,20 +413,20 @@ const [description, setDescription] = useState('');
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <label className="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wide flex items-center gap-1">
-                  <Hash className="w-3 h-3" /> {t('Journal Lines (DR / CR)')}
+                <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide flex items-center gap-1">
+                  <Hash className="w-3 h-3 text-emerald-600 dark:text-emerald-400" /> {t('Journal Lines (DR / CR)')}
                 </label>
                 <button
                   type="button"
                   onClick={addLine}
-                  className="flex items-center gap-1 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline"
+                  className="flex items-center gap-1 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5" /> {t('Add Line')}
                 </button>
               </div>
 
-              {lines.map((l, idx) => (
-                <div key={l.id} className="grid grid-cols-12 gap-2 items-center p-2 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
+              {lines.map((l) => (
+                <div key={l.id} className="grid grid-cols-12 gap-2 items-center p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 shadow-sm">
                   <div className="col-span-5">
                     <AccountPicker
                       value={l.accountCode}
@@ -420,7 +442,7 @@ const [description, setDescription] = useState('');
                       placeholder="DR ($)"
                       value={l.debit}
                       onChange={e => updateLine(l.id, 'debit', e.target.value)}
-                      className="w-full px-2.5 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-sky-600 dark:text-sky-400 font-mono text-xs font-bold focus:outline-none focus:border-emerald-500"
+                      className="w-full px-2.5 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-sky-600 dark:text-sky-400 font-mono text-xs font-bold focus:outline-none focus:border-emerald-500 shadow-sm"
                     />
                   </div>
                   <div className="col-span-3">
@@ -430,16 +452,27 @@ const [description, setDescription] = useState('');
                       placeholder="CR ($)"
                       value={l.credit}
                       onChange={e => updateLine(l.id, 'credit', e.target.value)}
-                      className="w-full px-2.5 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-mono text-xs font-bold focus:outline-none focus:border-emerald-500"
+                      className="w-full px-2.5 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-mono text-xs font-bold focus:outline-none focus:border-emerald-500 shadow-sm"
                     />
                   </div>
                   <div className="col-span-1 flex justify-center">
-                    <button type="button" onClick={() => removeLine(l.id)} className="text-slate-400 hover:text-rose-500">
-                      <Trash2 className="w-3.5 h-3.5" />
+                    <button type="button" onClick={() => removeLine(l.id)} className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer">
+                      <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
               ))}
+
+              <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 font-mono text-xs font-bold">
+                <span className="text-slate-700 dark:text-slate-300">{t('Balance Verification')}:</span>
+                <div className="flex items-center gap-4">
+                  <span className="text-sky-600 dark:text-sky-400">DR: ${fmt(totalDebit)}</span>
+                  <span className="text-emerald-600 dark:text-emerald-400">CR: ${fmt(totalCredit)}</span>
+                  <span className={isBalanced ? 'text-emerald-600 dark:text-emerald-400 font-black' : 'text-rose-600 dark:text-rose-400 font-black'}>
+                    {isBalanced ? `✓ ${t('Balanced')}` : `⚠ Variance: $${fmt(Math.abs(totalDebit - totalCredit))}`}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -470,9 +503,9 @@ const [description, setDescription] = useState('');
 
 export default function DoubleEntryJournalsPage() {
   const locale = useLocale();
-  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
-const [journals, setJournals]       = useState<JournalEntry[]>([]);
-  const [accounts, setAccounts]       = useState<ChartOfAccount[]>([]);
+  const t = useCallback((key: string) => i18nT(key, locale), [locale]);
+  const [journals, setJournals]       = useState<JournalEntry[]>([]);
+  const [accounts, setAccounts]       = useState<ChartOfAccount[]>(DEFAULT_COA);
   const [periods, setPeriods]         = useState<AccountingPeriod[]>([]);
   const [loading, setLoading]         = useState(true);
   const [query, setQuery]             = useState('');
@@ -488,19 +521,19 @@ const [journals, setJournals]       = useState<JournalEntry[]>([]);
     setLoading(true);
     try {
       const [jData, coaData, periodData] = await Promise.all([
-        financeService.getJournalEntries(),
-        financeService.getChartOfAccounts(),
-        financeService.getAccountingPeriods(),
+        financeService.getJournalEntries().catch(() => []),
+        financeService.getChartOfAccounts().catch(() => DEFAULT_COA),
+        financeService.getAccountingPeriods().catch(() => []),
       ]);
       setJournals(jData || []);
-      setAccounts(coaData || []);
+      setAccounts(coaData && coaData.length > 0 ? coaData : DEFAULT_COA);
       setPeriods(periodData || []);
     } catch {
-      toast.error(t('Failed to load journal entries.'));
+      toast.error(i18nT('Failed to load journal entries.', locale));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [locale]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
@@ -511,17 +544,17 @@ const [journals, setJournals]       = useState<JournalEntry[]>([]);
       const postingDate     = j.postingDate    || j.transactionDate || (j.date ? String(j.date).split('T')[0] : '') || '—';
       const referenceNumber = j.referenceNumber || j.sourceDocumentNumber || '—';
 
-      // Smart source module determination
+      // Determine source lifecycle
       let sourceModule = j.sourceModule;
       if (!sourceModule || sourceModule === 'manual_journal' || sourceModule === 'manual') {
         const descLower = description.toLowerCase();
         if (descLower.startsWith('invoice ') || descLower.includes('recognized') || descLower.includes('inv-')) {
           sourceModule = 'invoice_recognition';
-        } else if (descLower.startsWith('payment receipt') || descLower.includes('rcp-') || descLower.includes('receipt')) {
+        } else if (descLower.startsWith('payment receipt') || descLower.includes('rcp-') || descLower.includes('receipt') || descLower.includes('fee payment')) {
           sourceModule = 'payment_collection';
         } else if (descLower.startsWith('expense') || descLower.includes('exp-') || descLower.includes('voucher')) {
           sourceModule = 'expense_disbursement';
-        } else if (descLower.startsWith('payroll') || descLower.includes('pay-')) {
+        } else if (descLower.startsWith('payroll') || descLower.includes('pay-') || descLower.includes('wage')) {
           sourceModule = 'payroll_posting';
         } else {
           sourceModule = 'manual_journal';
@@ -532,26 +565,24 @@ const [journals, setJournals]       = useState<JournalEntry[]>([]);
       const totalCredit = Number(j.totalCredit ?? j.totalCreditOriginal ?? j.totalCreditBase ?? 0);
       const status      = j.status || 'posted';
 
-      // Smart GL line extraction: handles { account, type, amount } AND { accountCode, accountName, debit, credit }
       const lines = (j.lines || []).map((l: any, i: number) => {
         let accountName = l.accountName || l.account || '';
         let accountCode = l.accountCode || '';
 
-        // Extract account code from string like "Bank Account (1010)" or "Accounts Receivable (1100)"
         if (accountName && !accountCode) {
           const match = accountName.match(/\((\d+)\)/);
           if (match) {
             accountCode = match[1];
             accountName = accountName.replace(/\(\d+\)/, '').trim();
           } else if (accountName.toLowerCase().includes('receivable')) {
-            accountCode = '1200';
+            accountCode = '1100';
           } else if (accountName.toLowerCase().includes('bank') || accountName.toLowerCase().includes('cash')) {
             accountCode = '1010';
           } else if (accountName.toLowerCase().includes('revenue') || accountName.toLowerCase().includes('tuition')) {
             accountCode = '4010';
           } else if (accountName.toLowerCase().includes('payable')) {
             accountCode = '2010';
-          } else if (accountName.toLowerCase().includes('expense')) {
+          } else if (accountName.toLowerCase().includes('expense') || accountName.toLowerCase().includes('salary')) {
             accountCode = '5010';
           } else {
             accountCode = `GL-${1000 + i * 10}`;
@@ -580,7 +611,6 @@ const [journals, setJournals]       = useState<JournalEntry[]>([]);
         };
       });
 
-      // If totals were 0 or missing, calculate from parsed lines
       const computedDebit = totalDebit > 0 ? totalDebit : lines.reduce((s: number, l: any) => s + l.debit, 0);
       const computedCredit = totalCredit > 0 ? totalCredit : lines.reduce((s: number, l: any) => s + l.credit, 0);
 
@@ -621,13 +651,14 @@ const [journals, setJournals]       = useState<JournalEntry[]>([]);
     !!dateTo,
   ].filter(Boolean).length;
 
-  const totalDebitsPosted  = useMemo(() => normalizedJournals.reduce((s, j) => s + j.totalDebit,  0), [normalizedJournals]);
-  const totalCreditsPosted = useMemo(() => normalizedJournals.reduce((s, j) => s + j.totalCredit, 0), [normalizedJournals]);
+  const totalDebitsPosted    = useMemo(() => normalizedJournals.reduce((s, j) => s + j.totalDebit,  0), [normalizedJournals]);
+  const totalCreditsPosted   = useMemo(() => normalizedJournals.reduce((s, j) => s + j.totalCredit, 0), [normalizedJournals]);
   const invoiceVouchersCount = useMemo(() => normalizedJournals.filter(j => j.sourceModule === 'invoice_recognition').length, [normalizedJournals]);
   const receiptVouchersCount = useMemo(() => normalizedJournals.filter(j => j.sourceModule === 'payment_collection').length, [normalizedJournals]);
-  const isTrialBalanced    = Math.abs(totalDebitsPosted - totalCreditsPosted) < 0.01;
+  const expenseVouchersCount = useMemo(() => normalizedJournals.filter(j => j.sourceModule === 'expense_disbursement').length, [normalizedJournals]);
+  const payrollVouchersCount = useMemo(() => normalizedJournals.filter(j => j.sourceModule === 'payroll_posting').length, [normalizedJournals]);
+  const isTrialBalanced      = Math.abs(totalDebitsPosted - totalCreditsPosted) < 0.01;
 
-  // Real Economic Revenue (only count Revenue line items or Invoiced vouchers to avoid double-counting cash settlement)
   const netRecognizedRevenue = useMemo(() => {
     return normalizedJournals
       .filter(j => j.sourceModule === 'invoice_recognition')
@@ -647,13 +678,13 @@ const [journals, setJournals]       = useState<JournalEntry[]>([]);
       id: 'gross_activity',
       title: t('Gross Journal Volume (DR & CR)'),
       value: `$${fmt(totalDebitsPosted)}`,
-      subtitle: t('Sum of Invoicing ($2k) + Payment Settlement ($2k)'),
+      subtitle: t('Total double-entry transaction debit velocity'),
       trendDirection: 'neutral',
       icon: <Scale className="w-5 h-5 text-sky-600 dark:text-sky-400" />,
     },
     {
       id: 'net_revenue',
-      title: t('Net Recognized Revenue (YTD)'),
+      title: t('Recognized Revenue (YTD)'),
       value: `$${fmt(netRecognizedRevenue || (totalDebitsPosted / 2))}`,
       subtitle: t('Accrual Tuition & Fee Income (GL 4000s)'),
       trendDirection: 'up',
@@ -711,6 +742,13 @@ const [journals, setJournals]       = useState<JournalEntry[]>([]);
             </span>
           );
         }
+        if (sm === 'payroll_posting') {
+          return (
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-indigo-100 text-indigo-700 dark:bg-indigo-950/70 dark:text-indigo-300 border border-indigo-300 dark:border-indigo-700 font-mono">
+              {t('Payroll')}
+            </span>
+          );
+        }
         return (
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700 font-mono">
             {t('Manual Entry')}
@@ -724,8 +762,8 @@ const [journals, setJournals]       = useState<JournalEntry[]>([]);
       cell: ({ row }) => (
         <div className="space-y-1 font-mono text-[10px] max-w-sm">
           {(row.original.lines || []).slice(0, 4).map((l: any, i: number) => (
-            <div key={i} className="flex items-center justify-between gap-2 p-1 rounded bg-slate-50 dark:bg-slate-950/60 border border-slate-100 dark:border-slate-800/80">
-              <span className={`truncate ${l.debit > 0 ? 'text-sky-700 dark:text-sky-300 font-bold' : 'text-slate-600 dark:text-slate-400'}`}>
+            <div key={i} className="flex items-center justify-between gap-2 p-1 rounded-lg bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
+              <span className={`truncate ${l.debit > 0 ? 'text-sky-700 dark:text-sky-300 font-bold' : 'text-slate-700 dark:text-slate-300'}`}>
                 <strong className="text-emerald-600 dark:text-emerald-400 mr-1">{l.accountCode}</strong> {l.accountName}
               </span>
               <span className={`shrink-0 font-black px-1.5 py-0.5 rounded text-[9px] ${l.debit > 0 ? 'bg-sky-50 dark:bg-sky-950/50 text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-800' : 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800'}`}>
@@ -771,7 +809,7 @@ const [journals, setJournals]       = useState<JournalEntry[]>([]);
         </button>
       ),
     },
-  ], [locale]);
+  ], [t]);
 
   const clearFilters = () => { setStatusFilter('all'); setModuleFilter('all'); setDateFrom(''); setDateTo(''); setQuery(''); };
 
@@ -780,7 +818,7 @@ const [journals, setJournals]       = useState<JournalEntry[]>([]);
       title={t('Double-Entry General Journal')}
       description={t('Automated and manual journal postings enforcing strict Debits = Credits compliance. Every source document links to a sequential JRN voucher.')}
       breadcrumbs={[{ label: t('Finance ERP'), href: '/finance' }, { label: t('Accounting Engine') }, { label: t('Journal Entries') }]}
-      icon={<ScrollText className="w-8 h-8 text-emerald-400" />}
+      icon={<ScrollText className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />}
       recordCount={filteredJournals.length}
       recordLabel={t('Journal Vouchers')}
       activeFilterCount={activeFiltersCount}
@@ -788,8 +826,8 @@ const [journals, setJournals]       = useState<JournalEntry[]>([]);
       headerActions={
         <div className="flex items-center gap-2">
           <button
-            onClick={() => financeService.exportToCSV(journals, `journal_entries_${todayISO()}.csv`)}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white text-xs font-bold transition-all shadow-sm cursor-pointer"
+            onClick={() => financeService.exportToCSV(normalizedJournals, `journal_entries_${todayISO()}.csv`)}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition-all shadow-sm cursor-pointer"
           >
             <Download className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
             <span>{t('Export CSV')}</span>
@@ -799,7 +837,7 @@ const [journals, setJournals]       = useState<JournalEntry[]>([]);
             className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 text-white text-xs font-black shadow-lg shadow-emerald-600/30 hover:scale-[1.02] transition-all cursor-pointer"
           >
             <Plus className="w-4 h-4 stroke-[3]" />
-            {t('Post Manual Entry')}
+            <span>{t('Post Manual Entry')}</span>
           </button>
         </div>
       }
@@ -807,73 +845,77 @@ const [journals, setJournals]       = useState<JournalEntry[]>([]);
       <EnterpriseKPIDeck cards={kpiCards} />
 
       {/* Double-Entry Tuition Lifecycle Educational Guide Banner */}
-      <div className="p-4 rounded-3xl bg-slate-900/90 border border-slate-800 text-xs text-slate-300 space-y-3 mb-4 shadow-md">
-        <div className="flex items-center justify-between gap-2 border-b border-slate-800 pb-2.5">
+      <div className="p-4 rounded-3xl bg-slate-50 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300 space-y-3 mb-4 shadow-sm">
+        <div className="flex items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-2.5">
           <div className="flex items-center gap-2">
-            <Scale className="w-4 h-4 text-emerald-400 shrink-0" />
-            <h4 className="font-bold text-white text-xs">
+            <Scale className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            <h4 className="font-bold text-slate-900 dark:text-white text-xs">
               {t('Understanding the Double-Entry Tuition Billing & Collection Lifecycle')}
             </h4>
           </div>
-          <span className="text-[10px] font-mono font-black text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded-md border border-emerald-800">
+          <span className="text-[10px] font-mono font-black text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/80 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800">
             GAAP / IFRS Accrual Basis
           </span>
         </div>
-        <p className="text-[11px] text-slate-400">
+        <p className="text-[11px] text-slate-600 dark:text-slate-400">
           {t('In standard double-entry institutional accounting, 1 tuition billing cycle creates 2 complementary balanced journal vouchers. This is NOT a duplicate charge:')}
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-0.5">
-          <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 space-y-1.5">
+          <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-1.5 shadow-sm">
             <div className="flex items-center justify-between">
-              <span className="font-black text-sky-400 text-xs flex items-center gap-1.5">
-                <span className="w-4 h-4 rounded-full bg-sky-950 border border-sky-800 text-[10px] inline-flex items-center justify-center">1</span>
+              <span className="font-black text-sky-600 dark:text-sky-400 text-xs flex items-center gap-1.5">
+                <span className="w-4 h-4 rounded-full bg-sky-50 dark:bg-sky-950 border border-sky-200 dark:border-sky-800 text-[10px] inline-flex items-center justify-center">1</span>
                 {t('Invoice Recognition (Billing / Accrual)')}
               </span>
-              <span className="font-mono text-xs font-bold text-white">$2,000.00</span>
+              <span className="font-mono text-xs font-bold text-slate-900 dark:text-white">$2,000.00</span>
             </div>
-            <p className="text-[11px] text-slate-400 font-mono leading-relaxed pl-5">
-              • <strong>DR 1200</strong> Accounts Receivable: <span className="text-sky-400">+$2,000.00</span> <em>(Student Debt)</em><br />
-              • <strong>CR 4010</strong> Tuition Revenue: <span className="text-emerald-400">+$2,000.00</span> <em>(Earned Income)</em>
+            <p className="text-[11px] text-slate-600 dark:text-slate-400 font-mono leading-relaxed pl-5">
+              • <strong>DR 1100</strong> Accounts Receivable: <span className="text-sky-600 dark:text-sky-400 font-bold">+$2,000.00</span> <em>(Student Debt)</em><br />
+              • <strong>CR 4010</strong> Tuition Revenue: <span className="text-emerald-600 dark:text-emerald-400 font-bold">+$2,000.00</span> <em>(Earned Income)</em>
             </p>
           </div>
 
-          <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 space-y-1.5">
+          <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-1.5 shadow-sm">
             <div className="flex items-center justify-between">
-              <span className="font-black text-emerald-400 text-xs flex items-center gap-1.5">
-                <span className="w-4 h-4 rounded-full bg-emerald-950 border border-emerald-800 text-[10px] inline-flex items-center justify-center">2</span>
+              <span className="font-black text-emerald-600 dark:text-emerald-400 text-xs flex items-center gap-1.5">
+                <span className="w-4 h-4 rounded-full bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-800 text-[10px] inline-flex items-center justify-center">2</span>
                 {t('Payment Receipt (Settlement / Cash Desk)')}
               </span>
-              <span className="font-mono text-xs font-bold text-white">$2,000.00</span>
+              <span className="font-mono text-xs font-bold text-slate-900 dark:text-white">$2,000.00</span>
             </div>
-            <p className="text-[11px] text-slate-400 font-mono leading-relaxed pl-5">
-              • <strong>DR 1010</strong> Bank / Cash Desk: <span className="text-sky-400">+$2,000.00</span> <em>(Cash Inflow)</em><br />
-              • <strong>CR 1200</strong> Accounts Receivable: <span className="text-emerald-400">-$2,000.00</span> <em>(Debt Cleared)</em>
+            <p className="text-[11px] text-slate-600 dark:text-slate-400 font-mono leading-relaxed pl-5">
+              • <strong>DR 1010</strong> Bank / Cash Desk: <span className="text-sky-600 dark:text-sky-400 font-bold">+$2,000.00</span> <em>(Cash Inflow)</em><br />
+              • <strong>CR 1100</strong> Accounts Receivable: <span className="text-emerald-600 dark:text-emerald-400 font-bold">-$2,000.00</span> <em>(Debt Cleared)</em>
             </p>
           </div>
         </div>
-        <div className="pt-1.5 flex flex-col sm:flex-row sm:items-center justify-between text-[11px] text-slate-400 border-t border-slate-800/80 gap-1 font-mono">
-          <span><strong>{t('Net Balance Effect')}</strong>: Cash = <span className="text-emerald-400">+$2,000</span> • Receivable = <span className="text-slate-200">$0.00</span> • Net Revenue = <span className="text-emerald-400">$2,000</span></span>
-          <span className="text-slate-400">{t('Zero Variance • Audit Passed')}</span>
+        <div className="pt-1.5 flex flex-col sm:flex-row sm:items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 border-t border-slate-200 dark:border-slate-800/80 gap-1 font-mono">
+          <span><strong>{t('Net Balance Effect')}</strong>: Cash = <span className="text-emerald-600 dark:text-emerald-400 font-bold">+$2,000</span> • Receivable = <span className="text-slate-700 dark:text-slate-200 font-bold">$0.00</span> • Net Revenue = <span className="text-emerald-600 dark:text-emerald-400 font-bold">$2,000</span></span>
+          <span className="text-emerald-700 dark:text-emerald-400 font-bold">{t('Zero Variance • Audit Passed')}</span>
         </div>
       </div>
 
       {/* Domain Sub-Navigation */}
       <div className="flex flex-wrap items-center gap-2 pb-2 border-b border-slate-200 dark:border-slate-800">
-        <Link href="/finance/accounting/chart" className="px-3.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs transition-all flex items-center gap-1.5">
-          <BookOpen className="w-3.5 h-3.5 text-emerald-500" />
+        <Link href="/finance/accounting/chart" className="px-3.5 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white font-bold text-xs transition-all flex items-center gap-1.5">
+          <BookOpen className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
           <span>{t('Chart of Accounts')}</span>
         </Link>
         <Link href="/finance/accounting/journals" className="px-3.5 py-1.5 rounded-xl bg-emerald-600 text-white font-black text-xs shadow-md flex items-center gap-1.5">
           <FileText className="w-3.5 h-3.5" />
           <span>{t('Journal Entries')}</span>
         </Link>
-        <Link href="/finance/accounting/ledger" className="px-3.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs transition-all flex items-center gap-1.5">
-          <ScrollText className="w-3.5 h-3.5 text-sky-500" />
+        <Link href="/finance/accounting/ledger" className="px-3.5 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white font-bold text-xs transition-all flex items-center gap-1.5">
+          <ScrollText className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
           <span>{t('General Ledger')}</span>
         </Link>
-        <Link href="/finance/accounting/trial-balance" className="px-3.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs transition-all flex items-center gap-1.5">
-          <Scale className="w-3.5 h-3.5 text-amber-500" />
+        <Link href="/finance/accounting/trial-balance" className="px-3.5 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white font-bold text-xs transition-all flex items-center gap-1.5">
+          <Scale className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
           <span>{t('Trial Balance')}</span>
+        </Link>
+        <Link href="/finance/accounting/accounts" className="px-3.5 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white font-bold text-xs transition-all flex items-center gap-1.5">
+          <Layers className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+          <span>{t('Accounts Console')}</span>
         </Link>
       </div>
 
@@ -884,7 +926,7 @@ const [journals, setJournals]       = useState<JournalEntry[]>([]);
           className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
             moduleFilter === 'all'
               ? 'bg-emerald-600 text-white shadow-md'
-              : 'bg-slate-900 border border-slate-800 text-slate-400 hover:text-white'
+              : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-emerald-500'
           }`}
         >
           {t('All Journal Vouchers')} ({normalizedJournals.length})
@@ -894,7 +936,7 @@ const [journals, setJournals]       = useState<JournalEntry[]>([]);
           className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
             moduleFilter === 'invoice_recognition'
               ? 'bg-sky-600 text-white shadow-md'
-              : 'bg-slate-900 border border-slate-800 text-slate-400 hover:text-white'
+              : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-sky-500'
           }`}
         >
           {t('Invoice Accruals')} ({invoiceVouchersCount})
@@ -904,17 +946,37 @@ const [journals, setJournals]       = useState<JournalEntry[]>([]);
           className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
             moduleFilter === 'payment_collection'
               ? 'bg-emerald-600 text-white shadow-md'
-              : 'bg-slate-900 border border-slate-800 text-slate-400 hover:text-white'
+              : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-emerald-500'
           }`}
         >
           {t('Payment Settlements')} ({receiptVouchersCount})
+        </button>
+        <button
+          onClick={() => setModuleFilter('expense_disbursement')}
+          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            moduleFilter === 'expense_disbursement'
+              ? 'bg-rose-600 text-white shadow-md'
+              : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-rose-500'
+          }`}
+        >
+          {t('Expenses')} ({expenseVouchersCount})
+        </button>
+        <button
+          onClick={() => setModuleFilter('payroll_posting')}
+          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            moduleFilter === 'payroll_posting'
+              ? 'bg-indigo-600 text-white shadow-md'
+              : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-indigo-500'
+          }`}
+        >
+          {t('Payroll')} ({payrollVouchersCount})
         </button>
         <button
           onClick={() => setModuleFilter('manual_journal')}
           className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
             moduleFilter === 'manual_journal'
               ? 'bg-slate-700 text-white shadow-md'
-              : 'bg-slate-900 border border-slate-800 text-slate-400 hover:text-white'
+              : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-500'
           }`}
         >
           {t('Manual Vouchers')} ({normalizedJournals.filter(j => j.sourceModule === 'manual_journal').length})
@@ -939,6 +1001,8 @@ const [journals, setJournals]       = useState<JournalEntry[]>([]);
         columns={columns}
         isLoading={loading}
         density={density}
+        maxHeight={570}
+        pageSize={50}
         onRowInspect={setSelectedJournal}
         onRowClick={setSelectedJournal}
         emptyStateProps={{

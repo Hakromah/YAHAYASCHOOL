@@ -4,15 +4,11 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link } from '@/i18n/routing';
 import {
-  ShieldCheck, CheckCircle2, Clock, DollarSign, FileText,
-  Users, AlertCircle, ArrowRight, Check, X, Eye, Filter, Receipt, Building2,
-  Coins, RefreshCw
+  ShieldCheck, CheckCircle2, Clock, DollarSign,
+  Users, AlertCircle, Check, Coins, RefreshCw, Receipt, Building2
 } from 'lucide-react';
 import { useLocale } from 'next-intl';
 import { t as i18nT } from '@/lib/i18n-dict';
-
-// module-level i18n fallback
-const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
 import { financeService } from '@/services/finance.service';
 import type { PayrollRun, MultiCurrencyRate } from '@/types/finance.types';
 import { EnterpriseModuleShell } from '@/components/erp/EnterpriseModuleShell';
@@ -24,13 +20,13 @@ import { toast } from 'sonner';
 
 export default function PayrollApprovalsPage() {
   const locale = useLocale();
-  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+  // Stable translation helper — memoized with [locale]
+  const t = useCallback((key: string) => i18nT(key, locale), [locale]);
   const { user, role } = useAuth();
 
   // Multi-Currency Engine State
   const [currencies, setCurrencies] = useState<MultiCurrencyRate[]>([]);
   const [selectedCurrency, setSelectedCurrency] = useState<string>('USD');
-  const [baseCurrency, setBaseCurrency] = useState<string>('USD');
 
   const [payrolls, setPayrolls] = useState<PayrollRun[]>([]);
   const [loading, setLoading] = useState(true);
@@ -40,7 +36,7 @@ export default function PayrollApprovalsPage() {
   const isAccountantOnly = userRole === 'accountant';
   const canApprove = !isAccountantOnly; // Account Lead, Admin, Director, Super Admin
 
-  // ── Currency Converter Helper ──────────────────────────────────────────────
+  // Currency Converter Helpers
   const activeCurrencyRate = useMemo(() => {
     if (selectedCurrency === 'USD') return 1;
     const found = currencies.find(c => c.currencyCode === selectedCurrency || (c as any).isoCode === selectedCurrency);
@@ -49,7 +45,15 @@ export default function PayrollApprovalsPage() {
 
   const activeCurrencySymbol = useMemo(() => {
     const found = currencies.find(c => c.currencyCode === selectedCurrency || (c as any).isoCode === selectedCurrency);
-    return found?.symbol || (selectedCurrency === 'USD' ? '$' : selectedCurrency === 'EUR' ? '€' : selectedCurrency === 'TRY' ? '₺' : selectedCurrency === 'XOF' ? 'CFA' : selectedCurrency === 'GNF' ? 'FG' : selectedCurrency === 'GBP' ? '£' : selectedCurrency === 'SAR' ? '﷼' : selectedCurrency);
+    return found?.symbol || (
+      selectedCurrency === 'USD' ? '$' :
+      selectedCurrency === 'EUR' ? '€' :
+      selectedCurrency === 'TRY' ? '₺' :
+      selectedCurrency === 'XOF' ? 'CFA' :
+      selectedCurrency === 'GNF' ? 'FG' :
+      selectedCurrency === 'GBP' ? '£' :
+      selectedCurrency === 'SAR' ? '﷼' : selectedCurrency
+    );
   }, [currencies, selectedCurrency]);
 
   const formatMoney = useCallback((amountUSD: number) => {
@@ -70,6 +74,7 @@ export default function PayrollApprovalsPage() {
     toast.info(`${t('Payroll queue converted to')} ${newCurr}`);
   };
 
+  // Stable fetchPayrolls with [locale] dependency only — fixes infinite loop
   const fetchPayrolls = useCallback(async () => {
     setLoading(true);
     try {
@@ -90,13 +95,12 @@ export default function PayrollApprovalsPage() {
         active = settings.defaultCurrency;
       }
       setSelectedCurrency(active);
-      setBaseCurrency(settings?.defaultCurrency || 'USD');
     } catch {
-      toast.error(t('Failed to load payroll approval queue.'));
+      toast.error(i18nT('Failed to load payroll approval queue.', locale));
     } finally {
       setLoading(false);
     }
-  }, [t]);
+  }, [locale]);
 
   useEffect(() => {
     fetchPayrolls();
@@ -129,6 +133,11 @@ export default function PayrollApprovalsPage() {
           return financeService.updatePayrollStatus(targetId, 'approved');
         })
       );
+      setPayrolls(prev => prev.map(p =>
+        p.status === 'submitted' || p.status === 'reviewed' || p.status === 'draft'
+          ? { ...p, status: 'approved' as any }
+          : p
+      ));
       toast.success(`${t('Batch approved')} ${pending.length} ${t('payroll vouchers!')}`);
       fetchPayrolls();
     } catch {
@@ -153,6 +162,7 @@ export default function PayrollApprovalsPage() {
         await financeService.updatePayrollStatus(targetId, nextStatus);
         toast.success(`${t('Payroll voucher')} ${refNum} ${t('moved to')} [${nextStatus.toUpperCase()}].`);
       }
+      setPayrolls(prev => prev.map(item => item.id === p.id ? { ...item, status: nextStatus as any } : item));
       fetchPayrolls();
     } catch {
       toast.error(t('Action failed'));
@@ -161,6 +171,8 @@ export default function PayrollApprovalsPage() {
 
   const pendingApprovalsCount = payrolls.filter(p => p.status === 'submitted' || p.status === 'reviewed' || p.status === 'draft').length;
   const pendingAmount = payrolls.filter(p => p.status === 'submitted' || p.status === 'reviewed' || p.status === 'draft').reduce((s, p) => s + (Number(p.netPayable) || 0), 0);
+  const approvedCount = payrolls.filter(p => p.status === 'approved').length;
+  const paidCount = payrolls.filter(p => p.status === 'paid' || p.status === 'closed').length;
 
   const kpiCards: EnterpriseKPICard[] = [
     {
@@ -169,23 +181,23 @@ export default function PayrollApprovalsPage() {
       value: `${pendingApprovalsCount} ${t('Vouchers')}`,
       subtitle: `${t('Total Payout Queue')}: ${formatMoney(pendingAmount)}`,
       trendDirection: 'neutral',
-      icon: <Clock className="w-5 h-5 text-amber-400" />
+      icon: <Clock className="w-5 h-5 text-amber-600 dark:text-amber-400" />
     },
     {
       id: 'approved_runs',
       title: t('Certified Approved Vouchers'),
-      value: `${payrolls.filter(p => p.status === 'approved').length} ${t('Ready')}`,
+      value: `${approvedCount} ${t('Ready')}`,
       subtitle: t('Cleared by Account Lead & Director'),
       trendDirection: 'up',
-      icon: <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+      icon: <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
     },
     {
       id: 'payout_complete',
       title: t('Disbursed / Paid Status'),
-      value: `${payrolls.filter(p => p.status === 'paid' || p.status === 'closed').length} ${t('Payouts')}`,
+      value: `${paidCount} ${t('Payouts')}`,
       subtitle: t('Bank wire and mobile money executed'),
       trendDirection: 'up',
-      icon: <DollarSign className="w-5 h-5 text-sky-400" />
+      icon: <DollarSign className="w-5 h-5 text-sky-600 dark:text-sky-400" />
     }
   ];
 
@@ -195,9 +207,9 @@ export default function PayrollApprovalsPage() {
       header: t('Payroll Ref & Employee'),
       cell: ({ row }) => (
         <div className="space-y-0.5">
-          <span className="font-mono text-xs font-black text-indigo-400 block">{row.original.payrollNumber || `PAY-${row.original.id}`}</span>
-          <span className="font-bold text-white text-xs block">{row.original.employeeName}</span>
-          <span className="text-[11px] text-slate-400 font-mono block">{row.original.roleTitle}</span>
+          <span className="font-mono text-xs font-black text-indigo-600 dark:text-indigo-400 block">{row.original.payrollNumber || `PAY-${row.original.id}`}</span>
+          <span className="font-bold text-slate-900 dark:text-white text-xs block">{row.original.employeeName}</span>
+          <span className="text-[11px] text-slate-500 dark:text-slate-400 font-mono block">{row.original.roleTitle}</span>
         </div>
       )
     },
@@ -206,8 +218,8 @@ export default function PayrollApprovalsPage() {
       header: t('Pay Period'),
       cell: ({ row }) => (
         <div className="text-xs font-mono">
-          <span className="text-slate-300 block">{row.original.payPeriodMonth} {row.original.payPeriodYear}</span>
-          <span className="text-slate-500 text-[11px]">{t('Gross')}: {formatMoney(Number(row.original.grossSalary) || 0)}</span>
+          <span className="text-slate-800 dark:text-slate-200 font-medium block">{row.original.payPeriodMonth} {row.original.payPeriodYear}</span>
+          <span className="text-slate-500 dark:text-slate-400 text-[11px]">{t('Gross')}: {formatMoney(Number(row.original.grossSalary) || 0)}</span>
         </div>
       )
     },
@@ -215,7 +227,7 @@ export default function PayrollApprovalsPage() {
       accessorKey: 'netPayable',
       header: `${t('Net Disbursable')} (${selectedCurrency})`,
       cell: ({ row }) => (
-        <span className="font-mono text-xs sm:text-sm font-black text-emerald-400 block">
+        <span className="font-mono text-xs sm:text-sm font-black text-emerald-600 dark:text-emerald-400 block">
           {formatMoney(Number(row.original.netPayable) || 0)}
         </span>
       )
@@ -234,19 +246,19 @@ export default function PayrollApprovalsPage() {
 
         return (
           <div className="flex items-center gap-1.5" onClick={evt => evt.stopPropagation()}>
-            {/* Review Action (Accountant or Lead) */}
+            {/* Review Action */}
             {(p.status === 'draft' || p.status === 'submitted') && (
               <button
                 onClick={() => handleSingleAction(p, 'reviewed')}
-                className="px-2.5 py-1 rounded-xl bg-sky-950/60 text-sky-300 hover:bg-sky-900 border border-sky-800 text-xs font-bold transition-colors cursor-pointer"
+                className="px-2.5 py-1 rounded-xl bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 hover:bg-sky-100 dark:hover:bg-sky-900 border border-sky-200 dark:border-sky-800 text-xs font-bold transition-colors cursor-pointer"
               >
                 {t('Mark Reviewed')}
               </button>
             )}
 
-            {/* Approve Action (Account Lead / Admin / Director ONLY) */}
+            {/* Approve Action */}
             {isPending && !canApprove && (
-              <span className="px-2 py-1 rounded bg-amber-950/60 border border-amber-800/80 text-amber-300 text-[10px] font-bold">
+              <span className="px-2 py-1 rounded bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800/80 text-amber-700 dark:text-amber-300 text-[10px] font-bold">
                 {t('Awaiting Lead Sign-off')}
               </span>
             )}
@@ -260,7 +272,7 @@ export default function PayrollApprovalsPage() {
               </button>
             )}
 
-            {/* Disburse Payment (Executed by cashier/accountant after approval) */}
+            {/* Disburse Payment */}
             {p.status === 'approved' && (
               <button
                 onClick={() => handleSingleAction(p, 'paid')}
@@ -281,43 +293,50 @@ export default function PayrollApprovalsPage() {
       title={t('Executive Payroll Approval & Disbursement Authorization Queue')}
       description={t('Two-tier governance workflow for academic faculty and staff monthly wage vouchers prior to treasury bank disbursement.')}
       breadcrumbs={[{ label: t('Finance ERP'), href: '/finance' }, { label: t('Staff Payroll'), href: '/finance/payroll' }, { label: t('Approvals') }]}
-      icon={<ShieldCheck className="w-8 h-8 text-indigo-400" />}
+      icon={<ShieldCheck className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />}
       recordCount={payrolls.length}
       recordLabel={t('Vouchers')}
       headerActions={
         <div className="flex items-center gap-2 flex-wrap">
           {/* Multi-Currency Dropdown Selector */}
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs shadow-sm">
-            <Coins className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-            <span className="text-[11px] font-bold text-slate-400 uppercase">{t('Currency')}:</span>
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs shadow-sm">
+            <Coins className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase">{t('Currency')}:</span>
             <select
               value={selectedCurrency}
               onChange={(e) => handleCurrencyChange(e.target.value)}
-              className="bg-transparent text-xs font-black text-white focus:outline-none cursor-pointer font-mono"
+              className="bg-transparent text-xs font-black text-slate-900 dark:text-white focus:outline-none cursor-pointer font-mono"
             >
               {currencies.length > 0 ? (
                 currencies.map(c => (
-                  <option key={c.id || c.currencyCode} value={c.currencyCode || (c as any).isoCode} className="bg-slate-900 text-white">
+                  <option key={c.id || c.currencyCode} value={c.currencyCode || (c as any).isoCode}>
                     {c.currencyCode || (c as any).isoCode} ({c.symbol || '$'}) {c.isBase ? `• ${t('Base')}` : ''}
                   </option>
                 ))
               ) : (
                 <>
-                  <option value="USD" className="bg-slate-900 text-white">USD ($)</option>
-                  <option value="EUR" className="bg-slate-900 text-white">EUR (€)</option>
-                  <option value="TRY" className="bg-slate-900 text-white">TRY (₺)</option>
-                  <option value="XOF" className="bg-slate-900 text-white">XOF (CFA)</option>
-                  <option value="GNF" className="bg-slate-900 text-white">GNF (FG)</option>
-                  <option value="GBP" className="bg-slate-900 text-white">GBP (£)</option>
-                  <option value="SAR" className="bg-slate-900 text-white">SAR (﷼)</option>
+                  <option value="USD">USD ($)</option>
+                  <option value="EUR">EUR (€)</option>
+                  <option value="TRY">TRY (₺)</option>
+                  <option value="XOF">XOF (CFA)</option>
+                  <option value="GNF">GNF (FG)</option>
+                  <option value="GBP">GBP (£)</option>
+                  <option value="SAR">SAR (﷼)</option>
                 </>
               )}
             </select>
           </div>
 
+          <button
+            onClick={() => { fetchPayrolls(); toast.success(t('Payroll queue refreshed')); }}
+            className="p-2 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 transition-colors cursor-pointer"
+          >
+            <RefreshCw className="w-4 h-4" />
+          </button>
+
           <Link
             href="/finance/payroll"
-            className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs font-bold transition-all shadow-sm"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold transition-all shadow-sm"
           >
             ← {t('Back to Payroll Runs')}
           </Link>
@@ -336,16 +355,40 @@ export default function PayrollApprovalsPage() {
     >
       <EnterpriseKPIDeck cards={kpiCards} />
 
+      {/* Domain Sub-Navigation */}
+      <div className="flex flex-wrap items-center gap-2 pb-2 border-b border-slate-200 dark:border-slate-800">
+        <Link href="/finance/payroll" className="px-3.5 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white font-bold text-xs transition-all flex items-center gap-1.5">
+          <Users className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+          <span>{t('Staff Payroll Runs')}</span>
+        </Link>
+        <Link href="/finance/payroll/approvals" className="px-3.5 py-1.5 rounded-xl bg-indigo-600 text-white font-black text-xs shadow-md flex items-center gap-1.5">
+          <ShieldCheck className="w-3.5 h-3.5" />
+          <span>{t('Payroll Approvals')}</span>
+        </Link>
+        <Link href="/finance/expenses" className="px-3.5 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white font-bold text-xs transition-all flex items-center gap-1.5">
+          <Receipt className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
+          <span>{t('Operating Expenses')}</span>
+        </Link>
+        <Link href="/finance/expenses/approvals" className="px-3.5 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white font-bold text-xs transition-all flex items-center gap-1.5">
+          <ShieldCheck className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+          <span>{t('Expense Approvals')}</span>
+        </Link>
+        <Link href="/finance/budget" className="px-3.5 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white font-bold text-xs transition-all flex items-center gap-1.5">
+          <Building2 className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
+          <span>{t('Departmental Budget')}</span>
+        </Link>
+      </div>
+
       {/* Segregation of Duties Notice for Accountant */}
       {isAccountantOnly && (
-        <div className="p-4 rounded-2xl bg-amber-950/20 border border-amber-800/40 text-xs text-amber-300 flex items-center justify-between gap-3 mb-4">
+        <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/40 text-xs text-amber-800 dark:text-amber-300 flex items-center justify-between gap-3 mb-4">
           <div className="flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+            <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
             <span>
               <strong>{t('Segregation of Duties Policy')}:</strong> {t('Accountants can review and disburse certified payroll. Approval requires Account Lead, Director, or Super Admin authorization signature.')}
             </span>
           </div>
-          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-900/60 text-amber-200 border border-amber-700 uppercase">
+          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-200 border border-amber-300 dark:border-amber-700 uppercase whitespace-nowrap">
             {t('Preparer Mode')}
           </span>
         </div>
@@ -356,6 +399,8 @@ export default function PayrollApprovalsPage() {
         columns={columns}
         isLoading={loading}
         density="cozy"
+        maxHeight={570}
+        pageSize={50}
         emptyStateProps={{
           title: t('No Payroll Runs Awaiting Approval'),
           description: t('All staff payroll vouchers are approved or disbursed.'),

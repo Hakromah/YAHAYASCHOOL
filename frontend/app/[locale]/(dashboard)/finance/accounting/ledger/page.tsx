@@ -4,16 +4,12 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link } from '@/i18n/routing';
 import {
-  FolderOpen, Search, Filter, Download, Eye, CheckCircle2,
-  Clock, DollarSign, FileText, Receipt, Scale, ScrollText,
-  Landmark, ShieldCheck, ArrowRight, Printer, Sparkles,
-  Coins, Layers, RefreshCw, Calendar, ArrowUpRight, ArrowDownRight
+  FolderOpen, Download, Eye, DollarSign, FileText, Receipt, Scale, ScrollText,
+  Landmark, Coins, RefreshCw, ArrowUpRight, ArrowDownRight, ChevronDown,
+  AlertCircle, X
 } from 'lucide-react';
 import { useLocale } from 'next-intl';
 import { t as i18nT } from '@/lib/i18n-dict';
-
-// module-level i18n fallback
-const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
 import { financeService } from '@/services/finance.service';
 import type { ChartOfAccount, JournalEntry, MultiCurrencyRate } from '@/types/finance.types';
 import { EnterpriseModuleShell } from '@/components/erp/EnterpriseModuleShell';
@@ -21,7 +17,6 @@ import { EnterpriseKPIDeck, type EnterpriseKPICard } from '@/components/erp/Ente
 import { EnterpriseToolbar, type TableDensity } from '@/components/erp/EnterpriseToolbar';
 import { EnterpriseDataGrid, type ColumnDef } from '@/components/erp/EnterpriseDataGrid';
 import { SlideOutDrawer } from '@/components/erp/SlideOutDrawer';
-import { StatusBadge } from '@/components/erp/StatusBadge';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -41,28 +36,54 @@ interface GLPostingRow {
   originalJournal?: any;
 }
 
+// ─── Default Chart of Accounts (shown when Strapi data unavailable) ──────────
+const DEFAULT_COA: ChartOfAccount[] = [
+  { id: '1010', accountCode: '1010', accountName: 'Cash & Bank', accountType: 'Asset', isControlAccount: false, isActive: true, currentBalance: 0, currency: 'USD', description: 'Operating cash and bank accounts' },
+  { id: '1100', accountCode: '1100', accountName: 'Accounts Receivable', accountType: 'Asset', isControlAccount: true, isActive: true, currentBalance: 0, currency: 'USD', description: 'Tuition fees receivable' },
+  { id: '1200', accountCode: '1200', accountName: 'Prepaid Expenses', accountType: 'Asset', isControlAccount: false, isActive: true, currentBalance: 0, currency: 'USD', description: 'Prepaid insurance and rent' },
+  { id: '1500', accountCode: '1500', accountName: 'Fixed Assets', accountType: 'Asset', isControlAccount: false, isActive: true, currentBalance: 0, currency: 'USD', description: 'Equipment and property' },
+  { id: '2010', accountCode: '2010', accountName: 'Accounts Payable', accountType: 'Liability', isControlAccount: true, isActive: true, currentBalance: 0, currency: 'USD', description: 'Vendor payables' },
+  { id: '2100', accountCode: '2100', accountName: 'Salaries Payable', accountType: 'Liability', isControlAccount: false, isActive: true, currentBalance: 0, currency: 'USD', description: 'Accrued staff salaries' },
+  { id: '3010', accountCode: '3010', accountName: 'Retained Earnings', accountType: 'Equity', isControlAccount: false, isActive: true, currentBalance: 0, currency: 'USD', description: 'Accumulated surplus' },
+  { id: '4010', accountCode: '4010', accountName: 'Tuition Revenue', accountType: 'Revenue', isControlAccount: false, isActive: true, currentBalance: 0, currency: 'USD', description: 'Student tuition income' },
+  { id: '4020', accountCode: '4020', accountName: 'Hostel Revenue', accountType: 'Revenue', isControlAccount: false, isActive: true, currentBalance: 0, currency: 'USD', description: 'Boarding and accommodation' },
+  { id: '5010', accountCode: '5010', accountName: 'Staff Salaries', accountType: 'Expense', isControlAccount: false, isActive: true, currentBalance: 0, currency: 'USD', description: 'Teaching & admin payroll' },
+  { id: '5020', accountCode: '5020', accountName: 'Utilities Expense', accountType: 'Expense', isControlAccount: false, isActive: true, currentBalance: 0, currency: 'USD', description: 'Electricity, water, internet' },
+  { id: '5030', accountCode: '5030', accountName: 'Operating Expenses', accountType: 'Expense', isControlAccount: false, isActive: true, currentBalance: 0, currency: 'USD', description: 'General operating costs' },
+];
+
+const DEFAULT_CURRENCIES: MultiCurrencyRate[] = [
+  { id: 'CURR-001', currencyCode: 'USD', currencyName: 'US Dollar', symbol: '$', exchangeRateToUSD: 1.0, isBase: true, isBaseCurrency: true, isActive: true, lastUpdated: new Date().toISOString().split('T')[0] },
+  { id: 'CURR-002', currencyCode: 'EUR', currencyName: 'Euro', symbol: '€', exchangeRateToUSD: 0.92, isBase: false, isBaseCurrency: false, isActive: true, lastUpdated: new Date().toISOString().split('T')[0] },
+  { id: 'CURR-003', currencyCode: 'XOF', currencyName: 'West African CFA', symbol: 'CFA', exchangeRateToUSD: 605.50, isBase: false, isBaseCurrency: false, isActive: true, lastUpdated: new Date().toISOString().split('T')[0] },
+  { id: 'CURR-004', currencyCode: 'TRY', currencyName: 'Turkish Lira', symbol: '₺', exchangeRateToUSD: 34.20, isBase: false, isBaseCurrency: false, isActive: true, lastUpdated: new Date().toISOString().split('T')[0] },
+  { id: 'CURR-005', currencyCode: 'GNF', currencyName: 'Guinean Franc', symbol: 'FG', exchangeRateToUSD: 8600.0, isBase: false, isBaseCurrency: false, isActive: true, lastUpdated: new Date().toISOString().split('T')[0] },
+  { id: 'CURR-006', currencyCode: 'GBP', currencyName: 'British Pound', symbol: '£', exchangeRateToUSD: 0.78, isBase: false, isBaseCurrency: false, isActive: true, lastUpdated: new Date().toISOString().split('T')[0] },
+  { id: 'CURR-007', currencyCode: 'SAR', currencyName: 'Saudi Riyal', symbol: '﷼', exchangeRateToUSD: 3.75, isBase: false, isBaseCurrency: false, isActive: true, lastUpdated: new Date().toISOString().split('T')[0] },
+];
+
 export default function GeneralLedgerDrillDownPage() {
   const locale = useLocale();
-  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
+  const t = (key: string) => i18nT(key, locale);
 
-  // Multi-Currency State
-  const [currencies, setCurrencies] = useState<MultiCurrencyRate[]>([]);
+  // ── State ──────────────────────────────────────────────────────────────────
+  const [currencies, setCurrencies] = useState<MultiCurrencyRate[]>(DEFAULT_CURRENCIES);
   const [selectedCurrency, setSelectedCurrency] = useState<string>('USD');
-  const [baseCurrency, setBaseCurrency] = useState<string>('USD');
 
-  // Ledger State
-  const [coa, setCoa] = useState<ChartOfAccount[]>([]);
+  const [coa, setCoa] = useState<ChartOfAccount[]>(DEFAULT_COA);
   const [journals, setJournals] = useState<JournalEntry[]>([]);
   const [selectedCode, setSelectedCode] = useState<string>('1010');
   const [accountCategoryFilter, setAccountCategoryFilter] = useState<string>('all');
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [density, setDensity] = useState<TableDensity>('cozy');
   const [selectedRow, setSelectedRow] = useState<GLPostingRow | null>(null);
+  const [usingDefaultCoa, setUsingDefaultCoa] = useState(false);
 
-  // ── Currency Converter Helper ──────────────────────────────────────────────
+  // ── Currency Helpers ───────────────────────────────────────────────────────
   const activeCurrencyRate = useMemo(() => {
     if (selectedCurrency === 'USD') return 1;
     const found = currencies.find(c => c.currencyCode === selectedCurrency || (c as any).isoCode === selectedCurrency);
@@ -71,15 +92,14 @@ export default function GeneralLedgerDrillDownPage() {
 
   const activeCurrencySymbol = useMemo(() => {
     const found = currencies.find(c => c.currencyCode === selectedCurrency || (c as any).isoCode === selectedCurrency);
-    return found?.symbol || (selectedCurrency === 'USD' ? '$' : selectedCurrency === 'EUR' ? '€' : selectedCurrency === 'TRY' ? '₺' : selectedCurrency === 'XOF' ? 'CFA' : selectedCurrency === 'GNF' ? 'FG' : selectedCurrency === 'GBP' ? '£' : selectedCurrency === 'SAR' ? '﷼' : selectedCurrency);
+    if (found?.symbol) return found.symbol;
+    const map: Record<string, string> = { USD: '$', EUR: '€', TRY: '₺', XOF: 'CFA', GNF: 'FG', GBP: '£', SAR: '﷼' };
+    return map[selectedCurrency] || selectedCurrency;
   }, [currencies, selectedCurrency]);
 
   const formatMoney = useCallback((amountUSD: number) => {
     const converted = Number(amountUSD || 0) * activeCurrencyRate;
-    return `${activeCurrencySymbol}${converted.toLocaleString('en-US', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    })}`;
+    return `${activeCurrencySymbol}${converted.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   }, [activeCurrencyRate, activeCurrencySymbol]);
 
   const handleCurrencyChange = (newCurr: string) => {
@@ -89,57 +109,65 @@ export default function GeneralLedgerDrillDownPage() {
       localStorage.setItem('selected_currency', newCurr);
       window.dispatchEvent(new CustomEvent('yahaya_currency_changed', { detail: newCurr }));
     }
-    toast.info(`${t('General Ledger converted to')} ${newCurr}`);
+    toast.info(`General Ledger converted to ${newCurr}`);
   };
 
+  // ── Load Data ──────────────────────────────────────────────────────────────
   const loadData = useCallback(async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       const [coaList, jrnList, currs, settings] = await Promise.all([
-        financeService.getChartOfAccounts().catch(() => []),
-        financeService.getJournalEntries().catch(() => []),
-        financeService.getExchangeRates().catch(() => []),
-        financeService.getSettings().catch(() => null)
+        financeService.getChartOfAccounts().catch(() => [] as ChartOfAccount[]),
+        financeService.getJournalEntries().catch(() => [] as JournalEntry[]),
+        financeService.getExchangeRates().catch(() => [] as MultiCurrencyRate[]),
+        financeService.getSettings().catch(() => null),
       ]);
 
-      setCoa(coaList || []);
-      setJournals(jrnList || []);
-      setCurrencies(currs || []);
+      // Chart of Accounts: use defaults if none from Strapi
+      const effectiveCoa = (coaList && coaList.length > 0) ? coaList : DEFAULT_COA;
+      setCoa(effectiveCoa);
+      setUsingDefaultCoa(!coaList || coaList.length === 0);
 
-      if (coaList && coaList.length > 0) {
-        if (!selectedCode || !coaList.some(a => a.accountCode === selectedCode)) {
-          setSelectedCode(coaList[0].accountCode);
+      setJournals(jrnList || []);
+
+      // Currencies: use defaults if none from Strapi
+      const effectiveCurrs = (currs && currs.length > 0) ? currs : DEFAULT_CURRENCIES;
+      setCurrencies(effectiveCurrs);
+
+      // Set selected code
+      if (effectiveCoa.length > 0) {
+        if (!selectedCode || !effectiveCoa.some(a => a.accountCode === selectedCode)) {
+          setSelectedCode(effectiveCoa[0].accountCode);
         }
       }
 
-      let active = 'USD';
+      // Set currency from saved preference or settings
+      let activeCurr = 'USD';
       if (typeof window !== 'undefined') {
-        const saved = localStorage.getItem('yahaya_selected_currency') || localStorage.getItem('selected_currency') || localStorage.getItem('yahaya_default_currency');
-        if (saved) active = saved;
-        else if (settings?.defaultCurrency) active = settings.defaultCurrency;
+        const saved = localStorage.getItem('yahaya_selected_currency') || localStorage.getItem('selected_currency');
+        if (saved) activeCurr = saved;
+        else if (settings?.defaultCurrency) activeCurr = settings.defaultCurrency;
       } else if (settings?.defaultCurrency) {
-        active = settings.defaultCurrency;
+        activeCurr = settings.defaultCurrency;
       }
-      setSelectedCurrency(active);
-      setBaseCurrency(settings?.defaultCurrency || 'USD');
-    } catch {
-      toast.error(t('Failed to load General Ledger data.'));
+      setSelectedCurrency(activeCurr);
+    } catch (err: any) {
+      console.error('[GeneralLedger] loadData error:', err);
+      setLoadError('Failed to load some ledger data. Showing available data with defaults where needed.');
+      // Keep defaults in place
     } finally {
       setLoading(false);
     }
-  }, [selectedCode, t]);
+  }, [selectedCode]);
 
   useEffect(() => {
     loadData();
 
-    // Listen for currency updates across settings & executive tabs
-    const onCurrencyChange = (e: any) => {
-      if (e.detail) setSelectedCurrency(e.detail);
-    };
+    const onCurrencyChange = (e: any) => { if (e.detail) setSelectedCurrency(e.detail); };
     const onSettingsUpdate = (e: any) => {
       if (e.detail?.defaultCurrency) {
         setSelectedCurrency(e.detail.defaultCurrency);
-        setBaseCurrency(e.detail.defaultCurrency);
       }
     };
     window.addEventListener('yahaya_currency_changed', onCurrencyChange);
@@ -150,17 +178,17 @@ export default function GeneralLedgerDrillDownPage() {
     };
   }, [loadData]);
 
+  // ── Current Account ────────────────────────────────────────────────────────
   const currentAccount = useMemo(() => {
     return coa.find(a => a.accountCode === selectedCode) || coa[0] || null;
   }, [coa, selectedCode]);
 
-  // ── Double-Entry GL Line Postings Engine with GAAP Running Balance ──────────
+  // ── GL Posting Engine ──────────────────────────────────────────────────────
   const glRows = useMemo<GLPostingRow[]>(() => {
     if (!currentAccount) return [];
     let runBal = 0;
     const rows: GLPostingRow[] = [];
 
-    // Chronological order from oldest to newest for running balance
     const sorted = [...journals].sort((a: any, b: any) => {
       const dateA = a.postingDate || a.transactionDate || (a.date ? String(a.date).split('T')[0] : '') || '';
       const dateB = b.postingDate || b.transactionDate || (b.date ? String(b.date).split('T')[0] : '') || '';
@@ -179,23 +207,16 @@ export default function GeneralLedgerDrillDownPage() {
         let accountName = l.accountName || l.account || '';
         let accountCode = l.accountCode || '';
 
-        // Extract account code from string like "Bank Account (1010)"
         if (accountName && !accountCode) {
           const match = accountName.match(/\((\d+)\)/);
           if (match) {
             accountCode = match[1];
             accountName = accountName.replace(/\(\d+\)/, '').trim();
-          } else if (accountName.toLowerCase().includes('receivable')) {
-            accountCode = '1100';
-          } else if (accountName.toLowerCase().includes('bank') || accountName.toLowerCase().includes('cash')) {
-            accountCode = '1010';
-          } else if (accountName.toLowerCase().includes('revenue') || accountName.toLowerCase().includes('tuition')) {
-            accountCode = '4010';
-          } else if (accountName.toLowerCase().includes('payable')) {
-            accountCode = '2010';
-          } else if (accountName.toLowerCase().includes('expense') || accountName.toLowerCase().includes('salary')) {
-            accountCode = '5010';
-          }
+          } else if (accountName.toLowerCase().includes('receivable')) accountCode = '1100';
+          else if (accountName.toLowerCase().includes('bank') || accountName.toLowerCase().includes('cash')) accountCode = '1010';
+          else if (accountName.toLowerCase().includes('revenue') || accountName.toLowerCase().includes('tuition')) accountCode = '4010';
+          else if (accountName.toLowerCase().includes('payable')) accountCode = '2010';
+          else if (accountName.toLowerCase().includes('expense') || accountName.toLowerCase().includes('salary')) accountCode = '5010';
         }
 
         if (accountCode === currentAccount.accountCode || (accountCode && currentAccount.accountCode && accountCode.trim() === currentAccount.accountCode.trim())) {
@@ -211,7 +232,6 @@ export default function GeneralLedgerDrillDownPage() {
             credit = Number(l.creditAmount ?? l.credit ?? 0);
           }
 
-          // Strict GAAP normal balance rules
           if (currentAccount.accountType === 'Asset' || currentAccount.accountType === 'Expense') {
             runBal += (debit - credit);
           } else {
@@ -231,7 +251,7 @@ export default function GeneralLedgerDrillDownPage() {
             debit,
             credit,
             runningBalance: runBal,
-            originalJournal: j
+            originalJournal: j,
           });
         }
       }
@@ -243,10 +263,7 @@ export default function GeneralLedgerDrillDownPage() {
   const filteredRows = useMemo(() => {
     return glRows.filter(r => {
       const q = query.toLowerCase();
-      const matchQ = !query ||
-        r.journalNumber.toLowerCase().includes(q) ||
-        r.memo.toLowerCase().includes(q) ||
-        r.referenceNumber.toLowerCase().includes(q);
+      const matchQ = !query || r.journalNumber.toLowerCase().includes(q) || r.memo.toLowerCase().includes(q) || r.referenceNumber.toLowerCase().includes(q);
       const matchFrom = !dateFrom || r.postingDate >= dateFrom;
       const matchTo = !dateTo || r.postingDate <= dateTo;
       return matchQ && matchFrom && matchTo;
@@ -262,279 +279,296 @@ export default function GeneralLedgerDrillDownPage() {
     return coa.filter(a => a.accountType === accountCategoryFilter);
   }, [coa, accountCategoryFilter]);
 
+  // ── KPI Cards ──────────────────────────────────────────────────────────────
   const kpiCards: EnterpriseKPICard[] = [
     {
       id: 'current_balance',
-      title: `${currentAccount?.accountName || t('Account')} (${currentAccount?.accountCode || '---'})`,
+      title: `${currentAccount?.accountName || 'Account'} (${currentAccount?.accountCode || '---'})`,
       value: formatMoney(Math.abs(currentNetBalance)),
-      subtitle: `${t('Certified Net Balance')} • ${t(currentAccount?.accountType || 'Asset')} (${currentNetBalance >= 0 ? t('Normal Parity') : t('Contra/Credit')})`,
+      subtitle: `Net Balance · ${currentAccount?.accountType || 'Asset'} (${currentNetBalance >= 0 ? 'Normal' : 'Contra'})`,
       trendDirection: currentNetBalance >= 0 ? 'up' : 'down',
-      icon: <Landmark className="w-5 h-5 text-emerald-400" />
+      icon: <Landmark className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />,
     },
     {
       id: 'total_debits',
-      title: `${t('Cumulative Period Debits (DR)')} (${selectedCurrency})`,
+      title: `Cumulative Debits (DR) · ${selectedCurrency}`,
       value: formatMoney(totalDebits),
-      subtitle: `${filteredRows.filter(r => r.debit > 0).length} ${t('Debit Postings')}`,
+      subtitle: `${filteredRows.filter(r => r.debit > 0).length} debit postings`,
       trendDirection: 'neutral',
-      icon: <Scale className="w-5 h-5 text-sky-400" />
+      icon: <Scale className="w-5 h-5 text-sky-600 dark:text-sky-400" />,
     },
     {
       id: 'total_credits',
-      title: `${t('Cumulative Period Credits (CR)')} (${selectedCurrency})`,
+      title: `Cumulative Credits (CR) · ${selectedCurrency}`,
       value: formatMoney(totalCredits),
-      subtitle: `${filteredRows.filter(r => r.credit > 0).length} ${t('Credit Postings')}`,
+      subtitle: `${filteredRows.filter(r => r.credit > 0).length} credit postings`,
       trendDirection: 'neutral',
-      icon: <Receipt className="w-5 h-5 text-indigo-400" />
+      icon: <Receipt className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />,
     },
     {
       id: 'postings_count',
-      title: t('Total Activity Lines'),
-      value: `${filteredRows.length} ${t('Postings')}`,
-      subtitle: `${t('Double-Entry Trail')} • ${selectedCurrency}`,
+      title: 'Total Activity Lines',
+      value: `${filteredRows.length} Postings`,
+      subtitle: `Double-Entry Trail · ${selectedCurrency}`,
       trendDirection: 'up',
-      icon: <ScrollText className="w-5 h-5 text-amber-400" />
-    }
+      icon: <ScrollText className="w-5 h-5 text-amber-600 dark:text-amber-400" />,
+    },
   ];
 
+  // ── Columns ────────────────────────────────────────────────────────────────
   const columns = useMemo<ColumnDef<GLPostingRow, any>[]>(() => [
     {
       accessorKey: 'postingDate',
-      header: t('Date & Voucher Ref'),
+      header: 'Date & Voucher',
       cell: ({ row }) => (
         <div className="space-y-0.5 font-mono text-xs">
-          <span className="font-bold text-white block">{row.original.postingDate}</span>
-          <span className="text-[11px] text-emerald-400 block font-semibold">{row.original.journalNumber}</span>
+          <span className="font-bold text-slate-900 dark:text-white block">{row.original.postingDate}</span>
+          <span className="text-[11px] text-emerald-600 dark:text-emerald-400 block font-semibold">{row.original.journalNumber}</span>
           {row.original.referenceNumber !== '—' && (
             <span className="text-[10px] text-slate-400 block">{row.original.referenceNumber}</span>
           )}
         </div>
-      )
+      ),
     },
     {
       accessorKey: 'memo',
-      header: t('Transaction Memo & Description'),
+      header: 'Transaction Memo',
       cell: ({ row }) => (
         <div className="space-y-1 py-1 max-w-md">
-          <span className="font-medium text-white text-xs sm:text-sm block truncate">
-            {row.original.memo}
-          </span>
+          <span className="font-medium text-slate-900 dark:text-white text-xs sm:text-sm block truncate">{row.original.memo}</span>
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-slate-800 text-slate-300">
+            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
               {row.original.sourceModule.replace(/_/g, ' ')}
             </span>
           </div>
         </div>
-      )
+      ),
     },
     {
       accessorKey: 'debit',
-      header: `${t('Debit (DR)')} (${selectedCurrency})`,
+      header: `Debit (DR) · ${selectedCurrency}`,
       cell: ({ row }) => (
-        <span className="font-mono text-xs sm:text-sm font-bold text-sky-300">
-          {row.original.debit > 0 ? formatMoney(row.original.debit) : '—'}
+        <span className="font-mono text-xs sm:text-sm font-bold text-sky-700 dark:text-sky-300">
+          {row.original.debit > 0 ? formatMoney(row.original.debit) : <span className="text-slate-300 dark:text-slate-600">—</span>}
         </span>
-      )
+      ),
     },
     {
       accessorKey: 'credit',
-      header: `${t('Credit (CR)')} (${selectedCurrency})`,
+      header: `Credit (CR) · ${selectedCurrency}`,
       cell: ({ row }) => (
-        <span className="font-mono text-xs sm:text-sm font-bold text-indigo-300">
-          {row.original.credit > 0 ? formatMoney(row.original.credit) : '—'}
+        <span className="font-mono text-xs sm:text-sm font-bold text-indigo-700 dark:text-indigo-300">
+          {row.original.credit > 0 ? formatMoney(row.original.credit) : <span className="text-slate-300 dark:text-slate-600">—</span>}
         </span>
-      )
+      ),
     },
     {
       accessorKey: 'runningBalance',
-      header: `${t('Running Balance')} (${selectedCurrency})`,
+      header: `Running Balance · ${selectedCurrency}`,
       cell: ({ row }) => (
-        <span className="font-mono text-xs sm:text-sm font-black text-emerald-400 block">
+        <span className={cn(
+          'font-mono text-xs sm:text-sm font-black block',
+          row.original.runningBalance >= 0
+            ? 'text-emerald-700 dark:text-emerald-400'
+            : 'text-rose-600 dark:text-rose-400'
+        )}>
           {formatMoney(row.original.runningBalance)}
         </span>
-      )
+      ),
     },
     {
       id: 'actions',
-      header: t('Actions'),
+      header: '',
       cell: ({ row }) => (
         <button
           onClick={() => setSelectedRow(row.original)}
-          className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-all border border-slate-700 cursor-pointer"
+          className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-emerald-600 hover:text-white dark:hover:bg-emerald-600 text-slate-700 dark:text-slate-200 text-xs font-bold transition-all border border-slate-200 dark:border-slate-700 cursor-pointer"
         >
-          <Eye className="w-3.5 h-3.5 text-sky-400" />
-          <span>{t('Drill-Down')}</span>
+          <Eye className="w-3.5 h-3.5" />
+          <span>Drill-Down</span>
         </button>
-      )
-    }
-  ], [locale, selectedCurrency, formatMoney, t]);
+      ),
+    },
+  ], [selectedCurrency, formatMoney]);
 
+  // ── Export CSV ─────────────────────────────────────────────────────────────
   const handleExportCSV = () => {
     if (filteredRows.length === 0) {
-      toast.info(t('No ledger postings to export.'));
+      toast.info('No ledger postings to export.');
       return;
     }
     const exportData = filteredRows.map(r => ({
-      [t('Posting Date')]: r.postingDate,
-      [t('Voucher #')]: r.journalNumber,
-      [t('Account Code')]: r.accountCode,
-      [t('Account Name')]: r.accountName,
-      [t('Transaction Memo')]: r.memo,
-      [t('Reference')]: r.referenceNumber,
-      [`${t('Debit')} (${selectedCurrency})`]: (r.debit * activeCurrencyRate).toFixed(2),
-      [`${t('Credit')} (${selectedCurrency})`]: (r.credit * activeCurrencyRate).toFixed(2),
-      [`${t('Running Balance')} (${selectedCurrency})`]: (r.runningBalance * activeCurrencyRate).toFixed(2)
+      'Posting Date': r.postingDate,
+      'Voucher #': r.journalNumber,
+      'Account Code': r.accountCode,
+      'Account Name': r.accountName,
+      'Transaction Memo': r.memo,
+      'Reference': r.referenceNumber,
+      [`Debit (${selectedCurrency})`]: (r.debit * activeCurrencyRate).toFixed(2),
+      [`Credit (${selectedCurrency})`]: (r.credit * activeCurrencyRate).toFixed(2),
+      [`Running Balance (${selectedCurrency})`]: (r.runningBalance * activeCurrencyRate).toFixed(2),
     }));
     financeService.exportToCSV(exportData, `GeneralLedger_${selectedCode}_${selectedCurrency}_${new Date().toISOString().split('T')[0]}.csv`);
-    toast.success(t('General Ledger CSV exported successfully.'));
+    toast.success('General Ledger CSV exported successfully.');
   };
 
-  const activeFiltersCount = [
-    !!query,
-    !!dateFrom,
-    !!dateTo,
-    accountCategoryFilter !== 'all'
-  ].filter(Boolean).length;
+  const activeFiltersCount = [!!query, !!dateFrom, !!dateTo, accountCategoryFilter !== 'all'].filter(Boolean).length;
+  const clearFilters = () => { setQuery(''); setDateFrom(''); setDateTo(''); setAccountCategoryFilter('all'); };
 
-  const clearFilters = () => {
-    setQuery('');
-    setDateFrom('');
-    setDateTo('');
-    setAccountCategoryFilter('all');
-  };
-
+  // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <EnterpriseModuleShell
-      title={t('General Ledger Drill-Down & Account Card')}
-      description={t('Full SAP-grade double-entry transaction trail with cumulative running balance calculations per Chart of Accounts classification and real-time multi-currency conversion.')}
-      breadcrumbs={[{ label: t('Finance ERP'), href: '/finance' }, { label: t('Accounting Engine') }, { label: t('General Ledger') }]}
-      icon={<FolderOpen className="w-8 h-8 text-sky-400" />}
+      title="General Ledger Drill-Down"
+      description="Full double-entry transaction trail with cumulative running balance per Chart of Accounts account and real-time multi-currency conversion."
+      breadcrumbs={[
+        { label: 'Finance ERP', href: '/finance' },
+        { label: 'Accounting' },
+        { label: 'General Ledger' },
+      ]}
+      icon={<FolderOpen className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />}
       recordCount={filteredRows.length}
-      recordLabel={t('Postings')}
+      recordLabel="Postings"
       activeFilterCount={activeFiltersCount}
       onClearFilters={clearFilters}
       headerActions={
         <div className="flex items-center gap-2 flex-wrap">
-          {/* Multi-Currency Dropdown Selector */}
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs shadow-sm">
-            <Coins className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-            <span className="text-[11px] font-bold text-slate-400 uppercase">{t('Currency')}:</span>
+          {/* Currency Selector */}
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs shadow-sm">
+            <Coins className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase">Currency:</span>
             <select
               value={selectedCurrency}
               onChange={(e) => handleCurrencyChange(e.target.value)}
-              className="bg-transparent text-xs font-black text-white focus:outline-none cursor-pointer font-mono"
+              className="bg-transparent text-xs font-black text-slate-900 dark:text-white focus:outline-none cursor-pointer font-mono"
               aria-label="Select General Ledger Currency"
             >
-              {currencies.length > 0 ? (
-                currencies.map(c => (
-                  <option key={c.id || c.currencyCode} value={c.currencyCode || (c as any).isoCode} className="bg-slate-900 text-white">
-                    {c.currencyCode || (c as any).isoCode} ({c.symbol || '$'}) {c.isBase ? `• ${t('Base')}` : ''}
-                  </option>
-                ))
-              ) : (
-                <>
-                  <option value="USD" className="bg-slate-900 text-white">USD ($)</option>
-                  <option value="EUR" className="bg-slate-900 text-white">EUR (€)</option>
-                  <option value="TRY" className="bg-slate-900 text-white">TRY (₺)</option>
-                  <option value="XOF" className="bg-slate-900 text-white">XOF (CFA)</option>
-                  <option value="GNF" className="bg-slate-900 text-white">GNF (FG)</option>
-                  <option value="GBP" className="bg-slate-900 text-white">GBP (£)</option>
-                  <option value="SAR" className="bg-slate-900 text-white">SAR (﷼)</option>
-                </>
-              )}
+              {currencies.map(c => (
+                <option key={c.id || c.currencyCode} value={c.currencyCode || (c as any).isoCode} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
+                  {c.currencyCode || (c as any).isoCode} ({c.symbol || '$'}) {c.isBase ? '• Base' : ''}
+                </option>
+              ))}
             </select>
           </div>
 
-          {/* Account Selector Dropdown */}
-          <select
-            value={selectedCode}
-            onChange={(e) => setSelectedCode(e.target.value)}
-            className="px-3.5 py-2 rounded-xl bg-slate-900 border border-emerald-500/40 text-white font-mono font-bold text-xs focus:outline-none focus:border-emerald-500 cursor-pointer shadow-sm"
-          >
-            {filteredCoa.map(a => (
-              <option key={a.accountCode} value={a.accountCode} className="bg-slate-900 text-white">
-                {a.accountCode} — {a.accountName} ({t(a.accountType)})
-              </option>
-            ))}
-          </select>
+          {/* Account Selector */}
+          <div className="relative">
+            <select
+              value={selectedCode}
+              onChange={(e) => setSelectedCode(e.target.value)}
+              className="appearance-none pl-3.5 pr-8 py-2 rounded-xl bg-white dark:bg-slate-900 border border-emerald-400 dark:border-emerald-600 text-slate-900 dark:text-white font-mono font-bold text-xs focus:outline-none focus:border-emerald-500 cursor-pointer shadow-sm"
+            >
+              {filteredCoa.map(a => (
+                <option key={a.accountCode} value={a.accountCode} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
+                  {a.accountCode} — {a.accountName} ({a.accountType})
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+          </div>
 
           <button
             onClick={handleExportCSV}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white text-xs font-bold transition-all shadow-sm cursor-pointer"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-white text-xs font-bold transition-all shadow-sm cursor-pointer"
           >
-            <Download className="w-4 h-4 text-emerald-400" />
-            <span>{t('Export GL CSV')}</span>
+            <Download className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            <span>Export GL CSV</span>
           </button>
         </div>
       }
     >
+      {/* Warnings */}
+      {usingDefaultCoa && (
+        <div className="flex items-start gap-3 p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 text-sm">
+          <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+          <div>
+            <span className="font-bold text-amber-800 dark:text-amber-200">Using default Chart of Accounts.</span>
+            <span className="text-amber-700 dark:text-amber-300 ml-1">Configure your accounts in Strapi under <strong>finance-accounts</strong> to see live balances. Ensure the collection is set to Public in Strapi Roles & Permissions.</span>
+          </div>
+        </div>
+      )}
+      {loadError && (
+        <div className="flex items-start justify-between gap-3 p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-800">
+          <div className="flex items-start gap-2">
+            <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 mt-0.5 shrink-0" />
+            <span className="text-sm text-rose-700 dark:text-rose-300">{loadError}</span>
+          </div>
+          <button onClick={() => setLoadError(null)} className="shrink-0 text-rose-400 hover:text-rose-600 transition-colors">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       <EnterpriseKPIDeck cards={kpiCards} />
 
-      {/* Domain Sub-Navigation */}
-      <div className="flex flex-wrap items-center gap-2 pb-2 border-b border-slate-800">
-        <Link href="/finance/accounting/chart" className="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white font-bold text-xs transition-all flex items-center gap-1.5">
-          <Scale className="w-3.5 h-3.5 text-emerald-400" />
-          <span>{t('Chart of Accounts (16 GL)')}</span>
-        </Link>
-        <Link href="/finance/accounting/journals" className="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white font-bold text-xs transition-all flex items-center gap-1.5">
-          <FileText className="w-3.5 h-3.5 text-indigo-400" />
-          <span>{t('Manual Journal Entries')}</span>
-        </Link>
-        <Link href="/finance/accounting/ledger" className="px-3.5 py-1.5 rounded-xl bg-emerald-600 text-white font-black text-xs shadow-md flex items-center gap-1.5">
-          <FolderOpen className="w-3.5 h-3.5" />
-          <span>{t('General Ledger')}</span>
-        </Link>
-        <Link href="/finance/accounting/trial-balance" className="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white font-bold text-xs transition-all flex items-center gap-1.5">
-          <Scale className="w-3.5 h-3.5 text-sky-400" />
-          <span>{t('Trial Balance Equilibrium')}</span>
-        </Link>
+      {/* Sub-Navigation */}
+      <div className="flex flex-wrap items-center gap-2 pb-2 border-b border-slate-200 dark:border-slate-800">
+        {[
+          { href: '/finance/accounting/chart', label: 'Chart of Accounts', active: false },
+          { href: '/finance/accounting/journals', label: 'Journal Entries', active: false },
+          { href: '/finance/accounting/ledger', label: 'General Ledger', active: true },
+          { href: '/finance/accounting/trial-balance', label: 'Trial Balance', active: false },
+        ].map(({ href, label, active }) => (
+          <Link
+            key={href}
+            href={href}
+            className={cn(
+              'px-3.5 py-1.5 rounded-xl font-bold text-xs transition-all',
+              active
+                ? 'bg-emerald-600 text-white shadow-md'
+                : 'bg-slate-50 hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300'
+            )}
+          >
+            {label}
+          </Link>
+        ))}
       </div>
 
-      {/* Filter Control Bar */}
-      <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-3 shadow-sm flex flex-wrap items-center justify-between gap-3">
+      {/* Account Category Filter */}
+      <div className="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl p-3 shadow-sm flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-[11px] font-bold text-slate-400 uppercase">{t('Account Category')}:</span>
+          <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase">Account Category:</span>
           {['all', 'Asset', 'Liability', 'Equity', 'Revenue', 'Expense'].map(cat => (
             <button
               key={cat}
               onClick={() => setAccountCategoryFilter(cat)}
               className={cn(
-                'px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer',
+                'px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer border',
                 accountCategoryFilter === cat
-                  ? 'bg-emerald-600 text-white shadow-sm'
-                  : 'bg-slate-950 border border-slate-800 text-slate-400 hover:text-white'
+                  ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                  : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-emerald-400'
               )}
             >
-              {cat === 'all' ? t('All Accounts') : t(cat)}
+              {cat === 'all' ? 'All Accounts' : cat}
             </button>
           ))}
         </div>
 
+        {/* Date Range */}
         <div className="flex items-center gap-3 flex-wrap">
           <div className="flex items-center gap-1.5">
-            <span className="text-[10px] font-bold text-slate-400 uppercase">{t('From')}:</span>
+            <span className="text-[10px] font-bold text-slate-400 uppercase">From:</span>
             <input
               type="date"
               value={dateFrom}
               onChange={e => setDateFrom(e.target.value)}
-              className="px-2 py-1 rounded-lg bg-slate-950 border border-slate-800 text-white text-xs font-mono focus:outline-none focus:border-emerald-500"
+              className="px-2 py-1 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-xs font-mono focus:outline-none focus:border-emerald-500"
             />
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="text-[10px] font-bold text-slate-400 uppercase">{t('To')}:</span>
+            <span className="text-[10px] font-bold text-slate-400 uppercase">To:</span>
             <input
               type="date"
               value={dateTo}
               onChange={e => setDateTo(e.target.value)}
-              className="px-2 py-1 rounded-lg bg-slate-950 border border-slate-800 text-white text-xs font-mono focus:outline-none focus:border-emerald-500"
+              className="px-2 py-1 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-xs font-mono focus:outline-none focus:border-emerald-500"
             />
           </div>
           {activeFiltersCount > 0 && (
             <button
               onClick={clearFilters}
-              className="px-2.5 py-1 rounded-lg bg-rose-950/40 border border-rose-800 text-rose-300 text-xs font-bold hover:bg-rose-900/60 transition-all cursor-pointer"
+              className="px-2.5 py-1 rounded-lg bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800 text-rose-600 dark:text-rose-400 text-xs font-bold hover:bg-rose-100 transition-all cursor-pointer"
             >
-              {t('Clear Filters')}
+              Clear Filters ({activeFiltersCount})
             </button>
           )}
         </div>
@@ -543,46 +577,86 @@ export default function GeneralLedgerDrillDownPage() {
       <EnterpriseToolbar
         searchQuery={query}
         onSearchChange={setQuery}
-        searchPlaceholder={t('Search ledger postings by journal voucher #, memo, or narrative...')}
+        searchPlaceholder="Search ledger postings by voucher #, memo, or reference…"
         density={density}
         onDensityChange={setDensity}
-        onRefresh={() => {
-          loadData();
-          toast.success(t('General Ledger refreshed'));
-        }}
+        onRefresh={() => { loadData(); toast.success('General Ledger refreshed.'); }}
         activeFilterCount={activeFiltersCount}
         onResetFilters={clearFilters}
       />
+
+      {/* Account Summary Banner */}
+      {currentAccount && (
+        <div className="flex flex-wrap items-center justify-between gap-4 p-4 rounded-2xl bg-gradient-to-r from-emerald-50 to-sky-50 dark:from-emerald-950/20 dark:to-sky-950/20 border border-emerald-200 dark:border-emerald-800">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">{currentAccount.accountType}</span>
+              <span className="px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 text-[10px] font-black border border-emerald-200 dark:border-emerald-700">
+                #{currentAccount.accountCode}
+              </span>
+            </div>
+            <h3 className="text-lg font-black text-slate-900 dark:text-white">{currentAccount.accountName}</h3>
+            {currentAccount.description && (
+              <p className="text-xs text-slate-500 dark:text-slate-400">{currentAccount.description}</p>
+            )}
+          </div>
+          <div className="flex items-center gap-6">
+            <div className="text-right">
+              <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">Total Debits</p>
+              <p className="text-base font-black text-sky-700 dark:text-sky-300 font-mono">{formatMoney(totalDebits)}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">Total Credits</p>
+              <p className="text-base font-black text-indigo-700 dark:text-indigo-300 font-mono">{formatMoney(totalCredits)}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">Net Balance</p>
+              <p className={cn(
+                'text-xl font-black font-mono',
+                currentNetBalance >= 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
+              )}>
+                {formatMoney(currentNetBalance)}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <EnterpriseDataGrid
         data={filteredRows}
         columns={columns}
         isLoading={loading}
         density={density}
+        maxHeight={570}
+        pageSize={50}
         onRowInspect={(row) => setSelectedRow(row)}
         onRowClick={(row) => setSelectedRow(row)}
         emptyStateProps={{
-          title: `${t('No Transactions on Account')} ${selectedCode}`,
-          description: `${t('No journal entries have been posted to')} ${currentAccount?.accountName || t('this account')}.`,
+          title: journals.length === 0
+            ? 'No Journal Entries in Strapi'
+            : `No Transactions on Account ${selectedCode}`,
+          description: journals.length === 0
+            ? 'Post journal entries in Strapi under the finance-journal-entries collection to see them here. Ensure the collection has Public read access in Strapi Roles & Permissions.'
+            : `No journal entries have been posted to ${currentAccount?.accountName || 'this account'}.`,
           isFilterActive: activeFiltersCount > 0,
-          onResetFilters: clearFilters
+          onResetFilters: clearFilters,
         }}
       />
 
-      {/* Slide-Out Drilldown Inspection Drawer */}
+      {/* Slide-Out Drill-Down Drawer */}
       <SlideOutDrawer
         isOpen={!!selectedRow}
         onClose={() => setSelectedRow(null)}
         record={selectedRow ? {
           name: `${selectedRow.journalNumber} — ${selectedRow.accountName}`,
           id: String(selectedRow.id),
-          role: `${t('GL Account')}: ${selectedRow.accountCode} (${t(currentAccount?.accountType || 'Asset')})`,
+          role: `GL Account: ${selectedRow.accountCode} (${currentAccount?.accountType || 'Asset'})`,
           status: 'posted',
-          email: `${t('Posting Date')}: ${selectedRow.postingDate} | ${t('Ref')}: ${selectedRow.referenceNumber}`,
-          phone: `${t('Transaction Narrative')}: ${selectedRow.memo}`,
-          department: `${t('Debit')}: ${formatMoney(selectedRow.debit)} | ${t('Credit')}: ${formatMoney(selectedRow.credit)}`,
+          email: `Posting Date: ${selectedRow.postingDate} | Ref: ${selectedRow.referenceNumber}`,
+          phone: `Narrative: ${selectedRow.memo}`,
+          department: `Debit: ${formatMoney(selectedRow.debit)} | Credit: ${formatMoney(selectedRow.credit)}`,
           joinDate: selectedRow.postingDate,
-          balance: `${t('Cumulative Running Balance')}: ${formatMoney(selectedRow.runningBalance)}`
+          balance: `Running Balance: ${formatMoney(selectedRow.runningBalance)}`,
         } : null}
         category="finance"
       />

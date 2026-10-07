@@ -537,9 +537,9 @@ const [payrolls, setPayrolls] = useState<PayrollRun[]>([]);
         <div className="flex items-center gap-2">
           <Link
             href="/finance/payroll/approvals"
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white text-xs font-bold transition-all shadow-sm cursor-pointer"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold transition-all shadow-sm cursor-pointer"
           >
-            <ShieldCheck className="w-4 h-4 text-emerald-400" />
+            <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
             <span>{t('Approval Pipeline')}</span>
           </Link>
           <button
@@ -555,18 +555,18 @@ const [payrolls, setPayrolls] = useState<PayrollRun[]>([]);
       <EnterpriseKPIDeck cards={kpiCards} />
 
       {/* Sub-navigation */}
-      <div className="flex flex-wrap items-center gap-2 pb-2 border-b border-slate-800">
+      <div className="flex flex-wrap items-center gap-2 pb-2 border-b border-slate-200 dark:border-slate-800">
         <Link href="/finance/payroll" className="px-3.5 py-1.5 rounded-xl bg-emerald-600 text-white font-black text-xs shadow-md flex items-center gap-1.5">
           <Users className="w-3.5 h-3.5" /><span>{t('Staff Payroll Runs')}</span>
         </Link>
-        <Link href="/finance/payroll/approvals" className="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white font-bold text-xs transition-all flex items-center gap-1.5">
-          <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" /><span>{t('Approval Pipeline')}</span>
+        <Link href="/finance/payroll/approvals" className="px-3.5 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white font-bold text-xs transition-all flex items-center gap-1.5">
+          <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" /><span>{t('Approval Pipeline')}</span>
         </Link>
-        <Link href="/finance/expenses" className="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white font-bold text-xs transition-all flex items-center gap-1.5">
-          <Receipt className="w-3.5 h-3.5 text-amber-400" /><span>{t('Operating Expenses')}</span>
+        <Link href="/finance/expenses" className="px-3.5 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white font-bold text-xs transition-all flex items-center gap-1.5">
+          <Receipt className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" /><span>{t('Operating Expenses')}</span>
         </Link>
-        <Link href="/finance/budget" className="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white font-bold text-xs transition-all flex items-center gap-1.5">
-          <Building2 className="w-3.5 h-3.5 text-sky-400" /><span>{t('Budget vs Actual')}</span>
+        <Link href="/finance/budget" className="px-3.5 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white font-bold text-xs transition-all flex items-center gap-1.5">
+          <Building2 className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" /><span>{t('Budget vs Actual')}</span>
         </Link>
       </div>
 
@@ -612,6 +612,8 @@ const [payrolls, setPayrolls] = useState<PayrollRun[]>([]);
         columns={columns}
         isLoading={loading}
         density={density}
+        maxHeight={570}
+        pageSize={50}
         onRowInspect={row => setSelectedPayroll(row)}
         onRowClick={row => setSelectedPayroll(row)}
         emptyStateProps={{
