@@ -99,8 +99,8 @@ const [campaigns, setCampaigns] = useState<CampaignSummary[]>([]);
       header: t('Campaign Destination & Fund Title'),
       cell: ({ row }) => (
         <div className="space-y-0.5">
-          <span className="font-bold text-white text-xs sm:text-sm block">{row.original.name}</span>
-          <span className="text-[11px] font-mono text-slate-400">ID: {row.original.id} • {row.original.donorsCount} {t('benefactors')}</span>
+          <span className="font-bold text-slate-900 dark:text-white text-xs sm:text-sm block">{row.original.name}</span>
+          <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400">ID: {row.original.id} • {row.original.donorsCount} {t('benefactors')}</span>
         </div>
       )
     },
@@ -113,10 +113,10 @@ const [campaigns, setCampaigns] = useState<CampaignSummary[]>([]);
         return (
           <div className="space-y-1.5 w-full max-w-xs">
             <div className="flex justify-between items-center text-[11px] font-mono">
-              <span className="text-emerald-400 font-bold">${c.raisedAmount.toLocaleString()} {t('raised')}</span>
-              <span className="text-slate-300 font-black">{t('Goal')}: ${c.targetAmount.toLocaleString()}</span>
+              <span className="text-emerald-600 dark:text-emerald-400 font-bold">${c.raisedAmount.toLocaleString()} {t('raised')}</span>
+              <span className="text-slate-700 dark:text-slate-300 font-black">{t('Goal')}: ${c.targetAmount.toLocaleString()}</span>
             </div>
-            <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden border border-slate-700">
+            <div className="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-2 overflow-hidden border border-slate-300 dark:border-slate-700">
               <div
                 className={`h-full transition-all rounded-full ${
                   pct >= 100 ? 'bg-gradient-to-r from-emerald-600 to-emerald-400' : 'bg-gradient-to-r from-sky-600 to-emerald-400'
@@ -139,7 +139,7 @@ const [campaigns, setCampaigns] = useState<CampaignSummary[]>([]);
       cell: ({ row }) => (
         <button
           onClick={() => toast.info(`${t('Inspecting endowment ledger for')} ${row.original.name}`)}
-          className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-emerald-600 text-slate-300 hover:text-white font-bold text-xs border border-slate-700 transition-all cursor-pointer"
+          className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-emerald-600 hover:text-white text-slate-700 dark:text-slate-300 font-bold text-xs border border-slate-200 dark:border-slate-700 transition-all cursor-pointer"
         >
           {t('Inspect Ledger →')}
         </button>
@@ -152,7 +152,7 @@ const [campaigns, setCampaigns] = useState<CampaignSummary[]>([]);
       title={t('Endowment Campaigns & Fundraising Target Control')}
       description={t('Monitor institutional capital drives, track construction fund milestones, and oversee student Waqf sponsorship targets.')}
       breadcrumbs={[{ label: t('Finance ERP'), href: '/finance' }, { label: t('Donations & Audit') }, { label: t('Donation Campaigns') }]}
-      icon={<Heart className="w-8 h-8 text-rose-400" />}
+      icon={<Heart className="w-8 h-8 text-rose-500 dark:text-rose-400" />}
       recordCount={campaigns.length}
       recordLabel={t('Campaigns')}
       activeFilterCount={0}
@@ -160,7 +160,7 @@ const [campaigns, setCampaigns] = useState<CampaignSummary[]>([]);
       headerActions={
         <Link
           href="/finance/donations"
-          className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white text-xs font-bold transition-all shadow-sm cursor-pointer"
+          className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-white text-xs font-bold transition-all shadow-sm cursor-pointer"
         >
           <span>← {t('Back to Donations Console')}</span>
         </Link>

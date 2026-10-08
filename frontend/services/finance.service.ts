@@ -63,6 +63,79 @@ export const STANDARD_COA: ChartOfAccount[] = [
   { id: '5060', accountCode: '5060', accountName: 'Hostel Operations & Maintenance', accountType: 'Expense', isControlAccount: false, isActive: true, currentBalance: 0, currency: 'USD', description: 'Hostel bedding, dormitory repairs, and custodial operations' },
 ];
 
+export function isDonationReceipt(r: any): boolean {
+  if (!r) return false;
+  const num = String(r.receiptNumber || '').toUpperCase();
+  const method = String(r.paymentMethod || '').toLowerCase();
+  const type = String(r.paymentType || r.type || '').toLowerCase();
+  const notes = String(r.notes || '').toLowerCase();
+  const meta = r.paymentMetadata || {};
+  return (
+    meta.isDonation === true ||
+    meta.donationType !== undefined ||
+    num.startsWith('DON-') ||
+    type.includes('donation') ||
+    type.includes('waqf') ||
+    method.includes('donation') ||
+    notes.includes('donation') ||
+    notes.includes('waqf')
+  );
+}
+
+export function isHostelReceipt(r: any): boolean {
+  if (!r) return false;
+  const num = String(r.receiptNumber || '').toUpperCase();
+  const type = String(r.paymentType || r.type || '').toLowerCase();
+  const notes = String(r.notes || '').toLowerCase();
+  return (
+    num.startsWith('HST-') ||
+    type.includes('hostel') ||
+    type.includes('boarding') ||
+    type.includes('accommodation') ||
+    notes.includes('hostel') ||
+    notes.includes('dormitory')
+  );
+}
+
+export function isLibraryReceipt(r: any): boolean {
+  if (!r) return false;
+  const num = String(r.receiptNumber || '').toUpperCase();
+  const type = String(r.paymentType || r.type || '').toLowerCase();
+  const notes = String(r.notes || '').toLowerCase();
+  return (
+    num.startsWith('LIB-') ||
+    type.includes('library') ||
+    type.includes('fine') ||
+    notes.includes('library')
+  );
+}
+
+export function isLibraryInvoice(inv: any): boolean {
+  if (!inv) return false;
+  const num = String(inv.invoiceNumber || '').toUpperCase();
+  const notes = String(inv.notes || '').toLowerCase();
+  const items = Array.isArray(inv.items) ? inv.items : [];
+  const hasLibItem = items.some((item: any) => {
+    const cat = String(item.category || '').toLowerCase();
+    const desc = String(item.description || '').toLowerCase();
+    return (cat.includes('library') || desc.includes('library') || desc.includes('fine')) && Number(item.unitAmount || item.totalAmount || 0) > 0;
+  });
+  return num.startsWith('LIB-') || notes.includes('library') || notes.includes('overdue') || hasLibItem;
+}
+
+export function isHostelInvoice(inv: any): boolean {
+  if (!inv) return false;
+  const num = String(inv.invoiceNumber || '').toUpperCase();
+  const notes = String(inv.notes || '').toLowerCase();
+  const items = Array.isArray(inv.items) ? inv.items : [];
+  const hasHostelItem = items.some((item: any) => {
+    const cat = String(item.category || '').toLowerCase();
+    const desc = String(item.description || '').toLowerCase();
+    return (cat.includes('hostel') || cat.includes('boarding') || desc.includes('hostel') || desc.includes('boarding')) && Number(item.unitAmount || item.totalAmount || 0) > 0;
+  });
+  return num.startsWith('HST-') || notes.includes('hostel') || notes.includes('boarding') || notes.includes('dormitory') || hasHostelItem;
+}
+
 export const financeService = {
   // ─── 1. Dashboard & Core Analytics ──────────────────────────────────────────
   async getExecutiveStats(academicYearCode = '2026-2027'): Promise<ExecutiveFinanceStats> {
@@ -113,17 +186,14 @@ export const financeService = {
     receipts.forEach((r: any) => {
       const amt = Number(r.paymentAmount || r.amount || 0);
       const method = (r.paymentMethod || '').toLowerCase();
-      const type = (r.paymentType || r.type || '').toLowerCase();
 
-      if (type.includes('waqf') || type.includes('donation')) {
+      if (isDonationReceipt(r)) {
         waqfDonations += amt;
-      } else if (type.includes('library') || type.includes('fine')) {
+      } else if (isLibraryReceipt(r)) {
         libraryFinesSum += amt;
         auxiliaryRevenue += amt;
-      } else if (type.includes('hostel') || type.includes('boarding') || type.includes('accommodation')) {
+      } else if (isHostelReceipt(r)) {
         hostelRevenueSum += amt;
-      } else if (type.includes('auxiliary') || type.includes('cafeteria') || type.includes('transport')) {
-        auxiliaryRevenue += amt;
       } else {
         tuitionSum += amt;
       }
@@ -229,16 +299,20 @@ export const financeService = {
 
     receipts.forEach((r: any) => {
       const amt = Number(r.paymentAmount || r.amount || 0);
-      const type = (r.paymentType || r.type || '').toLowerCase();
+      const isDonation = isDonationReceipt(r);
+      const isHostel = isHostelReceipt(r);
+      const isLib = isLibraryReceipt(r);
+
       let txTitle = `Tuition Fee Settlement - ${r.studentName || 'Student Scholar'}`;
       let txType = 'Tuition Receipt';
-      if (type.includes('waqf') || type.includes('donation')) {
-        txTitle = `Philanthropic Waqf Donation - ${r.studentName || 'Benefactor'}`;
+      if (isDonation) {
+        const donorName = r.paymentMetadata?.donorName || r.cashierName || r.studentName || 'Benefactor';
+        txTitle = `Philanthropic Waqf Donation - ${donorName}`;
         txType = 'Waqf Donation';
-      } else if (type.includes('hostel') || type.includes('boarding')) {
+      } else if (isHostel) {
         txTitle = `Hostel Accommodation Fee - ${r.studentName || 'Student'}`;
         txType = 'Hostel Receipt';
-      } else if (type.includes('library') || type.includes('fine')) {
+      } else if (isLib) {
         txTitle = `Library Auxiliary Receipt - ${r.studentName || 'Student'}`;
         txType = 'Library Fine';
       }
@@ -519,24 +593,36 @@ export const financeService = {
     const raw = await safeGetArray('/finance-receipts?populate[student][populate][0]=parents&populate[invoice]=true&sort=createdAt:desc');
     return raw.map((r: any) => {
       const amt = Number(r.paymentAmount || r.amount || 0);
+      const isDonation = isDonationReceipt(r);
+      const isHostel = isHostelReceipt(r);
+      const isLib = isLibraryReceipt(r);
+
       const hasNewAllocations = Number(r.invoiceAllocation) > 0 || Number(r.walletAllocation) > 0 || Number(r.walletCreditGenerated) > 0;
       const isLinkedToInvoice = !!(r.invoice || r.invoiceNumber);
+
+      const resolvedPaymentType = isDonation ? 'donation' : isHostel ? 'hostel' : isLib ? 'library' : (r.paymentType || r.type || 'tuition');
+      const resolvedStudentName = isDonation
+        ? (r.paymentMetadata?.donorName || r.cashierName || r.studentName || 'Waqf Benefactor')
+        : (r.student
+            ? `${r.student.firstName || ''} ${r.student.lastName || ''}`.trim() || r.student.name || r.studentName || 'Student'
+            : r.studentName || 'Student');
 
       return {
         ...r,
         amount: amt,
-        invoiceAllocation: hasNewAllocations ? Number(r.invoiceAllocation) : (isLinkedToInvoice ? amt : 0),
+        paymentType: resolvedPaymentType,
+        invoiceAllocation: isDonation ? 0 : (hasNewAllocations ? Number(r.invoiceAllocation) : (isLinkedToInvoice ? amt : 0)),
         walletAllocation: Number(r.walletAllocation || r.paymentMetadata?.walletAmount || 0),
         cashAllocation: Number(r.cashAllocation || r.paymentMetadata?.cashAmount || 0),
         walletCreditGenerated: Number(r.walletCreditGenerated || r.paymentMetadata?.overpayment || 0),
         remainingStudentBalance: Number(r.remainingStudentBalance || 0),
-        invoiceNumber: r.invoice?.invoiceNumber || r.invoiceNumber || 'INV-GENERAL',
-        studentName: r.student
-          ? `${r.student.firstName || ''} ${r.student.lastName || ''}`.trim() || r.student.name || r.studentName || 'Student'
-          : r.studentName || 'Student',
-        parentName: r.student?.parents?.[0]
-          ? `${r.student.parents[0].firstName || ''} ${r.student.parents[0].lastName || ''}`.trim() || r.student.parents[0].name
-          : r.parentName || 'Registered Parent Profile',
+        invoiceNumber: isDonation ? 'DONATION' : (r.invoice?.invoiceNumber || r.invoiceNumber || 'INV-GENERAL'),
+        studentName: resolvedStudentName,
+        parentName: isDonation
+          ? 'N/A (Philanthropic Donor)'
+          : (r.student?.parents?.[0]
+              ? `${r.student.parents[0].firstName || ''} ${r.student.parents[0].lastName || ''}`.trim() || r.student.parents[0].name
+              : r.parentName || 'Registered Parent Profile'),
         cashierName: r.cashierName || 'Cashier Desk'
       };
     }) as PaymentReceipt[];
@@ -635,14 +721,13 @@ export const financeService = {
     receipts.forEach((r: any) => {
       const amt = Number(r.paymentAmount || r.amount || 0);
       const method = (r.paymentMethod || '').toLowerCase();
-      const type = (r.paymentType || r.type || '').toLowerCase();
 
-      if (type.includes('waqf') || type.includes('donation')) {
+      if (isDonationReceipt(r)) {
         waqfDonations += amt;
-      } else if (type.includes('library') || type.includes('fine') || type.includes('auxiliary') || type.includes('cafeteria')) {
-        auxiliaryRevenue += amt;
-      } else if (type.includes('hostel') || type.includes('boarding')) {
-        // counted in hostel
+      } else if (isLibraryReceipt(r)) {
+        if (!r.invoice) auxiliaryRevenue += amt;
+      } else if (isHostelReceipt(r)) {
+        // counted in hostel revenue below if not linked
       } else {
         tuitionReceiptsSum += amt;
       }
@@ -687,16 +772,27 @@ export const financeService = {
       hostelExpendituresSum += Number(ht.cost || 0);
     });
 
-    // 5. Calculate Outstanding Accounts Receivable (GL 1100) and Invoiced Tuition Revenue (GL 4010)
+    // 5. Calculate Outstanding Accounts Receivable (GL 1100) and Invoiced Revenues (GL 4010, 4030, 4040)
     let arSum = 0;
     let invoicedTuitionTotal = 0;
+    let invoicedAuxiliaryTotal = 0;
+    let invoicedHostelTotal = 0;
+
     invoices.forEach((i: any) => {
       const status = (i.status || '').toLowerCase();
       if (status !== 'cancelled' && status !== 'voided') {
         const total = Number(i.totalAmount || 0);
         const paid = Number(i.paidAmount || 0);
         const remaining = Number(i.remainingBalance ?? (total - paid));
-        invoicedTuitionTotal += total;
+
+        if (isLibraryInvoice(i)) {
+          invoicedAuxiliaryTotal += total;
+        } else if (isHostelInvoice(i)) {
+          invoicedHostelTotal += total;
+        } else {
+          invoicedTuitionTotal += total;
+        }
+
         if (status !== 'paid' && remaining > 0) {
           arSum += remaining;
         }
@@ -705,6 +801,8 @@ export const financeService = {
 
     // Recognize tuition revenue from invoices if any exist, otherwise from cash receipts
     const recognizedTuition = invoicedTuitionTotal > 0 ? invoicedTuitionTotal : tuitionReceiptsSum;
+    const recognizedAuxiliary = (invoicedAuxiliaryTotal > 0 ? invoicedAuxiliaryTotal : 0) + auxiliaryRevenue;
+    const recognizedHostel = (invoicedHostelTotal > 0 ? invoicedHostelTotal : 0) + hostelRevenueSum;
 
     // 6. Fixed Property Assets (GL 1500)
     let propertyAssets = 0;
@@ -712,7 +810,7 @@ export const financeService = {
       propertyAssets += Number(fa.purchaseCost || fa.currentValue || 0);
     });
 
-    const totalRev = recognizedTuition + waqfDonations + auxiliaryRevenue + hostelRevenueSum;
+    const totalRev = recognizedTuition + waqfDonations + recognizedAuxiliary + recognizedHostel;
     const totalExp = payrollSum + utilitySum + equipmentSum + suppliesSum + maintenanceSum + otherExpSum + hostelExpendituresSum;
     const netSurplus = totalRev - totalExp;
 
@@ -731,8 +829,8 @@ export const financeService = {
       balances: {
         '4010': recognizedTuition,
         '4020': waqfDonations,
-        '4030': auxiliaryRevenue,
-        '4040': hostelRevenueSum,
+        '4030': recognizedAuxiliary,
+        '4040': recognizedHostel,
         '5010': payrollSum,
         '5020': utilitySum,
         '5030': equipmentSum,
@@ -824,19 +922,40 @@ export const financeService = {
 
     const synth: JournalEntry[] = [];
 
-    // 1. Invoices -> DR 1100 Accounts Receivable / CR 4010 Tuition Revenue
+    // 1. Invoices -> DR 1100 Accounts Receivable / CR 4010 (Tuition) or CR 4030 (Auxiliary) or CR 4040 (Hostel)
     invoices.forEach((inv: any, idx: number) => {
       const amt = Number(inv.totalAmount || inv.amount || 0);
       if (amt > 0) {
         const invNum = inv.invoiceNumber || `INV-2026-${String(inv.id || idx + 1).padStart(4, '0')}`;
         const date = inv.issueDate || (inv.createdAt ? String(inv.createdAt).split('T')[0] : '2026-09-01');
         const studentName = inv.student?.name || (inv.student ? `${inv.student.firstName || ''} ${inv.student.lastName || ''}`.trim() : '') || inv.studentName || 'Student Scholar';
+
+        const isLib = isLibraryInvoice(inv);
+        const isHst = isHostelInvoice(inv);
+
+        let creditCode = '4010';
+        let creditName = 'Tuition & Academic Revenue';
+        let memoCredit = `Earned tuition revenue recognition - ${invNum}`;
+        let title = `Tuition fee invoice recognition for ${studentName}`;
+
+        if (isLib) {
+          creditCode = '4030';
+          creditName = 'Auxiliary & Library Revenue';
+          memoCredit = `Library auxiliary revenue recognition - ${invNum}`;
+          title = `Library auxiliary fee invoice recognition for ${studentName}`;
+        } else if (isHst) {
+          creditCode = '4040';
+          creditName = 'Hostel & Boarding Revenue';
+          memoCredit = `Hostel boarding revenue recognition - ${invNum}`;
+          title = `Hostel accommodation invoice recognition for ${studentName}`;
+        }
+
         synth.push({
           id: `jrn_inv_${inv.documentId || inv.id || idx}`,
           journalNumber: `JRN-${invNum}`,
           entryNumber: `JRN-${invNum}`,
-          title: `Tuition fee invoice recognition for ${studentName}`,
-          description: `Tuition fee invoice recognition for ${studentName} (${invNum})`,
+          title,
+          description: `${title} (${invNum})`,
           postingDate: date,
           date: date,
           transactionDate: date,
@@ -858,32 +977,38 @@ export const financeService = {
               debitAmount: amt,
               credit: 0,
               creditAmount: 0,
-              memo: `Tuition fee receivable (${studentName})`
+              memo: `Fee receivable (${studentName})`
             },
             {
               id: `l2_${inv.id || idx}`,
-              accountCode: '4010',
-              accountName: 'Tuition & Academic Revenue',
+              accountCode: creditCode,
+              accountName: creditName,
               debit: 0,
               debitAmount: 0,
               credit: amt,
               creditAmount: amt,
-              memo: `Earned tuition revenue recognition - ${invNum}`
+              memo: memoCredit
             }
           ]
         });
       }
     });
 
-    // 2. Receipts -> DR 1010/1020/1030/1040 / CR 1100 (tuition) or CR 4020 (donation) or CR 4040 (hostel)
+    // 2. Receipts -> DR 1010/1020/1030/1040 / CR 1100 (receivable settlement) or CR 4020 (donation)
     receipts.forEach((rcp: any, idx: number) => {
       const amt = Number(rcp.paymentAmount || rcp.amount || 0);
       if (amt > 0) {
         const rcpNum = rcp.receiptNumber || `RCP-2026-${String(rcp.id || idx + 1).padStart(4, '0')}`;
         const date = rcp.paymentDate ? String(rcp.paymentDate).split('T')[0] : (rcp.createdAt ? String(rcp.createdAt).split('T')[0] : '2026-09-05');
-        const payer = rcp.studentName || rcp.student?.name || (rcp.student ? `${rcp.student.firstName || ''} ${rcp.student.lastName || ''}`.trim() : '') || 'Student / Donor';
         const method = (rcp.paymentMethod || 'Bank Wire').toLowerCase();
-        const type = (rcp.paymentType || rcp.type || '').toLowerCase();
+
+        const isDonation = isDonationReceipt(rcp);
+        const isHst = isHostelReceipt(rcp);
+        const isLib = isLibraryReceipt(rcp);
+
+        const payer = isDonation
+          ? (rcp.paymentMetadata?.donorName || rcp.cashierName || rcp.studentName || 'Waqf Benefactor')
+          : (rcp.studentName || rcp.student?.name || (rcp.student ? `${rcp.student.firstName || ''} ${rcp.student.lastName || ''}`.trim() : '') || 'Student / Payer');
 
         let debitCode = '1010';
         let debitName = 'Cash & Bank Desk';
@@ -904,19 +1029,19 @@ export const financeService = {
         let desc = `Tuition fee settlement via ${rcp.paymentMethod || 'Bank'} from ${payer}`;
         let srcModule = 'payment_collection';
 
-        if (type.includes('waqf') || type.includes('donation')) {
+        if (isDonation) {
           creditCode = '4020';
           creditName = 'Waqf & Philanthropic Donations';
           memoCredit = `Philanthropic endowment donation from ${payer}`;
           desc = `Waqf & Charity contribution receipt - ${payer}`;
           srcModule = 'donation_collection';
-        } else if (type.includes('hostel') || type.includes('boarding')) {
+        } else if (isHst && !rcp.invoice) {
           creditCode = '4040';
           creditName = 'Hostel & Boarding Revenue';
           memoCredit = `Boarding room fee payment for ${payer}`;
           desc = `Hostel accommodation settlement - ${payer}`;
           srcModule = 'hostel_collection';
-        } else if (type.includes('library') || type.includes('fine')) {
+        } else if (isLib && !rcp.invoice) {
           creditCode = '4030';
           creditName = 'Auxiliary & Library Revenue';
           memoCredit = `Library overdue fine fee for ${payer}`;
@@ -1674,6 +1799,8 @@ export const financeService = {
       paymentDate: new Date().toISOString(),
       status: 'completed',
       cashierName: donorTitle,
+      paymentType: 'donation',
+      type: 'donation',
       paymentMetadata: {
         isDonation: true,
         donationType: 'Waqf / Institutional Donation',

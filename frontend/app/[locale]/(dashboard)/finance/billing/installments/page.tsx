@@ -6,13 +6,10 @@ import { Link } from '@/i18n/routing';
 import {
   DollarSign, CheckCircle2, AlertTriangle,
   FileText, ArrowRight, Percent,
-  Layers, ShieldCheck
+  Layers, ShieldCheck, Clock, Split
 } from 'lucide-react';
 import { useLocale } from 'next-intl';
 import { t as i18nT } from '@/lib/i18n-dict';
-
-// module-level i18n fallback
-const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
 import { financeService } from '@/services/finance.service';
 import type { Invoice } from '@/types/finance.types';
 import { EnterpriseModuleShell } from '@/components/erp/EnterpriseModuleShell';
@@ -42,8 +39,8 @@ function fmt(n: number) {
 
 export default function InstallmentPlansPage() {
   const locale = useLocale();
-  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
-const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const t = (key: string) => i18nT(key, locale);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading]   = useState(true);
   const [query, setQuery]       = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -55,7 +52,7 @@ const [invoices, setInvoices] = useState<Invoice[]>([]);
       const data = await financeService.getInvoices();
       setInvoices(data || []);
     } catch {
-      toast.error(t('Failed to load installment plans.'));
+      toast.error('Failed to load installment plans.');
     } finally {
       setLoading(false);
     }
@@ -98,7 +95,7 @@ const [invoices, setInvoices] = useState<Invoice[]>([]);
       } else {
         // Single payment plan represented as 1 installment
         let st: any = inv.status === 'paid' ? 'paid' : (inv.status === 'partially_paid' ? 'partially_paid' : 'pending_payment');
-        if (st === 'pending_payment' && inv.dueDate && inv.dueDate < today) {
+        if (st === 'pending_payment' && inv.dueDate && inv.dueDate < today && Number(inv.remainingBalance ?? inv.totalAmount) > 0) {
           st = 'overdue';
         }
         rows.push({
@@ -109,9 +106,9 @@ const [invoices, setInvoices] = useState<Invoice[]>([]);
           admissionNumber: (inv.student as any)?.admissionNumber || inv.admissionNumber,
           installmentIndex: 1,
           totalInstallments: 1,
-          dueDate: inv.dueDate ? String(inv.dueDate).split('T')[0] : '—',
+          dueDate: inv.dueDate || '—',
           amount: Number(inv.totalAmount || 0),
-          remainingBalance: Number(inv.remainingBalance ?? 0),
+          remainingBalance: Number(inv.remainingBalance ?? (st === 'paid' ? 0 : inv.totalAmount)),
           status: st,
         });
       }
@@ -126,68 +123,63 @@ const [invoices, setInvoices] = useState<Invoice[]>([]);
       const matchQ = !query ||
         r.invoiceNumber.toLowerCase().includes(q) ||
         r.studentName.toLowerCase().includes(q) ||
-        (r.admissionNumber || '').toLowerCase().includes(q);
-      const matchSt = statusFilter === 'all' || r.status === statusFilter;
-      return matchQ && matchSt;
+        (r.admissionNumber && r.admissionNumber.toLowerCase().includes(q));
+      const matchStatus = statusFilter === 'all' || r.status === statusFilter;
+      return matchQ && matchStatus;
     });
   }, [allInstallments, query, statusFilter]);
 
-  const totalCommitted = useMemo(() => allInstallments.reduce((s, r) => s + r.amount, 0), [allInstallments]);
-  const totalCollected = useMemo(() => allInstallments.reduce((s, r) => s + (r.amount - r.remainingBalance), 0), [allInstallments]);
-  const overdueCount   = useMemo(() => allInstallments.filter(r => r.status === 'overdue').length, [allInstallments]);
-  const activePlansCount = useMemo(() => new Set(allInstallments.map(r => r.invoiceId)).size, [allInstallments]);
+  const totalAmount       = useMemo(() => allInstallments.reduce((s, r) => s + r.amount, 0), [allInstallments]);
+  const totalOutstanding  = useMemo(() => allInstallments.reduce((s, r) => s + r.remainingBalance, 0), [allInstallments]);
+  const totalOverdue      = useMemo(() => allInstallments.filter(r => r.status === 'overdue').reduce((s, r) => s + r.remainingBalance, 0), [allInstallments]);
+  const paidCount         = useMemo(() => allInstallments.filter(r => r.status === 'paid').length, [allInstallments]);
 
   const kpiCards: EnterpriseKPICard[] = [
     {
-      id: 'active_plans',
-      title: t('Active Installment Plans'),
-      value: `${activePlansCount}`,
-      subtitle: `${allInstallments.length} ${t('scheduled tranches')}`,
-      trendDirection: 'up',
-      icon: <Layers className="w-5 h-5 text-emerald-400" />
-    },
-    {
-      id: 'total_scheduled',
-      title: t('Total Scheduled Tuition'),
-      value: `$${fmt(totalCommitted)}`,
-      subtitle: t('Across all quarterly/monthly deferred plans'),
+      id: 'total_installments',
+      title: 'Total Active Installments',
+      value: `$${fmt(totalAmount)}`,
+      subtitle: `${allInstallments.length} total scheduled payment milestones`,
       trendDirection: 'neutral',
-      icon: <DollarSign className="w-5 h-5 text-sky-400" />
+      icon: <Layers className="w-5 h-5 text-sky-600 dark:text-sky-400" />,
     },
     {
-      id: 'total_collected',
-      title: t('Installments Cleared'),
-      value: `$${fmt(totalCollected)}`,
-      subtitle: `${totalCommitted > 0 ? ((totalCollected / totalCommitted) * 100).toFixed(1) : 0}% ${t('collection rate')}`,
-      trendDirection: 'up',
-      icon: <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+      id: 'total_outstanding',
+      title: 'Outstanding Installments',
+      value: `$${fmt(totalOutstanding)}`,
+      subtitle: `${allInstallments.filter(r => r.remainingBalance > 0).length} tranches pending settlement`,
+      trendDirection: totalOutstanding > 0 ? 'down' : 'up',
+      icon: <DollarSign className="w-5 h-5 text-amber-500" />,
     },
     {
       id: 'overdue_installments',
-      title: t('Overdue Milestones'),
-      value: `${overdueCount}`,
-      subtitle: overdueCount > 0 ? t('Action required on deferred tranches') : t('All payments on schedule'),
-      trendDirection: overdueCount > 0 ? 'down' : 'up',
-      icon: <AlertTriangle className={`w-5 h-5 ${overdueCount > 0 ? 'text-rose-400 animate-pulse' : 'text-slate-400'}`} />
-    }
+      title: 'Overdue Milestones',
+      value: `$${fmt(totalOverdue)}`,
+      subtitle: `${allInstallments.filter(r => r.status === 'overdue').length} tranches past due date`,
+      trendDirection: totalOverdue > 0 ? 'down' : 'up',
+      icon: <AlertTriangle className="w-5 h-5 text-rose-500 animate-pulse" />,
+    },
+    {
+      id: 'settled_installments',
+      title: 'Fully Settled Tranches',
+      value: `${paidCount} Paid`,
+      subtitle: `${allInstallments.length > 0 ? ((paidCount / allInstallments.length) * 100).toFixed(0) : 100}% tranche completion rate`,
+      trendDirection: 'up',
+      icon: <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />,
+    },
   ];
 
   const columns = useMemo<ColumnDef<InstallmentRow, any>[]>(() => [
     {
       accessorKey: 'invoiceNumber',
-      header: t('Invoice & Milestone'),
+      header: 'Invoice & Tranche Index',
       cell: ({ row }) => {
         const r = row.original;
         return (
           <div className="space-y-0.5">
-            <Link
-              href={`/finance/billing/invoices?search=${r.invoiceNumber}`}
-              className="font-mono text-xs font-black text-emerald-400 hover:underline block"
-            >
-              {r.invoiceNumber}
-            </Link>
-            <span className="text-[11px] font-bold text-slate-300">
-              {t('Tranche')} {r.installmentIndex} of {r.totalInstallments}
+            <span className="font-mono text-xs font-black text-sky-700 dark:text-sky-400 block">{r.invoiceNumber}</span>
+            <span className="text-[11px] text-slate-500 dark:text-slate-400 font-mono">
+              Tranche {r.installmentIndex} of {r.totalInstallments}
             </span>
           </div>
         );
@@ -195,14 +187,14 @@ const [invoices, setInvoices] = useState<Invoice[]>([]);
     },
     {
       accessorKey: 'studentName',
-      header: t('Student Profile'),
+      header: 'Student Scholar & Admission ID',
       cell: ({ row }) => {
         const r = row.original;
         return (
           <div className="space-y-0.5">
-            <p className="font-bold text-white text-xs">{r.studentName}</p>
+            <p className="font-bold text-slate-900 dark:text-white text-xs">{r.studentName}</p>
             {r.admissionNumber && (
-              <span className="font-mono text-[10px] text-slate-400 block">{r.admissionNumber}</span>
+              <span className="font-mono text-[10px] text-slate-400 dark:text-slate-500 block">{r.admissionNumber}</span>
             )}
           </div>
         );
@@ -210,78 +202,78 @@ const [invoices, setInvoices] = useState<Invoice[]>([]);
     },
     {
       accessorKey: 'dueDate',
-      header: t('Maturity / Due Date'),
+      header: 'Maturity / Due Date',
       cell: ({ row }) => (
-        <span className="font-mono text-xs font-bold text-slate-300 whitespace-nowrap">
+        <span className="font-mono text-xs font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap">
           {row.original.dueDate}
         </span>
       ),
     },
     {
       accessorKey: 'amount',
-      header: `${t('Tranche Amount')} ($)`,
+      header: 'Tranche Amount ($)',
       cell: ({ row }) => (
-        <span className="font-mono text-xs font-black text-white whitespace-nowrap">
+        <span className="font-mono text-xs font-black text-slate-900 dark:text-white whitespace-nowrap">
           ${fmt(row.original.amount)}
         </span>
       ),
     },
     {
       accessorKey: 'remainingBalance',
-      header: `${t('Outstanding')} ($)`,
+      header: 'Outstanding ($)',
       cell: ({ row }) => (
-        <span className={`font-mono text-xs font-black whitespace-nowrap ${row.original.remainingBalance > 0 ? 'text-amber-400' : 'text-emerald-400'}`}>
+        <span className={`font-mono text-xs font-black whitespace-nowrap ${row.original.remainingBalance > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-700 dark:text-emerald-400'}`}>
           ${fmt(row.original.remainingBalance)}
         </span>
       ),
     },
     {
       accessorKey: 'status',
-      header: t('Settlement Status'),
+      header: 'Settlement Status',
       cell: ({ row }) => <StatusBadge status={row.original.status} size="sm" />,
     },
     {
       id: 'actions',
-      header: t('Actions'),
+      header: 'Actions',
       cell: ({ row }) => (
         <Link
           href={`/finance/billing/payments?invoiceNumber=${row.original.invoiceNumber}`}
-          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-600/10 hover:bg-emerald-600 text-emerald-400 hover:text-white font-bold text-xs transition-all border border-emerald-500/20"
+          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-600 hover:text-white text-emerald-700 dark:text-emerald-300 font-bold text-xs transition-all border border-emerald-200 dark:border-emerald-800 shadow-sm"
         >
-          <span>{t('Collect')}</span>
-          <ArrowRight className="w-3 h-3" />
+          <span>Collect</span>
+          <ArrowRight className="w-3.5 h-3.5" />
         </Link>
       ),
     },
-  ], [locale]);
+  ], []);
 
   const clearFilters = () => { setStatusFilter('all'); setQuery(''); };
 
   return (
     <EnterpriseModuleShell
-      title={t('Tuition Installment Plans & Deferred Schedules')}
-      description={t('Structured 4-quarter and custom deferred tuition schedules. Automated maturity tracking with direct cashier collection workflows.')}
-      breadcrumbs={[{ label: t('Finance ERP'), href: '/finance' }, { label: t('Billing & Invoicing') }, { label: t('Installments') }]}
-      icon={<Percent className="w-8 h-8 text-emerald-400" />}
+      title="Tuition Installment Plans & Deferred Schedules"
+      description="Structured 4-quarter and custom deferred tuition schedules. Automated maturity tracking with direct cashier collection workflows."
+      breadcrumbs={[{ label: 'Finance ERP', href: '/finance' }, { label: 'Billing & Invoicing' }, { label: 'Installments' }]}
+      icon={<Percent className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />}
       recordCount={filteredInstallments.length}
-      recordLabel={t('Payment Milestones')}
+      recordLabel="Payment Milestones"
       activeFilterCount={statusFilter !== 'all' ? 1 : 0}
       onClearFilters={clearFilters}
       headerActions={
         <div className="flex items-center gap-2">
           <Link
             href="/finance/billing/invoices"
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold transition-all border border-slate-700 shadow-sm"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold transition-all shadow-sm cursor-pointer"
           >
-            <FileText className="w-4 h-4 text-sky-400" />
-            <span>{t('View Invoices')}</span>
+            <FileText className="w-4 h-4 text-sky-600 dark:text-sky-400" />
+            <span>View Invoices</span>
           </Link>
           <Link
             href="/finance/billing/payments"
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 text-white text-xs font-black shadow-lg shadow-emerald-600/30 hover:scale-[1.02] transition-all"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 text-white text-xs font-black shadow-lg shadow-emerald-600/30 hover:scale-[1.02] transition-all cursor-pointer"
           >
             <DollarSign className="w-4 h-4 stroke-[3]" />
-            <span>{t('Collect Payment')}</span>
+            <span>Collect Payment</span>
           </Link>
         </div>
       }
@@ -289,26 +281,22 @@ const [invoices, setInvoices] = useState<Invoice[]>([]);
       <EnterpriseKPIDeck cards={kpiCards} />
 
       {/* Domain Navigation Tabs */}
-      <div className="flex flex-wrap items-center gap-2 pb-2 border-b border-slate-800">
-        <Link href="/finance/billing/structures" className="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 font-bold text-xs transition-all flex items-center gap-1.5">
-          <Layers className="w-3.5 h-3.5 text-emerald-500" />
-          <span>{t('Fee Structures')}</span>
+      <div className="flex flex-wrap items-center gap-2 pb-2 border-b border-slate-200 dark:border-slate-800">
+        <Link href="/finance/billing/structures" className="px-3.5 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white font-bold text-xs transition-all flex items-center gap-1.5">
+          <Layers className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+          <span>Fee Structures</span>
         </Link>
-        <Link href="/finance/billing/invoices" className="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 font-bold text-xs transition-all flex items-center gap-1.5">
-          <FileText className="w-3.5 h-3.5 text-sky-500" />
-          <span>{t('Invoices')}</span>
+        <Link href="/finance/billing/invoices" className="px-3.5 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white font-bold text-xs transition-all flex items-center gap-1.5">
+          <FileText className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
+          <span>Invoices</span>
         </Link>
         <Link href="/finance/billing/installments" className="px-3.5 py-1.5 rounded-xl bg-emerald-600 text-white font-black text-xs shadow-md flex items-center gap-1.5">
           <Percent className="w-3.5 h-3.5" />
-          <span>{t('Installment Plans')}</span>
+          <span>Installment Plans</span>
         </Link>
-        <Link href="/finance/billing/payments" className="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 font-bold text-xs transition-all flex items-center gap-1.5">
-          <DollarSign className="w-3.5 h-3.5 text-amber-500" />
-          <span>{t('Payments & Receipts')}</span>
-        </Link>
-        <Link href="/finance/billing/statements" className="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 font-bold text-xs transition-all flex items-center gap-1.5">
-          <ShieldCheck className="w-3.5 h-3.5 text-violet-500" />
-          <span>{t('Account Statements')}</span>
+        <Link href="/finance/billing/payments" className="px-3.5 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white font-bold text-xs transition-all flex items-center gap-1.5">
+          <DollarSign className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+          <span>Payments & Receipts</span>
         </Link>
       </div>
 
@@ -321,10 +309,10 @@ const [invoices, setInvoices] = useState<Invoice[]>([]);
             className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
               statusFilter === st
                 ? 'bg-emerald-600 text-white shadow-md'
-                : 'bg-slate-900 border border-slate-800 text-slate-400 hover:text-white'
+                : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
             }`}
           >
-            {st === 'all' ? t('All Milestones') : t(st)}
+            {st === 'all' ? 'All Milestones' : st.replace('_', ' ').toUpperCase()}
           </button>
         ))}
       </div>
@@ -332,14 +320,14 @@ const [invoices, setInvoices] = useState<Invoice[]>([]);
       <EnterpriseToolbar
         searchQuery={query}
         onSearchChange={setQuery}
-        searchPlaceholder={t('Search by invoice, student name, or admission number...')}
+        searchPlaceholder="Search by invoice, student name, or admission number..."
         density={density}
         onDensityChange={setDensity}
-        onRefresh={() => { loadData(); toast.success(t('Installment plans refreshed.')); }}
+        onRefresh={() => { loadData(); toast.success('Installment plans refreshed.'); }}
         activeFilterCount={statusFilter !== 'all' ? 1 : 0}
         onResetFilters={clearFilters}
-        createButtonLabel={t('+ Create Invoice Plan')}
-        onCreate={() => toast.info(t('Generate new installment plans via Invoices > Create Invoice.'))}
+        createButtonLabel="+ Create Invoice Plan"
+        onCreate={() => toast.info('Generate new installment plans via Invoices > Create Invoice.')}
       />
 
       <EnterpriseDataGrid
@@ -347,12 +335,13 @@ const [invoices, setInvoices] = useState<Invoice[]>([]);
         columns={columns}
         isLoading={loading}
         density={density}
+        maxHeight={570}
         emptyStateProps={{
-          title: t('No Installment Plans Found'),
-          description: t('No payment plan tranches match your active search or filter parameters.'),
+          title: 'No Installment Plans Found',
+          description: 'No payment plan tranches match your active search or filter parameters.',
           isFilterActive: statusFilter !== 'all' || query.length > 0,
           onResetFilters: clearFilters,
-          createLabel: t('Generate Student Invoice'),
+          createLabel: 'Generate Student Invoice',
           onCreate: () => {},
         }}
       />

@@ -107,8 +107,8 @@ const [transactions, setTransactions] = useState<FinancialLedgerTransaction[]>([
       header: t('Voucher Ref & Module Type'),
       cell: ({ row }) => (
         <div className="space-y-0.5">
-          <span className="font-mono text-xs font-black text-emerald-400 block">{row.original.transactionId}</span>
-          <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-slate-800 text-slate-300 border border-slate-700">
+          <span className="font-mono text-xs font-black text-emerald-600 dark:text-emerald-400 block">{row.original.transactionId}</span>
+          <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
             {t(row.original.type || 'entry')}
           </span>
         </div>
@@ -119,8 +119,8 @@ const [transactions, setTransactions] = useState<FinancialLedgerTransaction[]>([
       header: t('Description & Party Beneficiary'),
       cell: ({ row }) => (
         <div className="space-y-0.5">
-          <span className="font-bold text-white text-xs sm:text-sm block max-w-sm truncate">{row.original.description}</span>
-          {row.original.partyName && <span className="text-[11px] text-slate-400 block">{t('Party')}: {row.original.partyName}</span>}
+          <span className="font-bold text-slate-900 dark:text-white text-xs sm:text-sm block max-w-sm truncate">{row.original.description}</span>
+          {row.original.partyName && <span className="text-[11px] text-slate-500 dark:text-slate-400 block">{t('Party')}: {row.original.partyName}</span>}
         </div>
       )
     },
@@ -129,8 +129,8 @@ const [transactions, setTransactions] = useState<FinancialLedgerTransaction[]>([
       header: t('Posting Date & Ref ID'),
       cell: ({ row }) => (
         <div className="space-y-0.5 font-mono text-[11px]">
-          <span className="text-slate-300 font-bold block">{row.original.date}</span>
-          <span className="text-slate-400 block">{row.original.referenceId || 'CASH-POS'}</span>
+          <span className="text-slate-700 dark:text-slate-300 font-bold block">{row.original.date}</span>
+          <span className="text-slate-500 dark:text-slate-400 block">{row.original.referenceId || 'CASH-POS'}</span>
         </div>
       )
     },
@@ -138,7 +138,7 @@ const [transactions, setTransactions] = useState<FinancialLedgerTransaction[]>([
       accessorKey: 'creditAmount',
       header: `${t('Inflow / Credit')} ($)`,
       cell: ({ row }) => (
-        <span className={`font-mono text-xs sm:text-sm font-black ${row.original.creditAmount > 0 ? 'text-emerald-400' : 'text-slate-600'}`}>
+        <span className={`font-mono text-xs sm:text-sm font-black ${row.original.creditAmount > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-600'}`}>
           {row.original.creditAmount > 0 ? `+$${(Number(row.original.creditAmount) || 0).toFixed(2)}` : '---'}
         </span>
       )
@@ -147,7 +147,7 @@ const [transactions, setTransactions] = useState<FinancialLedgerTransaction[]>([
       accessorKey: 'debitAmount',
       header: `${t('Outflow / Debit')} ($)`,
       cell: ({ row }) => (
-        <span className={`font-mono text-xs sm:text-sm font-black ${row.original.debitAmount > 0 ? 'text-rose-400' : 'text-slate-600'}`}>
+        <span className={`font-mono text-xs sm:text-sm font-black ${row.original.debitAmount > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-400 dark:text-slate-600'}`}>
           {row.original.debitAmount > 0 ? `-$${(Number(row.original.debitAmount) || 0).toFixed(2)}` : '---'}
         </span>
       )
@@ -163,7 +163,7 @@ const [transactions, setTransactions] = useState<FinancialLedgerTransaction[]>([
       cell: ({ row }) => (
         <button
           onClick={() => setSelectedTx(row.original)}
-          className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-emerald-600 text-slate-300 hover:text-white font-bold text-xs transition-all border border-slate-700 hover:border-emerald-500 shadow-sm cursor-pointer"
+          className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-emerald-600 hover:text-white text-slate-700 dark:text-slate-300 font-bold text-xs transition-all border border-slate-200 dark:border-slate-700 hover:border-emerald-500 shadow-sm cursor-pointer"
         >
           <Eye className="w-3.5 h-3.5" />
           <span>{t('Details')}</span>
@@ -177,7 +177,7 @@ const [transactions, setTransactions] = useState<FinancialLedgerTransaction[]>([
       title={t('Global Financial Transaction Explorer & Ledger Search')}
       description={t('Omni-channel institutional ledger search. Query and cross-examine every student fee receipt, payroll disbursement, vendor claim, and double-entry journal across the entire school.')}
       breadcrumbs={[{ label: t('Finance ERP'), href: '/finance' }, { label: t('Donations & Audit') }, { label: t('Global Transactions') }]}
-      icon={<FolderOpen className="w-8 h-8 text-sky-400" />}
+      icon={<FolderOpen className="w-8 h-8 text-sky-600 dark:text-sky-400" />}
       recordCount={filteredTransactions.length}
       recordLabel={t('Ledger Transactions')}
       activeFilterCount={activeFiltersCount}
@@ -185,9 +185,9 @@ const [transactions, setTransactions] = useState<FinancialLedgerTransaction[]>([
       headerActions={
         <button
           onClick={() => financeService.exportToCSV(transactions, 'global_financial_transactions_2026.csv')}
-          className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white text-xs font-bold transition-all shadow-sm cursor-pointer"
+          className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-white text-xs font-bold transition-all shadow-sm cursor-pointer"
         >
-          <Download className="w-4 h-4 text-emerald-400" />
+          <Download className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
           <span>{t('Export Full Ledger CSV')}</span>
         </button>
       }
@@ -195,13 +195,13 @@ const [transactions, setTransactions] = useState<FinancialLedgerTransaction[]>([
       <EnterpriseKPIDeck cards={kpiCards} />
 
       {/* Domain Sub-Navigation */}
-      <div className="flex flex-wrap items-center gap-2 pb-2 border-b border-slate-800">
-        <Link href="/finance/donations" className="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white font-bold text-xs transition-all flex items-center gap-1.5">
-          <Award className="w-3.5 h-3.5 text-emerald-400" />
+      <div className="flex flex-wrap items-center gap-2 pb-2 border-b border-slate-200 dark:border-slate-800">
+        <Link href="/finance/donations" className="px-3.5 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white font-bold text-xs transition-all flex items-center gap-1.5">
+          <Award className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
           <span>{t('Waqf & Donations')}</span>
         </Link>
-        <Link href="/finance/reports" className="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white font-bold text-xs transition-all flex items-center gap-1.5">
-          <FileText className="w-3.5 h-3.5 text-amber-400" />
+        <Link href="/finance/reports" className="px-3.5 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white font-bold text-xs transition-all flex items-center gap-1.5">
+          <FileText className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
           <span>{t('Financial Statements (P&L/Balance Sheet)')}</span>
         </Link>
         <Link href="/finance/transactions" className="px-3.5 py-1.5 rounded-xl bg-emerald-600 text-white font-black text-xs shadow-md flex items-center gap-1.5">
@@ -228,7 +228,7 @@ const [transactions, setTransactions] = useState<FinancialLedgerTransaction[]>([
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
               aria-label="Filter transactions by type"
-              className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white font-bold focus:outline-none focus:border-emerald-500 shadow-2xs cursor-pointer"
+              className="px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs text-slate-700 dark:text-white font-bold focus:outline-none focus:border-emerald-500 shadow-2xs cursor-pointer"
             >
               <option value="all">{t('All Module Postings')}</option>
               <option value="payment">{t('Student Fee Receipts (REC)')}</option>

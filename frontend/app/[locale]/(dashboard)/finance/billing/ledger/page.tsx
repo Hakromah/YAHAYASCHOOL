@@ -176,8 +176,8 @@ const [accounts, setAccounts] = useState<StudentFinanceAccount[]>([]);
       header: t('Itemized Description & Memo'),
       cell: ({ row }) => (
         <div className="space-y-0.5 text-xs">
-          <span className="font-bold text-white block max-w-md truncate">{row.original.description}</span>
-          <span className="text-[11px] text-slate-400 block font-mono">{t('Posted by')}: {row.original.postedBy}</span>
+          <span className="font-bold text-slate-900 dark:text-white block max-w-md truncate">{row.original.description}</span>
+          <span className="text-[11px] text-slate-500 dark:text-slate-400 block font-mono">{t('Posted by')}: {row.original.postedBy}</span>
         </div>
       )
     },
@@ -188,7 +188,7 @@ const [accounts, setAccounts] = useState<StudentFinanceAccount[]>([]);
         const e = row.original;
         const isDebit = e.type === 'debit';
         return (
-          <span className={`font-mono text-xs sm:text-sm font-black ${isDebit ? 'text-sky-400' : 'text-emerald-400'}`}>
+          <span className={`font-mono text-xs sm:text-sm font-black ${isDebit ? 'text-sky-600 dark:text-sky-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
             {isDebit ? '+' : '-'}${(Number(e.amount) || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
           </span>
         );
@@ -200,7 +200,7 @@ const [accounts, setAccounts] = useState<StudentFinanceAccount[]>([]);
       cell: ({ row }) => {
         const bal = Number(row.original.runningBalance) || 0;
         return (
-          <span className={`font-mono text-xs sm:text-sm font-black ${bal <= 0 ? 'text-emerald-400' : 'text-amber-400'}`}>
+          <span className={`font-mono text-xs sm:text-sm font-black ${bal <= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`}>
             ${bal.toLocaleString('en-US', { minimumFractionDigits: 2 })}
           </span>
         );
@@ -215,7 +215,7 @@ const [accounts, setAccounts] = useState<StudentFinanceAccount[]>([]);
             e.stopPropagation();
             setSelectedEntry(row.original);
           }}
-          className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-emerald-600 text-slate-300 hover:text-white font-bold text-xs transition-all border border-slate-700 hover:border-emerald-500 shadow-sm cursor-pointer"
+          className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-emerald-600 hover:text-white text-slate-700 dark:text-slate-300 font-bold text-xs transition-all border border-slate-200 dark:border-slate-700 hover:border-emerald-500 shadow-sm cursor-pointer"
         >
           <Eye className="w-3.5 h-3.5" />
           <span>{t('Voucher')}</span>
@@ -229,7 +229,7 @@ const [accounts, setAccounts] = useState<StudentFinanceAccount[]>([]);
       title={t('Student Financial Ledger & Running Account Statement')}
       description={t('Interactive double-entry account statement viewable per scholar. Monitors every debit invoice and credit payment with automated running balances and institutional financial hold enforcements.')}
       breadcrumbs={[{ label: t('Finance ERP'), href: '/finance' }, { label: t('Billing Suite') }, { label: t('Running Ledger') }]}
-      icon={<ScrollText className="w-8 h-8" />}
+      icon={<ScrollText className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />}
       recordCount={filteredEntries.length}
       recordLabel={t('Ledger Rows')}
       activeFilterCount={query ? 1 : 0}
@@ -237,19 +237,19 @@ const [accounts, setAccounts] = useState<StudentFinanceAccount[]>([]);
       headerActions={
         <div className="flex items-center gap-2">
           {/* Scholar Account Selector Dropdown */}
-          <div className="flex items-center gap-2 bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-xl">
-            <User className="w-4 h-4 text-emerald-400" />
-            <span className="text-xs font-bold text-slate-400">{t('Select Scholar')}:</span>
+          <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3 py-1.5 rounded-xl shadow-sm">
+            <User className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            <span className="text-xs font-bold text-slate-500 dark:text-slate-400">{t('Select Scholar')}:</span>
             <select
               value={selectedStudentId}
               onChange={(e) => {
                 setSelectedStudentId(e.target.value);
               }}
               aria-label="Select Scholar Account"
-              className="bg-transparent text-xs font-black text-white focus:outline-none cursor-pointer max-w-[160px] truncate"
+              className="bg-transparent text-xs font-black text-slate-900 dark:text-white focus:outline-none cursor-pointer max-w-[160px] truncate"
             >
               {accounts.map(acc => (
-                <option key={acc.studentId} value={acc.studentId} className="bg-slate-900">
+                <option key={acc.studentId} value={acc.studentId} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
                   {acc.studentName} ({acc.admissionNumber})
                 </option>
               ))}
@@ -257,9 +257,9 @@ const [accounts, setAccounts] = useState<StudentFinanceAccount[]>([]);
           </div>
           <button
             onClick={() => financeService.exportToCSV(ledgerEntries, `ledger_${selectedStudentId}.csv`)}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white text-xs font-bold transition-all shadow-sm cursor-pointer"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-white text-xs font-bold transition-all shadow-sm cursor-pointer"
           >
-            <Download className="w-4 h-4 text-emerald-400" />
+            <Download className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
             <span>{t('Export Ledger CSV')}</span>
           </button>
         </div>
@@ -268,21 +268,21 @@ const [accounts, setAccounts] = useState<StudentFinanceAccount[]>([]);
       <EnterpriseKPIDeck cards={kpiCards} />
 
       {/* Domain Sub-Navigation */}
-      <div className="flex flex-wrap items-center gap-2 pb-2 border-b border-slate-800">
-        <Link href="/finance/billing/invoices" className="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white font-bold text-xs transition-all flex items-center gap-1.5">
-          <FileText className="w-3.5 h-3.5 text-emerald-400" />
+      <div className="flex flex-wrap items-center gap-2 pb-2 border-b border-slate-200 dark:border-slate-800">
+        <Link href="/finance/billing/invoices" className="px-3.5 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white font-bold text-xs transition-all flex items-center gap-1.5">
+          <FileText className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
           <span>{t('Student Invoices')}</span>
         </Link>
-        <Link href="/finance/billing/payments" className="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white font-bold text-xs transition-all flex items-center gap-1.5">
-          <DollarSign className="w-3.5 h-3.5 text-emerald-400" />
+        <Link href="/finance/billing/payments" className="px-3.5 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white font-bold text-xs transition-all flex items-center gap-1.5">
+          <DollarSign className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
           <span>{t('Payment Desk & POS')}</span>
         </Link>
         <Link href="/finance/billing/ledger" className="px-3.5 py-1.5 rounded-xl bg-emerald-600 text-white font-black text-xs shadow-md flex items-center gap-1.5">
           <ScrollText className="w-3.5 h-3.5" />
           <span>{t('Running Ledger')}</span>
         </Link>
-        <Link href="/finance/billing/statements" className="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white font-bold text-xs transition-all flex items-center gap-1.5">
-          <FileText className="w-3.5 h-3.5 text-sky-400" />
+        <Link href="/finance/billing/statements" className="px-3.5 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white font-bold text-xs transition-all flex items-center gap-1.5">
+          <FileText className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
           <span>{t('Student Statements')}</span>
         </Link>
       </div>

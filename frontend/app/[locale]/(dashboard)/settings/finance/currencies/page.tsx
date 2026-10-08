@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link } from '@/i18n/routing';
 import {
   Globe, Plus, RefreshCw, CheckCircle2, ShieldCheck, DollarSign,
@@ -10,9 +10,6 @@ import {
 } from 'lucide-react';
 import { useLocale } from 'next-intl';
 import { t as i18nT } from '@/lib/i18n-dict';
-
-// module-level i18n fallback
-const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
 import { financeService } from '@/services/finance.service';
 import type { MultiCurrencyRate } from '@/types/finance.types';
 import { EnterpriseModuleShell } from '@/components/erp/EnterpriseModuleShell';
@@ -22,8 +19,9 @@ import { toast } from 'sonner';
 
 export default function MultiCurrencySettingsPage() {
   const locale = useLocale();
-  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
-const [rates, setRates] = useState<MultiCurrencyRate[]>([]);
+  const t = useCallback((key: string) => i18nT(key, locale), [locale]);
+
+  const [rates, setRates] = useState<MultiCurrencyRate[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
 
@@ -42,31 +40,38 @@ const [rates, setRates] = useState<MultiCurrencyRate[]>([]);
   // Live Currency Converter Calculator State
   const [calcAmount, setCalcAmount] = useState('1000');
   const [calcSourceCurrency, setCalcSourceCurrency] = useState('USD');
+  const [baseCurrency, setBaseCurrency] = useState('USD');
 
-  const fetchRates = async () => {
+  const fetchRates = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await financeService.getExchangeRates();
+      const [data, settings] = await Promise.all([
+        financeService.getExchangeRates(),
+        financeService.getSettings().catch(() => null)
+      ]);
       setRates(data || []);
+      if (settings?.defaultCurrency) {
+        setBaseCurrency(settings.defaultCurrency);
+      }
     } catch {
-      toast.error(t('Failed to load multi-currency exchange rates.'));
+      toast.error(i18nT('Failed to load multi-currency exchange rates.', locale));
     } finally {
       setLoading(false);
     }
-  };
+  }, [locale]);
 
   useEffect(() => {
     fetchRates();
-  }, []);
+  }, [fetchRates]);
 
   const handleSyncAPI = async () => {
     setSyncing(true);
     try {
       await new Promise(res => setTimeout(res, 800));
       await fetchRates();
-      toast.success(t('Successfully synchronized exchange rates with Central Bank & BCEAO API gateways!'));
+      toast.success(i18nT('Successfully synchronized exchange rates with Central Bank & BCEAO API gateways!', locale));
     } catch {
-      toast.error(t('Exchange rate synchronization failed'));
+      toast.error(i18nT('Exchange rate synchronization failed', locale));
     } finally {
       setSyncing(false);
     }
@@ -84,7 +89,7 @@ const [rates, setRates] = useState<MultiCurrencyRate[]>([]);
 
     const parsedRate = parseFloat(newRateValue);
     if (isNaN(parsedRate) || parsedRate <= 0) {
-      toast.error(t('Please enter a valid positive exchange rate'));
+      toast.error(i18nT('Please enter a valid positive exchange rate', locale));
       return;
     }
 
@@ -96,10 +101,10 @@ const [rates, setRates] = useState<MultiCurrencyRate[]>([]);
         symbol: newSymbolValue,
         lastUpdated: new Date().toISOString().split('T')[0]
       } : r));
-      toast.success(`${t('Exchange rate updated for')} ${editingRate.currencyCode}!`);
+      toast.success(`${i18nT('Exchange rate updated for', locale)} ${editingRate.currencyCode}!`);
       setEditingRate(null);
     } catch {
-      toast.error(t('Failed to update rate'));
+      toast.error(i18nT('Failed to update rate', locale));
     }
   };
 
@@ -107,11 +112,11 @@ const [rates, setRates] = useState<MultiCurrencyRate[]>([]);
     e.preventDefault();
     const rateNum = parseFloat(addRate);
     if (!addCode.trim() || !addName.trim()) {
-      toast.error(t('Please provide currency code and name'));
+      toast.error(i18nT('Please provide currency code and name', locale));
       return;
     }
     if (isNaN(rateNum) || rateNum <= 0) {
-      toast.error(t('Please enter a valid exchange rate'));
+      toast.error(i18nT('Please enter a valid exchange rate', locale));
       return;
     }
 
@@ -127,30 +132,46 @@ const [rates, setRates] = useState<MultiCurrencyRate[]>([]);
       });
 
       setRates([...rates, newCurr]);
-      toast.success(`${t('Added new operating currency')}: ${addCode.toUpperCase()}`);
+      toast.success(`${i18nT('Added new operating currency', locale)}: ${addCode.toUpperCase()}`);
       setShowAddModal(false);
       setAddCode('');
       setAddName('');
       setAddSymbol('');
       setAddRate('');
     } catch {
-      toast.error(t('Failed to add currency'));
+      toast.error(i18nT('Failed to add currency', locale));
     }
   };
 
   const handleDeleteCurrency = async (id: string, code: string) => {
-    if (code === 'USD') {
-      toast.error(t('Cannot delete primary base currency (USD)'));
+    if (code === 'USD' || code === baseCurrency) {
+      toast.error(i18nT('Cannot delete primary base currency', locale));
       return;
     }
-    if (!confirm(`${t('Are you sure you want to remove currency')} "${code}"?`)) return;
+    if (!confirm(`${i18nT('Are you sure you want to remove currency', locale)} "${code}"?`)) return;
 
     try {
       await financeService.deleteCurrency(id);
       setRates(rates.filter(r => r.id !== id));
-      toast.success(`${t('Removed currency')}: ${code}`);
+      toast.success(`${i18nT('Removed currency', locale)}: ${code}`);
     } catch {
-      toast.error(t('Failed to delete currency'));
+      toast.error(i18nT('Failed to delete currency', locale));
+    }
+  };
+
+  const handleSetBaseCurrency = async (code: string) => {
+    try {
+      await financeService.updateSettings({ defaultCurrency: code });
+      setBaseCurrency(code);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('yahaya_selected_currency', code);
+        localStorage.setItem('selected_currency', code);
+        localStorage.setItem('yahaya_default_currency', code);
+        window.dispatchEvent(new CustomEvent('yahaya_currency_changed', { detail: code }));
+      }
+      toast.success(`${i18nT('Base institutional operating currency set to', locale)} ${code}!`);
+    } catch {
+      toast.error(i18nT('Failed to update base currency', locale));
     }
   };
 
@@ -159,7 +180,6 @@ const [rates, setRates] = useState<MultiCurrencyRate[]>([]);
     const amt = parseFloat(calcAmount) || 0;
     if (amt <= 0 || rates.length === 0) return [];
 
-    // Find source rate to USD
     const srcRate = rates.find(r => r.currencyCode === calcSourceCurrency)?.exchangeRateToUSD || 1;
     const amountInUSD = amt / (srcRate > 0 ? srcRate : 1);
 
@@ -178,69 +198,45 @@ const [rates, setRates] = useState<MultiCurrencyRate[]>([]);
   const kpiCards: EnterpriseKPICard[] = [
     {
       id: 'active_currencies',
-      title: t('Active Operating Currencies'),
-      value: `${rates.length} ${t('Currencies')}`,
-      subtitle: t('USD ($), EUR (€), XOF (CFA), TRY (₺) & GNF (FG)'),
+      title: 'Active Operating Currencies',
+      value: `${rates.length} Currencies`,
+      subtitle: 'USD ($), EUR (€), XOF (CFA), TRY (₺), GNF (FG), GBP (£), SAR (﷼)',
       trendDirection: 'up',
-      icon: <Globe className="w-5 h-5 text-sky-400" />
+      icon: <Globe className="w-5 h-5 text-sky-600 dark:text-sky-400" />
     },
     {
       id: 'sync_mode',
-      title: t('Rate Synchronizer Gateway'),
-      value: t('Central Bank & BCEAO Parity'),
-      subtitle: t('Real-time multi-ledger synchronization'),
+      title: 'Rate Synchronizer Gateway',
+      value: 'Central Bank & BCEAO Parity',
+      subtitle: 'Real-time multi-ledger synchronization',
       trendDirection: 'up',
-      icon: <RefreshCw className="w-5 h-5 text-emerald-400" />
+      icon: <RefreshCw className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
     },
     {
       id: 'multi_ledger',
-      title: t('Multi-Currency Bookkeeping'),
+      title: 'Multi-Currency Bookkeeping',
       value: '100% Normalized',
-      subtitle: t('Foreign payments converted to USD base GL accounts'),
+      subtitle: `Foreign payments converted to ${baseCurrency} base GL accounts`,
       trendDirection: 'up',
-      icon: <ShieldCheck className="w-5 h-5 text-amber-400" />
+      icon: <ShieldCheck className="w-5 h-5 text-amber-600 dark:text-amber-400" />
     }
   ];
-
-  const [baseCurrency, setBaseCurrency] = useState('USD');
-
-  useEffect(() => {
-    financeService.getSettings().then(s => {
-      if (s?.defaultCurrency) setBaseCurrency(s.defaultCurrency);
-    }).catch(() => {});
-  }, []);
-
-  const handleSetBaseCurrency = async (code: string) => {
-    try {
-      await financeService.updateSettings({ defaultCurrency: code });
-      setBaseCurrency(code);
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('yahaya_selected_currency', code);
-        localStorage.setItem('selected_currency', code);
-        localStorage.setItem('yahaya_default_currency', code);
-        window.dispatchEvent(new CustomEvent('yahaya_currency_changed', { detail: code }));
-      }
-      toast.success(`${t('Base institutional operating currency set to')} ${code}!`);
-    } catch {
-      toast.error(t('Failed to update base currency'));
-    }
-  };
 
   const columns: ColumnDef<MultiCurrencyRate, any>[] = [
     {
       accessorKey: 'currencyCode',
-      header: t('Currency Code & Name'),
+      header: 'Currency Code & Name',
       cell: ({ row }) => {
         const isBase = row.original.currencyCode === baseCurrency;
         return (
           <div className="flex items-center gap-2">
-            <span className="px-2 py-1 rounded bg-slate-800 text-emerald-400 font-black font-mono text-xs">
+            <span className="px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 text-emerald-700 dark:text-emerald-400 font-black font-mono text-xs border border-slate-200 dark:border-slate-700">
               {row.original.currencyCode}
             </span>
-            <span className="font-bold text-white text-xs sm:text-sm">{row.original.currencyName}</span>
+            <span className="font-bold text-slate-900 dark:text-white text-xs sm:text-sm">{row.original.currencyName}</span>
             {isBase && (
-              <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-950 text-emerald-400 border border-emerald-800">
-                {t('BASE')}
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
+                BASE
               </span>
             )}
           </div>
@@ -249,47 +245,47 @@ const [rates, setRates] = useState<MultiCurrencyRate[]>([]);
     },
     {
       accessorKey: 'exchangeRateToUSD',
-      header: `${t('Exchange Rate (vs 1 USD $)')}`,
+      header: 'Exchange Rate (vs 1 USD $)',
       cell: ({ row }) => (
-        <span className="font-mono text-xs sm:text-sm font-black text-white">
+        <span className="font-mono text-xs sm:text-sm font-black text-slate-900 dark:text-white">
           {(Number(row.original.exchangeRateToUSD) || 1).toFixed(4)} {row.original.symbol}
         </span>
       )
     },
     {
       accessorKey: 'lastUpdated',
-      header: t('Last Synchronization'),
-      cell: ({ row }) => <span className="font-mono text-xs text-slate-400 font-bold">{row.original.lastUpdated || 'Today'}</span>
+      header: 'Last Synchronization',
+      cell: ({ row }) => <span className="font-mono text-xs text-slate-500 dark:text-slate-400 font-bold">{row.original.lastUpdated || 'Today'}</span>
     },
     {
       id: 'actions',
-      header: t('Actions'),
+      header: 'Actions',
       cell: ({ row }) => {
         const isBase = row.original.currencyCode === baseCurrency;
         return (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
             {!isBase && (
               <button
                 onClick={() => handleSetBaseCurrency(row.original.currencyCode)}
-                className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-emerald-950/60 hover:bg-emerald-600 text-emerald-400 hover:text-white font-bold text-xs border border-emerald-800/60 transition-all cursor-pointer"
-                title={t('Set as Base Currency')}
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-600 hover:text-white text-emerald-700 dark:text-emerald-300 font-bold text-xs border border-emerald-200 dark:border-emerald-800/60 transition-all cursor-pointer"
+                title="Set as Base Currency"
               >
                 <Check className="w-3 h-3" />
-                <span>{t('Set Base')}</span>
+                <span>Set Base</span>
               </button>
             )}
             <button
               onClick={() => handleOpenEditModal(row.original)}
-              className="flex items-center gap-1 px-3 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs border border-slate-700 transition-all cursor-pointer"
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-sky-600 hover:text-white text-slate-700 dark:text-slate-300 font-bold text-xs border border-slate-200 dark:border-slate-700 transition-all cursor-pointer"
             >
               <Edit2 className="w-3 h-3" />
-              <span>{t('Override Rate')}</span>
+              <span>Override Rate</span>
             </button>
-            {row.original.currencyCode !== 'USD' && (
+            {row.original.currencyCode !== 'USD' && !isBase && (
               <button
                 onClick={() => handleDeleteCurrency(row.original.id, row.original.currencyCode)}
-                className="p-1.5 rounded-xl bg-slate-800 hover:bg-rose-600 text-slate-400 hover:text-white border border-slate-700 transition-all cursor-pointer"
-                title={t('Delete')}
+                className="p-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-rose-600 hover:text-white text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 transition-all cursor-pointer"
+                title="Delete"
               >
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
@@ -300,31 +296,38 @@ const [rates, setRates] = useState<MultiCurrencyRate[]>([]);
     }
   ];
 
+  // Reusable token classes
+  const inputCls = 'w-full px-3 py-2.5 rounded-xl bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-white text-xs font-medium focus:outline-none focus:border-emerald-500';
+  const selectCls = 'w-full px-3 py-2.5 rounded-xl bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-white text-xs font-bold focus:outline-none focus:border-emerald-500 cursor-pointer';
+  const labelCls = 'text-xs font-bold text-slate-700 dark:text-slate-300 block';
+  const modalCls = 'fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-in fade-in duration-200';
+  const modalPanelCls = 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4';
+
   return (
     <EnterpriseModuleShell
-      title={t('Multi-Currency Engine & Exchange Rate Parameters')}
-      description={t('Real-time multi-currency bookkeeping. Manage institutional exchange rate parities, automated Central Bank rate fetching, foreign fee conversions, and ledger base currency normalization.')}
-      breadcrumbs={[{ label: t('Finance ERP'), href: '/finance' }, { label: t('Settings & Config') }, { label: t('Multi-Currency') }]}
-      icon={<Globe className="w-8 h-8 text-sky-400" />}
+      title="Multi-Currency Engine & Exchange Rate Parameters"
+      description="Real-time multi-currency bookkeeping. Manage institutional exchange rate parities, automated Central Bank rate fetching, foreign fee conversions, and ledger base currency normalization."
+      breadcrumbs={[{ label: 'Finance ERP', href: '/finance' }, { label: 'Settings & Config', href: '/settings/finance' }, { label: 'Multi-Currency' }]}
+      icon={<Globe className="w-8 h-8 text-sky-600 dark:text-sky-400" />}
       recordCount={rates.length}
-      recordLabel={t('Currencies')}
+      recordLabel="Currencies"
       headerActions={
         <div className="flex items-center gap-2">
           <button
             onClick={handleSyncAPI}
             disabled={syncing}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white text-xs font-bold transition-all shadow-sm cursor-pointer disabled:opacity-50"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold transition-all shadow-sm cursor-pointer disabled:opacity-50"
           >
-            <RefreshCw className={`w-4 h-4 text-sky-400 ${syncing ? 'animate-spin' : ''}`} />
-            <span>{syncing ? t('Syncing Parities...') : t('Sync Central Bank Rates')}</span>
+            <RefreshCw className={`w-4 h-4 text-sky-600 dark:text-sky-400 ${syncing ? 'animate-spin' : ''}`} />
+            <span>{syncing ? 'Syncing Parities...' : 'Sync Central Bank Rates'}</span>
           </button>
 
           <button
             onClick={() => setShowAddModal(true)}
             className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 text-white font-black text-xs shadow-lg shadow-emerald-600/30 hover:scale-[1.02] cursor-pointer"
           >
-            <Plus className="w-4 h-4" />
-            <span>+ {t('Add Operating Currency')}</span>
+            <Plus className="w-4 h-4 stroke-[3]" />
+            <span>+ Add Operating Currency</span>
           </button>
         </div>
       }
@@ -332,26 +335,26 @@ const [rates, setRates] = useState<MultiCurrencyRate[]>([]);
       <EnterpriseKPIDeck cards={kpiCards} />
 
       {/* Domain Sub-Navigation */}
-      <div className="flex flex-wrap items-center gap-2 pb-2 border-b border-slate-800">
-        <Link href="/settings/finance" className="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white font-bold text-xs transition-all flex items-center gap-1.5">
-          <Settings className="w-3.5 h-3.5 text-emerald-400" />
-          <span>{t('General Policy Hub')}</span>
+      <div className="flex flex-wrap items-center gap-2 pb-2 border-b border-slate-200 dark:border-slate-800">
+        <Link href="/settings/finance" className="px-3.5 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white font-bold text-xs transition-all flex items-center gap-1.5">
+          <Settings className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+          <span>General Policy Hub</span>
         </Link>
         <Link href="/settings/finance/currencies" className="px-3.5 py-1.5 rounded-xl bg-emerald-600 text-white font-black text-xs shadow-md flex items-center gap-1.5">
           <Globe className="w-3.5 h-3.5" />
-          <span>{t('Multi-Currency & Rates')}</span>
+          <span>Multi-Currency & Rates</span>
         </Link>
-        <Link href="/settings/finance/tax" className="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white font-bold text-xs transition-all flex items-center gap-1.5">
-          <Percent className="w-3.5 h-3.5 text-amber-400" />
-          <span>{t('VAT & Tax Rules')}</span>
+        <Link href="/settings/finance/tax" className="px-3.5 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white font-bold text-xs transition-all flex items-center gap-1.5">
+          <Percent className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+          <span>VAT & Tax Rules</span>
         </Link>
-        <Link href="/settings/finance/methods" className="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white font-bold text-xs transition-all flex items-center gap-1.5">
-          <CreditCard className="w-3.5 h-3.5 text-emerald-400" />
-          <span>{t('Payment Gateways & POS')}</span>
+        <Link href="/settings/finance/methods" className="px-3.5 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white font-bold text-xs transition-all flex items-center gap-1.5">
+          <CreditCard className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+          <span>Payment Gateways & POS</span>
         </Link>
-        <Link href="/settings/finance/fees" className="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white font-bold text-xs transition-all flex items-center gap-1.5">
-          <DollarSign className="w-3.5 h-3.5 text-rose-400" />
-          <span>{t('Fee & Penalty Rules')}</span>
+        <Link href="/settings/finance/fees" className="px-3.5 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white font-bold text-xs transition-all flex items-center gap-1.5">
+          <DollarSign className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
+          <span>Fee & Penalty Rules</span>
         </Link>
       </div>
 
@@ -364,24 +367,24 @@ const [rates, setRates] = useState<MultiCurrencyRate[]>([]);
             isLoading={loading}
             density="cozy"
             emptyStateProps={{
-              title: t('No Exchange Rates Found'),
-              description: t('No foreign currency conversion rates configured.'),
+              title: 'No Exchange Rates Found',
+              description: 'No foreign currency conversion rates configured.',
               isFilterActive: false,
               onResetFilters: () => {},
-              createLabel: t('Add Currency'),
+              createLabel: 'Add Currency',
               onCreate: () => setShowAddModal(true)
             }}
           />
         </div>
 
         {/* Live Multi-Currency Conversion Calculator (Right 1 Column) */}
-        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
             <div className="flex items-center gap-2">
-              <Calculator className="w-5 h-5 text-emerald-400" />
-              <h3 className="text-sm font-black text-white uppercase tracking-wider">{t('Live Parity Calculator')}</h3>
+              <Calculator className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+              <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">Live Parity Calculator</h3>
             </div>
-            <span className="text-[10px] font-mono font-bold bg-emerald-950 text-emerald-400 border border-emerald-800 px-2 py-0.5 rounded-full">
+            <span className="text-[10px] font-mono font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 px-2 py-0.5 rounded-full">
               Real-time
             </span>
           </div>
@@ -389,22 +392,22 @@ const [rates, setRates] = useState<MultiCurrencyRate[]>([]);
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-300">{t('Input Amount')}</label>
+                <label className={labelCls}>Input Amount</label>
                 <input
                   type="number"
                   step="any"
                   value={calcAmount}
                   onChange={(e) => setCalcAmount(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-emerald-400 font-mono text-sm font-black focus:outline-none focus:border-emerald-500"
+                  className={inputCls + ' font-mono text-emerald-700 dark:text-emerald-400 font-black'}
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-300">{t('Currency')}</label>
+                <label className={labelCls}>Currency</label>
                 <select
                   value={calcSourceCurrency}
                   onChange={(e) => setCalcSourceCurrency(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white font-mono text-xs font-bold focus:outline-none focus:border-emerald-500 cursor-pointer"
+                  className={selectCls + ' font-mono'}
                 >
                   {rates.map(r => (
                     <option key={r.currencyCode} value={r.currencyCode}>
@@ -415,20 +418,20 @@ const [rates, setRates] = useState<MultiCurrencyRate[]>([]);
               </div>
             </div>
 
-            <div className="space-y-2 pt-2 border-t border-slate-800">
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
-                {t('Converted Parity Equivalents')}:
+            <div className="space-y-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+              <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
+                Converted Parity Equivalents:
               </span>
               <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
                 {conversions.map((conv) => (
-                  <div key={conv.code} className="p-3 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                  <div key={conv.code} className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
                     <div>
-                      <span className="font-bold text-white text-xs block">{conv.name}</span>
+                      <span className="font-bold text-slate-900 dark:text-white text-xs block">{conv.name}</span>
                       <span className="text-[10px] text-slate-500 font-mono">
                         1 USD = {Number(conv.rate).toFixed(2)} {conv.symbol}
                       </span>
                     </div>
-                    <span className="font-mono text-xs font-black text-emerald-400">
+                    <span className="font-mono text-xs font-black text-emerald-700 dark:text-emerald-400">
                       {conv.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {conv.symbol}
                     </span>
                   </div>
@@ -441,59 +444,59 @@ const [rates, setRates] = useState<MultiCurrencyRate[]>([]);
 
       {/* Edit Rate Modal */}
       {editingRate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-in fade-in duration-200">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div className={modalCls}>
+          <div className={modalPanelCls}>
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
               <div className="flex items-center gap-2">
-                <Edit2 className="w-5 h-5 text-sky-400" />
-                <h3 className="text-sm font-black text-white">{t('Override Exchange Rate')}: {editingRate.currencyCode}</h3>
+                <Edit2 className="w-5 h-5 text-sky-600 dark:text-sky-400" />
+                <h3 className="text-sm font-black text-slate-900 dark:text-white">Override Exchange Rate: {editingRate.currencyCode}</h3>
               </div>
-              <button onClick={() => setEditingRate(null)} className="text-slate-400 hover:text-white font-bold text-xs">
+              <button onClick={() => setEditingRate(null)} className="text-slate-400 hover:text-slate-900 dark:hover:text-white font-bold text-xs cursor-pointer">
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             <form onSubmit={handleSaveRate} className="space-y-3">
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-300">{t('Currency Name')}</label>
+                <label className={labelCls}>Currency Name</label>
                 <input
                   type="text"
                   disabled
                   value={editingRate.currencyName}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-400 text-xs font-medium"
+                  className={inputCls + ' bg-slate-100 dark:bg-slate-950 opacity-80'}
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-300">{t('Exchange Rate to 1 USD')}</label>
+                  <label className={labelCls}>Exchange Rate to 1 USD</label>
                   <input
                     type="number"
                     step="any"
                     required
                     value={newRateValue}
                     onChange={(e) => setNewRateValue(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-emerald-400 font-mono text-sm font-black focus:outline-none focus:border-emerald-500"
+                    className={inputCls + ' font-mono text-emerald-700 dark:text-emerald-400 font-black text-sm'}
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-300">{t('Currency Symbol')}</label>
+                  <label className={labelCls}>Currency Symbol</label>
                   <input
                     type="text"
                     value={newSymbolValue}
                     onChange={(e) => setNewSymbolValue(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white font-mono text-sm font-bold focus:outline-none focus:border-emerald-500"
+                    className={inputCls + ' font-mono font-bold'}
                   />
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
-                <button type="button" onClick={() => setEditingRate(null)} className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 font-bold text-xs">
-                  {t('Cancel')}
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
+                <button type="button" onClick={() => setEditingRate(null)} className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs cursor-pointer">
+                  Cancel
                 </button>
-                <button type="submit" className="px-5 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-black text-xs shadow-md">
-                  {t('Apply Override')}
+                <button type="submit" className="px-5 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-black text-xs shadow-md cursor-pointer">
+                  Apply Override
                 </button>
               </div>
             </form>
@@ -503,14 +506,14 @@ const [rates, setRates] = useState<MultiCurrencyRate[]>([]);
 
       {/* Add Currency Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-in fade-in duration-200">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div className={modalCls}>
+          <div className={modalPanelCls}>
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
               <div className="flex items-center gap-2">
-                <Plus className="w-5 h-5 text-emerald-400" />
-                <h3 className="text-sm font-black text-white">{t('Add Operating Currency')}</h3>
+                <Plus className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                <h3 className="text-sm font-black text-slate-900 dark:text-white">Add Operating Currency</h3>
               </div>
-              <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-white font-bold text-xs">
+              <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-slate-900 dark:hover:text-white font-bold text-xs cursor-pointer">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -518,7 +521,7 @@ const [rates, setRates] = useState<MultiCurrencyRate[]>([]);
             <form onSubmit={handleAddCurrency} className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-300">{t('Currency Code (ISO)')}</label>
+                  <label className={labelCls}>Currency Code (ISO)</label>
                   <input
                     type="text"
                     required
@@ -526,37 +529,37 @@ const [rates, setRates] = useState<MultiCurrencyRate[]>([]);
                     maxLength={5}
                     value={addCode}
                     onChange={(e) => setAddCode(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-emerald-400 font-mono text-xs font-bold uppercase focus:outline-none focus:border-emerald-500"
+                    className={inputCls + ' font-mono uppercase font-bold text-emerald-700 dark:text-emerald-400'}
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-300">{t('Symbol')}</label>
+                  <label className={labelCls}>Symbol</label>
                   <input
                     type="text"
                     required
                     placeholder="e.g. ﷼"
                     value={addSymbol}
                     onChange={(e) => setAddSymbol(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white font-mono text-xs font-bold focus:outline-none focus:border-emerald-500"
+                    className={inputCls + ' font-mono font-bold'}
                   />
                 </div>
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-300">{t('Currency Name')}</label>
+                <label className={labelCls}>Currency Name</label>
                 <input
                   type="text"
                   required
                   placeholder="e.g. Saudi Arabian Riyal"
                   value={addName}
                   onChange={(e) => setAddName(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs font-medium focus:outline-none focus:border-emerald-500"
+                  className={inputCls}
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-300">{t('Exchange Rate to 1 USD ($)')}</label>
+                <label className={labelCls}>Exchange Rate to 1 USD ($)</label>
                 <input
                   type="number"
                   step="any"
@@ -564,16 +567,16 @@ const [rates, setRates] = useState<MultiCurrencyRate[]>([]);
                   placeholder="e.g. 3.75"
                   value={addRate}
                   onChange={(e) => setAddRate(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-emerald-400 font-mono text-sm font-black focus:outline-none focus:border-emerald-500"
+                  className={inputCls + ' font-mono text-emerald-700 dark:text-emerald-400 font-black text-sm'}
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
-                <button type="button" onClick={() => setShowAddModal(false)} className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 font-bold text-xs">
-                  {t('Cancel')}
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
+                <button type="button" onClick={() => setShowAddModal(false)} className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs cursor-pointer">
+                  Cancel
                 </button>
-                <button type="submit" className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs shadow-md">
-                  {t('Add Currency')}
+                <button type="submit" className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs shadow-md cursor-pointer">
+                  Add Currency
                 </button>
               </div>
             </form>

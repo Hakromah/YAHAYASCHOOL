@@ -6,13 +6,10 @@ import { Link } from '@/i18n/routing';
 import {
   Sparkles, Plus, Search, Filter, Download, Eye, CheckCircle2,
   Clock, DollarSign, FileText, Receipt, Award, Layers,
-  ArrowRight, ShieldCheck, Users, Percent, Building2
+  ArrowRight, ShieldCheck, Users, Percent, Building2, X
 } from 'lucide-react';
 import { useLocale } from 'next-intl';
 import { t as i18nT } from '@/lib/i18n-dict';
-
-// module-level i18n fallback
-const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
 import { financeService } from '@/services/finance.service';
 import type { DiscountRule } from '@/types/finance.types';
 import { EnterpriseModuleShell } from '@/components/erp/EnterpriseModuleShell';
@@ -25,15 +22,15 @@ import { toast } from 'sonner';
 
 export default function DiscountsPage() {
   const locale = useLocale();
-  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
-const [discounts, setDiscounts] = useState<DiscountRule[]>([]);
+  const t = (key: string) => i18nT(key, locale);
+  const [discounts, setDiscounts] = useState<DiscountRule[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
   const [density, setDensity] = useState<TableDensity>('cozy');
   const [selectedDiscount, setSelectedDiscount] = useState<DiscountRule | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
 
-  // Form state - clean empty defaults
+  // Form state
   const [name, setName] = useState('');
   const [type, setType] = useState<'sibling' | 'staff' | 'hafiz' | 'early_payment' | 'custom'>('sibling');
   const [value, setValue] = useState('');
@@ -46,7 +43,7 @@ const [discounts, setDiscounts] = useState<DiscountRule[]>([]);
       const data = await financeService.getDiscountRules();
       setDiscounts(data);
     } catch {
-      toast.error(t('Failed to load discount rules.'));
+      toast.error('Failed to load discount rules.');
     } finally {
       setLoading(false);
     }
@@ -66,7 +63,7 @@ const [discounts, setDiscounts] = useState<DiscountRule[]>([]);
   const handleCreateDiscount = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !value) {
-      toast.error(t('Policy name and discount value are required.'));
+      toast.error('Policy name and discount value are required.');
       return;
     }
     const valNum = parseFloat(value || '0');
@@ -84,13 +81,13 @@ const [discounts, setDiscounts] = useState<DiscountRule[]>([]);
       };
 
       setDiscounts([created, ...discounts]);
-      toast.success(`${t('Created discount policy rule')}: ${created.name}`);
+      toast.success(`Created discount policy: ${created.name}`);
       setName('');
       setValue('');
       setMinEnrollmentMonths('');
       setShowCreateModal(false);
     } catch {
-      toast.error(t('Failed to create discount rule'));
+      toast.error('Failed to create discount rule');
     }
   };
 
@@ -99,113 +96,117 @@ const [discounts, setDiscounts] = useState<DiscountRule[]>([]);
   const kpiCards: EnterpriseKPICard[] = [
     {
       id: 'active_rules',
-      title: t('Active Discount Policies'),
-      value: `${discounts.filter(d => d.isActive).length} ${t('Policies')}`,
-      subtitle: `${discounts.length} ${t('total automated deduction rules')}`,
+      title: 'Active Discount Policies',
+      value: `${discounts.filter(d => d.isActive).length} Policies`,
+      subtitle: `${discounts.length} total automated deduction rules`,
       trendDirection: 'up',
-      icon: <Sparkles className="w-5 h-5 text-amber-400" />
+      icon: <Sparkles className="w-5 h-5 text-amber-500" />
     },
     {
       id: 'beneficiaries',
-      title: t('Scholars Benefiting'),
-      value: `${totalBeneficiaries} ${t('Scholars')}`,
-      subtitle: t('Covering siblings, teaching faculty & Hafiz milestones'),
+      title: 'Scholars Benefiting',
+      value: `${totalBeneficiaries} Scholars`,
+      subtitle: 'Covering siblings, teaching faculty & Hafiz milestones',
       trendDirection: 'up',
-      icon: <Users className="w-5 h-5 text-emerald-400" />
+      icon: <Users className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
     },
     {
       id: 'sibling_rules',
-      title: t('Sibling Discount Tiering'),
-      value: t('Automated'),
-      subtitle: t('Multi-sibling automatic discounts applied on billing'),
+      title: 'Sibling Discount Tiering',
+      value: 'Automated',
+      subtitle: 'Multi-sibling automatic discounts applied on billing',
       trendDirection: 'neutral',
-      icon: <Percent className="w-5 h-5 text-sky-400" />
+      icon: <Percent className="w-5 h-5 text-sky-600 dark:text-sky-400" />
     }
   ];
 
   const columns = useMemo<ColumnDef<DiscountRule, any>[]>(() => [
     {
       accessorKey: 'name',
-      header: t('Policy Name & Tier'),
+      header: 'Policy Name & Tier',
       cell: ({ row }) => (
         <div className="space-y-0.5">
-          <span className="font-bold text-white text-xs sm:text-sm block">{row.original.name}</span>
-          <span className="text-[11px] text-slate-400 block font-mono">{t('Type')}: {row.original.type.toUpperCase()}</span>
+          <span className="font-bold text-slate-900 dark:text-white text-xs sm:text-sm block">{row.original.name}</span>
+          <span className="text-[11px] text-slate-500 dark:text-slate-400 block font-mono">Type: {row.original.type.toUpperCase()}</span>
         </div>
       )
     },
     {
       accessorKey: 'type',
-      header: t('Classification'),
+      header: 'Classification',
       cell: ({ row }) => (
-        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-slate-800 text-slate-300 border border-slate-700 font-mono">
-          {t(row.original.type)}
+        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 font-mono">
+          {row.original.type}
         </span>
       )
     },
     {
       accessorKey: 'value',
-      header: t('Deduction Rate'),
+      header: 'Deduction Rate',
       cell: ({ row }) => (
-        <span className="font-mono text-xs sm:text-sm font-black text-emerald-400 block">
-          {row.original.isPercentage ? `${row.original.value}%` : `$${row.original.value.toFixed(2)}`} {t('Off')}
+        <span className="font-mono text-xs sm:text-sm font-black text-emerald-700 dark:text-emerald-400 block">
+          {row.original.isPercentage ? `${row.original.value}%` : `$${row.original.value.toFixed(2)}`} Off
         </span>
       )
     },
     {
       accessorKey: 'activeBeneficiariesCount',
-      header: t('Active Scholars'),
+      header: 'Active Scholars',
       cell: ({ row }) => (
-        <span className="font-mono text-xs font-bold text-slate-300">
-          {row.original.activeBeneficiariesCount} {t('Scholars')}
+        <span className="font-mono text-xs font-bold text-slate-700 dark:text-slate-300">
+          {row.original.activeBeneficiariesCount} Scholars
         </span>
       )
     },
     {
       accessorKey: 'isActive',
-      header: t('Status'),
+      header: 'Status',
       cell: ({ row }) => <StatusBadge status={row.original.isActive ? 'active' : 'inactive'} size="sm" />
     },
     {
       id: 'actions',
-      header: t('Actions'),
+      header: 'Actions',
       cell: ({ row }) => (
         <button
           onClick={() => setSelectedDiscount(row.original)}
-          className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-emerald-600 text-slate-300 hover:text-white font-bold text-xs transition-all border border-slate-700 hover:border-emerald-500 shadow-sm cursor-pointer"
+          className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-emerald-600 hover:text-white text-slate-700 dark:text-slate-300 font-bold text-xs transition-all border border-slate-200 dark:border-slate-700 cursor-pointer shadow-sm"
         >
           <Eye className="w-3.5 h-3.5" />
-          <span>{t('Inspect')}</span>
+          <span>Inspect</span>
         </button>
       )
     }
-  ], [locale]);
+  ], []);
+
+  // Form input classes
+  const inputCls = 'w-full px-3 py-2.5 rounded-xl bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-white text-xs font-medium focus:outline-none focus:border-emerald-500';
+  const selectCls = 'w-full px-3 py-2.5 rounded-xl bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-white text-xs font-bold focus:outline-none focus:border-emerald-500 cursor-pointer';
 
   return (
     <EnterpriseModuleShell
-      title={t('Tuition Discounts & Fee Concession Engine')}
-      description={t('Configure multi-sibling discounts, staff child exemptions, Hafiz milestones, and early settlement fee incentives.')}
-      breadcrumbs={[{ label: t('Finance ERP'), href: '/finance' }, { label: t('Billing Suite') }, { label: t('Discounts') }]}
-      icon={<Sparkles className="w-8 h-8 text-amber-400" />}
+      title="Tuition Discounts & Fee Concession Policy Rules"
+      description="Configure multi-sibling discounts, staff child exemptions, Hafiz milestones, and early settlement fee incentives."
+      breadcrumbs={[{ label: 'Finance ERP', href: '/finance' }, { label: 'Billing Suite' }, { label: 'Discounts' }]}
+      icon={<Sparkles className="w-8 h-8 text-amber-500" />}
       recordCount={filteredDiscounts.length}
-      recordLabel={t('Policies')}
+      recordLabel="Policies"
       activeFilterCount={0}
       onClearFilters={() => setQuery('')}
       headerActions={
         <div className="flex items-center gap-2">
           <Link
             href="/finance/billing/scholarships"
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white text-xs font-bold transition-all shadow-sm cursor-pointer"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold transition-all shadow-sm cursor-pointer"
           >
-            <Award className="w-4 h-4 text-sky-400" />
-            <span>{t('Scholarships & Grants')}</span>
+            <Award className="w-4 h-4 text-sky-600 dark:text-sky-400" />
+            <span>Scholarships & Grants</span>
           </Link>
           <button
             onClick={() => setShowCreateModal(true)}
             className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 text-white text-xs font-black transition-all shadow-lg shadow-emerald-600/30 hover:scale-[1.02] cursor-pointer"
           >
             <Plus className="w-4 h-4 stroke-[3]" />
-            <span>{t('+ Create Discount Policy')}</span>
+            <span>+ Create Discount Policy</span>
           </button>
         </div>
       }
@@ -213,34 +214,34 @@ const [discounts, setDiscounts] = useState<DiscountRule[]>([]);
       <EnterpriseKPIDeck cards={kpiCards} />
 
       {/* Domain Sub-Navigation */}
-      <div className="flex flex-wrap items-center gap-2 pb-2 border-b border-slate-800">
-        <Link href="/finance/billing/invoices" className="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white font-bold text-xs transition-all flex items-center gap-1.5">
-          <FileText className="w-3.5 h-3.5 text-emerald-400" />
-          <span>{t('Student Invoices')}</span>
+      <div className="flex flex-wrap items-center gap-2 pb-2 border-b border-slate-200 dark:border-slate-800">
+        <Link href="/finance/billing/invoices" className="px-3.5 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white font-bold text-xs transition-all flex items-center gap-1.5">
+          <FileText className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+          <span>Student Invoices</span>
         </Link>
-        <Link href="/finance/billing/scholarships" className="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white font-bold text-xs transition-all flex items-center gap-1.5">
-          <Award className="w-3.5 h-3.5 text-sky-400" />
-          <span>{t('Scholarships & Grants')}</span>
+        <Link href="/finance/billing/scholarships" className="px-3.5 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white font-bold text-xs transition-all flex items-center gap-1.5">
+          <Award className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
+          <span>Scholarships & Grants</span>
         </Link>
         <Link href="/finance/billing/discounts" className="px-3.5 py-1.5 rounded-xl bg-emerald-600 text-white font-black text-xs shadow-md flex items-center gap-1.5">
           <Sparkles className="w-3.5 h-3.5" />
-          <span>{t('Discount Policies')}</span>
+          <span>Discount Policies</span>
         </Link>
       </div>
 
       <EnterpriseToolbar
         searchQuery={query}
         onSearchChange={setQuery}
-        searchPlaceholder={t('Search discount policies by rule name...')}
+        searchPlaceholder="Search discount policies by rule name..."
         density={density}
         onDensityChange={setDensity}
         onRefresh={() => {
           loadData();
-          toast.success(t('Discount rules refreshed'));
+          toast.success('Discount rules refreshed');
         }}
         activeFilterCount={0}
         onResetFilters={() => setQuery('')}
-        createButtonLabel={t('+ New Policy')}
+        createButtonLabel="+ New Policy"
         onCreate={() => setShowCreateModal(true)}
       />
 
@@ -249,60 +250,66 @@ const [discounts, setDiscounts] = useState<DiscountRule[]>([]);
         columns={columns}
         isLoading={loading}
         density={density}
+        maxHeight={570}
         onRowInspect={(row) => setSelectedDiscount(row)}
         onRowClick={(row) => setSelectedDiscount(row)}
         emptyStateProps={{
-          title: t('No Discount Rules Found'),
-          description: t('No discount policies match your search.'),
+          title: 'No Discount Rules Found',
+          description: 'No discount policies match your search.',
           isFilterActive: query.length > 0,
           onResetFilters: () => setQuery(''),
-          createLabel: t('Create First Policy'),
+          createLabel: 'Create First Policy',
           onCreate: () => setShowCreateModal(true)
         }}
       />
 
       {/* Create Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-5">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl space-y-5">
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
               <div className="flex items-center gap-2.5">
-                <Sparkles className="w-6 h-6 text-amber-400" />
-                <h3 className="text-base font-black text-white">{t('Create Automated Discount Policy')}</h3>
+                <Sparkles className="w-6 h-6 text-amber-500" />
+                <h3 className="text-base font-black text-slate-900 dark:text-white">Create Automated Discount Policy</h3>
               </div>
-              <button onClick={() => setShowCreateModal(false)} className="text-slate-400 hover:text-white font-bold text-sm">✕</button>
+              <button
+                onClick={() => setShowCreateModal(false)}
+                className="p-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 hover:text-slate-900 dark:hover:text-white font-bold transition-all cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
 
             <form onSubmit={handleCreateDiscount} className="space-y-4">
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-300">{t('Policy Title / Concession Name')}</label>
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Policy Title / Concession Name</label>
                 <input
                   type="text"
                   required
                   placeholder="e.g. Sibling Discount (2nd Child)"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs font-medium focus:outline-none focus:border-emerald-500"
+                  className={inputCls}
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-300">{t('Rule Type')}</label>
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Rule Type</label>
                   <select
                     value={type}
                     onChange={(e) => setType(e.target.value as any)}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs font-bold focus:outline-none focus:border-emerald-500 cursor-pointer"
+                    className={selectCls}
                   >
-                    <option value="sibling">{t('Sibling Discount')}</option>
-                    <option value="staff">{t('Staff Child Exemption')}</option>
-                    <option value="hafiz">{t('Hafiz Milestone')}</option>
-                    <option value="early_payment">{t('Early Settlement Incentive')}</option>
-                    <option value="custom">{t('Custom Policy')}</option>
+                    <option value="sibling">Sibling Discount</option>
+                    <option value="staff">Staff Child Exemption</option>
+                    <option value="hafiz">Hafiz Milestone</option>
+                    <option value="early_payment">Early Settlement Incentive</option>
+                    <option value="custom">Custom Policy</option>
                   </select>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-300">{t('Deduction Rate')}</label>
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Deduction Rate (%)</label>
                   <input
                     type="number"
                     step="0.01"
@@ -310,14 +317,25 @@ const [discounts, setDiscounts] = useState<DiscountRule[]>([]);
                     placeholder="15"
                     value={value}
                     onChange={(e) => setValue(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-emerald-400 font-mono text-sm font-black focus:outline-none focus:border-emerald-500"
+                    className={inputCls + ' font-mono text-emerald-700 dark:text-emerald-400 font-bold'}
                   />
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
-                <button type="button" onClick={() => setShowCreateModal(false)} className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 font-bold text-xs">{t('Cancel')}</button>
-                <button type="submit" className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs shadow-md">{t('Save Policy')}</button>
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateModal(false)}
+                  className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs shadow-md cursor-pointer"
+                >
+                  Save Policy
+                </button>
               </div>
             </form>
           </div>
