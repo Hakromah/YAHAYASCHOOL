@@ -37,6 +37,32 @@ const safeGetObject = async <T>(url: string, fallback: T) => {
   }
 };
 
+export const STANDARD_COA: ChartOfAccount[] = [
+  { id: '1010', accountCode: '1010', accountName: 'Cash & Bank Desk', accountType: 'Asset', isControlAccount: false, isActive: true, currentBalance: 0, currency: 'USD', description: 'Institutional operating commercial bank accounts' },
+  { id: '1020', accountCode: '1020', accountName: 'Mobile Money Wallets', accountType: 'Asset', isControlAccount: false, isActive: true, currentBalance: 0, currency: 'USD', description: 'Orange Money & MTN Merchant Wallets' },
+  { id: '1030', accountCode: '1030', accountName: 'Campus Cash Drawer', accountType: 'Asset', isControlAccount: false, isActive: true, currentBalance: 0, currency: 'USD', description: 'Physical cash desk and petty cash drawer' },
+  { id: '1040', accountCode: '1040', accountName: 'Cheque Clearing Account', accountType: 'Asset', isControlAccount: false, isActive: true, currentBalance: 0, currency: 'USD', description: 'Post-dated bank cheques clearing' },
+  { id: '1100', accountCode: '1100', accountName: 'Accounts Receivable', accountType: 'Asset', isControlAccount: true, isActive: true, currentBalance: 0, currency: 'USD', description: 'Student tuition fees and outstanding balances receivable' },
+  { id: '1200', accountCode: '1200', accountName: 'Prepaid Expenses', accountType: 'Asset', isControlAccount: false, isActive: true, currentBalance: 0, currency: 'USD', description: 'Prepaid rent, insurance, and vendor advances' },
+  { id: '1500', accountCode: '1500', accountName: 'Fixed Assets & Facilities', accountType: 'Asset', isControlAccount: false, isActive: true, currentBalance: 0, currency: 'USD', description: 'School buildings, land, IT hardware and equipment' },
+  { id: '2010', accountCode: '2010', accountName: 'Accounts Payable', accountType: 'Liability', isControlAccount: true, isActive: true, currentBalance: 0, currency: 'USD', description: 'Vendor, contractor, and utility accounts payable' },
+  { id: '2020', accountCode: '2020', accountName: 'Unearned Tuition Revenue', accountType: 'Liability', isControlAccount: false, isActive: true, currentBalance: 0, currency: 'USD', description: 'Advance fees collected for upcoming terms' },
+  { id: '2050', accountCode: '2050', accountName: 'Student Advance Wallet Liabilities', accountType: 'Liability', isControlAccount: false, isActive: true, currentBalance: 0, currency: 'USD', description: 'Student prepayment deposits and wallet balances' },
+  { id: '2100', accountCode: '2100', accountName: 'Salaries Payable', accountType: 'Liability', isControlAccount: false, isActive: true, currentBalance: 0, currency: 'USD', description: 'Accrued faculty and staff payroll payables' },
+  { id: '2200', accountCode: '2200', accountName: 'Payroll Deductions & Taxes Payable', accountType: 'Liability', isControlAccount: false, isActive: true, currentBalance: 0, currency: 'USD', description: 'Withheld income tax, social security and union dues' },
+  { id: '3010', accountCode: '3010', accountName: 'Retained Earnings & Reserves', accountType: 'Equity', isControlAccount: false, isActive: true, currentBalance: 0, currency: 'USD', description: 'Cumulative institutional operating reserves and surplus' },
+  { id: '4010', accountCode: '4010', accountName: 'Tuition & Academic Revenue', accountType: 'Revenue', isControlAccount: false, isActive: true, currentBalance: 0, currency: 'USD', description: 'Primary, secondary, and Quranic tuition income' },
+  { id: '4020', accountCode: '4020', accountName: 'Waqf & Philanthropic Donations', accountType: 'Revenue', isControlAccount: false, isActive: true, currentBalance: 0, currency: 'USD', description: 'Community donations, endowments, and philanthropy' },
+  { id: '4030', accountCode: '4030', accountName: 'Auxiliary & Library Revenue', accountType: 'Revenue', isControlAccount: false, isActive: true, currentBalance: 0, currency: 'USD', description: 'Library overdue fees, cafeteria, transport, and supplies' },
+  { id: '4040', accountCode: '4040', accountName: 'Hostel & Boarding Revenue', accountType: 'Revenue', isControlAccount: false, isActive: true, currentBalance: 0, currency: 'USD', description: 'Student boarding room accommodation fees' },
+  { id: '5010', accountCode: '5010', accountName: 'Staff & Faculty Salaries Expense', accountType: 'Expense', isControlAccount: false, isActive: true, currentBalance: 0, currency: 'USD', description: 'Monthly teaching, administrative, and worker payroll' },
+  { id: '5020', accountCode: '5020', accountName: 'Utilities & Energy Expense', accountType: 'Expense', isControlAccount: false, isActive: true, currentBalance: 0, currency: 'USD', description: 'Electricity, water, generator fuel, and internet connectivity' },
+  { id: '5030', accountCode: '5030', accountName: 'Equipment & Technology Expense', accountType: 'Expense', isControlAccount: false, isActive: true, currentBalance: 0, currency: 'USD', description: 'Computer lab hardware, classroom projectors, and IT software' },
+  { id: '5040', accountCode: '5040', accountName: 'Teaching & Curriculum Supplies Expense', accountType: 'Expense', isControlAccount: false, isActive: true, currentBalance: 0, currency: 'USD', description: 'Quran books, whiteboards, stationery, and laboratory reagents' },
+  { id: '5050', accountCode: '5050', accountName: 'Campus Maintenance & Repairs Expense', accountType: 'Expense', isControlAccount: false, isActive: true, currentBalance: 0, currency: 'USD', description: 'Facility maintenance, plumbing, painting, and security' },
+  { id: '5060', accountCode: '5060', accountName: 'Hostel Operations & Maintenance', accountType: 'Expense', isControlAccount: false, isActive: true, currentBalance: 0, currency: 'USD', description: 'Hostel bedding, dormitory repairs, and custodial operations' },
+];
+
 export const financeService = {
   // ─── 1. Dashboard & Core Analytics ──────────────────────────────────────────
   async getExecutiveStats(academicYearCode = '2026-2027'): Promise<ExecutiveFinanceStats> {
@@ -202,13 +228,27 @@ export const financeService = {
     const recentTransactions: any[] = [];
 
     receipts.forEach((r: any) => {
+      const amt = Number(r.paymentAmount || r.amount || 0);
+      const type = (r.paymentType || r.type || '').toLowerCase();
+      let txTitle = `Tuition Fee Settlement - ${r.studentName || 'Student Scholar'}`;
+      let txType = 'Tuition Receipt';
+      if (type.includes('waqf') || type.includes('donation')) {
+        txTitle = `Philanthropic Waqf Donation - ${r.studentName || 'Benefactor'}`;
+        txType = 'Waqf Donation';
+      } else if (type.includes('hostel') || type.includes('boarding')) {
+        txTitle = `Hostel Accommodation Fee - ${r.studentName || 'Student'}`;
+        txType = 'Hostel Receipt';
+      } else if (type.includes('library') || type.includes('fine')) {
+        txTitle = `Library Auxiliary Receipt - ${r.studentName || 'Student'}`;
+        txType = 'Library Fine';
+      }
       recentTransactions.push({
         id: r.id || r.documentId || r.receiptNumber,
         documentNumber: r.receiptNumber || `RCP-${r.id}`,
-        title: `Tuition Fee Settlement - ${r.studentName || 'Student'}`,
-        type: 'Tuition Receipt',
+        title: txTitle,
+        type: txType,
         date: r.paymentDate ? new Date(r.paymentDate).toISOString().split('T')[0] : (r.createdAt ? new Date(r.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]),
-        amount: Number(r.paymentAmount || r.amount || 0),
+        amount: amt,
         status: r.status || 'Approved'
       });
     });
@@ -379,7 +419,11 @@ export const financeService = {
       dueDate: data.dueDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       items: data.items || [],
       installments: data.installments || null,
-      academicYearId: data.academicYearId || '2026-2027'
+      academicYearId: data.academicYearId || '2026-2027',
+      notes: data.notes || '',
+      discountAmount: data.discountAmount || 0,
+      scholarshipAmount: data.scholarshipAmount || 0,
+      lateFeeAmount: data.lateFeeAmount || 0
     };
 
     if (data.studentId && !isNaN(Number(data.studentId))) {
@@ -565,18 +609,23 @@ export const financeService = {
       }
     });
 
-    // 2. Calculate Payroll Outflows (GL 5010)
+    // 2. Calculate Payroll Outflows (GL 5010) & Unpaid Salaries (GL 2100)
     let payrollSum = 0;
+    let unpaidSalariesSum = 0;
     payrolls.forEach((p: any) => {
-      payrollSum += Number(p.totalDisbursement || p.netPayable || 0);
+      const gross = Number(p.totalDisbursement || p.netPayable || p.grossSalary || 0);
+      payrollSum += gross;
+      if (p.status !== 'paid' && p.status !== 'closed') {
+        unpaidSalariesSum += gross;
+      }
     });
 
     // 3. Calculate Revenues & Liquid Cash from Receipts by Payment Method
-    let tuitionSum = 0;       // GL 4010
-    let waqfDonations = 0;    // GL 4020
-    let auxiliaryRevenue = 0; // GL 4030
-    let unearnedTuition = 0;  // GL 2020
-    let walletLiability = 0;  // GL 2050
+    let tuitionReceiptsSum = 0; // GL 4010 cash collection
+    let waqfDonations = 0;      // GL 4020
+    let auxiliaryRevenue = 0;   // GL 4030
+    let unearnedTuition = 0;    // GL 2020
+    let walletLiability = 0;    // GL 2050
 
     let bankCash = 0;    // GL 1010
     let mobileCash = 0;  // GL 1020
@@ -595,7 +644,7 @@ export const financeService = {
       } else if (type.includes('hostel') || type.includes('boarding')) {
         // counted in hostel
       } else {
-        tuitionSum += amt;
+        tuitionReceiptsSum += amt;
       }
 
       walletLiability += Number(r.walletAllocation || r.walletCreditGenerated || 0);
@@ -638,14 +687,24 @@ export const financeService = {
       hostelExpendituresSum += Number(ht.cost || 0);
     });
 
-    // 5. Calculate Outstanding Accounts Receivable (GL 1100)
+    // 5. Calculate Outstanding Accounts Receivable (GL 1100) and Invoiced Tuition Revenue (GL 4010)
     let arSum = 0;
+    let invoicedTuitionTotal = 0;
     invoices.forEach((i: any) => {
       const status = (i.status || '').toLowerCase();
-      if (status !== 'paid' && status !== 'cancelled' && status !== 'voided') {
-        arSum += Number(i.remainingBalance ?? (Number(i.totalAmount || 0) - Number(i.paidAmount || 0)));
+      if (status !== 'cancelled' && status !== 'voided') {
+        const total = Number(i.totalAmount || 0);
+        const paid = Number(i.paidAmount || 0);
+        const remaining = Number(i.remainingBalance ?? (total - paid));
+        invoicedTuitionTotal += total;
+        if (status !== 'paid' && remaining > 0) {
+          arSum += remaining;
+        }
       }
     });
+
+    // Recognize tuition revenue from invoices if any exist, otherwise from cash receipts
+    const recognizedTuition = invoicedTuitionTotal > 0 ? invoicedTuitionTotal : tuitionReceiptsSum;
 
     // 6. Fixed Property Assets (GL 1500)
     let propertyAssets = 0;
@@ -653,12 +712,12 @@ export const financeService = {
       propertyAssets += Number(fa.purchaseCost || fa.currentValue || 0);
     });
 
-    const totalRev = tuitionSum + waqfDonations + auxiliaryRevenue + hostelRevenueSum;
+    const totalRev = recognizedTuition + waqfDonations + auxiliaryRevenue + hostelRevenueSum;
     const totalExp = payrollSum + utilitySum + equipmentSum + suppliesSum + maintenanceSum + otherExpSum + hostelExpendituresSum;
     const netSurplus = totalRev - totalExp;
 
     const totalAssets = bankCash + mobileCash + rawCash + chequeCash + arSum + propertyAssets;
-    const totalLiabilities = unpaidClaimsSum + unearnedTuition + walletLiability;
+    const totalLiabilities = unpaidClaimsSum + unpaidSalariesSum + unearnedTuition + walletLiability;
     const totalEquity = totalAssets - totalLiabilities;
     const retainedEquity = totalEquity - netSurplus; // GL 3010
 
@@ -670,7 +729,7 @@ export const financeService = {
       reportHash,
       generatedAt: new Date().toISOString(),
       balances: {
-        '4010': tuitionSum,
+        '4010': recognizedTuition,
         '4020': waqfDonations,
         '4030': auxiliaryRevenue,
         '4040': hostelRevenueSum,
@@ -685,10 +744,13 @@ export const financeService = {
         '1030': rawCash,
         '1040': chequeCash,
         '1100': arSum,
+        '1200': 0,
         '1500': propertyAssets,
         '2010': unpaidClaimsSum,
         '2020': unearnedTuition,
         '2050': walletLiability,
+        '2100': unpaidSalariesSum,
+        '2200': 0,
         '3010': retainedEquity
       },
       totalDebits: totalExp + totalAssets,
@@ -706,33 +768,52 @@ export const financeService = {
 
   // ─── 6. Chart of Accounts & Journals ────────────────────────────────────────
   async getChartOfAccounts(): Promise<ChartOfAccount[]> {
-    const [accounts, statement] = await Promise.all([
+    const [strapiAccounts, statement] = await Promise.all([
       safeGetArray('/finance-accounts?populate=*&sort=accountCode:asc'),
       this.generateFinancialStatement({ academicYear: '2026-2027' }).catch(() => null)
     ]);
 
     const balances = statement?.balances || {};
 
-    return accounts.map((a: any) => {
-      const code = String(a.accountCode || '');
-      const liveBal = balances[code] !== undefined ? Number(balances[code]) : 0;
-      return {
-        id: a.documentId || String(a.id),
-        accountCode: code,
-        accountName: a.accountName || 'Account',
-        accountType: a.accountType || 'Asset',
-        parentAccountCode: a.parentAccountCode,
-        isControlAccount: Boolean(a.isControlAccount),
-        isActive: a.isActive !== false,
-        currentBalance: liveBal,
-        currency: 'USD',
-        description: a.description || ''
-      };
+    const accountMap = new Map<string, ChartOfAccount>();
+    STANDARD_COA.forEach(a => {
+      accountMap.set(a.accountCode, { ...a, currentBalance: Number(balances[a.accountCode] || 0) });
     });
+
+    strapiAccounts.forEach((a: any) => {
+      const code = String(a.accountCode || '');
+      if (code) {
+        const existing = accountMap.get(code);
+        accountMap.set(code, {
+          id: a.documentId || String(a.id),
+          accountCode: code,
+          accountName: a.accountName || existing?.accountName || 'Account',
+          accountType: a.accountType || existing?.accountType || 'Asset',
+          parentAccountCode: a.parentAccountCode || existing?.parentAccountCode,
+          isControlAccount: a.isControlAccount !== undefined ? Boolean(a.isControlAccount) : Boolean(existing?.isControlAccount),
+          isActive: a.isActive !== false,
+          currentBalance: balances[code] !== undefined ? Number(balances[code]) : (existing?.currentBalance || 0),
+          currency: 'USD',
+          description: a.description || existing?.description || ''
+        });
+      }
+    });
+
+    return Array.from(accountMap.values()).sort((a, b) => a.accountCode.localeCompare(b.accountCode));
   },
 
   async getJournalEntries(): Promise<JournalEntry[]> {
-    const raw = await safeGetArray('/finance-journal-entries?populate=*&sort=createdAt:desc');
+    const [invoices, receipts, expenses, payrolls, rawStrapiJournals] = await Promise.all([
+      this.getInvoices().catch(() => []),
+      this.getReceipts().catch(() => []),
+      this.getExpenses().catch(() => []),
+      this.getPayrollRuns().catch(() => []),
+      safeGetArray('/finance-journal-entries?populate=*&sort=createdAt:desc').then(arr => {
+        if (arr && arr.length > 0) return arr;
+        return safeGetArray('/finance-journal-entrys?populate=*&sort=createdAt:desc');
+      }).catch(() => [])
+    ]);
+
     let localSaved: any[] = [];
     if (typeof window !== 'undefined') {
       try {
@@ -741,249 +822,308 @@ export const financeService = {
       } catch {}
     }
 
-    const merged = [...raw];
-    localSaved.forEach(localItem => {
-      if (!merged.some(m => String(m.id) === String(localItem.id) || m.journalNumber === localItem.journalNumber || m.entryNumber === localItem.entryNumber)) {
-        merged.push(localItem);
+    const synth: JournalEntry[] = [];
+
+    // 1. Invoices -> DR 1100 Accounts Receivable / CR 4010 Tuition Revenue
+    invoices.forEach((inv: any, idx: number) => {
+      const amt = Number(inv.totalAmount || inv.amount || 0);
+      if (amt > 0) {
+        const invNum = inv.invoiceNumber || `INV-2026-${String(inv.id || idx + 1).padStart(4, '0')}`;
+        const date = inv.issueDate || (inv.createdAt ? String(inv.createdAt).split('T')[0] : '2026-09-01');
+        const studentName = inv.student?.name || (inv.student ? `${inv.student.firstName || ''} ${inv.student.lastName || ''}`.trim() : '') || inv.studentName || 'Student Scholar';
+        synth.push({
+          id: `jrn_inv_${inv.documentId || inv.id || idx}`,
+          journalNumber: `JRN-${invNum}`,
+          entryNumber: `JRN-${invNum}`,
+          title: `Tuition fee invoice recognition for ${studentName}`,
+          description: `Tuition fee invoice recognition for ${studentName} (${invNum})`,
+          postingDate: date,
+          date: date,
+          transactionDate: date,
+          referenceNumber: invNum,
+          sourceDocumentNumber: invNum,
+          sourceModule: 'invoice_recognition',
+          totalDebit: amt,
+          totalCredit: amt,
+          currency: 'USD',
+          status: 'posted',
+          postedBy: 'System Financial Engine',
+          postedAt: date || new Date().toISOString(),
+          lines: [
+            {
+              id: `l1_${inv.id || idx}`,
+              accountCode: '1100',
+              accountName: 'Accounts Receivable',
+              debit: amt,
+              debitAmount: amt,
+              credit: 0,
+              creditAmount: 0,
+              memo: `Tuition fee receivable (${studentName})`
+            },
+            {
+              id: `l2_${inv.id || idx}`,
+              accountCode: '4010',
+              accountName: 'Tuition & Academic Revenue',
+              debit: 0,
+              debitAmount: 0,
+              credit: amt,
+              creditAmount: amt,
+              memo: `Earned tuition revenue recognition - ${invNum}`
+            }
+          ]
+        });
       }
     });
 
-    if (merged.length === 0) {
-      const [invoices, receipts, expenses, payrolls] = await Promise.all([
-        this.getInvoices().catch(() => []),
-        this.getReceipts().catch(() => []),
-        this.getExpenses().catch(() => []),
-        this.getPayrollRuns().catch(() => []),
-      ]);
+    // 2. Receipts -> DR 1010/1020/1030/1040 / CR 1100 (tuition) or CR 4020 (donation) or CR 4040 (hostel)
+    receipts.forEach((rcp: any, idx: number) => {
+      const amt = Number(rcp.paymentAmount || rcp.amount || 0);
+      if (amt > 0) {
+        const rcpNum = rcp.receiptNumber || `RCP-2026-${String(rcp.id || idx + 1).padStart(4, '0')}`;
+        const date = rcp.paymentDate ? String(rcp.paymentDate).split('T')[0] : (rcp.createdAt ? String(rcp.createdAt).split('T')[0] : '2026-09-05');
+        const payer = rcp.studentName || rcp.student?.name || (rcp.student ? `${rcp.student.firstName || ''} ${rcp.student.lastName || ''}`.trim() : '') || 'Student / Donor';
+        const method = (rcp.paymentMethod || 'Bank Wire').toLowerCase();
+        const type = (rcp.paymentType || rcp.type || '').toLowerCase();
 
-      const synth: any[] = [];
-
-      // 1. Invoices -> DR 1100 Accounts Receivable / CR 4010 Tuition Revenue
-      invoices.forEach((inv: any, idx: number) => {
-        const amt = Number(inv.totalAmount || inv.amount || 0);
-        if (amt > 0) {
-          const invNum = inv.invoiceNumber || `INV-2026-${String(inv.id || idx + 1).padStart(4, '0')}`;
-          const date = inv.issueDate || (inv.createdAt ? String(inv.createdAt).split('T')[0] : '2026-09-01');
-          const studentName = inv.student?.name || (inv.student ? `${inv.student.firstName || ''} ${inv.student.lastName || ''}`.trim() : '') || 'Student Scholar';
-          synth.push({
-            id: `jrn_inv_${inv.id || idx}`,
-            journalNumber: `JRN-INV-${String(inv.id || idx + 1).padStart(4, '0')}`,
-            entryNumber: `JRN-INV-${String(inv.id || idx + 1).padStart(4, '0')}`,
-            description: `Tuition fee invoice recognition for ${studentName}`,
-            postingDate: date,
-            date: date,
-            transactionDate: date,
-            referenceNumber: invNum,
-            sourceDocumentNumber: invNum,
-            sourceModule: 'invoice_recognition',
-            totalDebit: amt,
-            totalCredit: amt,
-            status: 'posted',
-            lines: [
-              {
-                id: `l1_${inv.id || idx}`,
-                accountCode: '1100',
-                accountName: 'Accounts Receivable',
-                debit: amt,
-                debitAmount: amt,
-                credit: 0,
-                creditAmount: 0,
-                memo: `Tuition Receivable (${studentName})`
-              },
-              {
-                id: `l2_${inv.id || idx}`,
-                accountCode: '4010',
-                accountName: 'Tuition Revenue',
-                debit: 0,
-                debitAmount: 0,
-                credit: amt,
-                creditAmount: amt,
-                memo: `Earned Tuition Income - ${invNum}`
-              }
-            ]
-          });
+        let debitCode = '1010';
+        let debitName = 'Cash & Bank Desk';
+        if (method.includes('mobile') || method.includes('orange') || method.includes('mtn') || method.includes('wave')) {
+          debitCode = '1020';
+          debitName = 'Mobile Money Wallets';
+        } else if (method.includes('cash')) {
+          debitCode = '1030';
+          debitName = 'Campus Cash Drawer';
+        } else if (method.includes('cheque')) {
+          debitCode = '1040';
+          debitName = 'Cheque Clearing Account';
         }
-      });
 
-      // 2. Receipts -> DR 1010 Cash & Bank / CR 1100 Accounts Receivable
-      receipts.forEach((rcp: any, idx: number) => {
-        const amt = Number(rcp.paymentAmount || rcp.amount || 0);
-        if (amt > 0) {
-          const rcpNum = rcp.receiptNumber || `RCP-2026-${String(rcp.id || idx + 1).padStart(4, '0')}`;
-          const date = rcp.paymentDate || (rcp.createdAt ? String(rcp.createdAt).split('T')[0] : '2026-09-05');
-          const payer = rcp.studentName || rcp.student?.name || 'Student / Parent';
-          const method = rcp.paymentMethod || 'Bank Wire';
-          synth.push({
-            id: `jrn_rcp_${rcp.id || idx}`,
-            journalNumber: `JRN-RCP-${String(rcp.id || idx + 1).padStart(4, '0')}`,
-            entryNumber: `JRN-RCP-${String(rcp.id || idx + 1).padStart(4, '0')}`,
-            description: `Fee payment settlement via ${method} from ${payer}`,
-            postingDate: date,
-            date: date,
-            transactionDate: date,
-            referenceNumber: rcpNum,
-            sourceDocumentNumber: rcpNum,
-            sourceModule: 'payment_collection',
-            totalDebit: amt,
-            totalCredit: amt,
-            status: 'posted',
-            lines: [
-              {
-                id: `l1_${rcp.id || idx}`,
-                accountCode: '1010',
-                accountName: 'Cash & Bank Desk',
-                debit: amt,
-                debitAmount: amt,
-                credit: 0,
-                creditAmount: 0,
-                memo: `Payment collected via ${method}`
-              },
-              {
-                id: `l2_${rcp.id || idx}`,
-                accountCode: '1100',
-                accountName: 'Accounts Receivable',
-                debit: 0,
-                debitAmount: 0,
-                credit: amt,
-                creditAmount: amt,
-                memo: `Clear student receivable (${payer})`
-              }
-            ]
-          });
+        let creditCode = '1100';
+        let creditName = 'Accounts Receivable';
+        let memoCredit = `Settlement of student receivable (${payer})`;
+        let desc = `Tuition fee settlement via ${rcp.paymentMethod || 'Bank'} from ${payer}`;
+        let srcModule = 'payment_collection';
+
+        if (type.includes('waqf') || type.includes('donation')) {
+          creditCode = '4020';
+          creditName = 'Waqf & Philanthropic Donations';
+          memoCredit = `Philanthropic endowment donation from ${payer}`;
+          desc = `Waqf & Charity contribution receipt - ${payer}`;
+          srcModule = 'donation_collection';
+        } else if (type.includes('hostel') || type.includes('boarding')) {
+          creditCode = '4040';
+          creditName = 'Hostel & Boarding Revenue';
+          memoCredit = `Boarding room fee payment for ${payer}`;
+          desc = `Hostel accommodation settlement - ${payer}`;
+          srcModule = 'hostel_collection';
+        } else if (type.includes('library') || type.includes('fine')) {
+          creditCode = '4030';
+          creditName = 'Auxiliary & Library Revenue';
+          memoCredit = `Library overdue fine fee for ${payer}`;
+          desc = `Library auxiliary revenue receipt - ${payer}`;
+          srcModule = 'auxiliary_collection';
         }
-      });
 
-      // 3. Expenses -> DR 5020/5030/5040/5050 / CR 1010 Cash & Bank or 2010 Accounts Payable
-      expenses.forEach((exp: any, idx: number) => {
-        const amt = Number(exp.amount || 0);
-        if (amt > 0) {
-          const expNum = exp.voucherNumber || `EXP-2026-${String(exp.id || idx + 1).padStart(4, '0')}`;
-          const date = exp.createdAt ? String(exp.createdAt).split('T')[0] : '2026-09-10';
-          const cat = exp.category || 'Utilities';
-          let expCode = '5020';
-          let expName = 'Utilities Expense';
-          if (cat === 'Equipment') { expCode = '5030'; expName = 'Equipment & IT Expense'; }
-          else if (cat === 'Supplies') { expCode = '5040'; expName = 'Teaching Supplies Expense'; }
-          else if (cat === 'Maintenance') { expCode = '5050'; expName = 'Maintenance & Repairs'; }
-          else if (cat === 'Salaries') { expCode = '5010'; expName = 'Staff Salaries'; }
-          else if (cat === 'Other') { expCode = '5030'; expName = 'Operating Expenses'; }
-
-          const isPaid = exp.status === 'paid' || exp.status === 'closed';
-          const creditCode = isPaid ? '1010' : '2010';
-          const creditName = isPaid ? 'Cash & Bank' : 'Accounts Payable';
-
-          synth.push({
-            id: `jrn_exp_${exp.id || idx}`,
-            journalNumber: `JRN-EXP-${String(exp.id || idx + 1).padStart(4, '0')}`,
-            entryNumber: `JRN-EXP-${String(exp.id || idx + 1).padStart(4, '0')}`,
-            description: `${exp.title || 'Operating Expense'} (${exp.vendorName || 'Vendor'})`,
-            postingDate: date,
-            date: date,
-            transactionDate: date,
-            referenceNumber: expNum,
-            sourceDocumentNumber: expNum,
-            sourceModule: 'expense_disbursement',
-            totalDebit: amt,
-            totalCredit: amt,
-            status: 'posted',
-            lines: [
-              {
-                id: `l1_${exp.id || idx}`,
-                accountCode: expCode,
-                accountName: expName,
-                debit: amt,
-                debitAmount: amt,
-                credit: 0,
-                creditAmount: 0,
-                memo: `${exp.title || 'Expense'} - ${exp.department || 'Operations'}`
-              },
-              {
-                id: `l2_${exp.id || idx}`,
-                accountCode: creditCode,
-                accountName: creditName,
-                debit: 0,
-                debitAmount: 0,
-                credit: amt,
-                creditAmount: amt,
-                memo: `Settlement to ${exp.vendorName || 'Supplier'}`
-              }
-            ]
-          });
-        }
-      });
-
-      // 4. Payroll Runs -> DR 5010 Staff Salaries / CR 1010 or 2100 Salaries Payable
-      payrolls.forEach((pay: any, idx: number) => {
-        const gross = Number(pay.grossSalary || pay.baseSalary || 0);
-        const net = Number(pay.netPayable || gross);
-        const deductions = Number(pay.deductionsAmount || 0);
-
-        if (gross > 0) {
-          const payNum = pay.payrollNumber || `PAY-2026-${String(pay.id || idx + 1).padStart(4, '0')}`;
-          const date = pay.createdAt ? String(pay.createdAt).split('T')[0] : '2026-09-28';
-          const emp = pay.employeeName || 'Faculty Member';
-          const isPaid = pay.status === 'paid' || pay.status === 'closed';
-
-          const lines: any[] = [
+        synth.push({
+          id: `jrn_rcp_${rcp.documentId || rcp.id || idx}`,
+          journalNumber: `JRN-${rcpNum}`,
+          entryNumber: `JRN-${rcpNum}`,
+          title: desc,
+          description: desc,
+          postingDate: date,
+          date: date,
+          transactionDate: date,
+          referenceNumber: rcpNum,
+          sourceDocumentNumber: rcpNum,
+          sourceModule: srcModule,
+          totalDebit: amt,
+          totalCredit: amt,
+          currency: 'USD',
+          status: 'posted',
+          postedBy: 'System Financial Engine',
+          postedAt: date || new Date().toISOString(),
+          lines: [
             {
-              id: `l1_${pay.id || idx}`,
-              accountCode: '5010',
-              accountName: 'Staff Salaries Expense',
-              debit: gross,
-              debitAmount: gross,
+              id: `l1_${rcp.id || idx}`,
+              accountCode: debitCode,
+              accountName: debitName,
+              debit: amt,
+              debitAmount: amt,
               credit: 0,
               creditAmount: 0,
-              memo: `Gross salary for ${emp} (${pay.payPeriodMonth || 'Current Period'})`
-            }
-          ];
-
-          if (deductions > 0) {
-            lines.push({
-              id: `l2_${pay.id || idx}`,
-              accountCode: '2200',
-              accountName: 'Payroll Deductions Payable',
+              memo: `Funds received via ${rcp.paymentMethod || 'Bank'}`
+            },
+            {
+              id: `l2_${rcp.id || idx}`,
+              accountCode: creditCode,
+              accountName: creditName,
               debit: 0,
               debitAmount: 0,
-              credit: deductions,
-              creditAmount: deductions,
-              memo: `Withholding deductions for ${emp}`
-            });
-          }
+              credit: amt,
+              creditAmount: amt,
+              memo: memoCredit
+            }
+          ]
+        });
+      }
+    });
 
+    // 3. Expenses -> DR 5020/5030/5040/5050 / CR 1010 or 2010
+    expenses.forEach((exp: any, idx: number) => {
+      const amt = Number(exp.amount || 0);
+      if (amt > 0) {
+        const expNum = exp.voucherNumber || `EXP-2026-${String(exp.id || idx + 1).padStart(4, '0')}`;
+        const date = exp.createdAt ? String(exp.createdAt).split('T')[0] : '2026-09-10';
+        const cat = (exp.category || 'Utilities').toLowerCase();
+        let expCode = '5020';
+        let expName = 'Utilities & Energy Expense';
+        if (cat.includes('equip') || cat.includes('it') || cat.includes('tech')) {
+          expCode = '5030'; expName = 'Equipment & Technology Expense';
+        } else if (cat.includes('suppl') || cat.includes('book') || cat.includes('stationery')) {
+          expCode = '5040'; expName = 'Teaching & Curriculum Supplies Expense';
+        } else if (cat.includes('maint') || cat.includes('repair')) {
+          expCode = '5050'; expName = 'Campus Maintenance & Repairs Expense';
+        } else if (cat.includes('salar') || cat.includes('payroll')) {
+          expCode = '5010'; expName = 'Staff & Faculty Salaries Expense';
+        } else if (cat.includes('hostel')) {
+          expCode = '5060'; expName = 'Hostel Operations & Maintenance';
+        }
+
+        const isPaid = exp.status === 'paid' || exp.status === 'closed';
+        const creditCode = isPaid ? '1010' : '2010';
+        const creditName = isPaid ? 'Cash & Bank Desk' : 'Accounts Payable';
+
+        synth.push({
+          id: `jrn_exp_${exp.documentId || exp.id || idx}`,
+          journalNumber: `JRN-${expNum}`,
+          entryNumber: `JRN-${expNum}`,
+          title: `${exp.title || 'Operating Expense Claim'} (${exp.vendorName || 'Vendor'})`,
+          description: `${exp.title || 'Operating Expense Claim'} (${exp.vendorName || 'Vendor'})`,
+          postingDate: date,
+          date: date,
+          transactionDate: date,
+          referenceNumber: expNum,
+          sourceDocumentNumber: expNum,
+          sourceModule: 'expense_disbursement',
+          totalDebit: amt,
+          totalCredit: amt,
+          currency: 'USD',
+          status: 'posted',
+          postedBy: 'System Financial Engine',
+          postedAt: date || new Date().toISOString(),
+          lines: [
+            {
+              id: `l1_${exp.id || idx}`,
+              accountCode: expCode,
+              accountName: expName,
+              debit: amt,
+              debitAmount: amt,
+              credit: 0,
+              creditAmount: 0,
+              memo: `${exp.title || 'Operating Claim'} - ${exp.department || 'Operations'}`
+            },
+            {
+              id: `l2_${exp.id || idx}`,
+              accountCode: creditCode,
+              accountName: creditName,
+              debit: 0,
+              debitAmount: 0,
+              credit: amt,
+              creditAmount: amt,
+              memo: `Disbursement to ${exp.vendorName || 'Supplier'}`
+            }
+          ]
+        });
+      }
+    });
+
+    // 4. Payroll Runs -> DR 5010 Staff Salaries / CR 1010 or 2100 Salaries Payable
+    payrolls.forEach((pay: any, idx: number) => {
+      const gross = Number(pay.grossSalary || pay.baseSalary || pay.totalDisbursement || 0);
+      const net = Number(pay.netPayable || gross);
+      const deductions = Number(pay.deductionsAmount || (gross - net > 0 ? gross - net : 0));
+
+      if (gross > 0) {
+        const payNum = pay.payrollNumber || `PAY-2026-${String(pay.id || idx + 1).padStart(4, '0')}`;
+        const date = pay.createdAt ? String(pay.createdAt).split('T')[0] : '2026-09-28';
+        const emp = pay.employeeName || pay.staffName || 'Faculty Member';
+        const isPaid = pay.status === 'paid' || pay.status === 'closed';
+
+        const lines: any[] = [
+          {
+            id: `l1_${pay.id || idx}`,
+            accountCode: '5010',
+            accountName: 'Staff & Faculty Salaries Expense',
+            debit: gross,
+            debitAmount: gross,
+            credit: 0,
+            creditAmount: 0,
+            memo: `Gross payroll compensation for ${emp}`
+          }
+        ];
+
+        if (deductions > 0) {
           lines.push({
-            id: `l3_${pay.id || idx}`,
-            accountCode: isPaid ? '1010' : '2100',
-            accountName: isPaid ? 'Cash & Bank' : 'Salaries Payable',
+            id: `l2_${pay.id || idx}`,
+            accountCode: '2200',
+            accountName: 'Payroll Deductions & Taxes Payable',
             debit: 0,
             debitAmount: 0,
-            credit: net,
-            creditAmount: net,
-            memo: `Net wage disbursement to ${emp}`
-          });
-
-          synth.push({
-            id: `jrn_pay_${pay.id || idx}`,
-            journalNumber: `JRN-PAY-${String(pay.id || idx + 1).padStart(4, '0')}`,
-            entryNumber: `JRN-PAY-${String(pay.id || idx + 1).padStart(4, '0')}`,
-            description: `Payroll wage posting for ${emp} (${pay.roleTitle || 'Faculty'})`,
-            postingDate: date,
-            date: date,
-            transactionDate: date,
-            referenceNumber: payNum,
-            sourceDocumentNumber: payNum,
-            sourceModule: 'payroll_posting',
-            totalDebit: gross,
-            totalCredit: gross,
-            status: 'posted',
-            lines
+            credit: deductions,
+            creditAmount: deductions,
+            memo: `Withholding statutory deductions for ${emp}`
           });
         }
-      });
 
-      return [...synth, ...localSaved];
-    }
+        lines.push({
+          id: `l3_${pay.id || idx}`,
+          accountCode: isPaid ? '1010' : '2100',
+          accountName: isPaid ? 'Cash & Bank Desk' : 'Salaries Payable',
+          debit: 0,
+          debitAmount: 0,
+          credit: net,
+          creditAmount: net,
+          memo: `Net salary disbursement to ${emp}`
+        });
 
-    return merged;
+        synth.push({
+          id: `jrn_pay_${pay.documentId || pay.id || idx}`,
+          journalNumber: `JRN-${payNum}`,
+          entryNumber: `JRN-${payNum}`,
+          title: `Faculty wage run compensation for ${emp}`,
+          description: `Faculty wage run compensation for ${emp}`,
+          postingDate: date,
+          date: date,
+          transactionDate: date,
+          referenceNumber: payNum,
+          sourceDocumentNumber: payNum,
+          sourceModule: 'payroll_posting',
+          totalDebit: gross,
+          totalCredit: gross,
+          currency: 'USD',
+          status: 'posted',
+          postedBy: 'System Financial Engine',
+          postedAt: date || new Date().toISOString(),
+          lines
+        });
+      }
+    });
+
+    // Merge manual journals (Strapi + local) with synthesized journals without duplicates
+    const allJournals = [...synth];
+    const combinedManual = [...rawStrapiJournals, ...localSaved];
+    combinedManual.forEach(manual => {
+      const num = manual.journalNumber || manual.entryNumber;
+      if (!allJournals.some(j => j.journalNumber === num || String(j.id) === String(manual.id))) {
+        allJournals.push(manual);
+      }
+    });
+
+    return allJournals.sort((a: any, b: any) => {
+      const dateA = a.postingDate || a.transactionDate || (a.date ? String(a.date).split('T')[0] : '') || '';
+      const dateB = b.postingDate || b.transactionDate || (b.date ? String(b.date).split('T')[0] : '') || '';
+      return dateB.localeCompare(dateA);
+    });
   },
 
   async postManualJournalEntry(data: any): Promise<any> {

@@ -47,20 +47,7 @@ function todayISO() {
   return new Date().toISOString().split('T')[0];
 }
 
-const DEFAULT_COA: ChartOfAccount[] = [
-  { id: '1010', accountCode: '1010', accountName: 'Cash & Bank', accountType: 'Asset', isControlAccount: false, isActive: true, currentBalance: 0, currency: 'USD', description: 'Operating cash and bank accounts' },
-  { id: '1100', accountCode: '1100', accountName: 'Accounts Receivable', accountType: 'Asset', isControlAccount: true, isActive: true, currentBalance: 0, currency: 'USD', description: 'Tuition fees receivable' },
-  { id: '1200', accountCode: '1200', accountName: 'Prepaid Expenses', accountType: 'Asset', isControlAccount: false, isActive: true, currentBalance: 0, currency: 'USD', description: 'Prepaid expenses' },
-  { id: '1500', accountCode: '1500', accountName: 'Fixed Assets', accountType: 'Asset', isControlAccount: false, isActive: true, currentBalance: 0, currency: 'USD', description: 'Equipment and property' },
-  { id: '2010', accountCode: '2010', accountName: 'Accounts Payable', accountType: 'Liability', isControlAccount: true, isActive: true, currentBalance: 0, currency: 'USD', description: 'Vendor payables' },
-  { id: '2100', accountCode: '2100', accountName: 'Salaries Payable', accountType: 'Liability', isControlAccount: false, isActive: true, currentBalance: 0, currency: 'USD', description: 'Accrued staff salaries' },
-  { id: '3010', accountCode: '3010', accountName: 'Retained Earnings', accountType: 'Equity', isControlAccount: false, isActive: true, currentBalance: 0, currency: 'USD', description: 'Accumulated surplus' },
-  { id: '4010', accountCode: '4010', accountName: 'Tuition Revenue', accountType: 'Revenue', isControlAccount: false, isActive: true, currentBalance: 0, currency: 'USD', description: 'Student tuition income' },
-  { id: '4020', accountCode: '4020', accountName: 'Hostel Revenue', accountType: 'Revenue', isControlAccount: false, isActive: true, currentBalance: 0, currency: 'USD', description: 'Boarding and accommodation' },
-  { id: '5010', accountCode: '5010', accountName: 'Staff Salaries', accountType: 'Expense', isControlAccount: false, isActive: true, currentBalance: 0, currency: 'USD', description: 'Teaching & admin payroll' },
-  { id: '5020', accountCode: '5020', accountName: 'Utilities Expense', accountType: 'Expense', isControlAccount: false, isActive: true, currentBalance: 0, currency: 'USD', description: 'Electricity, water, internet' },
-  { id: '5030', accountCode: '5030', accountName: 'Operating Expenses', accountType: 'Expense', isControlAccount: false, isActive: true, currentBalance: 0, currency: 'USD', description: 'General operating costs' },
-];
+import { STANDARD_COA as DEFAULT_COA } from '@/services/finance.service';
 
 // ─── Account Picker Component ─────────────────────────────────────────────────
 

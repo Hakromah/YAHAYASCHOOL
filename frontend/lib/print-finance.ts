@@ -296,6 +296,13 @@ export function printInvoiceDocument(invoice: any) {
         </table>
       </div>
 
+      ${invoice.notes ? `
+      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-left: 4px solid #10b981; border-radius: 12px; padding: 16px 20px; margin-bottom: 30px;">
+        <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #475569; letter-spacing: 0.8px; margin-bottom: 6px;">Invoice Notes & Administrative Remarks</div>
+        <div style="font-size: 12.5px; color: #334155; white-space: pre-wrap; line-height: 1.6;">${invoice.notes}</div>
+      </div>
+      ` : ''}
+
       <div class="footer-qr">
         <img src="${qrCodeUrl}" alt="Verification Code">
         <p>

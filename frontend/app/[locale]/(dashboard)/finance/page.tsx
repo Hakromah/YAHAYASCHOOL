@@ -152,7 +152,12 @@ const [stats, setStats] = useState<ExecutiveFinanceStats | null>(null);
       const sumInvoiced = allInvoices.reduce((sum, inv) => sum + Number(inv.totalAmount || 0), 0);
       const sumPaid = allInvoices.reduce((sum, inv) => sum + Number(inv.paidAmount || 0), 0);
       const sumRemaining = allInvoices.reduce((sum, inv) => sum + Number(inv.remainingBalance || 0), 0);
-      const sumReceiptsAllocated = allReceipts.reduce((sum, rec) => sum + Number(rec.invoiceAllocation || rec.paymentAmount || rec.amount || 0), 0);
+      
+      const tuitionReceipts = allReceipts.filter(r => {
+        const type = (r.paymentType || r.type || '').toLowerCase();
+        return !type.includes('donation') && !type.includes('waqf') && !type.includes('hostel');
+      });
+      const sumTuitionReceipts = tuitionReceipts.reduce((sum, rec) => sum + Number(rec.invoiceAllocation ?? (rec.paymentAmount || rec.amount || 0)), 0);
       const hasNegativeInvoice = allInvoices.some(inv => Number(inv.remainingBalance || 0) < -0.01 || Number(inv.paidAmount || 0) < -0.01);
       const invoiceMismatch = Math.abs(sumInvoiced - (sumPaid + sumRemaining)) > 0.01;
 
@@ -162,7 +167,7 @@ const [stats, setStats] = useState<ExecutiveFinanceStats | null>(null);
           sumInvoiced,
           sumPaid,
           sumRemaining,
-          sumReceipts: sumReceiptsAllocated,
+          sumReceipts: sumTuitionReceipts,
           hasNegativeInvoice,
           invoiceMismatch,
           receiptMismatch: false
