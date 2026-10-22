@@ -7,8 +7,7 @@ module.exports = {
     {
       name: 'yahaya-frontend',
       cwd: '/var/www/YAHAYASCHOOL/frontend',
-      script: 'node',
-      args: '.next/standalone/server.js',
+      script: '.next/standalone/server.js',
       env_production: {
         NODE_ENV: 'production',
         PORT: 3002,
@@ -32,11 +31,11 @@ module.exports = {
         NODE_ENV: 'production',
         PORT: 1339,
         HOST: '0.0.0.0',
-        NODE_OPTIONS: '--max-old-space-size=460',
+        NODE_OPTIONS: '--max-old-space-size=1024',
       },
       instances: 1,
       exec_mode: 'fork',
-      max_memory_restart: '512M',
+      max_memory_restart: '1G',
       restart_delay: 5000,
       watch: false,
       log_date_format: 'YYYY-MM-DD HH:mm:ss',

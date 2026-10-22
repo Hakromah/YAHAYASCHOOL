@@ -40,10 +40,12 @@ import type {
 // Public CMS reads (homepage, about, nav, footer…) must use the Strapi API
 // Token, NOT the end-user JWT, because these are called server-side where
 // no cookie exists, and Strapi returns 403 for unauthenticated requests.
+// On server (SSR & next build), use internal localhost:1339 for instant 0ms responses without SSL/DNS overhead.
+// In browser, use public NEXT_PUBLIC_STRAPI_URL.
 const STRAPI_BASE =
-  process.env.NEXT_PUBLIC_STRAPI_URL ||
-  process.env.STRAPI_URL ||
-  'http://localhost:1339';
+  typeof window === 'undefined'
+    ? (process.env.STRAPI_INTERNAL_URL || process.env.STRAPI_URL || 'http://127.0.0.1:1339')
+    : (process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1339');
 
 const STRAPI_TOKEN =
   process.env.STRAPI_API_TOKEN ||
@@ -52,7 +54,7 @@ const STRAPI_TOKEN =
 
 const cmsClient = axios.create({
   baseURL: `${STRAPI_BASE}/api`,
-  timeout: 30_000,
+  timeout: 5_000,
   headers: {
     'Content-Type': 'application/json',
     ...(STRAPI_TOKEN ? { Authorization: `Bearer ${STRAPI_TOKEN}` } : {}),

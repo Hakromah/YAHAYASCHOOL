@@ -50,8 +50,9 @@ echo "▶  Building Next.js (standalone mode)..."
 npm run build
 
 # Copy public + static assets into standalone output
-cp -r public .next/standalone/public 2>/dev/null || true
-cp -r .next/static .next/standalone/.next/static 2>/dev/null || true
+mkdir -p .next/standalone/.next
+cp -r public .next/standalone/ 2>/dev/null || true
+cp -r .next/static .next/standalone/.next/ 2>/dev/null || true
 
 echo "▶  [6/6] Restarting frontend via PM2..."
 pm2 restart yahaya-frontend || pm2 start "$PROJECT_DIR/ecosystem.config.js" --only yahaya-frontend --env production
