@@ -8,7 +8,8 @@
     "dev:webpack": "next dev -p 3002 --webpack",
     "dev:clean": "powershell -Command \"Remove-Item -Recurse -Force .next -ErrorAction SilentlyContinue\" && next dev -p 3002",
     "dev:warm": "node warmup.js",
-    "build": "next build",
+    "build": "next build --webpack",
+    "build:turbo": "next build",
     "start": "next start -p 3002",
     "lint": "eslint"
   },

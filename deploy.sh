@@ -44,7 +44,7 @@ pm2 restart yahaya-strapi || pm2 start "$PROJECT_DIR/ecosystem.config.js" --only
 echo ""
 echo "▶  [5/6] Installing frontend dependencies..."
 cd "$FRONTEND_DIR"
-npm ci --omit=dev
+npm ci
 
 echo "▶  Building Next.js (standalone mode)..."
 npm run build
