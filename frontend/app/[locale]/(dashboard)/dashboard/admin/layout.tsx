@@ -10,7 +10,7 @@ export default function AdminDashboardLayout({ children }: { children: ReactNode
   const locale = useLocale();
   const t = (key: string, loc?: string) => i18nT(key, loc || locale);
 return (
-    <RoleGuard allowedRoles={['super-administrator', 'director', 'super-administrator']}>
+    <RoleGuard allowedRoles={['super-administrator', 'director', 'registrar']}>
       {children}
     </RoleGuard>
   );

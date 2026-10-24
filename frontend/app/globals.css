@@ -304,6 +304,8 @@
     touch-action: pan-y;
     /* Use small viewport height so mobile browser chrome is excluded */
     min-height: 100svh;
+    /* Prevent layout shift (CSS shaking) when scrollbar appears/disappears on modal open */
+    scrollbar-gutter: stable;
   }
 
   body {

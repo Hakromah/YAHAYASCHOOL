@@ -49,12 +49,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     try {
       const user = await authService.getMe();
+      const roleType = (user.role?.type ?? null) as UserRoleEnum | null;
+      if (!roleType) {
+        console.warn('[AuthProvider] user.role.type is null/undefined after getMe(). Role object:', user.role);
+      }
       setState({
         user,
         token: null, // Token is managed via cookie, not state
         isAuthenticated: true,
         isLoading: false,
-        role: (user.role?.type ?? null) as UserRoleEnum | null,
+        role: roleType,
       });
     } catch {
       // Token invalid or expired

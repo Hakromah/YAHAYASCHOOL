@@ -14,6 +14,8 @@ export enum UserRoleEnum {
   Accountant = 'accountant',
   AccountLead = 'account-lead',
   Driver = 'driver',
+  SectionHead = 'section-head',
+  Registrar = 'registrar',
   Authenticated = 'authenticated',
   Public = 'public',
 }
