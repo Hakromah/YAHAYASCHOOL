@@ -2771,100 +2771,96 @@ async function seedPublicPermissions(strapi) {
     }
 }
 // ─────────────────────────────────────────────────────────────────────────────
-// Bootstrap: Seed Finance & Module Permissions for Authenticated and Custom Roles
+// Bootstrap: Seed Permissions for Authenticated and Custom Roles
+// Ensures all roles (student, teacher, parent, worker, accountant, etc.)
+// have access to /users/me, notifications, avatars, and platform modules.
 // ─────────────────────────────────────────────────────────────────────────────
 async function seedFinancePermissions(strapi) {
-    strapi.log.info('[YAHAYASCOOL] Seeding finance & module permissions for all roles...');
+    strapi.log.info('[YAHAYASCOOL] Seeding complete API and user permissions for all non-public roles...');
     try {
         const roles = await strapi.db.query('plugin::users-permissions.role').findMany({});
         const targetRoles = roles.filter((r) => r.type !== 'public');
-        const financeControllers = [
-            'api::finance-invoice.finance-invoice',
-            'api::finance-receipt.finance-receipt',
-            'api::finance-journal-entry.finance-journal-entry',
-            'api::finance-expense.finance-expense',
-            'api::finance-budget.finance-budget',
-            'api::finance-fee-structure.finance-fee-structure',
-            'api::finance-payroll.finance-payroll',
-            'api::finance-scholarship.finance-scholarship',
-            'api::finance-cashier-session.finance-cashier-session',
-            'api::finance-currency.finance-currency',
-            'api::finance-account.finance-account',
-            'api::finance-financial-statement.finance-financial-statement',
-            'api::quran-program.quran-program',
-            'api::quran-group.quran-group',
-            'api::memorization.memorization',
-            'api::murajaah.murajaah',
-            'api::tajweed-evaluation.tajweed-evaluation',
-            'api::halaqah.halaqah',
-            'api::quran-achievement.quran-achievement',
-            'api::quran-certificate.quran-certificate',
-            'api::quran-competition.quran-competition',
-            'api::quran-attendance.quran-attendance',
-            'api::dawah-activity.dawah-activity',
-            'api::quran-assessment.quran-assessment',
-            'api::memorization-plan.memorization-plan',
-            'api::quran-progress.quran-progress',
-            'api::course-offering.course-offering',
-            'api::student.student',
-            'api::teacher.teacher',
-            'api::academic-year.academic-year',
-            'api::academic-term.academic-term',
-            'api::library-book.library-book',
-            'api::library-borrow-record.library-borrow-record',
-            'api::inventory-warehouse.inventory-warehouse',
-            'api::inventory-item.inventory-item',
-            'api::inventory-movement.inventory-movement',
-            'api::fixed-asset.fixed-asset',
-            'api::vendor.vendor',
-            'api::purchase-order.purchase-order',
-            'api::hostel-building.hostel-building',
-            'api::hostel-floor.hostel-floor',
-            'api::hostel-room.hostel-room',
-            'api::hostel-bed.hostel-bed',
-            'api::hostel-allocation.hostel-allocation',
-            'api::hostel-gate-pass.hostel-gate-pass',
-            'api::hostel-maintenance-ticket.hostel-maintenance-ticket',
-            'api::hostel-visitor.hostel-visitor',
-            'api::hostel-fee-plan.hostel-fee-plan',
-            'api::hostel-warden.hostel-warden',
-            'api::hostel-attendance.hostel-attendance',
-            'api::hostel-payment.hostel-payment',
-            'api::hostel-invoice.hostel-invoice',
-            'api::hostel-audit-log.hostel-audit-log',
-            'api::hostel-deposit-refund.hostel-deposit-refund',
-            'api::hostel-vacation.hostel-vacation',
-            'api::language-program.language-program',
-            'api::language-level.language-level',
-            'api::placement-test.placement-test',
-            'api::skill-assessment.skill-assessment',
-            'api::language-portfolio.language-portfolio',
-            'api::observation-journal.observation-journal',
-            'api::language-competition.language-competition',
-            'api::language-achievement.language-achievement',
-            'api::language-certificate.language-certificate',
-            'api::dashboard.dashboard',
-            'api::grade-level.grade-level',
-            'api::section.section',
-            'api::curriculum.curriculum',
-            'api::donation-campaign.donation-campaign',
-            'api::finance-ledger-entry.finance-ledger-entry',
-            'api::finance-statement.finance-statement',
+        // Dynamically discover all API folders in src/api
+        const apiDir = path_1.default.resolve(__dirname, 'api');
+        let apiNames = [];
+        try {
+            if (fs_1.default.existsSync(apiDir)) {
+                apiNames = fs_1.default.readdirSync(apiDir).filter((f) => {
+                    try {
+                        return fs_1.default.statSync(path_1.default.join(apiDir, f)).isDirectory();
+                    }
+                    catch {
+                        return false;
+                    }
+                });
+            }
+        }
+        catch (e) {
+            strapi.log.warn('[YAHAYASCOOL] Could not read apiDir: ' + e.message);
+        }
+        // Fallback essential controllers in case directory reading had any issues
+        const fallbackControllers = [
+            'notification', 'student', 'teacher', 'parent', 'worker', 'dashboard',
+            'finance-invoice', 'finance-receipt', 'finance-journal-entry', 'finance-expense',
+            'finance-budget', 'finance-fee-structure', 'finance-payroll', 'finance-scholarship',
+            'finance-cashier-session', 'finance-currency', 'finance-account', 'finance-financial-statement',
+            'quran-program', 'quran-group', 'memorization', 'murajaah', 'tajweed-evaluation',
+            'halaqah', 'quran-achievement', 'quran-certificate', 'quran-competition', 'quran-attendance',
+            'dawah-activity', 'quran-assessment', 'memorization-plan', 'quran-progress',
+            'course-offering', 'academic-year', 'academic-term', 'library-book', 'library-borrow-record',
+            'inventory-warehouse', 'inventory-item', 'inventory-movement', 'fixed-asset', 'vendor',
+            'purchase-order', 'hostel-building', 'hostel-floor', 'hostel-room', 'hostel-bed',
+            'hostel-allocation', 'hostel-gate-pass', 'hostel-maintenance-ticket', 'hostel-visitor',
+            'hostel-fee-plan', 'hostel-warden', 'hostel-attendance', 'hostel-payment', 'hostel-invoice',
+            'hostel-audit-log', 'hostel-deposit-refund', 'hostel-vacation', 'language-program',
+            'language-level', 'placement-test', 'skill-assessment', 'language-portfolio',
+            'observation-journal', 'language-competition', 'language-achievement', 'language-certificate',
+            'grade-level', 'section', 'curriculum', 'donation-campaign', 'attendance-record',
+            'homework', 'homework-submission', 'timetable-slot', 'lesson-plan', 'lesson-delivery',
+            'student-grade', 'student-result', 'student-ranking', 'report-card', 'academic-transcript',
+            'examination', 'exam-schedule', 'exam-timetable', 'gradebook-entry', 'subject', 'audit-log'
         ];
-        const actions = [
+        const allApiNames = Array.from(new Set([...apiNames, ...fallbackControllers]));
+        const standardActions = [
             'find', 'findOne', 'create', 'update', 'delete',
             'processPayment', 'applyScholarship', 'generateStatement', 'reconcile',
             'getFinanceStats', 'getAdminDashboard', 'getTeacherDashboard', 'getAccountantDashboard',
-            'getStudentDashboard', 'getParentDashboard', 'getWorkerDashboard', 'getDriverDashboard'
+            'getStudentDashboard', 'getParentDashboard', 'getWorkerDashboard', 'getDriverDashboard',
+            'markAsRead', 'markAllAsRead'
         ];
+        // Build the set of action targets to grant
+        const actionTargets = [];
+        // 1. All API module actions
+        for (const apiName of allApiNames) {
+            for (const act of standardActions) {
+                actionTargets.push(`api::${apiName}.${apiName}.${act}`);
+            }
+        }
+        // 2. CRITICAL Users & Permissions plugin actions (Fixes 403 on /api/users/me)
+        actionTargets.push('plugin::users-permissions.user.me');
+        actionTargets.push('plugin::users-permissions.user.find');
+        actionTargets.push('plugin::users-permissions.user.findOne');
+        actionTargets.push('plugin::users-permissions.user.update');
+        actionTargets.push('plugin::users-permissions.role.find');
+        actionTargets.push('plugin::users-permissions.role.findOne');
+        actionTargets.push('plugin::users-permissions.auth.changePassword');
+        // 3. Media Upload plugin actions
+        actionTargets.push('plugin::upload.content-api.find');
+        actionTargets.push('plugin::upload.content-api.findOne');
+        actionTargets.push('plugin::upload.content-api.upload');
+        actionTargets.push('plugin::upload.content-api.destroy');
         for (const role of targetRoles) {
-            for (const controller of financeControllers) {
-                for (const action of actions) {
-                    const actionTarget = `${controller}.${action}`;
-                    const existing = await strapi.db.query('plugin::users-permissions.permission').findOne({
-                        where: { action: actionTarget, role: role.id },
-                    });
-                    if (!existing) {
+            // 1-query fetch of existing permissions for this role
+            const existing = await strapi.db.query('plugin::users-permissions.permission').findMany({
+                where: { role: role.id },
+                select: ['action'],
+            });
+            const existingSet = new Set((existing || []).map((p) => p.action));
+            const missing = actionTargets.filter((a) => !existingSet.has(a));
+            if (missing.length > 0) {
+                strapi.log.info(`[YAHAYASCOOL] Seeding ${missing.length} missing permissions for role: ${role.name} (${role.type})...`);
+                for (const actionTarget of missing) {
+                    try {
                         await strapi.db.query('plugin::users-permissions.permission').create({
                             data: {
                                 action: actionTarget,
@@ -2872,13 +2868,16 @@ async function seedFinancePermissions(strapi) {
                             },
                         });
                     }
+                    catch {
+                        // Ignore individual duplicate constraint errors
+                    }
                 }
             }
         }
-        strapi.log.info('[YAHAYASCOOL] Finance permissions seeded for all non-public roles.');
+        strapi.log.info('[YAHAYASCOOL] Permissions verified and seeded for all non-public roles.');
     }
     catch (error) {
-        strapi.log.error('[YAHAYASCOOL] Error seeding finance permissions:', error.message);
+        strapi.log.error('[YAHAYASCOOL] Error seeding permissions:', error.message);
     }
 }
 // ─────────────────────────────────────────────────────────────────────────────
