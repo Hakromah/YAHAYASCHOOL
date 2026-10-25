@@ -188,17 +188,31 @@ const { user, isLoading: authLoading } = useAuth();
     }
     setIsLoading(true);
     try {
+      const teacherOrFilters = [
+        { teacher: { id: { $eq: teacher.id } } },
+        { teacherAssignments: { teacher: { id: { $eq: teacher.id } } } },
+        { academicSection: { teachers: { id: { $eq: teacher.id } } } },
+        { academicSection: { academicHead: { id: { $eq: teacher.id } } } }
+      ];
+
       const [offeringsRes, ttRes] = await Promise.all([
         apiClient.get('/course-offerings', {
           params: {
-            filters: { teacher: { id: { $eq: teacher.id } } },
+            filters: { $or: teacherOrFilters },
             populate: ['subject', 'academicSection', 'gradeLevel', 'academicYear', 'academicTerm', 'room', 'studentEnrollments.student'],
             pagination: { limit: 100 }
           }
         }),
         apiClient.get('/timetable-slots', {
           params: {
-            filters: { courseOffering: { teacher: { id: { $eq: teacher.id } } } },
+            filters: {
+              $or: [
+                { courseOffering: { teacher: { id: { $eq: teacher.id } } } },
+                { courseOffering: { academicSection: { teachers: { id: { $eq: teacher.id } } } } },
+                { courseOffering: { academicSection: { academicHead: { id: { $eq: teacher.id } } } } },
+                { courseOffering: { teacherAssignments: { teacher: { id: { $eq: teacher.id } } } } }
+              ]
+            },
             populate: ['courseOffering.subject', 'courseOffering.room', 'courseOffering.academicSection']
           }
         })

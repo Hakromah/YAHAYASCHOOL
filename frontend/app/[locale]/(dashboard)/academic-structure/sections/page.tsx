@@ -117,7 +117,7 @@ const [sections, setSections] = useState<SectionData[]>([]);
   const loadMetadata = async () => {
     try {
       const [tchsRes, deptsRes, progsRes, yearsRes] = await Promise.all([
-        apiClient.get('/teachers?pagination[limit]=300'),
+        apiClient.get('/teachers?populate=user&pagination[limit]=300'),
         apiClient.get('/departments?pagination[limit]=100'),
         apiClient.get('/programs?pagination[limit]=100'),
         apiClient.get('/academic-years?pagination[limit]=100')
@@ -501,7 +501,7 @@ const [sections, setSections] = useState<SectionData[]>([]);
                       <option value="">Select Department Head...</option>
                       {teachers.map(t => (
                         <option key={t.id} value={t.id}>
-                          {t.name || `Teacher #${t.id}`} ({t.schoolId || `ID: ${t.id}`})
+                          {t.name || (t.user ? ([t.user.firstName, t.user.lastName].filter(Boolean).join(' ') || t.user.username) : '') || `Teacher #${t.id}`} ({t.schoolId || `ID: ${t.id}`})
                         </option>
                       ))}
                     </select>

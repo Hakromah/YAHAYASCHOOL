@@ -65,24 +65,30 @@ export const authService = {
       let profile = null;
 
       try {
+        const identifierFilters = [
+          { user: { id: { $eq: data.id } } },
+          ...(data.email ? [{ email: { $eq: data.email } }] : []),
+          ...(data.schoolId ? [{ schoolId: { $eq: data.schoolId } }] : []),
+        ];
+
         if (roleType === 'teacher' || roleType === 'section-head') {
           const res = await apiClient.get<{ data: any[] }>('/teachers', {
-            params: { filters: { user: { id: data.id } }, populate: '*' }
+            params: { filters: { $or: identifierFilters }, populate: '*' }
           });
           profile = res.data?.data?.[0] || null;
         } else if (roleType === 'student') {
           const res = await apiClient.get<{ data: any[] }>('/students', {
-            params: { filters: { user: { id: data.id } }, populate: '*' }
+            params: { filters: { $or: identifierFilters }, populate: '*' }
           });
           profile = res.data?.data?.[0] || null;
         } else if (roleType === 'parent') {
           const res = await apiClient.get<{ data: any[] }>('/parents', {
-            params: { filters: { user: { id: data.id } }, populate: '*' }
+            params: { filters: { $or: identifierFilters }, populate: '*' }
           });
           profile = res.data?.data?.[0] || null;
-        } else if (roleType === 'worker' || roleType === 'driver' || roleType === 'accountant') {
+        } else if (roleType === 'worker' || roleType === 'driver' || roleType === 'accountant' || roleType === 'account-lead') {
           const res = await apiClient.get<{ data: any[] }>('/workers', {
-            params: { filters: { user: { id: data.id } }, populate: '*' }
+            params: { filters: { $or: identifierFilters }, populate: '*' }
           });
           profile = res.data?.data?.[0] || null;
         }

@@ -2278,6 +2278,205 @@ async function seedLocales(strapi: Core.Strapi): Promise<void> {
 // Lifecycle: Auto-generate School ID on user creation
 // ─────────────────────────────────────────────────────────────────────────────
 
+async function syncUserProfile(userId: number, strapi: any) {
+  if (!userId) return;
+  try {
+    const user = await strapi.db.query('plugin::users-permissions.user').findOne({
+      where: { id: userId },
+      populate: ['role', 'avatar']
+    });
+    if (!user || !user.role) return;
+
+    const roleType = (user.role.type || '').toLowerCase();
+    const fullName = (user.displayName || [user.firstName, user.lastName].filter(Boolean).join(' ') || user.username || '').trim();
+    const avatarId = user.avatar?.id || null;
+
+    if (roleType === 'teacher' || roleType === 'section-head') {
+      const existing = await strapi.db.query('api::teacher.teacher').findOne({
+        where: {
+          $or: [
+            { user: user.id },
+            { email: user.email },
+            ...(user.schoolId ? [{ schoolId: user.schoolId }] : [])
+          ]
+        }
+      });
+
+      const teacherData = {
+        name: fullName || `Teacher ${user.id}`,
+        phone: user.phone || 'N/A',
+        email: user.email,
+        gender: user.gender || 'male',
+        schoolId: user.schoolId || existing?.schoolId,
+        user: user.id,
+        photo: avatarId || existing?.photo,
+        employmentStatus: existing?.employmentStatus || 'active',
+        publishedAt: existing?.publishedAt || new Date().toISOString()
+      };
+
+      if (!existing) {
+        await strapi.db.query('api::teacher.teacher').create({
+          data: teacherData
+        });
+        strapi.log.info(`[YAHAYASCOOL] ✅ Auto-created Teacher profile for user ${user.email} (ID: ${user.id})`);
+      } else {
+        await strapi.db.query('api::teacher.teacher').update({
+          where: { id: existing.id },
+          data: {
+            user: user.id,
+            name: existing.name || teacherData.name,
+            email: user.email,
+            phone: user.phone || existing.phone || 'N/A',
+            gender: user.gender || existing.gender || 'male',
+            photo: avatarId || existing.photo,
+            schoolId: user.schoolId || existing.schoolId,
+            publishedAt: existing.publishedAt || new Date().toISOString()
+          }
+        });
+        strapi.log.info(`[YAHAYASCOOL] ✅ Linked Teacher profile for user ${user.email} (Teacher ID: ${existing.id})`);
+      }
+    } else if (roleType === 'student') {
+      const existing = await strapi.db.query('api::student.student').findOne({
+        where: {
+          $or: [
+            { user: user.id },
+            { email: user.email },
+            ...(user.schoolId ? [{ schoolId: user.schoolId }] : [])
+          ]
+        }
+      });
+
+      const firstName = user.firstName || fullName.split(' ')[0] || user.username;
+      const lastName = user.lastName || fullName.split(' ').slice(1).join(' ') || 'Student';
+
+      const studentData = {
+        firstName,
+        lastName,
+        gender: user.gender || 'male',
+        phone: user.phone || '',
+        email: user.email,
+        schoolId: user.schoolId || existing?.schoolId,
+        dateOfBirth: user.dateOfBirth || existing?.dateOfBirth,
+        photo: avatarId || existing?.photo,
+        user: user.id,
+        enrollmentStatus: existing?.enrollmentStatus || 'active'
+      };
+
+      if (!existing) {
+        await strapi.db.query('api::student.student').create({
+          data: studentData
+        });
+        strapi.log.info(`[YAHAYASCOOL] ✅ Auto-created Student profile for user ${user.email} (ID: ${user.id})`);
+      } else {
+        await strapi.db.query('api::student.student').update({
+          where: { id: existing.id },
+          data: {
+            user: user.id,
+            email: user.email,
+            photo: avatarId || existing.photo,
+            schoolId: user.schoolId || existing.schoolId
+          }
+        });
+        strapi.log.info(`[YAHAYASCOOL] ✅ Linked Student profile for user ${user.email} (Student ID: ${existing.id})`);
+      }
+    } else if (roleType === 'parent') {
+      const existing = await strapi.db.query('api::parent.parent').findOne({
+        where: {
+          $or: [
+            { user: user.id },
+            { email: user.email },
+            ...(user.schoolId ? [{ schoolId: user.schoolId }] : [])
+          ]
+        }
+      });
+
+      const parentData = {
+        name: fullName || `Parent ${user.id}`,
+        phone: user.phone || 'N/A',
+        email: user.email,
+        gender: user.gender || 'male',
+        schoolId: user.schoolId || existing?.schoolId,
+        relationship: existing?.relationship || 'guardian',
+        user: user.id,
+        photo: avatarId || existing?.photo,
+        publishedAt: existing?.publishedAt || new Date().toISOString()
+      };
+
+      if (!existing) {
+        await strapi.db.query('api::parent.parent').create({
+          data: parentData
+        });
+        strapi.log.info(`[YAHAYASCOOL] ✅ Auto-created Parent profile for user ${user.email} (ID: ${user.id})`);
+      } else {
+        await strapi.db.query('api::parent.parent').update({
+          where: { id: existing.id },
+          data: {
+            user: user.id,
+            email: user.email,
+            publishedAt: existing.publishedAt || new Date().toISOString()
+          }
+        });
+      }
+    } else if (['worker', 'driver', 'accountant', 'account-lead'].includes(roleType)) {
+      const existing = await strapi.db.query('api::worker.worker').findOne({
+        where: {
+          $or: [
+            { user: user.id },
+            { email: user.email },
+            ...(user.schoolId ? [{ schoolId: user.schoolId }] : [])
+          ]
+        }
+      });
+
+      const workerData = {
+        name: fullName || `Staff ${user.id}`,
+        phone: user.phone || 'N/A',
+        email: user.email,
+        gender: user.gender || 'male',
+        role: user.role.name || 'Worker',
+        user: user.id,
+        photo: avatarId || existing?.photo,
+        publishedAt: existing?.publishedAt || new Date().toISOString()
+      };
+
+      if (!existing) {
+        await strapi.db.query('api::worker.worker').create({
+          data: workerData
+        });
+        strapi.log.info(`[YAHAYASCOOL] ✅ Auto-created Worker profile for user ${user.email} (ID: ${user.id})`);
+      } else {
+        await strapi.db.query('api::worker.worker').update({
+          where: { id: existing.id },
+          data: {
+            user: user.id,
+            email: user.email,
+            publishedAt: existing.publishedAt || new Date().toISOString()
+          }
+        });
+      }
+    }
+  } catch (err: any) {
+    strapi.log.error(`[YAHAYASCOOL] Error syncing profile for user ID ${userId}:`, err.message);
+  }
+}
+
+async function syncAllExistingUsers(strapi: Core.Strapi): Promise<void> {
+  strapi.log.info('[YAHAYASCOOL] Verifying user-to-profile linkages for all existing accounts...');
+  try {
+    const users = await strapi.db.query('plugin::users-permissions.user').findMany({
+      populate: ['role']
+    });
+    for (const u of users) {
+      if (u.id) {
+        await syncUserProfile(u.id, strapi);
+      }
+    }
+    strapi.log.info(`[YAHAYASCOOL] Profile synchronization complete. Processed ${users.length} users.`);
+  } catch (err: any) {
+    strapi.log.error('[YAHAYASCOOL] Error in syncAllExistingUsers:', err.message);
+  }
+}
+
 function registerUserLifecycles(strapi: Core.Strapi): void {
   strapi.db.lifecycles.subscribe({
     models: ['plugin::users-permissions.user'],
@@ -2312,6 +2511,9 @@ function registerUserLifecycles(strapi: Core.Strapi): void {
 
     async afterCreate(event: any) {
       try {
+        if (event.result?.id) {
+          await syncUserProfile(event.result.id, strapi);
+        }
         const auditService = strapi.service('api::audit-log.audit-log') as {
           log: (payload: Record<string, unknown>) => Promise<void>;
         };
@@ -2332,6 +2534,9 @@ function registerUserLifecycles(strapi: Core.Strapi): void {
 
     async afterUpdate(event: any) {
       try {
+        if (event.result?.id) {
+          await syncUserProfile(event.result.id, strapi);
+        }
         const auditService = strapi.service('api::audit-log.audit-log') as {
           log: (payload: Record<string, unknown>) => Promise<void>;
         };
@@ -2399,6 +2604,88 @@ function registerERPLifecycles(strapi: Core.Strapi): void {
     });
   }
 
+  // Teacher profile beforeCreate: auto-fill from user or auto-link
+  strapi.db.lifecycles.subscribe({
+    models: ['api::teacher.teacher'],
+    async beforeCreate(event: any) {
+      const { data } = event.params;
+      if (!data) return;
+      if (data.user) {
+        try {
+          const user = await strapi.db.query('plugin::users-permissions.user').findOne({
+            where: { id: data.user },
+            populate: ['avatar']
+          });
+          if (user) {
+            if (!data.name) data.name = user.displayName || [user.firstName, user.lastName].filter(Boolean).join(' ') || user.username;
+            if (!data.email) data.email = user.email;
+            if (!data.phone && user.phone) data.phone = user.phone;
+            if (!data.gender && user.gender) data.gender = user.gender;
+            if (!data.schoolId && user.schoolId) data.schoolId = user.schoolId;
+            if (!data.photo && user.avatar?.id) data.photo = user.avatar.id;
+          }
+        } catch {}
+      } else if (data.email || data.schoolId) {
+        try {
+          const user = await strapi.db.query('plugin::users-permissions.user').findOne({
+            where: {
+              $or: [
+                ...(data.email ? [{ email: data.email }] : []),
+                ...(data.schoolId ? [{ schoolId: data.schoolId }] : [])
+              ]
+            }
+          });
+          if (user) {
+            data.user = user.id;
+          }
+        } catch {}
+      }
+      if (!data.publishedAt) {
+        data.publishedAt = new Date().toISOString();
+      }
+    }
+  });
+
+  // Student profile beforeCreate: auto-fill from user or auto-link
+  strapi.db.lifecycles.subscribe({
+    models: ['api::student.student'],
+    async beforeCreate(event: any) {
+      const { data } = event.params;
+      if (!data) return;
+      if (data.user) {
+        try {
+          const user = await strapi.db.query('plugin::users-permissions.user').findOne({
+            where: { id: data.user },
+            populate: ['avatar']
+          });
+          if (user) {
+            if (!data.firstName) data.firstName = user.firstName || user.username;
+            if (!data.lastName) data.lastName = user.lastName || 'Student';
+            if (!data.email) data.email = user.email;
+            if (!data.phone && user.phone) data.phone = user.phone;
+            if (!data.gender && user.gender) data.gender = user.gender;
+            if (!data.schoolId && user.schoolId) data.schoolId = user.schoolId;
+            if (!data.photo && user.avatar?.id) data.photo = user.avatar.id;
+          }
+        } catch {}
+      } else if (data.email || data.schoolId) {
+        try {
+          const user = await strapi.db.query('plugin::users-permissions.user').findOne({
+            where: {
+              $or: [
+                ...(data.email ? [{ email: data.email }] : []),
+                ...(data.schoolId ? [{ schoolId: data.schoolId }] : [])
+              ]
+            }
+          });
+          if (user) {
+            data.user = user.id;
+          }
+        } catch {}
+      }
+    }
+  });
+
   strapi.db.lifecycles.subscribe({
     async beforeCreate(event: any) {
       const { data, model } = event.params || {};
@@ -2444,7 +2731,7 @@ function registerERPLifecycles(strapi: Core.Strapi): void {
     }
   });
 
-  // Verify academicHead is a Section Head role profile
+  // Verify academicHead has a teaching or faculty role
   strapi.db.lifecycles.subscribe({
     models: ['api::section.section'],
     async beforeCreate(event: any) {
@@ -2459,13 +2746,10 @@ function registerERPLifecycles(strapi: Core.Strapi): void {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Content Manager: Filter academicHead dropdown to only show Section Head profiles
+// Content Manager: Filter academicHead dropdown to show Faculty & Section Head profiles
 // ─────────────────────────────────────────────────────────────────────────────
 
 function registerContentManagerFilters(strapi: Core.Strapi): void {
-  // Intercept the Content Manager relation API endpoint for academicHead
-  // and filter results to only include teacher profiles linked to Section Head users.
-  // The endpoint pattern is: GET /content-manager/relations/api::section.section/academicHead
   strapi.server.use(async (ctx: any, next: any) => {
     await next();
 
@@ -2482,47 +2766,35 @@ function registerContentManagerFilters(strapi: Core.Strapi): void {
     try {
       const knex = strapi.db.connection;
 
-      // 1. Get the section-head role
-      const role = await knex('up_roles').where({ type: 'section-head' }).first();
-      if (!role) return;
+      // Allow Section Head, Teacher, Director, and Super Admin roles
+      const roles = await knex('up_roles')
+        .whereIn('type', ['section-head', 'teacher', 'director', 'super-administrator'])
+        .select('id');
+      const roleIds = roles.map((r: any) => r.id);
+      if (roleIds.length === 0) return;
 
-      // 2. Get teacher IDs AND documentIds for all section-head linked teacher profiles
-      //    Strapi v5 Content Manager uses 'documentId' (string) as primary identifier,
-      //    not the numeric database 'id'. We check both for safety.
-      const sectionHeadTeachers: Array<{ id: number | string; document_id: string }> = await knex('teachers as t')
-        .join('teachers_user_lnk as tul', 'tul.teacher_id', 't.id')
-        .join('up_users_role_lnk as url', 'url.user_id', 'tul.user_id')
-        .where('url.role_id', role.id)
+      const eligibleTeachers: Array<{ id: number | string; document_id: string }> = await knex('teachers as t')
+        .leftJoin('teachers_user_lnk as tul', 'tul.teacher_id', 't.id')
+        .leftJoin('up_users_role_lnk as url', 'url.user_id', 'tul.user_id')
+        .where((builder: any) => {
+          builder.whereIn('url.role_id', roleIds).orWhereNull('tul.user_id');
+        })
         .select('t.id', 't.document_id');
 
-      const numericIdSet = new Set(sectionHeadTeachers.map(t => Number(t.id)));
-      const documentIdSet = new Set(sectionHeadTeachers.map(t => t.document_id).filter(Boolean));
+      const numericIdSet = new Set(eligibleTeachers.map(t => Number(t.id)));
+      const documentIdSet = new Set(eligibleTeachers.map(t => t.document_id).filter(Boolean));
 
-      strapi.log.info(
-        `[YAHAYASCOOL] academicHead filter: allowed numeric IDs = [${[...numericIdSet].join(', ')}], ` +
-        `documentIds = [${[...documentIdSet].join(', ')}]`
-      );
-
-      // 3. Filter the response body
-      //    Strapi CM v5 uses { results: [...], pagination: {...} } where each item has:
-      //      item.id         → numeric DB id (may not always be present)
-      //      item.documentId → Strapi v5 stable string identifier
       if (ctx.body) {
         if (Array.isArray(ctx.body.results)) {
-          const before = ctx.body.results.length;
           ctx.body.results = ctx.body.results.filter((item: any) => {
             const matchesNumericId = item.id != null && numericIdSet.has(Number(item.id));
             const matchesDocumentId = item.documentId && documentIdSet.has(item.documentId);
             return matchesNumericId || matchesDocumentId;
           });
-          strapi.log.info(
-            `[YAHAYASCOOL] academicHead filter: ${before} → ${ctx.body.results.length} results after filtering`
-          );
           if (ctx.body.pagination) {
             ctx.body.pagination.total = ctx.body.results.length;
           }
         }
-        // Some endpoints use { data: [...] }
         if (Array.isArray(ctx.body.data)) {
           ctx.body.data = ctx.body.data.filter((item: any) => {
             const matchesNumericId = item.id != null && numericIdSet.has(Number(item.id));
@@ -2531,8 +2803,6 @@ function registerContentManagerFilters(strapi: Core.Strapi): void {
           });
         }
       }
-
-      strapi.log.debug('[YAHAYASCOOL] Filtered academicHead relation dropdown to Section Head profiles only.');
     } catch (err: any) {
       strapi.log.warn('[YAHAYASCOOL] Could not filter academicHead dropdown:', err.message);
     }
@@ -2563,28 +2833,24 @@ async function validateAcademicHeadIsSectionHead(event: any, strapi: any) {
       return;
     }
 
-    // 1. Find teacher and check linked user account role
     const teacherLink = await strapi.db.query('api::teacher.teacher').findOne({
       where: queryWhere,
       populate: ['user.role']
     });
 
-    if (!teacherLink) {
-      const { errors } = require('@strapi/utils');
-      throw new errors.ValidationError('Selected academic head profile does not exist.');
-    }
+    if (!teacherLink) return;
 
     const roleType = teacherLink.user?.role?.type;
-    if (roleType !== 'section-head') {
+    if (roleType && !['section-head', 'teacher', 'director', 'super-administrator'].includes(roleType)) {
       const { errors } = require('@strapi/utils');
       throw new errors.ValidationError(
-        `The selected teacher (${teacherLink.name}) does not have the 'Section Head' user role. Only registered Section Heads can be assigned as the Academic Head.`
+        `The selected teacher (${teacherLink.name}) must have a faculty or leadership role.`
       );
     }
   } catch (err: any) {
     const { errors } = require('@strapi/utils');
     if (err instanceof errors.ValidationError) throw err;
-    throw new errors.ValidationError(err.message || 'Validation of academic head role failed.');
+    strapi.log.warn('[YAHAYASCOOL] validateAcademicHead error:', err.message);
   }
 }
 
@@ -2595,7 +2861,6 @@ async function updateStudentEnrollmentName(event: any, strapi: any) {
   let studentId = data.student;
   let courseOfferingId = data.courseOffering;
 
-  // For updates, fetch missing IDs from existing record
   if (where?.id && (!studentId || !courseOfferingId)) {
     try {
       const existing = await strapi.db.query('api::student-enrollment.student-enrollment').findOne({
@@ -2645,7 +2910,6 @@ async function updateTeacherAssignmentName(event: any, strapi: any) {
   let teacherId = data.teacher;
   let courseOfferingId = data.courseOffering;
 
-  // For updates, fetch missing IDs from existing record
   if (where?.id && (!teacherId || !courseOfferingId)) {
     try {
       const existing = await strapi.db.query('api::teacher-assignment.teacher-assignment').findOne({
@@ -3473,6 +3737,7 @@ export default {
     await seedLmsData(strapi);
     await seedFinancePermissions(strapi);
     await seedDefaultUsers(strapi);
+    await syncAllExistingUsers(strapi);
     await reconcileInvoiceBalances(strapi);
     await seedWallOfGratitude(strapi);
     await migrateLegacyAcademicData(strapi);
