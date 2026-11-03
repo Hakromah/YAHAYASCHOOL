@@ -137,10 +137,9 @@ async function seedPublicPermissions(strapi) {
     }
 }
 async function seedRolePermissions(strapi) {
-    strapi.log.info('[YAHAYASCOOL] Seeding complete API and user permissions for all non-public roles...');
+    strapi.log.info('[YAHAYASCOOL] Seeding complete API and user permissions for all roles...');
     try {
-        const roles = await strapi.db.query('plugin::users-permissions.role').findMany({});
-        const targetRoles = roles.filter((r) => r.type !== 'public');
+        const targetRoles = await strapi.db.query('plugin::users-permissions.role').findMany({});
         // Dynamically discover all active API folders in src/api
         const apiDir = path_1.default.resolve(__dirname, '..', 'api');
         let apiNames = [];

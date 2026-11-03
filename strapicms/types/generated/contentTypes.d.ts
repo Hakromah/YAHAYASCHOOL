@@ -445,7 +445,7 @@ export interface ApiAboutPageAboutPage extends Struct.SingleTypeSchema {
   collectionName: 'about_pages';
   info: {
     description: 'The About Us page content';
-    displayName: '[F] About Page';
+    displayName: '2. Website - About Page';
     pluralName: 'about-pages';
     singularName: 'about-page';
   };
@@ -453,6 +453,9 @@ export interface ApiAboutPageAboutPage extends Struct.SingleTypeSchema {
     draftAndPublish: true;
   };
   pluginOptions: {
+    'content-manager': {
+      visible: true;
+    };
     i18n: {
       localized: true;
     };
@@ -516,6 +519,11 @@ export interface ApiAcademicAppealAcademicAppeal
   options: {
     draftAndPublish: false;
   };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
+  };
   attributes: {
     courseOffering: Schema.Attribute.Relation<
       'manyToOne',
@@ -559,8 +567,8 @@ export interface ApiAcademicAuditLogAcademicAuditLog
     draftAndPublish: false;
   };
   pluginOptions: {
-    i18n: {
-      localized: true;
+    'content-manager': {
+      visible: false;
     };
   };
   attributes: {
@@ -573,152 +581,17 @@ export interface ApiAcademicAuditLogAcademicAuditLog
     entityId: Schema.Attribute.Integer;
     entityType: Schema.Attribute.String;
     ipAddress: Schema.Attribute.String;
-    locale: Schema.Attribute.String;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
       'api::academic-audit-log.academic-audit-log'
-    >;
+    > &
+      Schema.Attribute.Private;
     newValue: Schema.Attribute.JSON;
     oldValue: Schema.Attribute.JSON;
     publishedAt: Schema.Attribute.DateTime;
     reason: Schema.Attribute.Text;
     timestamp: Schema.Attribute.DateTime;
-    updatedAt: Schema.Attribute.DateTime;
-    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-  };
-}
-
-export interface ApiAcademicCalendarEventAcademicCalendarEvent
-  extends Struct.CollectionTypeSchema {
-  collectionName: 'academic_calendar_events';
-  info: {
-    displayName: 'Academic Calendar Event';
-    pluralName: 'academic-calendar-events';
-    singularName: 'academic-calendar-event';
-  };
-  options: {
-    draftAndPublish: false;
-  };
-  attributes: {
-    academicTerms: Schema.Attribute.Relation<
-      'manyToMany',
-      'api::academic-term.academic-term'
-    >;
-    academicYear: Schema.Attribute.Relation<
-      'manyToOne',
-      'api::academic-year.academic-year'
-    >;
-    createdAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    description: Schema.Attribute.Text;
-    endDate: Schema.Attribute.Date & Schema.Attribute.Required;
-    eventType: Schema.Attribute.Enumeration<
-      ['Holiday', 'Exam', 'Meeting', 'Custom']
-    > &
-      Schema.Attribute.DefaultTo<'Custom'>;
-    locale: Schema.Attribute.String & Schema.Attribute.Private;
-    localizations: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::academic-calendar-event.academic-calendar-event'
-    > &
-      Schema.Attribute.Private;
-    publishedAt: Schema.Attribute.DateTime;
-    startDate: Schema.Attribute.Date & Schema.Attribute.Required;
-    title: Schema.Attribute.String & Schema.Attribute.Required;
-    updatedAt: Schema.Attribute.DateTime;
-    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-  };
-}
-
-export interface ApiAcademicCalendarAcademicCalendar
-  extends Struct.CollectionTypeSchema {
-  collectionName: 'academic_calendars';
-  info: {
-    description: 'School academic year and term schedule details';
-    displayName: 'Academic Calendar';
-    pluralName: 'academic-calendars';
-    singularName: 'academic-calendar';
-  };
-  options: {
-    draftAndPublish: false;
-  };
-  pluginOptions: {
-    i18n: {
-      localized: true;
-    };
-  };
-  attributes: {
-    academic_year: Schema.Attribute.Relation<
-      'manyToOne',
-      'api::academic-year.academic-year'
-    >;
-    createdAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    dropPeriodEnd: Schema.Attribute.Date;
-    dropPeriodStart: Schema.Attribute.Date;
-    examWeekEnd: Schema.Attribute.Date;
-    examWeekStart: Schema.Attribute.Date;
-    graduationDate: Schema.Attribute.Date;
-    holidayEnd: Schema.Attribute.Date;
-    holidayStart: Schema.Attribute.Date;
-    locale: Schema.Attribute.String;
-    localizations: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::academic-calendar.academic-calendar'
-    >;
-    name: Schema.Attribute.String & Schema.Attribute.Required;
-    publishedAt: Schema.Attribute.DateTime;
-    registrationEnd: Schema.Attribute.Date;
-    registrationStart: Schema.Attribute.Date;
-    updatedAt: Schema.Attribute.DateTime;
-    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-  };
-}
-
-export interface ApiAcademicCertificateTemplateAcademicCertificateTemplate
-  extends Struct.CollectionTypeSchema {
-  collectionName: 'academic-certificate-templates';
-  info: {
-    description: 'Global configuration for certificate generation';
-    displayName: 'Academic Certificate Template';
-    pluralName: 'academic-certificate-templates';
-    singularName: 'academic-certificate-template';
-  };
-  options: {
-    draftAndPublish: true;
-  };
-  pluginOptions: {
-    i18n: {
-      localized: true;
-    };
-  };
-  attributes: {
-    category: Schema.Attribute.Enumeration<
-      [
-        'Excellence',
-        'Graduation',
-        'Completion',
-        'Attendance',
-        'Behavior',
-        'Custom',
-      ]
-    >;
-    createdAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    designConfig: Schema.Attribute.JSON;
-    locale: Schema.Attribute.String;
-    localizations: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::academic-certificate-template.academic-certificate-template'
-    >;
-    name: Schema.Attribute.String & Schema.Attribute.Required;
-    publishedAt: Schema.Attribute.DateTime;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -738,8 +611,8 @@ export interface ApiAcademicCertificateAcademicCertificate
     draftAndPublish: false;
   };
   pluginOptions: {
-    i18n: {
-      localized: true;
+    'content-manager': {
+      visible: false;
     };
   };
   attributes: {
@@ -763,21 +636,18 @@ export interface ApiAcademicCertificateAcademicCertificate
       Schema.Attribute.Private;
     digitalSignature: Schema.Attribute.String;
     issueDate: Schema.Attribute.Date;
-    locale: Schema.Attribute.String;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
       'api::academic-certificate.academic-certificate'
-    >;
+    > &
+      Schema.Attribute.Private;
     publishedAt: Schema.Attribute.DateTime;
     qrCode: Schema.Attribute.String;
     serialNumber: Schema.Attribute.String & Schema.Attribute.Unique;
     status: Schema.Attribute.Enumeration<['Valid', 'Revoked']> &
       Schema.Attribute.DefaultTo<'Valid'>;
     student: Schema.Attribute.Relation<'manyToOne', 'api::student.student'>;
-    template: Schema.Attribute.Relation<
-      'manyToOne',
-      'api::academic-certificate-template.academic-certificate-template'
-    >;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -796,6 +666,11 @@ export interface ApiAcademicClearanceAcademicClearance
   };
   options: {
     draftAndPublish: false;
+  };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
   };
   attributes: {
     attendanceRate: Schema.Attribute.Decimal;
@@ -821,46 +696,6 @@ export interface ApiAcademicClearanceAcademicClearance
   };
 }
 
-export interface ApiAcademicRegulationAcademicRegulation
-  extends Struct.CollectionTypeSchema {
-  collectionName: 'academic_regulations';
-  info: {
-    description: 'Enterprise academic regulations and threshold rules';
-    displayName: 'Academic Regulation';
-    pluralName: 'academic-regulations';
-    singularName: 'academic-regulation';
-  };
-  options: {
-    draftAndPublish: false;
-  };
-  pluginOptions: {
-    i18n: {
-      localized: true;
-    };
-  };
-  attributes: {
-    createdAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    dismissalRules: Schema.Attribute.Text;
-    graduationRequirements: Schema.Attribute.JSON;
-    locale: Schema.Attribute.String;
-    localizations: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::academic-regulation.academic-regulation'
-    >;
-    maxFailedCredits: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<12>;
-    maxRepeats: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<2>;
-    minimumGPA: Schema.Attribute.Decimal & Schema.Attribute.DefaultTo<2>;
-    name: Schema.Attribute.String & Schema.Attribute.Required;
-    probationRules: Schema.Attribute.Text;
-    publishedAt: Schema.Attribute.DateTime;
-    updatedAt: Schema.Attribute.DateTime;
-    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-  };
-}
-
 export interface ApiAcademicResourceAcademicResource
   extends Struct.CollectionTypeSchema {
   collectionName: 'academic_resources';
@@ -871,6 +706,11 @@ export interface ApiAcademicResourceAcademicResource
   };
   options: {
     draftAndPublish: false;
+  };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
   };
   attributes: {
     author: Schema.Attribute.Relation<'manyToOne', 'api::teacher.teacher'>;
@@ -911,16 +751,16 @@ export interface ApiAcademicTermAcademicTerm
   collectionName: 'academic_terms';
   info: {
     description: 'Specific terms within an academic year (e.g., First Term)';
-    displayName: 'Academic Term';
+    displayName: '2. Academic - Academic Term';
     pluralName: 'academic-terms';
     singularName: 'academic-term';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   pluginOptions: {
-    i18n: {
-      localized: true;
+    'content-manager': {
+      visible: true;
     };
   };
   attributes: {
@@ -933,18 +773,13 @@ export interface ApiAcademicTermAcademicTerm
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
     endDate: Schema.Attribute.Date & Schema.Attribute.Required;
-    locale: Schema.Attribute.String;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
       'api::academic-term.academic-term'
-    >;
-    name: Schema.Attribute.String &
-      Schema.Attribute.Required &
-      Schema.Attribute.SetPluginOptions<{
-        i18n: {
-          localized: true;
-        };
-      }>;
+    > &
+      Schema.Attribute.Private;
+    name: Schema.Attribute.String & Schema.Attribute.Required;
     publishedAt: Schema.Attribute.DateTime;
     startDate: Schema.Attribute.Date & Schema.Attribute.Required;
     updatedAt: Schema.Attribute.DateTime;
@@ -966,8 +801,8 @@ export interface ApiAcademicTranscriptAcademicTranscript
     draftAndPublish: false;
   };
   pluginOptions: {
-    i18n: {
-      localized: true;
+    'content-manager': {
+      visible: false;
     };
   };
   attributes: {
@@ -978,11 +813,12 @@ export interface ApiAcademicTranscriptAcademicTranscript
     digitalSignature: Schema.Attribute.String;
     hash: Schema.Attribute.String;
     issueDate: Schema.Attribute.Date;
-    locale: Schema.Attribute.String;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
       'api::academic-transcript.academic-transcript'
-    >;
+    > &
+      Schema.Attribute.Private;
     principal: Schema.Attribute.String;
     publishedAt: Schema.Attribute.DateTime;
     qrCode: Schema.Attribute.String;
@@ -1005,7 +841,7 @@ export interface ApiAcademicYearAcademicYear
   collectionName: 'academic_years';
   info: {
     description: 'School academic calendar year with terms and enrollments';
-    displayName: 'Academic Year';
+    displayName: '2. Academic - Academic Year';
     pluralName: 'academic-years';
     singularName: 'academic-year';
   };
@@ -1013,8 +849,8 @@ export interface ApiAcademicYearAcademicYear
     draftAndPublish: false;
   };
   pluginOptions: {
-    i18n: {
-      localized: true;
+    'content-manager': {
+      visible: true;
     };
   };
   attributes: {
@@ -1027,18 +863,13 @@ export interface ApiAcademicYearAcademicYear
     >;
     endDate: Schema.Attribute.Date & Schema.Attribute.Required;
     isCurrent: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
-    locale: Schema.Attribute.String;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
       'api::academic-year.academic-year'
-    >;
-    name: Schema.Attribute.String &
-      Schema.Attribute.Required &
-      Schema.Attribute.SetPluginOptions<{
-        i18n: {
-          localized: true;
-        };
-      }>;
+    > &
+      Schema.Attribute.Private;
+    name: Schema.Attribute.String & Schema.Attribute.Required;
     publishedAt: Schema.Attribute.DateTime;
     recordStatus: Schema.Attribute.Enumeration<
       ['planned', 'active', 'completed']
@@ -1063,12 +894,17 @@ export interface ApiAdmissionApplicationAdmissionApplication
   collectionName: 'admission_applications';
   info: {
     description: 'Student online admission applications submitted via website registration portal';
-    displayName: 'Admission Application';
+    displayName: '3. ERP - Admission Application';
     pluralName: 'admission-applications';
     singularName: 'admission-application';
   };
   options: {
     draftAndPublish: false;
+  };
+  pluginOptions: {
+    'content-manager': {
+      visible: true;
+    };
   };
   attributes: {
     address: Schema.Attribute.Text & Schema.Attribute.Required;
@@ -1131,7 +967,7 @@ export interface ApiAnnouncementAnnouncement
   collectionName: 'announcements';
   info: {
     description: 'Public and internal school announcements or ticker alerts';
-    displayName: '[F] Announcement';
+    displayName: '4. Website - Announcement';
     pluralName: 'announcements';
     singularName: 'announcement';
   };
@@ -1139,6 +975,9 @@ export interface ApiAnnouncementAnnouncement
     draftAndPublish: true;
   };
   pluginOptions: {
+    'content-manager': {
+      visible: true;
+    };
     i18n: {
       localized: true;
     };
@@ -1192,6 +1031,11 @@ export interface ApiAssessmentBlueprintAssessmentBlueprint
   options: {
     draftAndPublish: false;
   };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
+  };
   attributes: {
     componentName: Schema.Attribute.Enumeration<
       [
@@ -1226,97 +1070,21 @@ export interface ApiAssessmentBlueprintAssessmentBlueprint
   };
 }
 
-export interface ApiAssessmentCategoryAssessmentCategory
-  extends Struct.CollectionTypeSchema {
-  collectionName: 'assessment_categories';
-  info: {
-    description: 'Updated assessments weights configuration';
-    displayName: 'Assessment Category';
-    pluralName: 'assessment-categories';
-    singularName: 'assessment-category';
-  };
-  options: {
-    draftAndPublish: false;
-  };
-  pluginOptions: {
-    i18n: {
-      localized: true;
-    };
-  };
-  attributes: {
-    createdAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    description: Schema.Attribute.Text;
-    latePenalty: Schema.Attribute.Decimal;
-    locale: Schema.Attribute.String;
-    localizations: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::assessment-category.assessment-category'
-    >;
-    maxMarks: Schema.Attribute.Decimal;
-    name: Schema.Attribute.String &
-      Schema.Attribute.Required &
-      Schema.Attribute.Unique;
-    passingMarks: Schema.Attribute.Decimal;
-    publishedAt: Schema.Attribute.DateTime;
-    updatedAt: Schema.Attribute.DateTime;
-    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    weightPercent: Schema.Attribute.Decimal;
-  };
-}
-
-export interface ApiAssessmentTypeAssessmentType
-  extends Struct.CollectionTypeSchema {
-  collectionName: 'assessment_types';
-  info: {
-    description: 'Schema for Assessment Type';
-    displayName: 'Assessment Type';
-    pluralName: 'assessment-types';
-    singularName: 'assessment-type';
-  };
-  options: {
-    draftAndPublish: true;
-  };
-  attributes: {
-    assessment_category: Schema.Attribute.Relation<
-      'manyToOne',
-      'api::assessment-category.assessment-category'
-    >;
-    code: Schema.Attribute.String &
-      Schema.Attribute.Required &
-      Schema.Attribute.Unique;
-    createdAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    isActive: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
-    locale: Schema.Attribute.String & Schema.Attribute.Private;
-    localizations: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::assessment-type.assessment-type'
-    > &
-      Schema.Attribute.Private;
-    name: Schema.Attribute.String & Schema.Attribute.Required;
-    passingScore: Schema.Attribute.Decimal;
-    publishedAt: Schema.Attribute.DateTime;
-    updatedAt: Schema.Attribute.DateTime;
-    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    weight: Schema.Attribute.Decimal;
-  };
-}
-
 export interface ApiAttendanceRecordAttendanceRecord
   extends Struct.CollectionTypeSchema {
   collectionName: 'attendance_records';
   info: {
-    displayName: 'Attendance Record';
+    displayName: '3. ERP - Attendance Record';
     pluralName: 'attendance-records';
     singularName: 'attendance-record';
   };
   options: {
     draftAndPublish: false;
+  };
+  pluginOptions: {
+    'content-manager': {
+      visible: true;
+    };
   };
   attributes: {
     academicTerm: Schema.Attribute.Relation<
@@ -1378,6 +1146,11 @@ export interface ApiAuditLogAuditLog extends Struct.CollectionTypeSchema {
     comment: '';
     draftAndPublish: false;
   };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
+  };
   attributes: {
     action: Schema.Attribute.String &
       Schema.Attribute.Required &
@@ -1427,7 +1200,7 @@ export interface ApiCampusCampus extends Struct.CollectionTypeSchema {
   collectionName: 'campuses';
   info: {
     description: 'School campuses and facilities management';
-    displayName: 'Campus';
+    displayName: '2. Academic - Campus';
     pluralName: 'campuses';
     singularName: 'campus';
   };
@@ -1435,17 +1208,12 @@ export interface ApiCampusCampus extends Struct.CollectionTypeSchema {
     draftAndPublish: false;
   };
   pluginOptions: {
-    i18n: {
-      localized: true;
+    'content-manager': {
+      visible: true;
     };
   };
   attributes: {
-    address: Schema.Attribute.Text &
-      Schema.Attribute.SetPluginOptions<{
-        i18n: {
-          localized: true;
-        };
-      }>;
+    address: Schema.Attribute.Text;
     code: Schema.Attribute.String &
       Schema.Attribute.Required &
       Schema.Attribute.Unique;
@@ -1453,22 +1221,15 @@ export interface ApiCampusCampus extends Struct.CollectionTypeSchema {
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
     email: Schema.Attribute.Email;
-    locale: Schema.Attribute.String;
-    localizations: Schema.Attribute.Relation<'oneToMany', 'api::campus.campus'>;
-    name: Schema.Attribute.String &
-      Schema.Attribute.Required &
-      Schema.Attribute.SetPluginOptions<{
-        i18n: {
-          localized: true;
-        };
-      }>;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::campus.campus'
+    > &
+      Schema.Attribute.Private;
+    name: Schema.Attribute.String & Schema.Attribute.Required;
     phone: Schema.Attribute.String;
-    principalName: Schema.Attribute.String &
-      Schema.Attribute.SetPluginOptions<{
-        i18n: {
-          localized: true;
-        };
-      }>;
+    principalName: Schema.Attribute.String;
     publishedAt: Schema.Attribute.DateTime;
     recordStatus: Schema.Attribute.Enumeration<
       ['active', 'inactive', 'under_construction']
@@ -1485,7 +1246,7 @@ export interface ApiCareerPositionCareerPosition
   collectionName: 'career_positions';
   info: {
     description: 'Join our mission of nurturing global leadership.';
-    displayName: '[F] Available Positions';
+    displayName: '4. Website - Career Position';
     pluralName: 'career-positions';
     singularName: 'career-position';
   };
@@ -1493,6 +1254,9 @@ export interface ApiCareerPositionCareerPosition
     draftAndPublish: true;
   };
   pluginOptions: {
+    'content-manager': {
+      visible: true;
+    };
     i18n: {
       localized: true;
     };
@@ -1550,7 +1314,7 @@ export interface ApiCareerSettingCareerSetting extends Struct.SingleTypeSchema {
   collectionName: 'career_settings';
   info: {
     description: 'The title and description that appears above the list of positions.';
-    displayName: '[F] Available Positions Header';
+    displayName: '2. Website - Career Header';
     pluralName: 'career-settings';
     singularName: 'career-setting';
   };
@@ -1558,6 +1322,9 @@ export interface ApiCareerSettingCareerSetting extends Struct.SingleTypeSchema {
     draftAndPublish: true;
   };
   pluginOptions: {
+    'content-manager': {
+      visible: true;
+    };
     i18n: {
       localized: true;
     };
@@ -1622,12 +1389,17 @@ export interface ApiCareerSettingCareerSetting extends Struct.SingleTypeSchema {
 export interface ApiClassroomClassroom extends Struct.CollectionTypeSchema {
   collectionName: 'classrooms';
   info: {
-    displayName: 'Classroom';
+    displayName: '2. Academic - Classroom';
     pluralName: 'classrooms';
     singularName: 'classroom';
   };
   options: {
     draftAndPublish: false;
+  };
+  pluginOptions: {
+    'content-manager': {
+      visible: true;
+    };
   };
   attributes: {
     building: Schema.Attribute.String;
@@ -1675,7 +1447,7 @@ export interface ApiContactInfoContactInfo extends Struct.SingleTypeSchema {
   collectionName: 'contact_infos';
   info: {
     description: 'School contact details, office hours, and maps';
-    displayName: '[F] Contact Information';
+    displayName: '2. Website - Contact Information';
     pluralName: 'contact-infos';
     singularName: 'contact-info';
   };
@@ -1683,6 +1455,9 @@ export interface ApiContactInfoContactInfo extends Struct.SingleTypeSchema {
     draftAndPublish: true;
   };
   pluginOptions: {
+    'content-manager': {
+      visible: true;
+    };
     i18n: {
       localized: true;
     };
@@ -1711,12 +1486,17 @@ export interface ApiContactSubmissionContactSubmission
   collectionName: 'contact_submissions';
   info: {
     description: 'Inquiries submitted via website contact form';
-    displayName: 'Contact Submission';
+    displayName: '4. Website - Contact Submission';
     pluralName: 'contact-submissions';
     singularName: 'contact-submission';
   };
   options: {
     draftAndPublish: false;
+  };
+  pluginOptions: {
+    'content-manager': {
+      visible: true;
+    };
   };
   attributes: {
     createdAt: Schema.Attribute.DateTime;
@@ -1750,7 +1530,7 @@ export interface ApiCourseOfferingCourseOffering
   collectionName: 'course_offerings';
   info: {
     description: 'Specific scheduled course instance';
-    displayName: 'Course Offering';
+    displayName: '2. Academic - Course Offering';
     pluralName: 'course-offerings';
     singularName: 'course-offering';
   };
@@ -1758,8 +1538,8 @@ export interface ApiCourseOfferingCourseOffering
     draftAndPublish: false;
   };
   pluginOptions: {
-    i18n: {
-      localized: false;
+    'content-manager': {
+      visible: true;
     };
   };
   attributes: {
@@ -1825,7 +1605,7 @@ export interface ApiCurriculumCurriculum extends Struct.CollectionTypeSchema {
   collectionName: 'curriculums';
   info: {
     description: 'Updated curriculum syllabus records';
-    displayName: 'Curriculum';
+    displayName: '2. Academic - Curriculum';
     pluralName: 'curriculums';
     singularName: 'curriculum';
   };
@@ -1833,8 +1613,8 @@ export interface ApiCurriculumCurriculum extends Struct.CollectionTypeSchema {
     draftAndPublish: false;
   };
   pluginOptions: {
-    i18n: {
-      localized: true;
+    'content-manager': {
+      visible: true;
     };
   };
   attributes: {
@@ -1860,11 +1640,12 @@ export interface ApiCurriculumCurriculum extends Struct.CollectionTypeSchema {
     >;
     graduationCredits: Schema.Attribute.Integer;
     learningOutcomes: Schema.Attribute.Text;
-    locale: Schema.Attribute.String;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
       'api::curriculum.curriculum'
-    >;
+    > &
+      Schema.Attribute.Private;
     objectives: Schema.Attribute.Text;
     prerequisites: Schema.Attribute.Text;
     program: Schema.Attribute.Relation<'manyToOne', 'api::program.program'>;
@@ -1894,7 +1675,12 @@ export interface ApiDawahActivityDawahActivity
     singularName: 'dawah-activity';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
+  };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
   };
   attributes: {
     createdAt: Schema.Attribute.DateTime;
@@ -1925,7 +1711,7 @@ export interface ApiDepartmentDepartment extends Struct.CollectionTypeSchema {
   collectionName: 'departments';
   info: {
     description: 'Academic and administrative faculties/departments';
-    displayName: '[F] Department';
+    displayName: '2. Academic - Department';
     pluralName: 'departments';
     singularName: 'department';
   };
@@ -1933,6 +1719,9 @@ export interface ApiDepartmentDepartment extends Struct.CollectionTypeSchema {
     draftAndPublish: true;
   };
   pluginOptions: {
+    'content-manager': {
+      visible: true;
+    };
     i18n: {
       localized: true;
     };
@@ -2006,7 +1795,7 @@ export interface ApiDonationCampaignDonationCampaign
   collectionName: 'donation_campaigns';
   info: {
     description: 'School development, waqf, laboratory, and scholarship fundraising campaigns';
-    displayName: '[F] Donation Campaign';
+    displayName: '4. Website - Donation Campaign';
     pluralName: 'donation-campaigns';
     singularName: 'donation-campaign';
   };
@@ -2014,6 +1803,9 @@ export interface ApiDonationCampaignDonationCampaign
     draftAndPublish: true;
   };
   pluginOptions: {
+    'content-manager': {
+      visible: true;
+    };
     i18n: {
       localized: true;
     };
@@ -2089,7 +1881,7 @@ export interface ApiDonationSettingDonationSetting
   collectionName: 'donation_settings';
   info: {
     description: 'Global settings for the donation page (Bank Accounts, Form Options)';
-    displayName: '[F] Donation Settings';
+    displayName: '2. Website - Donation Settings';
     pluralName: 'donation-settings';
     singularName: 'donation-setting';
   };
@@ -2097,6 +1889,9 @@ export interface ApiDonationSettingDonationSetting
     draftAndPublish: true;
   };
   pluginOptions: {
+    'content-manager': {
+      visible: true;
+    };
     i18n: {
       localized: true;
     };
@@ -2143,67 +1938,11 @@ export interface ApiDonationSettingDonationSetting
   };
 }
 
-export interface ApiDownloadItemDownloadItem
-  extends Struct.CollectionTypeSchema {
-  collectionName: 'download_items';
-  info: {
-    description: 'Public documents, brochures, application forms, and prospectuses';
-    displayName: 'Download Item';
-    pluralName: 'download-items';
-    singularName: 'download-item';
-  };
-  options: {
-    draftAndPublish: true;
-  };
-  pluginOptions: {
-    i18n: {
-      localized: true;
-    };
-  };
-  attributes: {
-    category: Schema.Attribute.String &
-      Schema.Attribute.SetPluginOptions<{
-        i18n: {
-          localized: true;
-        };
-      }> &
-      Schema.Attribute.DefaultTo<'General'>;
-    createdAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    description: Schema.Attribute.Text &
-      Schema.Attribute.SetPluginOptions<{
-        i18n: {
-          localized: true;
-        };
-      }>;
-    file: Schema.Attribute.Media<'files' | 'images'>;
-    fileSizeLabel: Schema.Attribute.String &
-      Schema.Attribute.DefaultTo<'2.4 MB'>;
-    locale: Schema.Attribute.String;
-    localizations: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::download-item.download-item'
-    >;
-    publishedAt: Schema.Attribute.DateTime;
-    title: Schema.Attribute.String &
-      Schema.Attribute.Required &
-      Schema.Attribute.SetPluginOptions<{
-        i18n: {
-          localized: true;
-        };
-      }>;
-    updatedAt: Schema.Attribute.DateTime;
-    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-  };
-}
-
 export interface ApiEventEvent extends Struct.CollectionTypeSchema {
   collectionName: 'events';
   info: {
     description: 'School calendar activities, sports, lectures, and parent gatherings';
-    displayName: '[F] Event';
+    displayName: '4. Website - Event';
     pluralName: 'events';
     singularName: 'event';
   };
@@ -2211,6 +1950,9 @@ export interface ApiEventEvent extends Struct.CollectionTypeSchema {
     draftAndPublish: true;
   };
   pluginOptions: {
+    'content-manager': {
+      visible: true;
+    };
     i18n: {
       localized: true;
     };
@@ -2296,7 +2038,12 @@ export interface ApiExamRoomExamRoom extends Struct.CollectionTypeSchema {
     singularName: 'exam-room';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
+  };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
   };
   attributes: {
     building: Schema.Attribute.String;
@@ -2330,6 +2077,11 @@ export interface ApiExamScheduleExamSchedule
   };
   options: {
     draftAndPublish: false;
+  };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
   };
   attributes: {
     createdAt: Schema.Attribute.DateTime;
@@ -2378,8 +2130,8 @@ export interface ApiExamSessionExamSession extends Struct.CollectionTypeSchema {
     draftAndPublish: false;
   };
   pluginOptions: {
-    i18n: {
-      localized: true;
+    'content-manager': {
+      visible: false;
     };
   };
   attributes: {
@@ -2395,11 +2147,12 @@ export interface ApiExamSessionExamSession extends Struct.CollectionTypeSchema {
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
     endDate: Schema.Attribute.Date & Schema.Attribute.Required;
-    locale: Schema.Attribute.String;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
       'api::exam-session.exam-session'
-    >;
+    > &
+      Schema.Attribute.Private;
     lockDate: Schema.Attribute.Date;
     name: Schema.Attribute.String & Schema.Attribute.Required;
     publicationDate: Schema.Attribute.Date;
@@ -2417,55 +2170,6 @@ export interface ApiExamSessionExamSession extends Struct.CollectionTypeSchema {
   };
 }
 
-export interface ApiExamTimetableExamTimetable
-  extends Struct.CollectionTypeSchema {
-  collectionName: 'exam_timetables';
-  info: {
-    description: 'Detailed examination schedules, hall assignments, and invigilator bookings';
-    displayName: 'Exam Timetable';
-    pluralName: 'exam-timetables';
-    singularName: 'exam-timetable';
-  };
-  options: {
-    draftAndPublish: false;
-  };
-  pluginOptions: {
-    i18n: {
-      localized: true;
-    };
-  };
-  attributes: {
-    building: Schema.Attribute.String;
-    course: Schema.Attribute.Relation<'manyToOne', 'api::subject.subject'>;
-    createdAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    duration: Schema.Attribute.String;
-    exam_room: Schema.Attribute.Relation<
-      'manyToOne',
-      'api::exam-room.exam-room'
-    >;
-    exam_session: Schema.Attribute.Relation<
-      'manyToOne',
-      'api::exam-session.exam-session'
-    >;
-    examDate: Schema.Attribute.Date;
-    instructions: Schema.Attribute.Text;
-    invigilator: Schema.Attribute.Relation<'manyToOne', 'api::teacher.teacher'>;
-    locale: Schema.Attribute.String;
-    localizations: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::exam-timetable.exam-timetable'
-    >;
-    publishedAt: Schema.Attribute.DateTime;
-    seatCapacity: Schema.Attribute.Integer;
-    startTime: Schema.Attribute.String;
-    updatedAt: Schema.Attribute.DateTime;
-    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-  };
-}
-
 export interface ApiExaminationExamination extends Struct.CollectionTypeSchema {
   collectionName: 'examinations';
   info: {
@@ -2477,11 +2181,12 @@ export interface ApiExaminationExamination extends Struct.CollectionTypeSchema {
   options: {
     draftAndPublish: false;
   };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
+  };
   attributes: {
-    assessment_type: Schema.Attribute.Relation<
-      'manyToOne',
-      'api::assessment-type.assessment-type'
-    >;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -2519,7 +2224,7 @@ export interface ApiFaqFaq extends Struct.CollectionTypeSchema {
   collectionName: 'faqs';
   info: {
     description: 'Frequently asked questions categorized by topic';
-    displayName: '[F] FAQ';
+    displayName: '4. Website - FAQ';
     pluralName: 'faqs';
     singularName: 'faq';
   };
@@ -2527,6 +2232,9 @@ export interface ApiFaqFaq extends Struct.CollectionTypeSchema {
     draftAndPublish: true;
   };
   pluginOptions: {
+    'content-manager': {
+      visible: true;
+    };
     i18n: {
       localized: true;
     };
@@ -2578,6 +2286,11 @@ export interface ApiFinanceAccountFinanceAccount
   options: {
     draftAndPublish: false;
   };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
+  };
   attributes: {
     accountCode: Schema.Attribute.String &
       Schema.Attribute.Required &
@@ -2620,6 +2333,11 @@ export interface ApiFinanceAccountingPeriodFinanceAccountingPeriod
   options: {
     draftAndPublish: false;
   };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
+  };
   attributes: {
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
@@ -2656,6 +2374,11 @@ export interface ApiFinanceBudgetFinanceBudget
   };
   options: {
     draftAndPublish: false;
+  };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
   };
   attributes: {
     academicYearCode: Schema.Attribute.String &
@@ -2703,6 +2426,11 @@ export interface ApiFinanceCurrencyFinanceCurrency
   options: {
     draftAndPublish: false;
   };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
+  };
   attributes: {
     country: Schema.Attribute.String;
     createdAt: Schema.Attribute.DateTime;
@@ -2741,6 +2469,11 @@ export interface ApiFinanceExchangeRateFinanceExchangeRate
   };
   options: {
     draftAndPublish: false;
+  };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
   };
   attributes: {
     createdAt: Schema.Attribute.DateTime;
@@ -2784,6 +2517,11 @@ export interface ApiFinanceExpenseFinanceExpense
   options: {
     draftAndPublish: false;
   };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
+  };
   attributes: {
     amount: Schema.Attribute.Decimal & Schema.Attribute.Required;
     category: Schema.Attribute.String;
@@ -2816,12 +2554,17 @@ export interface ApiFinanceFeeStructureFinanceFeeStructure
   collectionName: 'finance_fee_structures';
   info: {
     description: 'Institutional fee schedules, tuition templates, and grade-level billing matrices';
-    displayName: 'Finance Fee Structure';
+    displayName: '3. ERP - Fee Structure';
     pluralName: 'finance-fee-structures';
     singularName: 'finance-fee-structure';
   };
   options: {
     draftAndPublish: false;
+  };
+  pluginOptions: {
+    'content-manager': {
+      visible: true;
+    };
   };
   attributes: {
     academicYearCode: Schema.Attribute.String;
@@ -2857,44 +2600,6 @@ export interface ApiFinanceFeeStructureFinanceFeeStructure
   };
 }
 
-export interface ApiFinanceFinancialStatementFinanceFinancialStatement
-  extends Struct.CollectionTypeSchema {
-  collectionName: 'finance_financial_statements';
-  info: {
-    description: 'Generated institutional financial statement versions';
-    displayName: 'Finance Financial Statement';
-    pluralName: 'finance-financial-statements';
-    singularName: 'finance-financial-statement';
-  };
-  options: {
-    draftAndPublish: false;
-  };
-  attributes: {
-    academicYear: Schema.Attribute.String;
-    createdAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    generatedBy: Schema.Attribute.String;
-    generationDate: Schema.Attribute.DateTime;
-    locale: Schema.Attribute.String & Schema.Attribute.Private;
-    localizations: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::finance-financial-statement.finance-financial-statement'
-    > &
-      Schema.Attribute.Private;
-    period: Schema.Attribute.String;
-    publishedAt: Schema.Attribute.DateTime;
-    reportData: Schema.Attribute.JSON;
-    reportHash: Schema.Attribute.String;
-    reportType: Schema.Attribute.String;
-    status: Schema.Attribute.Enumeration<['Draft', 'Reviewed', 'Certified']> &
-      Schema.Attribute.DefaultTo<'Draft'>;
-    updatedAt: Schema.Attribute.DateTime;
-    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-  };
-}
-
 export interface ApiFinanceHoldFinanceHold extends Struct.CollectionTypeSchema {
   collectionName: 'finance_holds';
   info: {
@@ -2905,6 +2610,11 @@ export interface ApiFinanceHoldFinanceHold extends Struct.CollectionTypeSchema {
   };
   options: {
     draftAndPublish: false;
+  };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
   };
   attributes: {
     createdAt: Schema.Attribute.DateTime;
@@ -2947,12 +2657,17 @@ export interface ApiFinanceInvoiceFinanceInvoice
   collectionName: 'finance_invoices';
   info: {
     description: '';
-    displayName: 'Finance Invoice';
+    displayName: '3. ERP - Tuition Invoice';
     pluralName: 'finance-invoices';
     singularName: 'finance-invoice';
   };
   options: {
     draftAndPublish: false;
+  };
+  pluginOptions: {
+    'content-manager': {
+      visible: true;
+    };
   };
   attributes: {
     academicYearId: Schema.Attribute.String;
@@ -3022,6 +2737,11 @@ export interface ApiFinanceJournalEntryFinanceJournalEntry
   options: {
     draftAndPublish: false;
   };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
+  };
   attributes: {
     baseCurrency: Schema.Attribute.Relation<
       'manyToOne',
@@ -3073,6 +2793,11 @@ export interface ApiFinanceLedgerEntryFinanceLedgerEntry
   };
   options: {
     draftAndPublish: false;
+  };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
   };
   attributes: {
     baseAmount: Schema.Attribute.Decimal;
@@ -3130,6 +2855,11 @@ export interface ApiFinancePayrollFinancePayroll
   options: {
     draftAndPublish: false;
   };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
+  };
   attributes: {
     attendanceRate: Schema.Attribute.Decimal & Schema.Attribute.DefaultTo<100>;
     baseSalary: Schema.Attribute.Decimal & Schema.Attribute.DefaultTo<0>;
@@ -3169,12 +2899,17 @@ export interface ApiFinanceReceiptFinanceReceipt
   collectionName: 'finance_receipts';
   info: {
     description: '';
-    displayName: 'Finance Receipt';
+    displayName: '3. ERP - Payment Receipt';
     pluralName: 'finance-receipts';
     singularName: 'finance-receipt';
   };
   options: {
     draftAndPublish: false;
+  };
+  pluginOptions: {
+    'content-manager': {
+      visible: true;
+    };
   };
   attributes: {
     appliedAmount: Schema.Attribute.Decimal & Schema.Attribute.DefaultTo<0>;
@@ -3255,7 +2990,12 @@ export interface ApiFinanceScholarshipFinanceScholarship
     singularName: 'finance-scholarship';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
+  };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
   };
   attributes: {
     createdAt: Schema.Attribute.DateTime;
@@ -3275,45 +3015,6 @@ export interface ApiFinanceScholarshipFinanceScholarship
   };
 }
 
-export interface ApiFinanceSequenceCounterFinanceSequenceCounter
-  extends Struct.CollectionTypeSchema {
-  collectionName: 'finance_sequence_counters';
-  info: {
-    description: 'Centralized sequence generator for all ERP documents';
-    displayName: 'Finance Sequence Counter';
-    pluralName: 'finance-sequence-counters';
-    singularName: 'finance-sequence-counter';
-  };
-  options: {
-    draftAndPublish: false;
-  };
-  attributes: {
-    createdAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    currentValue: Schema.Attribute.Integer &
-      Schema.Attribute.Required &
-      Schema.Attribute.DefaultTo<0>;
-    locale: Schema.Attribute.String & Schema.Attribute.Private;
-    localizations: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::finance-sequence-counter.finance-sequence-counter'
-    > &
-      Schema.Attribute.Private;
-    module: Schema.Attribute.String &
-      Schema.Attribute.Required &
-      Schema.Attribute.Unique;
-    padding: Schema.Attribute.Integer &
-      Schema.Attribute.Required &
-      Schema.Attribute.DefaultTo<6>;
-    prefix: Schema.Attribute.String & Schema.Attribute.Required;
-    publishedAt: Schema.Attribute.DateTime;
-    updatedAt: Schema.Attribute.DateTime;
-    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-  };
-}
-
 export interface ApiFixedAssetFixedAsset extends Struct.CollectionTypeSchema {
   collectionName: 'fixed_assets';
   info: {
@@ -3323,6 +3024,11 @@ export interface ApiFixedAssetFixedAsset extends Struct.CollectionTypeSchema {
   };
   options: {
     draftAndPublish: false;
+  };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
   };
   attributes: {
     accumulatedDepreciation: Schema.Attribute.Decimal &
@@ -3380,7 +3086,7 @@ export interface ApiFooterConfigFooterConfig extends Struct.SingleTypeSchema {
   collectionName: 'footer_configs';
   info: {
     description: 'Dynamic website footer columns, copyright, and newsletter links';
-    displayName: '[F] Footer Configuration';
+    displayName: '2. Website - Footer Configuration';
     pluralName: 'footer-configs';
     singularName: 'footer-config';
   };
@@ -3388,6 +3094,9 @@ export interface ApiFooterConfigFooterConfig extends Struct.SingleTypeSchema {
     draftAndPublish: true;
   };
   pluginOptions: {
+    'content-manager': {
+      visible: true;
+    };
     i18n: {
       localized: true;
     };
@@ -3520,7 +3229,7 @@ export interface ApiGalleryItemGalleryItem extends Struct.CollectionTypeSchema {
   collectionName: 'gallery_items';
   info: {
     description: 'Photo and video albums for school gallery';
-    displayName: '[F] Gallery Item';
+    displayName: '4. Website - Gallery Item';
     pluralName: 'gallery-items';
     singularName: 'gallery-item';
   };
@@ -3528,6 +3237,9 @@ export interface ApiGalleryItemGalleryItem extends Struct.CollectionTypeSchema {
     draftAndPublish: true;
   };
   pluginOptions: {
+    'content-manager': {
+      visible: true;
+    };
     i18n: {
       localized: true;
     };
@@ -3585,8 +3297,8 @@ export interface ApiGpaConfigurationGpaConfiguration
     draftAndPublish: false;
   };
   pluginOptions: {
-    i18n: {
-      localized: true;
+    'content-manager': {
+      visible: false;
     };
   };
   attributes: {
@@ -3599,61 +3311,16 @@ export interface ApiGpaConfigurationGpaConfiguration
       Schema.Attribute.DefaultTo<'Weighted GPA'>;
     gradeReplacementPolicy: Schema.Attribute.String;
     isActive: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
-    locale: Schema.Attribute.String;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
       'api::gpa-configuration.gpa-configuration'
-    >;
+    > &
+      Schema.Attribute.Private;
     name: Schema.Attribute.String & Schema.Attribute.Required;
     publishedAt: Schema.Attribute.DateTime;
     repeatedCoursePolicy: Schema.Attribute.String;
     transferCreditPolicy: Schema.Attribute.String;
-    updatedAt: Schema.Attribute.DateTime;
-    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-  };
-}
-
-export interface ApiGpaHistoryGpaHistory extends Struct.CollectionTypeSchema {
-  collectionName: 'gpa_histories';
-  info: {
-    description: 'Student historical GPA and academic standing records';
-    displayName: 'GPA History';
-    pluralName: 'gpa-histories';
-    singularName: 'gpa-history';
-  };
-  options: {
-    draftAndPublish: false;
-  };
-  pluginOptions: {
-    i18n: {
-      localized: true;
-    };
-  };
-  attributes: {
-    academic_term: Schema.Attribute.Relation<
-      'manyToOne',
-      'api::academic-term.academic-term'
-    >;
-    academic_year: Schema.Attribute.Relation<
-      'manyToOne',
-      'api::academic-year.academic-year'
-    >;
-    academicStanding: Schema.Attribute.String;
-    cgpa: Schema.Attribute.Decimal;
-    createdAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    creditsAttempted: Schema.Attribute.Decimal;
-    creditsEarned: Schema.Attribute.Decimal;
-    locale: Schema.Attribute.String;
-    localizations: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::gpa-history.gpa-history'
-    >;
-    publishedAt: Schema.Attribute.DateTime;
-    semesterGPA: Schema.Attribute.Decimal;
-    student: Schema.Attribute.Relation<'manyToOne', 'api::student.student'>;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -3670,6 +3337,11 @@ export interface ApiGradeApprovalHistoryGradeApprovalHistory
   };
   options: {
     draftAndPublish: false;
+  };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
   };
   attributes: {
     actionDateTime: Schema.Attribute.DateTime & Schema.Attribute.Required;
@@ -3712,6 +3384,11 @@ export interface ApiGradeApprovalGradeApproval
   };
   options: {
     draftAndPublish: false;
+  };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
   };
   attributes: {
     academicTerm: Schema.Attribute.Relation<
@@ -3760,8 +3437,8 @@ export interface ApiGradeBandGradeBand extends Struct.CollectionTypeSchema {
     draftAndPublish: false;
   };
   pluginOptions: {
-    i18n: {
-      localized: true;
+    'content-manager': {
+      visible: false;
     };
   };
   attributes: {
@@ -3776,11 +3453,12 @@ export interface ApiGradeBandGradeBand extends Struct.CollectionTypeSchema {
     >;
     isPass: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
     letterGrade: Schema.Attribute.String;
-    locale: Schema.Attribute.String;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
       'api::grade-band.grade-band'
-    >;
+    > &
+      Schema.Attribute.Private;
     maxScore: Schema.Attribute.Decimal & Schema.Attribute.Required;
     minScore: Schema.Attribute.Decimal & Schema.Attribute.Required;
     performanceLevel: Schema.Attribute.String;
@@ -3795,12 +3473,17 @@ export interface ApiGradeLevelGradeLevel extends Struct.CollectionTypeSchema {
   collectionName: 'grade_levels';
   info: {
     description: 'Independent Grade Level entity \u2014 shared globally across all Academic Sections';
-    displayName: 'Grade Level';
+    displayName: '2. Academic - Grade Level';
     pluralName: 'grade-levels';
     singularName: 'grade-level';
   };
   options: {
     draftAndPublish: false;
+  };
+  pluginOptions: {
+    'content-manager': {
+      visible: true;
+    };
   };
   attributes: {
     ageRange: Schema.Attribute.String;
@@ -3817,7 +3500,6 @@ export interface ApiGradeLevelGradeLevel extends Struct.CollectionTypeSchema {
       'manyToOne',
       'api::curriculum.curriculum'
     >;
-    homerooms: Schema.Attribute.Relation<'oneToMany', 'api::homeroom.homeroom'>;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
@@ -3835,46 +3517,6 @@ export interface ApiGradeLevelGradeLevel extends Struct.CollectionTypeSchema {
   };
 }
 
-export interface ApiGradeModerationGradeModeration
-  extends Struct.CollectionTypeSchema {
-  collectionName: 'grade_moderations';
-  info: {
-    description: 'Schema for Grade Moderation';
-    displayName: 'Grade Moderation';
-    pluralName: 'grade-moderations';
-    singularName: 'grade-moderation';
-  };
-  options: {
-    draftAndPublish: true;
-  };
-  attributes: {
-    approvedBy: Schema.Attribute.Relation<'manyToOne', 'api::teacher.teacher'>;
-    comments: Schema.Attribute.Text;
-    createdAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    examination: Schema.Attribute.Relation<
-      'manyToOne',
-      'api::examination.examination'
-    >;
-    locale: Schema.Attribute.String & Schema.Attribute.Private;
-    localizations: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::grade-moderation.grade-moderation'
-    > &
-      Schema.Attribute.Private;
-    publishedAt: Schema.Attribute.DateTime;
-    submittedBy: Schema.Attribute.Relation<'manyToOne', 'api::teacher.teacher'>;
-    updatedAt: Schema.Attribute.DateTime;
-    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    workflowStatus: Schema.Attribute.Enumeration<
-      ['Submitted', 'DepartmentReview', 'Approved', 'Rejected']
-    > &
-      Schema.Attribute.DefaultTo<'Submitted'>;
-  };
-}
-
 export interface ApiGradebookEntryGradebookEntry
   extends Struct.CollectionTypeSchema {
   collectionName: 'gradebook_entries';
@@ -3885,6 +3527,11 @@ export interface ApiGradebookEntryGradebookEntry
   };
   options: {
     draftAndPublish: false;
+  };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
   };
   attributes: {
     academicTerm: Schema.Attribute.Relation<
@@ -3950,6 +3597,11 @@ export interface ApiGradingPolicyGradingPolicy
   options: {
     draftAndPublish: false;
   };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
+  };
   attributes: {
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
@@ -3988,8 +3640,8 @@ export interface ApiGradingSchemeGradingScheme
     draftAndPublish: false;
   };
   pluginOptions: {
-    i18n: {
-      localized: true;
+    'content-manager': {
+      visible: false;
     };
   };
   attributes: {
@@ -4004,11 +3656,12 @@ export interface ApiGradingSchemeGradingScheme
       'api::grade-band.grade-band'
     >;
     isActive: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
-    locale: Schema.Attribute.String;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
       'api::grading-scheme.grading-scheme'
-    >;
+    > &
+      Schema.Attribute.Private;
     name: Schema.Attribute.String &
       Schema.Attribute.Required &
       Schema.Attribute.Unique;
@@ -4034,8 +3687,8 @@ export interface ApiGraduationClearanceGraduationClearance
     draftAndPublish: false;
   };
   pluginOptions: {
-    i18n: {
-      localized: true;
+    'content-manager': {
+      visible: false;
     };
   };
   attributes: {
@@ -4071,11 +3724,12 @@ export interface ApiGraduationClearanceGraduationClearance
       ['Pending', 'Approved', 'Rejected']
     > &
       Schema.Attribute.DefaultTo<'Pending'>;
-    locale: Schema.Attribute.String;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
       'api::graduation-clearance.graduation-clearance'
-    >;
+    > &
+      Schema.Attribute.Private;
     notes: Schema.Attribute.Text;
     principalStatus: Schema.Attribute.Enumeration<
       ['Pending', 'Approved', 'Rejected']
@@ -4111,11 +3765,11 @@ export interface ApiGraduationRecordGraduationRecord
     singularName: 'graduation-record';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   pluginOptions: {
-    i18n: {
-      localized: true;
+    'content-manager': {
+      visible: false;
     };
   };
   attributes: {
@@ -4129,11 +3783,12 @@ export interface ApiGraduationRecordGraduationRecord
       'api::academic-transcript.academic-transcript'
     >;
     graduationDate: Schema.Attribute.Date;
-    locale: Schema.Attribute.String;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
       'api::graduation-record.graduation-record'
-    >;
+    > &
+      Schema.Attribute.Private;
     publishedAt: Schema.Attribute.DateTime;
     student: Schema.Attribute.Relation<'oneToOne', 'api::student.student'>;
     updatedAt: Schema.Attribute.DateTime;
@@ -4151,7 +3806,12 @@ export interface ApiHalaqahHalaqah extends Struct.CollectionTypeSchema {
     singularName: 'halaqah';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
+  };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
   };
   attributes: {
     corrections: Schema.Attribute.Text;
@@ -4185,7 +3845,7 @@ export interface ApiHomepageHomepage extends Struct.SingleTypeSchema {
   collectionName: 'homepages';
   info: {
     description: 'Unified homepage content covering all 7 sections';
-    displayName: '[F] Homepage';
+    displayName: '2. Website - Homepage';
     pluralName: 'homepages';
     singularName: 'homepage';
   };
@@ -4193,6 +3853,9 @@ export interface ApiHomepageHomepage extends Struct.SingleTypeSchema {
     draftAndPublish: true;
   };
   pluginOptions: {
+    'content-manager': {
+      visible: true;
+    };
     i18n: {
       localized: true;
     };
@@ -4443,46 +4106,6 @@ export interface ApiHomepageHomepage extends Struct.SingleTypeSchema {
   };
 }
 
-export interface ApiHomeroomHomeroom extends Struct.CollectionTypeSchema {
-  collectionName: 'homerooms';
-  info: {
-    description: 'Administrative cohort group';
-    displayName: 'Homeroom';
-    pluralName: 'homerooms';
-    singularName: 'homeroom';
-  };
-  options: {
-    draftAndPublish: false;
-  };
-  attributes: {
-    advisor: Schema.Attribute.Relation<'manyToOne', 'api::teacher.teacher'>;
-    classroom: Schema.Attribute.Relation<
-      'manyToOne',
-      'api::classroom.classroom'
-    >;
-    code: Schema.Attribute.String & Schema.Attribute.Required;
-    createdAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    gradeLevel: Schema.Attribute.Relation<
-      'manyToOne',
-      'api::grade-level.grade-level'
-    >;
-    locale: Schema.Attribute.String & Schema.Attribute.Private;
-    localizations: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::homeroom.homeroom'
-    > &
-      Schema.Attribute.Private;
-    name: Schema.Attribute.String & Schema.Attribute.Required;
-    publishedAt: Schema.Attribute.DateTime;
-    students: Schema.Attribute.Relation<'manyToMany', 'api::student.student'>;
-    updatedAt: Schema.Attribute.DateTime;
-    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-  };
-}
-
 export interface ApiHomeworkSubmissionHomeworkSubmission
   extends Struct.CollectionTypeSchema {
   collectionName: 'homework_submissions';
@@ -4493,6 +4116,11 @@ export interface ApiHomeworkSubmissionHomeworkSubmission
   };
   options: {
     draftAndPublish: false;
+  };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
   };
   attributes: {
     attachments: Schema.Attribute.Media<
@@ -4531,6 +4159,11 @@ export interface ApiHomeworkHomework extends Struct.CollectionTypeSchema {
   };
   options: {
     draftAndPublish: false;
+  };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
   };
   attributes: {
     academicTerm: Schema.Attribute.Relation<
@@ -4588,57 +4221,6 @@ export interface ApiHomeworkHomework extends Struct.CollectionTypeSchema {
   };
 }
 
-export interface ApiHonorRollHonorRoll extends Struct.CollectionTypeSchema {
-  collectionName: 'honor-rolls';
-  info: {
-    description: 'Merit lists';
-    displayName: 'Honor Roll';
-    pluralName: 'honor-rolls';
-    singularName: 'honor-roll';
-  };
-  options: {
-    draftAndPublish: true;
-  };
-  pluginOptions: {
-    i18n: {
-      localized: true;
-    };
-  };
-  attributes: {
-    academic_term: Schema.Attribute.Relation<
-      'manyToOne',
-      'api::academic-term.academic-term'
-    >;
-    academic_year: Schema.Attribute.Relation<
-      'manyToOne',
-      'api::academic-year.academic-year'
-    >;
-    category: Schema.Attribute.Enumeration<
-      [
-        "Dean's List",
-        "Principal's List",
-        'Perfect Attendance',
-        'Most Improved',
-        'Custom',
-      ]
-    >;
-    createdAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    locale: Schema.Attribute.String;
-    localizations: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::honor-roll.honor-roll'
-    >;
-    name: Schema.Attribute.String & Schema.Attribute.Required;
-    publishedAt: Schema.Attribute.DateTime;
-    students: Schema.Attribute.Relation<'manyToMany', 'api::student.student'>;
-    updatedAt: Schema.Attribute.DateTime;
-    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-  };
-}
-
 export interface ApiHostelAllocationHostelAllocation
   extends Struct.CollectionTypeSchema {
   collectionName: 'hostel_allocations';
@@ -4650,6 +4232,11 @@ export interface ApiHostelAllocationHostelAllocation
   };
   options: {
     draftAndPublish: false;
+  };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
   };
   attributes: {
     academicYear: Schema.Attribute.String & Schema.Attribute.Required;
@@ -4706,6 +4293,11 @@ export interface ApiHostelAttendanceHostelAttendance
   options: {
     draftAndPublish: false;
   };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
+  };
   attributes: {
     allocation: Schema.Attribute.Relation<
       'manyToOne',
@@ -4747,6 +4339,11 @@ export interface ApiHostelAuditLogHostelAuditLog
   options: {
     draftAndPublish: false;
   };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
+  };
   attributes: {
     action: Schema.Attribute.String & Schema.Attribute.Required;
     createdAt: Schema.Attribute.DateTime;
@@ -4781,6 +4378,11 @@ export interface ApiHostelBedHostelBed extends Struct.CollectionTypeSchema {
   };
   options: {
     draftAndPublish: false;
+  };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
   };
   attributes: {
     bedNumber: Schema.Attribute.String & Schema.Attribute.Required;
@@ -4819,6 +4421,11 @@ export interface ApiHostelBuildingHostelBuilding
   };
   options: {
     draftAndPublish: false;
+  };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
   };
   attributes: {
     campus: Schema.Attribute.String;
@@ -4875,6 +4482,11 @@ export interface ApiHostelDepositRefundHostelDepositRefund
   options: {
     draftAndPublish: false;
   };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
+  };
   attributes: {
     allocation: Schema.Attribute.Relation<
       'manyToOne',
@@ -4913,6 +4525,11 @@ export interface ApiHostelFeePlanHostelFeePlan
   };
   options: {
     draftAndPublish: false;
+  };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
   };
   attributes: {
     academicYear: Schema.Attribute.String & Schema.Attribute.Required;
@@ -4964,6 +4581,11 @@ export interface ApiHostelFloorHostelFloor extends Struct.CollectionTypeSchema {
   options: {
     draftAndPublish: false;
   };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
+  };
   attributes: {
     building: Schema.Attribute.Relation<
       'manyToOne',
@@ -5004,6 +4626,11 @@ export interface ApiHostelGatePassHostelGatePass
   };
   options: {
     draftAndPublish: false;
+  };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
   };
   attributes: {
     actualReturnDateTime: Schema.Attribute.DateTime;
@@ -5060,6 +4687,11 @@ export interface ApiHostelInvoiceHostelInvoice
   options: {
     draftAndPublish: false;
   };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
+  };
   attributes: {
     allocation: Schema.Attribute.Relation<
       'manyToOne',
@@ -5106,6 +4738,11 @@ export interface ApiHostelMaintenanceTicketHostelMaintenanceTicket
   };
   options: {
     draftAndPublish: false;
+  };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
   };
   attributes: {
     bed: Schema.Attribute.Relation<'manyToOne', 'api::hostel-bed.hostel-bed'>;
@@ -5159,6 +4796,11 @@ export interface ApiHostelPaymentHostelPayment
   options: {
     draftAndPublish: false;
   };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
+  };
   attributes: {
     amount: Schema.Attribute.Decimal & Schema.Attribute.Required;
     createdAt: Schema.Attribute.DateTime;
@@ -5203,6 +4845,11 @@ export interface ApiHostelRoomHostelRoom extends Struct.CollectionTypeSchema {
   options: {
     draftAndPublish: false;
   };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
+  };
   attributes: {
     beds: Schema.Attribute.Relation<'oneToMany', 'api::hostel-bed.hostel-bed'>;
     building: Schema.Attribute.Relation<
@@ -5238,50 +4885,6 @@ export interface ApiHostelRoomHostelRoom extends Struct.CollectionTypeSchema {
   };
 }
 
-export interface ApiHostelSettingHostelSetting
-  extends Struct.CollectionTypeSchema {
-  collectionName: 'hostel_settings';
-  info: {
-    description: 'Schema for Hostel Setting';
-    displayName: 'Hostel Setting';
-    pluralName: 'hostel-settings';
-    singularName: 'hostel-setting';
-  };
-  options: {
-    draftAndPublish: false;
-  };
-  attributes: {
-    capacity: Schema.Attribute.Integer;
-    checkInPolicy: Schema.Attribute.Text;
-    checkOutPolicy: Schema.Attribute.Text;
-    createdAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    defaultCurrency: Schema.Attribute.String &
-      Schema.Attribute.DefaultTo<'USD'>;
-    gatePassRules: Schema.Attribute.Text;
-    genderType: Schema.Attribute.Enumeration<['boys', 'girls', 'mixed']> &
-      Schema.Attribute.Required;
-    hostelCode: Schema.Attribute.String & Schema.Attribute.Required;
-    hostelName: Schema.Attribute.String & Schema.Attribute.Required;
-    lateExitRules: Schema.Attribute.Text;
-    locale: Schema.Attribute.String & Schema.Attribute.Private;
-    localizations: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::hostel-setting.hostel-setting'
-    > &
-      Schema.Attribute.Private;
-    medicalEmergencySettings: Schema.Attribute.Text;
-    publishedAt: Schema.Attribute.DateTime;
-    refundPolicy: Schema.Attribute.Text;
-    securityDepositRules: Schema.Attribute.Text;
-    updatedAt: Schema.Attribute.DateTime;
-    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    wardenAssignmentRules: Schema.Attribute.Text;
-  };
-}
-
 export interface ApiHostelVacationHostelVacation
   extends Struct.CollectionTypeSchema {
   collectionName: 'hostel_vacations';
@@ -5293,6 +4896,11 @@ export interface ApiHostelVacationHostelVacation
   };
   options: {
     draftAndPublish: false;
+  };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
   };
   attributes: {
     allocation: Schema.Attribute.Relation<
@@ -5334,6 +4942,11 @@ export interface ApiHostelVisitorHostelVisitor
   };
   options: {
     draftAndPublish: false;
+  };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
   };
   attributes: {
     approval: Schema.Attribute.Enumeration<
@@ -5392,6 +5005,11 @@ export interface ApiHostelWardenHostelWarden
   options: {
     draftAndPublish: false;
   };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
+  };
   attributes: {
     assignedBuilding: Schema.Attribute.Relation<
       'manyToOne',
@@ -5439,6 +5057,11 @@ export interface ApiInventoryItemInventoryItem
   };
   options: {
     draftAndPublish: false;
+  };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
   };
   attributes: {
     barcode: Schema.Attribute.String;
@@ -5518,6 +5141,11 @@ export interface ApiInventoryMovementInventoryMovement
   options: {
     draftAndPublish: false;
   };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
+  };
   attributes: {
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
@@ -5571,6 +5199,11 @@ export interface ApiInventoryWarehouseInventoryWarehouse
   options: {
     draftAndPublish: false;
   };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
+  };
   attributes: {
     code: Schema.Attribute.String &
       Schema.Attribute.Required &
@@ -5595,44 +5228,6 @@ export interface ApiInventoryWarehouseInventoryWarehouse
   };
 }
 
-export interface ApiIslamicExtensionIslamicExtension
-  extends Struct.CollectionTypeSchema {
-  collectionName: 'islamic_extensions';
-  info: {
-    displayName: 'Islamic Extension';
-    pluralName: 'islamic-extensions';
-    singularName: 'islamic-extension';
-  };
-  options: {
-    draftAndPublish: false;
-  };
-  attributes: {
-    createdAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    currentAyah: Schema.Attribute.Integer;
-    currentJuz: Schema.Attribute.Integer;
-    currentSurah: Schema.Attribute.String;
-    ijazahEarned: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
-    locale: Schema.Attribute.String & Schema.Attribute.Private;
-    localizations: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::islamic-extension.islamic-extension'
-    > &
-      Schema.Attribute.Private;
-    publishedAt: Schema.Attribute.DateTime;
-    sanadChain: Schema.Attribute.Text;
-    student: Schema.Attribute.Relation<'manyToOne', 'api::student.student'>;
-    tajweedCompetency: Schema.Attribute.Enumeration<
-      ['Beginner', 'Intermediate', 'Hafiz', 'Qari']
-    > &
-      Schema.Attribute.DefaultTo<'Beginner'>;
-    updatedAt: Schema.Attribute.DateTime;
-    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-  };
-}
-
 export interface ApiLanguageAchievementLanguageAchievement
   extends Struct.CollectionTypeSchema {
   collectionName: 'language_achievements';
@@ -5643,7 +5238,12 @@ export interface ApiLanguageAchievementLanguageAchievement
     singularName: 'language-achievement';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
+  };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
   };
   attributes: {
     createdAt: Schema.Attribute.DateTime;
@@ -5666,57 +5266,6 @@ export interface ApiLanguageAchievementLanguageAchievement
   };
 }
 
-export interface ApiLanguageCertificateLanguageCertificate
-  extends Struct.CollectionTypeSchema {
-  collectionName: 'language_certificates';
-  info: {
-    description: 'Schema for Language Certificate';
-    displayName: 'Language Certificate';
-    pluralName: 'language-certificates';
-    singularName: 'language-certificate';
-  };
-  options: {
-    draftAndPublish: false;
-  };
-  attributes: {
-    certificateUrl: Schema.Attribute.String;
-    createdAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    issueDate: Schema.Attribute.Date & Schema.Attribute.Required;
-    language_program: Schema.Attribute.Relation<
-      'manyToOne',
-      'api::language-program.language-program'
-    >;
-    locale: Schema.Attribute.String & Schema.Attribute.Private;
-    localizations: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::language-certificate.language-certificate'
-    > &
-      Schema.Attribute.Private;
-    publishedAt: Schema.Attribute.DateTime;
-    recordStatus: Schema.Attribute.Enumeration<['Draft', 'Issued', 'Revoked']> &
-      Schema.Attribute.DefaultTo<'Draft'>;
-    student: Schema.Attribute.Relation<'manyToOne', 'api::student.student'>;
-    type: Schema.Attribute.Enumeration<
-      [
-        'Course Completion',
-        'Level Completion',
-        'Reading Excellence',
-        'Writing Excellence',
-        'Listening Excellence',
-        'Speaking Excellence',
-        'Grammar Excellence',
-        'Vocabulary Excellence',
-        'Competition Winner',
-      ]
-    >;
-    updatedAt: Schema.Attribute.DateTime;
-    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-  };
-}
-
 export interface ApiLanguageCompetitionLanguageCompetition
   extends Struct.CollectionTypeSchema {
   collectionName: 'language_competitions';
@@ -5727,7 +5276,12 @@ export interface ApiLanguageCompetitionLanguageCompetition
     singularName: 'language-competition';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
+  };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
   };
   attributes: {
     awards: Schema.Attribute.String;
@@ -5765,46 +5319,6 @@ export interface ApiLanguageCompetitionLanguageCompetition
   };
 }
 
-export interface ApiLanguageLevelLanguageLevel
-  extends Struct.CollectionTypeSchema {
-  collectionName: 'language_levels';
-  info: {
-    description: 'Schema for Language Level';
-    displayName: 'Language Level';
-    pluralName: 'language-levels';
-    singularName: 'language-level';
-  };
-  options: {
-    draftAndPublish: true;
-  };
-  attributes: {
-    code: Schema.Attribute.String &
-      Schema.Attribute.Required &
-      Schema.Attribute.Unique;
-    createdAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    expectedCompetencies: Schema.Attribute.Text;
-    language_program: Schema.Attribute.Relation<
-      'manyToOne',
-      'api::language-program.language-program'
-    >;
-    learningOutcomes: Schema.Attribute.Text;
-    locale: Schema.Attribute.String & Schema.Attribute.Private;
-    localizations: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::language-level.language-level'
-    > &
-      Schema.Attribute.Private;
-    minPassingScore: Schema.Attribute.Decimal;
-    name: Schema.Attribute.String & Schema.Attribute.Required;
-    publishedAt: Schema.Attribute.DateTime;
-    updatedAt: Schema.Attribute.DateTime;
-    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-  };
-}
-
 export interface ApiLanguagePortfolioLanguagePortfolio
   extends Struct.CollectionTypeSchema {
   collectionName: 'language_portfolios';
@@ -5815,7 +5329,12 @@ export interface ApiLanguagePortfolioLanguagePortfolio
     singularName: 'language-portfolio';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
+  };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
   };
   attributes: {
     academicTerm: Schema.Attribute.Relation<
@@ -5867,12 +5386,17 @@ export interface ApiLanguageProgramLanguageProgram
   collectionName: 'language_programs';
   info: {
     description: 'Schema for Language Program';
-    displayName: 'Language Program';
+    displayName: '3. ERP - Language Program';
     pluralName: 'language-programs';
     singularName: 'language-program';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
+  };
+  pluginOptions: {
+    'content-manager': {
+      visible: true;
+    };
   };
   attributes: {
     ageGroup: Schema.Attribute.String;
@@ -5905,47 +5429,6 @@ export interface ApiLanguageProgramLanguageProgram
   };
 }
 
-export interface ApiLessonDeliveryLessonDelivery
-  extends Struct.CollectionTypeSchema {
-  collectionName: 'lesson_deliveries';
-  info: {
-    displayName: 'Lesson Delivery';
-    pluralName: 'lesson-deliveries';
-    singularName: 'lesson-delivery';
-  };
-  options: {
-    draftAndPublish: false;
-  };
-  attributes: {
-    actualEndTime: Schema.Attribute.DateTime;
-    actualStartTime: Schema.Attribute.DateTime;
-    attachments: Schema.Attribute.Media<
-      'files' | 'images' | 'videos' | 'audios',
-      true
-    >;
-    completionPercentage: Schema.Attribute.Integer;
-    createdAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    lessonPlan: Schema.Attribute.Relation<
-      'oneToOne',
-      'api::lesson-plan.lesson-plan'
-    >;
-    locale: Schema.Attribute.String & Schema.Attribute.Private;
-    localizations: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::lesson-delivery.lesson-delivery'
-    > &
-      Schema.Attribute.Private;
-    publishedAt: Schema.Attribute.DateTime;
-    teacherReflection: Schema.Attribute.Text;
-    topicsCovered: Schema.Attribute.JSON;
-    updatedAt: Schema.Attribute.DateTime;
-    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-  };
-}
-
 export interface ApiLessonPlanLessonPlan extends Struct.CollectionTypeSchema {
   collectionName: 'lesson_plans';
   info: {
@@ -5955,6 +5438,11 @@ export interface ApiLessonPlanLessonPlan extends Struct.CollectionTypeSchema {
   };
   options: {
     draftAndPublish: false;
+  };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
   };
   attributes: {
     academicTerm: Schema.Attribute.Relation<
@@ -6013,6 +5501,11 @@ export interface ApiLibraryBookLibraryBook extends Struct.CollectionTypeSchema {
   options: {
     draftAndPublish: false;
   };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
+  };
   attributes: {
     author: Schema.Attribute.String;
     availableCopies: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<1>;
@@ -6067,6 +5560,11 @@ export interface ApiLibraryBorrowRecordLibraryBorrowRecord
   options: {
     draftAndPublish: false;
   };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
+  };
   attributes: {
     book: Schema.Attribute.Relation<
       'manyToOne',
@@ -6106,7 +5604,7 @@ export interface ApiLoginPageLoginPage extends Struct.SingleTypeSchema {
   collectionName: 'login_pages';
   info: {
     description: 'Portal login page branding, features, and form configuration';
-    displayName: '[F] Login Page';
+    displayName: '2. Website - Login Page';
     pluralName: 'login-pages';
     singularName: 'login-page';
   };
@@ -6114,6 +5612,9 @@ export interface ApiLoginPageLoginPage extends Struct.SingleTypeSchema {
     draftAndPublish: true;
   };
   pluginOptions: {
+    'content-manager': {
+      visible: true;
+    };
     i18n: {
       localized: true;
     };
@@ -6244,52 +5745,6 @@ export interface ApiLoginPageLoginPage extends Struct.SingleTypeSchema {
   };
 }
 
-export interface ApiMarksEntryMarksEntry extends Struct.CollectionTypeSchema {
-  collectionName: 'marks_entries';
-  info: {
-    description: 'Schema for Marks Entry';
-    displayName: 'Marks Entry';
-    pluralName: 'marks-entries';
-    singularName: 'marks-entry';
-  };
-  options: {
-    draftAndPublish: false;
-  };
-  attributes: {
-    createdAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    examination: Schema.Attribute.Relation<
-      'manyToOne',
-      'api::examination.examination'
-    >;
-    gradePoint: Schema.Attribute.Decimal;
-    grading_scheme: Schema.Attribute.Relation<
-      'manyToOne',
-      'api::grading-scheme.grading-scheme'
-    >;
-    locale: Schema.Attribute.String & Schema.Attribute.Private;
-    localizations: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::marks-entry.marks-entry'
-    > &
-      Schema.Attribute.Private;
-    percentage: Schema.Attribute.Decimal;
-    publishedAt: Schema.Attribute.DateTime;
-    rawScore: Schema.Attribute.Decimal;
-    recordStatus: Schema.Attribute.Enumeration<
-      ['Draft', 'Submitted', 'Approved']
-    > &
-      Schema.Attribute.DefaultTo<'Draft'>;
-    student: Schema.Attribute.Relation<'manyToOne', 'api::student.student'>;
-    teacher: Schema.Attribute.Relation<'manyToOne', 'api::teacher.teacher'>;
-    teacherNotes: Schema.Attribute.Text;
-    updatedAt: Schema.Attribute.DateTime;
-    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-  };
-}
-
 export interface ApiMemorizationMemorization
   extends Struct.CollectionTypeSchema {
   collectionName: 'memorizations';
@@ -6301,6 +5756,11 @@ export interface ApiMemorizationMemorization
   };
   options: {
     draftAndPublish: false;
+  };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
   };
   attributes: {
     academic_term: Schema.Attribute.Relation<
@@ -6363,6 +5823,11 @@ export interface ApiMurajaahMurajaah extends Struct.CollectionTypeSchema {
   options: {
     draftAndPublish: false;
   };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
+  };
   attributes: {
     assignedPortions: Schema.Attribute.Text;
     completedPortions: Schema.Attribute.Text;
@@ -6405,7 +5870,7 @@ export interface ApiNavigationMenuNavigationMenu
   collectionName: 'navigation_menus';
   info: {
     description: 'Dynamic website menus supporting nested children and multi-language links';
-    displayName: '[F] Navigation Menu';
+    displayName: '4. Website - Navigation Menu';
     pluralName: 'navigation-menus';
     singularName: 'navigation-menu';
   };
@@ -6413,6 +5878,9 @@ export interface ApiNavigationMenuNavigationMenu
     draftAndPublish: true;
   };
   pluginOptions: {
+    'content-manager': {
+      visible: true;
+    };
     i18n: {
       localized: true;
     };
@@ -6450,7 +5918,7 @@ export interface ApiNewsPageNewsPage extends Struct.SingleTypeSchema {
   collectionName: 'news_pages';
   info: {
     description: 'The News page content';
-    displayName: '[F] News Page';
+    displayName: '2. Website - News Page';
     pluralName: 'news-pages';
     singularName: 'news-page';
   };
@@ -6458,6 +5926,9 @@ export interface ApiNewsPageNewsPage extends Struct.SingleTypeSchema {
     draftAndPublish: true;
   };
   pluginOptions: {
+    'content-manager': {
+      visible: true;
+    };
     i18n: {
       localized: true;
     };
@@ -6510,12 +5981,17 @@ export interface ApiNewsletterSubscriberNewsletterSubscriber
   collectionName: 'newsletter_subscribers';
   info: {
     description: 'Subscribers to school newsletter';
-    displayName: 'Newsletter Subscriber';
+    displayName: '4. Website - Newsletter Subscriber';
     pluralName: 'newsletter-subscribers';
     singularName: 'newsletter-subscriber';
   };
   options: {
     draftAndPublish: false;
+  };
+  pluginOptions: {
+    'content-manager': {
+      visible: true;
+    };
   };
   attributes: {
     createdAt: Schema.Attribute.DateTime;
@@ -6549,6 +6025,11 @@ export interface ApiNotificationNotification
   options: {
     comment: '';
     draftAndPublish: false;
+  };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
   };
   attributes: {
     body: Schema.Attribute.Text & Schema.Attribute.Required;
@@ -6606,55 +6087,12 @@ export interface ApiNotificationNotification
   };
 }
 
-export interface ApiObservationJournalObservationJournal
-  extends Struct.CollectionTypeSchema {
-  collectionName: 'observation_journals';
-  info: {
-    description: 'Schema for Observation Journal';
-    displayName: 'Observation Journal';
-    pluralName: 'observation-journals';
-    singularName: 'observation-journal';
-  };
-  options: {
-    draftAndPublish: true;
-  };
-  attributes: {
-    behavior: Schema.Attribute.Integer;
-    confidence: Schema.Attribute.Integer;
-    createdAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    date: Schema.Attribute.Date & Schema.Attribute.Required;
-    locale: Schema.Attribute.String & Schema.Attribute.Private;
-    localizations: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::observation-journal.observation-journal'
-    > &
-      Schema.Attribute.Private;
-    motivation: Schema.Attribute.Integer;
-    participation: Schema.Attribute.Integer;
-    publishedAt: Schema.Attribute.DateTime;
-    recommendations: Schema.Attribute.Text;
-    strengths: Schema.Attribute.Text;
-    student: Schema.Attribute.Relation<'manyToOne', 'api::student.student'>;
-    teacher: Schema.Attribute.Relation<'manyToOne', 'api::teacher.teacher'>;
-    updatedAt: Schema.Attribute.DateTime;
-    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    visibility: Schema.Attribute.Enumeration<
-      ['Teacher Only', 'Parent', 'Director']
-    > &
-      Schema.Attribute.DefaultTo<'Teacher Only'>;
-    weaknesses: Schema.Attribute.Text;
-  };
-}
-
 export interface ApiOnlineCourseOnlineCourse
   extends Struct.CollectionTypeSchema {
   collectionName: 'online_courses';
   info: {
     description: 'Public online course offering for enrollment';
-    displayName: '[F] Online Course';
+    displayName: '4. Website - Online Course';
     pluralName: 'online-courses';
     singularName: 'online-course';
   };
@@ -6662,6 +6100,9 @@ export interface ApiOnlineCourseOnlineCourse
     draftAndPublish: true;
   };
   pluginOptions: {
+    'content-manager': {
+      visible: true;
+    };
     i18n: {
       localized: true;
     };
@@ -6732,7 +6173,7 @@ export interface ApiOnlineLearningPageOnlineLearningPage
   collectionName: 'online_learning_pages';
   info: {
     description: 'Online Learning page (/online-learning)';
-    displayName: '[F] Online Learning Page';
+    displayName: '2. Website - Online Learning Page';
     pluralName: 'online-learning-pages';
     singularName: 'online-learning-page';
   };
@@ -6740,6 +6181,9 @@ export interface ApiOnlineLearningPageOnlineLearningPage
     draftAndPublish: true;
   };
   pluginOptions: {
+    'content-manager': {
+      visible: true;
+    };
     i18n: {
       localized: true;
     };
@@ -7033,7 +6477,7 @@ export interface ApiPagePage extends Struct.CollectionTypeSchema {
   collectionName: 'pages';
   info: {
     description: 'Custom public pages (e.g. About, Admissions, FAQ)';
-    displayName: '[F] Page';
+    displayName: '4. Website - Custom Page';
     pluralName: 'pages';
     singularName: 'page';
   };
@@ -7041,6 +6485,9 @@ export interface ApiPagePage extends Struct.CollectionTypeSchema {
     draftAndPublish: true;
   };
   pluginOptions: {
+    'content-manager': {
+      visible: true;
+    };
     i18n: {
       localized: true;
     };
@@ -7099,60 +6546,38 @@ export interface ApiParentParent extends Struct.CollectionTypeSchema {
   collectionName: 'parents';
   info: {
     description: 'Parent and guardian profiles linked to students';
-    displayName: 'Parent Management';
+    displayName: '1. Profiles - Parent';
     pluralName: 'parents';
     singularName: 'parent';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   pluginOptions: {
-    i18n: {
-      localized: true;
+    'content-manager': {
+      visible: true;
     };
   };
   attributes: {
-    address: Schema.Attribute.Text &
-      Schema.Attribute.SetPluginOptions<{
-        i18n: {
-          localized: true;
-        };
-      }>;
+    address: Schema.Attribute.Text;
     children: Schema.Attribute.Relation<'manyToMany', 'api::student.student'>;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
     email: Schema.Attribute.Email;
     emergencyContact: Schema.Attribute.String;
-    employer: Schema.Attribute.String &
-      Schema.Attribute.SetPluginOptions<{
-        i18n: {
-          localized: true;
-        };
-      }>;
+    employer: Schema.Attribute.String;
     gender: Schema.Attribute.Enumeration<['male', 'female']>;
-    locale: Schema.Attribute.String;
-    localizations: Schema.Attribute.Relation<'oneToMany', 'api::parent.parent'>;
-    name: Schema.Attribute.String &
-      Schema.Attribute.Required &
-      Schema.Attribute.SetPluginOptions<{
-        i18n: {
-          localized: true;
-        };
-      }>;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::parent.parent'
+    > &
+      Schema.Attribute.Private;
+    name: Schema.Attribute.String & Schema.Attribute.Required;
     nationalId: Schema.Attribute.String;
-    notes: Schema.Attribute.RichText &
-      Schema.Attribute.SetPluginOptions<{
-        i18n: {
-          localized: true;
-        };
-      }>;
-    occupation: Schema.Attribute.String &
-      Schema.Attribute.SetPluginOptions<{
-        i18n: {
-          localized: true;
-        };
-      }>;
+    notes: Schema.Attribute.RichText;
+    occupation: Schema.Attribute.String;
     passport: Schema.Attribute.String;
     phone: Schema.Attribute.String & Schema.Attribute.Required;
     photo: Schema.Attribute.Media<'images'>;
@@ -7163,13 +6588,7 @@ export interface ApiParentParent extends Struct.CollectionTypeSchema {
       ['father', 'mother', 'guardian', 'other']
     > &
       Schema.Attribute.Required;
-    religion: Schema.Attribute.String &
-      Schema.Attribute.SetPluginOptions<{
-        i18n: {
-          localized: true;
-        };
-      }> &
-      Schema.Attribute.DefaultTo<'Islam'>;
+    religion: Schema.Attribute.String & Schema.Attribute.DefaultTo<'Islam'>;
     schoolId: Schema.Attribute.String & Schema.Attribute.Unique;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
@@ -7178,52 +6597,6 @@ export interface ApiParentParent extends Struct.CollectionTypeSchema {
       'oneToOne',
       'plugin::users-permissions.user'
     >;
-  };
-}
-
-export interface ApiPartnerPartner extends Struct.CollectionTypeSchema {
-  collectionName: 'partners';
-  info: {
-    description: 'School accreditation bodies, educational partners, and waqf sponsors';
-    displayName: 'Partner & Sponsor';
-    pluralName: 'partners';
-    singularName: 'partner';
-  };
-  options: {
-    draftAndPublish: false;
-  };
-  pluginOptions: {
-    i18n: {
-      localized: true;
-    };
-  };
-  attributes: {
-    createdAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    locale: Schema.Attribute.String;
-    localizations: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::partner.partner'
-    >;
-    logo: Schema.Attribute.Media<'images'>;
-    name: Schema.Attribute.String &
-      Schema.Attribute.Required &
-      Schema.Attribute.SetPluginOptions<{
-        i18n: {
-          localized: true;
-        };
-      }>;
-    order: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<0>;
-    partnerType: Schema.Attribute.Enumeration<
-      ['accreditation', 'educational', 'waqf_sponsor', 'partner']
-    > &
-      Schema.Attribute.DefaultTo<'educational'>;
-    publishedAt: Schema.Attribute.DateTime;
-    updatedAt: Schema.Attribute.DateTime;
-    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    websiteUrl: Schema.Attribute.String;
   };
 }
 
@@ -7237,7 +6610,12 @@ export interface ApiPlacementTestPlacementTest
     singularName: 'placement-test';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
+  };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
   };
   attributes: {
     createdAt: Schema.Attribute.DateTime;
@@ -7274,7 +6652,7 @@ export interface ApiPrivacyPagePrivacyPage extends Struct.SingleTypeSchema {
   collectionName: 'privacy_pages';
   info: {
     description: 'Privacy policy page content, header, and SEO settings';
-    displayName: '[F] Privacy Policy Page';
+    displayName: '2. Website - Privacy Policy Page';
     pluralName: 'privacy-pages';
     singularName: 'privacy-page';
   };
@@ -7282,6 +6660,9 @@ export interface ApiPrivacyPagePrivacyPage extends Struct.SingleTypeSchema {
     draftAndPublish: true;
   };
   pluginOptions: {
+    'content-manager': {
+      visible: true;
+    };
     i18n: {
       localized: true;
     };
@@ -7334,7 +6715,7 @@ export interface ApiProgramProgram extends Struct.CollectionTypeSchema {
   collectionName: 'programs';
   info: {
     description: "Academic and specialized programs (e.g. Qur'an Memorization, Sciences, Languages)";
-    displayName: '[F] Program';
+    displayName: '2. Academic - Program';
     pluralName: 'programs';
     singularName: 'program';
   };
@@ -7342,6 +6723,9 @@ export interface ApiProgramProgram extends Struct.CollectionTypeSchema {
     draftAndPublish: true;
   };
   pluginOptions: {
+    'content-manager': {
+      visible: true;
+    };
     i18n: {
       localized: true;
     };
@@ -7424,65 +6808,6 @@ export interface ApiProgramProgram extends Struct.CollectionTypeSchema {
   };
 }
 
-export interface ApiPromotionRecordPromotionRecord
-  extends Struct.CollectionTypeSchema {
-  collectionName: 'promotion-records';
-  info: {
-    description: 'Updated grade promotion history log';
-    displayName: 'Promotion Record';
-    pluralName: 'promotion-records';
-    singularName: 'promotion-record';
-  };
-  options: {
-    draftAndPublish: false;
-  };
-  pluginOptions: {
-    i18n: {
-      localized: true;
-    };
-  };
-  attributes: {
-    approvalDate: Schema.Attribute.Date;
-    committee: Schema.Attribute.String;
-    createdAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    decision: Schema.Attribute.Enumeration<
-      [
-        'Promoted',
-        'Conditionally Promoted',
-        'Repeat Class',
-        'Graduated',
-        'Transferred',
-        'Withdrawn',
-        'Probation',
-        'Dismissed',
-      ]
-    >;
-    fromSection: Schema.Attribute.Relation<'manyToOne', 'api::section.section'>;
-    fromYear: Schema.Attribute.Relation<
-      'manyToOne',
-      'api::academic-year.academic-year'
-    >;
-    locale: Schema.Attribute.String;
-    localizations: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::promotion-record.promotion-record'
-    >;
-    publishedAt: Schema.Attribute.DateTime;
-    remarks: Schema.Attribute.Text;
-    student: Schema.Attribute.Relation<'manyToOne', 'api::student.student'>;
-    toSection: Schema.Attribute.Relation<'manyToOne', 'api::section.section'>;
-    toYear: Schema.Attribute.Relation<
-      'manyToOne',
-      'api::academic-year.academic-year'
-    >;
-    updatedAt: Schema.Attribute.DateTime;
-    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-  };
-}
-
 export interface ApiPurchaseOrderPurchaseOrder
   extends Struct.CollectionTypeSchema {
   collectionName: 'purchase_orders';
@@ -7493,6 +6818,11 @@ export interface ApiPurchaseOrderPurchaseOrder
   };
   options: {
     draftAndPublish: false;
+  };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
   };
   attributes: {
     approvalStatus: Schema.Attribute.Enumeration<
@@ -7540,7 +6870,7 @@ export interface ApiPursuitCtaPursuitCta extends Struct.SingleTypeSchema {
   collectionName: 'pursuit_ctas';
   info: {
     description: "Call to action banner ('In Pursuit of Exceptional Education') used on About and Staff pages";
-    displayName: '[F] Pursuit CTA Banner';
+    displayName: '2. Website - Pursuit CTA Banner';
     pluralName: 'pursuit-ctas';
     singularName: 'pursuit-cta';
   };
@@ -7548,6 +6878,9 @@ export interface ApiPursuitCtaPursuitCta extends Struct.SingleTypeSchema {
     draftAndPublish: true;
   };
   pluginOptions: {
+    'content-manager': {
+      visible: true;
+    };
     i18n: {
       localized: true;
     };
@@ -7628,7 +6961,12 @@ export interface ApiQuestionPoolQuestionPool
     singularName: 'question-pool';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
+  };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
   };
   attributes: {
     createdAt: Schema.Attribute.DateTime;
@@ -7658,7 +6996,12 @@ export interface ApiQuestionQuestion extends Struct.CollectionTypeSchema {
     singularName: 'question';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
+  };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
   };
   attributes: {
     correctAnswer: Schema.Attribute.Text;
@@ -7709,7 +7052,12 @@ export interface ApiQuranAchievementQuranAchievement
     singularName: 'quran-achievement';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
+  };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
   };
   attributes: {
     createdAt: Schema.Attribute.DateTime;
@@ -7732,118 +7080,6 @@ export interface ApiQuranAchievementQuranAchievement
   };
 }
 
-export interface ApiQuranAssessmentQuranAssessment
-  extends Struct.CollectionTypeSchema {
-  collectionName: 'quran_assessments';
-  info: {
-    description: 'Schema for Quran Assessment';
-    displayName: 'Quran Assessment';
-    pluralName: 'quran-assessments';
-    singularName: 'quran-assessment';
-  };
-  options: {
-    draftAndPublish: true;
-  };
-  attributes: {
-    comments: Schema.Attribute.Text;
-    courseOffering: Schema.Attribute.Relation<
-      'manyToOne',
-      'api::course-offering.course-offering'
-    >;
-    createdAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    date: Schema.Attribute.Date & Schema.Attribute.Required;
-    locale: Schema.Attribute.String & Schema.Attribute.Private;
-    localizations: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::quran-assessment.quran-assessment'
-    > &
-      Schema.Attribute.Private;
-    maxScore: Schema.Attribute.Decimal;
-    mistakes: Schema.Attribute.Integer;
-    portion: Schema.Attribute.String;
-    publishedAt: Schema.Attribute.DateTime;
-    quran_group: Schema.Attribute.Relation<
-      'manyToOne',
-      'api::quran-group.quran-group'
-    >;
-    score: Schema.Attribute.Decimal;
-    student: Schema.Attribute.Relation<'manyToOne', 'api::student.student'>;
-    teacher: Schema.Attribute.Relation<'manyToOne', 'api::teacher.teacher'>;
-    title: Schema.Attribute.String & Schema.Attribute.Required;
-    type: Schema.Attribute.Enumeration<
-      [
-        'Daily Recitation',
-        'Weekly Test',
-        'Monthly Test',
-        'Quarterly Test',
-        'Half Juz',
-        'Full Juz',
-        'Half Hifz',
-        'Complete Hifz',
-      ]
-    >;
-    updatedAt: Schema.Attribute.DateTime;
-    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-  };
-}
-
-export interface ApiQuranAttendanceQuranAttendance
-  extends Struct.CollectionTypeSchema {
-  collectionName: 'quran_attendances';
-  info: {
-    description: 'Schema for Quran Attendance';
-    displayName: 'Quran Attendance';
-    pluralName: 'quran-attendances';
-    singularName: 'quran-attendance';
-  };
-  options: {
-    draftAndPublish: false;
-  };
-  attributes: {
-    academic_term: Schema.Attribute.Relation<
-      'manyToOne',
-      'api::academic-term.academic-term'
-    >;
-    arrivalTime: Schema.Attribute.Time;
-    courseOffering: Schema.Attribute.Relation<
-      'manyToOne',
-      'api::course-offering.course-offering'
-    >;
-    createdAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    date: Schema.Attribute.Date & Schema.Attribute.Required;
-    departureTime: Schema.Attribute.Time;
-    lateReason: Schema.Attribute.String;
-    locale: Schema.Attribute.String & Schema.Attribute.Private;
-    localizations: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::quran-attendance.quran-attendance'
-    > &
-      Schema.Attribute.Private;
-    participationScore: Schema.Attribute.Integer;
-    publishedAt: Schema.Attribute.DateTime;
-    quran_group: Schema.Attribute.Relation<
-      'manyToOne',
-      'api::quran-group.quran-group'
-    >;
-    recitationStatus: Schema.Attribute.String;
-    recordStatus: Schema.Attribute.Enumeration<
-      ['Present', 'Absent', 'Late', 'Excused']
-    > &
-      Schema.Attribute.Required;
-    remarks: Schema.Attribute.Text;
-    student: Schema.Attribute.Relation<'manyToOne', 'api::student.student'>;
-    teacher: Schema.Attribute.Relation<'manyToOne', 'api::teacher.teacher'>;
-    updatedAt: Schema.Attribute.DateTime;
-    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-  };
-}
-
 export interface ApiQuranCertificateQuranCertificate
   extends Struct.CollectionTypeSchema {
   collectionName: 'quran_certificates';
@@ -7855,6 +7091,11 @@ export interface ApiQuranCertificateQuranCertificate
   };
   options: {
     draftAndPublish: false;
+  };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
   };
   attributes: {
     certificateUrl: Schema.Attribute.String;
@@ -7893,52 +7134,21 @@ export interface ApiQuranCertificateQuranCertificate
   };
 }
 
-export interface ApiQuranCompetitionQuranCompetition
-  extends Struct.CollectionTypeSchema {
-  collectionName: 'quran_competitions';
-  info: {
-    description: 'Schema for Quran Competition';
-    displayName: 'Quran Competition';
-    pluralName: 'quran-competitions';
-    singularName: 'quran-competition';
-  };
-  options: {
-    draftAndPublish: true;
-  };
-  attributes: {
-    awards: Schema.Attribute.String;
-    category: Schema.Attribute.String;
-    createdAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    date: Schema.Attribute.Date;
-    judges: Schema.Attribute.String;
-    locale: Schema.Attribute.String & Schema.Attribute.Private;
-    localizations: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::quran-competition.quran-competition'
-    > &
-      Schema.Attribute.Private;
-    name: Schema.Attribute.String & Schema.Attribute.Required;
-    publishedAt: Schema.Attribute.DateTime;
-    ranking: Schema.Attribute.Integer;
-    students: Schema.Attribute.Relation<'manyToMany', 'api::student.student'>;
-    updatedAt: Schema.Attribute.DateTime;
-    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-  };
-}
-
 export interface ApiQuranGroupQuranGroup extends Struct.CollectionTypeSchema {
   collectionName: 'quran_groups';
   info: {
     description: 'Schema for Quran Group';
-    displayName: 'Quran Group';
+    displayName: '3. ERP - Quran Group';
     pluralName: 'quran-groups';
     singularName: 'quran-group';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
+  };
+  pluginOptions: {
+    'content-manager': {
+      visible: true;
+    };
   };
   attributes: {
     capacity: Schema.Attribute.Integer;
@@ -7982,12 +7192,17 @@ export interface ApiQuranProgramQuranProgram
   collectionName: 'quran_programs';
   info: {
     description: 'Schema for Quran Program';
-    displayName: 'Quran Program';
+    displayName: '3. ERP - Quran Program';
     pluralName: 'quran-programs';
     singularName: 'quran-program';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
+  };
+  pluginOptions: {
+    'content-manager': {
+      visible: true;
+    };
   };
   attributes: {
     ageGroup: Schema.Attribute.String;
@@ -8021,145 +7236,12 @@ export interface ApiQuranProgramQuranProgram
   };
 }
 
-export interface ApiReportCardReportCard extends Struct.CollectionTypeSchema {
-  collectionName: 'report-cards';
-  info: {
-    description: 'Final issued report card document';
-    displayName: 'Report Card';
-    pluralName: 'report-cards';
-    singularName: 'report-card';
-  };
-  options: {
-    draftAndPublish: true;
-  };
-  pluginOptions: {
-    i18n: {
-      localized: true;
-    };
-  };
-  attributes: {
-    academic_term: Schema.Attribute.Relation<
-      'manyToOne',
-      'api::academic-term.academic-term'
-    >;
-    academic_year: Schema.Attribute.Relation<
-      'manyToOne',
-      'api::academic-year.academic-year'
-    >;
-    createdAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    dataSnapshot: Schema.Attribute.JSON;
-    issueDate: Schema.Attribute.Date;
-    locale: Schema.Attribute.String;
-    localizations: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::report-card.report-card'
-    >;
-    publishedAt: Schema.Attribute.DateTime;
-    report_template: Schema.Attribute.Relation<
-      'manyToOne',
-      'api::report-template.report-template'
-    >;
-    student: Schema.Attribute.Relation<'manyToOne', 'api::student.student'>;
-    updatedAt: Schema.Attribute.DateTime;
-    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    verificationQR: Schema.Attribute.String & Schema.Attribute.Unique;
-    workflowStatus: Schema.Attribute.Enumeration<
-      ['Draft', 'DepartmentReview', 'DirectorApproval', 'Published', 'Rejected']
-    > &
-      Schema.Attribute.DefaultTo<'Draft'>;
-  };
-}
-
-export interface ApiReportTemplateReportTemplate
-  extends Struct.CollectionTypeSchema {
-  collectionName: 'report-templates';
-  info: {
-    description: 'Configurable layouts for report cards';
-    displayName: 'Report Template';
-    pluralName: 'report-templates';
-    singularName: 'report-template';
-  };
-  options: {
-    draftAndPublish: true;
-  };
-  pluginOptions: {
-    i18n: {
-      localized: true;
-    };
-  };
-  attributes: {
-    brandingConfig: Schema.Attribute.JSON;
-    createdAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    layoutType: Schema.Attribute.Enumeration<
-      [
-        'Primary',
-        'Secondary',
-        'Quran',
-        'Arabic',
-        'English',
-        'Boarding',
-        'Custom',
-      ]
-    > &
-      Schema.Attribute.DefaultTo<'Primary'>;
-    locale: Schema.Attribute.String;
-    localizations: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::report-template.report-template'
-    >;
-    name: Schema.Attribute.String & Schema.Attribute.Required;
-    publishedAt: Schema.Attribute.DateTime;
-    signatureConfig: Schema.Attribute.JSON;
-    updatedAt: Schema.Attribute.DateTime;
-    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    version: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<1>;
-  };
-}
-
-export interface ApiRubricRubric extends Struct.CollectionTypeSchema {
-  collectionName: 'rubrics';
-  info: {
-    description: 'Schema for Rubric';
-    displayName: 'Rubric';
-    pluralName: 'rubrics';
-    singularName: 'rubric';
-  };
-  options: {
-    draftAndPublish: true;
-  };
-  attributes: {
-    createdAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    criteria: Schema.Attribute.String & Schema.Attribute.Required;
-    description: Schema.Attribute.Text;
-    levels: Schema.Attribute.JSON;
-    locale: Schema.Attribute.String & Schema.Attribute.Private;
-    localizations: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::rubric.rubric'
-    > &
-      Schema.Attribute.Private;
-    maxPoints: Schema.Attribute.Decimal;
-    publishedAt: Schema.Attribute.DateTime;
-    updatedAt: Schema.Attribute.DateTime;
-    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-  };
-}
-
 export interface ApiSchoolAcademicProgramSchoolAcademicProgram
   extends Struct.CollectionTypeSchema {
   collectionName: 'school_academic_programs';
   info: {
     description: "Public school academic program offering (English, Arabic, Qur'an Memorization, etc.)";
-    displayName: '[F] School Academic Program';
+    displayName: '4. Website - Academic Program Card';
     pluralName: 'school-academic-programs';
     singularName: 'school-academic-program';
   };
@@ -8167,6 +7249,9 @@ export interface ApiSchoolAcademicProgramSchoolAcademicProgram
     draftAndPublish: true;
   };
   pluginOptions: {
+    'content-manager': {
+      visible: true;
+    };
     i18n: {
       localized: true;
     };
@@ -8277,7 +7362,7 @@ export interface ApiSchoolAcademicProgramsPageSchoolAcademicProgramsPage
   collectionName: 'school_academic_programs_pages';
   info: {
     description: 'Main Academic Programs listing page (/programs)';
-    displayName: '[F] School Academic Programs Page';
+    displayName: '2. Website - Academic Programs Page';
     pluralName: 'school-academic-programs-pages';
     singularName: 'school-academic-programs-page';
   };
@@ -8285,6 +7370,9 @@ export interface ApiSchoolAcademicProgramsPageSchoolAcademicProgramsPage
     draftAndPublish: true;
   };
   pluginOptions: {
+    'content-manager': {
+      visible: true;
+    };
     i18n: {
       localized: true;
     };
@@ -8392,6 +7480,11 @@ export interface ApiSchoolIdSequenceSchoolIdSequence
     comment: '';
     draftAndPublish: false;
   };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
+  };
   attributes: {
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
@@ -8428,7 +7521,7 @@ export interface ApiSchoolProfileSchoolProfile extends Struct.SingleTypeSchema {
   collectionName: 'school_profiles';
   info: {
     description: 'Global school settings, branding, and configuration';
-    displayName: 'School Profile';
+    displayName: '1. School Profile & Settings';
     pluralName: 'school-profiles';
     singularName: 'school-profile';
   };
@@ -8436,51 +7529,21 @@ export interface ApiSchoolProfileSchoolProfile extends Struct.SingleTypeSchema {
     draftAndPublish: false;
   };
   pluginOptions: {
-    i18n: {
-      localized: true;
+    'content-manager': {
+      visible: true;
     };
   };
   attributes: {
-    academicYearEnd: Schema.Attribute.Date &
-      Schema.Attribute.SetPluginOptions<{
-        i18n: {
-          localized: false;
-        };
-      }>;
-    academicYearStart: Schema.Attribute.Date &
-      Schema.Attribute.SetPluginOptions<{
-        i18n: {
-          localized: false;
-        };
-      }>;
-    address: Schema.Attribute.Text &
-      Schema.Attribute.SetPluginOptions<{
-        i18n: {
-          localized: true;
-        };
-      }>;
+    academicYearEnd: Schema.Attribute.Date;
+    academicYearStart: Schema.Attribute.Date;
+    address: Schema.Attribute.Text;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
     defaultLanguage: Schema.Attribute.Enumeration<['en', 'ar', 'fr', 'tr']> &
-      Schema.Attribute.SetPluginOptions<{
-        i18n: {
-          localized: false;
-        };
-      }> &
       Schema.Attribute.DefaultTo<'en'>;
-    email: Schema.Attribute.Email &
-      Schema.Attribute.SetPluginOptions<{
-        i18n: {
-          localized: false;
-        };
-      }>;
+    email: Schema.Attribute.Email;
     foundedYear: Schema.Attribute.Integer &
-      Schema.Attribute.SetPluginOptions<{
-        i18n: {
-          localized: false;
-        };
-      }> &
       Schema.Attribute.SetMinMax<
         {
           max: 2100;
@@ -8488,65 +7551,31 @@ export interface ApiSchoolProfileSchoolProfile extends Struct.SingleTypeSchema {
         },
         number
       >;
-    locale: Schema.Attribute.String;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
       'api::school-profile.school-profile'
-    >;
-    logo: Schema.Attribute.Media<'images'> &
-      Schema.Attribute.SetPluginOptions<{
-        i18n: {
-          localized: false;
-        };
-      }>;
-    motto: Schema.Attribute.Text &
-      Schema.Attribute.SetPluginOptions<{
-        i18n: {
-          localized: true;
-        };
-      }>;
+    > &
+      Schema.Attribute.Private;
+    logo: Schema.Attribute.Media<'images'>;
+    motto: Schema.Attribute.Text;
     phone: Schema.Attribute.String &
-      Schema.Attribute.SetPluginOptions<{
-        i18n: {
-          localized: false;
-        };
-      }> &
       Schema.Attribute.SetMinMaxLength<{
         maxLength: 30;
       }>;
     publishedAt: Schema.Attribute.DateTime;
     registrationNumber: Schema.Attribute.String &
-      Schema.Attribute.SetPluginOptions<{
-        i18n: {
-          localized: false;
-        };
-      }> &
       Schema.Attribute.SetMinMaxLength<{
         maxLength: 100;
       }>;
     schoolName: Schema.Attribute.String &
       Schema.Attribute.Required &
-      Schema.Attribute.SetPluginOptions<{
-        i18n: {
-          localized: true;
-        };
-      }> &
       Schema.Attribute.SetMinMaxLength<{
         maxLength: 200;
       }> &
       Schema.Attribute.DefaultTo<'Yahaya International Islamic and English High School'>;
-    socialLinks: Schema.Attribute.Component<'contact.social-media', true> &
-      Schema.Attribute.SetPluginOptions<{
-        i18n: {
-          localized: false;
-        };
-      }>;
+    socialLinks: Schema.Attribute.Component<'contact.social-media', true>;
     timezone: Schema.Attribute.String &
-      Schema.Attribute.SetPluginOptions<{
-        i18n: {
-          localized: false;
-        };
-      }> &
       Schema.Attribute.SetMinMaxLength<{
         maxLength: 100;
       }> &
@@ -8555,11 +7584,6 @@ export interface ApiSchoolProfileSchoolProfile extends Struct.SingleTypeSchema {
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
     website: Schema.Attribute.String &
-      Schema.Attribute.SetPluginOptions<{
-        i18n: {
-          localized: false;
-        };
-      }> &
       Schema.Attribute.SetMinMaxLength<{
         maxLength: 200;
       }>;
@@ -8570,16 +7594,16 @@ export interface ApiSectionSection extends Struct.CollectionTypeSchema {
   collectionName: 'sections';
   info: {
     description: 'Multi-purpose academic sections, groups, levels, or boarding tracks';
-    displayName: 'Academic Section';
+    displayName: '2. Academic - Academic Section';
     pluralName: 'sections';
     singularName: 'section';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   pluginOptions: {
-    i18n: {
-      localized: true;
+    'content-manager': {
+      visible: true;
     };
   };
   attributes: {
@@ -8606,29 +7630,19 @@ export interface ApiSectionSection extends Struct.CollectionTypeSchema {
       'manyToOne',
       'api::department.department'
     >;
-    description: Schema.Attribute.Text &
-      Schema.Attribute.SetPluginOptions<{
-        i18n: {
-          localized: true;
-        };
-      }>;
+    description: Schema.Attribute.Text;
     gradeLevels: Schema.Attribute.Relation<
       'manyToMany',
       'api::grade-level.grade-level'
     >;
     icon: Schema.Attribute.String;
-    locale: Schema.Attribute.String;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
       'api::section.section'
-    >;
-    name: Schema.Attribute.String &
-      Schema.Attribute.Required &
-      Schema.Attribute.SetPluginOptions<{
-        i18n: {
-          localized: true;
-        };
-      }>;
+    > &
+      Schema.Attribute.Private;
+    name: Schema.Attribute.String & Schema.Attribute.Required;
     program: Schema.Attribute.Relation<'manyToOne', 'api::program.program'>;
     publishedAt: Schema.Attribute.DateTime;
     sectionType: Schema.Attribute.Enumeration<
@@ -8663,7 +7677,12 @@ export interface ApiSkillAssessmentSkillAssessment
     singularName: 'skill-assessment';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
+  };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
   };
   attributes: {
     courseOffering: Schema.Attribute.Relation<
@@ -8716,7 +7735,7 @@ export interface ApiStaffMemberStaffMember extends Struct.CollectionTypeSchema {
   collectionName: 'staff_members';
   info: {
     description: 'Faculty and staff members';
-    displayName: '[F] Staff Member';
+    displayName: '4. Website - Public Staff Member';
     pluralName: 'staff-members';
     singularName: 'staff-member';
   };
@@ -8724,6 +7743,9 @@ export interface ApiStaffMemberStaffMember extends Struct.CollectionTypeSchema {
     draftAndPublish: true;
   };
   pluginOptions: {
+    'content-manager': {
+      visible: true;
+    };
     i18n: {
       localized: true;
     };
@@ -8807,12 +7829,17 @@ export interface ApiStudentEnrollmentStudentEnrollment
   collectionName: 'student_enrollments';
   info: {
     description: 'Enrollment mapping a student to a Course Offering';
-    displayName: 'Student Enrollment';
+    displayName: '2. Academic - Student Enrollment';
     pluralName: 'student-enrollments';
     singularName: 'student-enrollment';
   };
   options: {
     draftAndPublish: false;
+  };
+  pluginOptions: {
+    'content-manager': {
+      visible: true;
+    };
   };
   attributes: {
     courseOffering: Schema.Attribute.Relation<
@@ -8857,8 +7884,8 @@ export interface ApiStudentGradeStudentGrade
     draftAndPublish: false;
   };
   pluginOptions: {
-    i18n: {
-      localized: true;
+    'content-manager': {
+      visible: false;
     };
   };
   attributes: {
@@ -8870,10 +7897,6 @@ export interface ApiStudentGradeStudentGrade
       'manyToOne',
       'api::academic-year.academic-year'
     >;
-    assessment_category: Schema.Attribute.Relation<
-      'manyToOne',
-      'api::assessment-category.assessment-category'
-    >;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -8882,11 +7905,12 @@ export interface ApiStudentGradeStudentGrade
       'api::exam-session.exam-session'
     >;
     isModerated: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
-    locale: Schema.Attribute.String;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
       'api::student-grade.student-grade'
-    >;
+    > &
+      Schema.Attribute.Private;
     marksObtained: Schema.Attribute.Decimal;
     maxMarks: Schema.Attribute.Decimal;
     moderatorRemarks: Schema.Attribute.Text;
@@ -8912,111 +7936,11 @@ export interface ApiStudentGradeStudentGrade
   };
 }
 
-export interface ApiStudentRankingStudentRanking
-  extends Struct.CollectionTypeSchema {
-  collectionName: 'student-rankings';
-  info: {
-    description: 'Pre-calculated student rankings';
-    displayName: 'Student Ranking';
-    pluralName: 'student-rankings';
-    singularName: 'student-ranking';
-  };
-  options: {
-    draftAndPublish: true;
-  };
-  pluginOptions: {
-    i18n: {
-      localized: true;
-    };
-  };
-  attributes: {
-    academic_term: Schema.Attribute.Relation<
-      'manyToOne',
-      'api::academic-term.academic-term'
-    >;
-    academic_year: Schema.Attribute.Relation<
-      'manyToOne',
-      'api::academic-year.academic-year'
-    >;
-    averageScore: Schema.Attribute.Decimal;
-    createdAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    isTied: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
-    locale: Schema.Attribute.String;
-    localizations: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::student-ranking.student-ranking'
-    >;
-    publishedAt: Schema.Attribute.DateTime;
-    rankContext: Schema.Attribute.Enumeration<
-      ['School', 'Department', 'Section', 'Subject', 'Program']
-    >;
-    rankPosition: Schema.Attribute.Integer;
-    student: Schema.Attribute.Relation<'manyToOne', 'api::student.student'>;
-    subject: Schema.Attribute.Relation<'manyToOne', 'api::subject.subject'>;
-    updatedAt: Schema.Attribute.DateTime;
-    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-  };
-}
-
-export interface ApiStudentResultStudentResult
-  extends Struct.CollectionTypeSchema {
-  collectionName: 'student-results';
-  info: {
-    description: 'Calculated final outcome for a student per subject';
-    displayName: 'Student Result';
-    pluralName: 'student-results';
-    singularName: 'student-result';
-  };
-  options: {
-    draftAndPublish: true;
-  };
-  pluginOptions: {
-    i18n: {
-      localized: true;
-    };
-  };
-  attributes: {
-    academic_term: Schema.Attribute.Relation<
-      'manyToOne',
-      'api::academic-term.academic-term'
-    >;
-    academic_year: Schema.Attribute.Relation<
-      'manyToOne',
-      'api::academic-year.academic-year'
-    >;
-    caTotal: Schema.Attribute.Decimal;
-    createdAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    directorComments: Schema.Attribute.Text;
-    examTotal: Schema.Attribute.Decimal;
-    gradePoint: Schema.Attribute.Decimal;
-    isPass: Schema.Attribute.Boolean;
-    letterGrade: Schema.Attribute.String;
-    locale: Schema.Attribute.String;
-    localizations: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::student-result.student-result'
-    >;
-    overallScore: Schema.Attribute.Decimal;
-    publishedAt: Schema.Attribute.DateTime;
-    student: Schema.Attribute.Relation<'manyToOne', 'api::student.student'>;
-    subject: Schema.Attribute.Relation<'manyToOne', 'api::subject.subject'>;
-    teacherComments: Schema.Attribute.Text;
-    updatedAt: Schema.Attribute.DateTime;
-    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-  };
-}
-
 export interface ApiStudentStudent extends Struct.CollectionTypeSchema {
   collectionName: 'students';
   info: {
     description: 'Comprehensive Student Information System (SIS) profile entity';
-    displayName: 'Student Profile';
+    displayName: '1. Profiles - Student';
     pluralName: 'students';
     singularName: 'student';
   };
@@ -9024,8 +7948,8 @@ export interface ApiStudentStudent extends Struct.CollectionTypeSchema {
     draftAndPublish: false;
   };
   pluginOptions: {
-    i18n: {
-      localized: true;
+    'content-manager': {
+      visible: true;
     };
   };
   attributes: {
@@ -9033,41 +7957,16 @@ export interface ApiStudentStudent extends Struct.CollectionTypeSchema {
       'manyToMany',
       'api::academic-year.academic-year'
     >;
-    address: Schema.Attribute.Text &
-      Schema.Attribute.SetPluginOptions<{
-        i18n: {
-          localized: true;
-        };
-      }>;
+    address: Schema.Attribute.Text;
     admissionDate: Schema.Attribute.Date;
     admissionNumber: Schema.Attribute.String & Schema.Attribute.Unique;
     advanceBalance: Schema.Attribute.Decimal & Schema.Attribute.DefaultTo<0>;
     barcodeData: Schema.Attribute.String;
     behaviorRecords: Schema.Attribute.Component<'erp.behavior-record', true>;
-    biography: Schema.Attribute.RichText &
-      Schema.Attribute.SetPluginOptions<{
-        i18n: {
-          localized: true;
-        };
-      }>;
-    city: Schema.Attribute.String &
-      Schema.Attribute.SetPluginOptions<{
-        i18n: {
-          localized: true;
-        };
-      }>;
-    country: Schema.Attribute.String &
-      Schema.Attribute.SetPluginOptions<{
-        i18n: {
-          localized: true;
-        };
-      }>;
-    county: Schema.Attribute.String &
-      Schema.Attribute.SetPluginOptions<{
-        i18n: {
-          localized: true;
-        };
-      }>;
+    biography: Schema.Attribute.RichText;
+    city: Schema.Attribute.String;
+    country: Schema.Attribute.String;
+    county: Schema.Attribute.String;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -9100,69 +7999,32 @@ export interface ApiStudentStudent extends Struct.CollectionTypeSchema {
       ]
     > &
       Schema.Attribute.DefaultTo<'active'>;
-    firstName: Schema.Attribute.String &
-      Schema.Attribute.Required &
-      Schema.Attribute.SetPluginOptions<{
-        i18n: {
-          localized: true;
-        };
-      }>;
+    firstName: Schema.Attribute.String & Schema.Attribute.Required;
     gender: Schema.Attribute.Enumeration<['male', 'female']> &
       Schema.Attribute.Required;
-    generalNotes: Schema.Attribute.RichText &
-      Schema.Attribute.SetPluginOptions<{
-        i18n: {
-          localized: true;
-        };
-      }>;
+    generalNotes: Schema.Attribute.RichText;
     graduationDate: Schema.Attribute.Date;
-    lastName: Schema.Attribute.String &
-      Schema.Attribute.Required &
-      Schema.Attribute.SetPluginOptions<{
-        i18n: {
-          localized: true;
-        };
-      }>;
-    locale: Schema.Attribute.String;
+    lastName: Schema.Attribute.String & Schema.Attribute.Required;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
       'api::student.student'
-    >;
+    > &
+      Schema.Attribute.Private;
     medicalInfo: Schema.Attribute.Component<'erp.medical-record', true>;
-    middleName: Schema.Attribute.String &
-      Schema.Attribute.SetPluginOptions<{
-        i18n: {
-          localized: true;
-        };
-      }>;
+    middleName: Schema.Attribute.String;
     multiCurrencyWallets: Schema.Attribute.JSON;
     nationalId: Schema.Attribute.String;
-    nationality: Schema.Attribute.String &
-      Schema.Attribute.SetPluginOptions<{
-        i18n: {
-          localized: true;
-        };
-      }>;
+    nationality: Schema.Attribute.String;
     parents: Schema.Attribute.Relation<'manyToMany', 'api::parent.parent'>;
     passportNumber: Schema.Attribute.String;
     phone: Schema.Attribute.String;
     photo: Schema.Attribute.Media<'images'>;
-    placeOfBirth: Schema.Attribute.String &
-      Schema.Attribute.SetPluginOptions<{
-        i18n: {
-          localized: true;
-        };
-      }>;
+    placeOfBirth: Schema.Attribute.String;
     programs: Schema.Attribute.Relation<'manyToMany', 'api::program.program'>;
     publishedAt: Schema.Attribute.DateTime;
     qrCodeData: Schema.Attribute.String;
-    religion: Schema.Attribute.String &
-      Schema.Attribute.SetPluginOptions<{
-        i18n: {
-          localized: true;
-        };
-      }> &
-      Schema.Attribute.DefaultTo<'Islam'>;
+    religion: Schema.Attribute.String & Schema.Attribute.DefaultTo<'Islam'>;
     schoolId: Schema.Attribute.String & Schema.Attribute.Unique;
     sections: Schema.Attribute.Relation<'manyToMany', 'api::section.section'>;
     staffNotes: Schema.Attribute.Component<'erp.staff-note', true>;
@@ -9186,12 +8048,17 @@ export interface ApiSubjectSubject extends Struct.CollectionTypeSchema {
   collectionName: 'subjects';
   info: {
     description: 'Academic Subjects';
-    displayName: 'Subject';
+    displayName: '2. Academic - Subject';
     pluralName: 'subjects';
     singularName: 'subject';
   };
   options: {
     draftAndPublish: false;
+  };
+  pluginOptions: {
+    'content-manager': {
+      visible: true;
+    };
   };
   attributes: {
     academicSection: Schema.Attribute.Relation<
@@ -9256,7 +8123,12 @@ export interface ApiTajweedEvaluationTajweedEvaluation
     singularName: 'tajweed-evaluation';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
+  };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
   };
   attributes: {
     academicTerm: Schema.Attribute.Relation<
@@ -9302,12 +8174,17 @@ export interface ApiTeacherAssignmentTeacherAssignment
   collectionName: 'teacher_assignments';
   info: {
     description: 'Teacher workloads per Course Offering';
-    displayName: 'Teacher Assignment';
+    displayName: '2. Academic - Teacher Assignment';
     pluralName: 'teacher-assignments';
     singularName: 'teacher-assignment';
   };
   options: {
     draftAndPublish: false;
+  };
+  pluginOptions: {
+    'content-manager': {
+      visible: true;
+    };
   };
   attributes: {
     courseOffering: Schema.Attribute.Relation<
@@ -9337,35 +8214,25 @@ export interface ApiTeacherTeacher extends Struct.CollectionTypeSchema {
   collectionName: 'teachers';
   info: {
     description: 'Faculty, Sheikhs, and teaching staff profiles';
-    displayName: 'Teacher Management';
+    displayName: '1. Profiles - Teacher';
     pluralName: 'teachers';
     singularName: 'teacher';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   pluginOptions: {
-    i18n: {
-      localized: true;
+    'content-manager': {
+      visible: true;
     };
   };
   attributes: {
-    address: Schema.Attribute.Text &
-      Schema.Attribute.SetPluginOptions<{
-        i18n: {
-          localized: true;
-        };
-      }>;
+    address: Schema.Attribute.Text;
     assignments: Schema.Attribute.Relation<
       'oneToMany',
       'api::teacher-assignment.teacher-assignment'
     >;
-    biography: Schema.Attribute.RichText &
-      Schema.Attribute.SetPluginOptions<{
-        i18n: {
-          localized: true;
-        };
-      }>;
+    biography: Schema.Attribute.RichText;
     courseOfferings: Schema.Attribute.Relation<
       'oneToMany',
       'api::course-offering.course-offering'
@@ -9395,37 +8262,22 @@ export interface ApiTeacherTeacher extends Struct.CollectionTypeSchema {
       Schema.Attribute.DefaultTo<'active'>;
     experienceYears: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<5>;
     gender: Schema.Attribute.Enumeration<['male', 'female']>;
-    locale: Schema.Attribute.String;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
       'api::teacher.teacher'
-    >;
-    name: Schema.Attribute.String &
-      Schema.Attribute.Required &
-      Schema.Attribute.SetPluginOptions<{
-        i18n: {
-          localized: true;
-        };
-      }>;
+    > &
+      Schema.Attribute.Private;
+    name: Schema.Attribute.String & Schema.Attribute.Required;
     phone: Schema.Attribute.String & Schema.Attribute.Required;
     photo: Schema.Attribute.Media<'images'>;
     programs: Schema.Attribute.Relation<'manyToMany', 'api::program.program'>;
     publishedAt: Schema.Attribute.DateTime;
-    qualifications: Schema.Attribute.String &
-      Schema.Attribute.SetPluginOptions<{
-        i18n: {
-          localized: true;
-        };
-      }>;
+    qualifications: Schema.Attribute.String;
     salaryGrade: Schema.Attribute.String;
     schoolId: Schema.Attribute.String & Schema.Attribute.Unique;
     sections: Schema.Attribute.Relation<'manyToMany', 'api::section.section'>;
-    specializations: Schema.Attribute.String &
-      Schema.Attribute.SetPluginOptions<{
-        i18n: {
-          localized: true;
-        };
-      }>;
+    specializations: Schema.Attribute.String;
     students: Schema.Attribute.Relation<'manyToMany', 'api::student.student'>;
     subjects: Schema.Attribute.JSON;
     updatedAt: Schema.Attribute.DateTime;
@@ -9448,6 +8300,11 @@ export interface ApiTeachingProgressTeachingProgress
   };
   options: {
     draftAndPublish: false;
+  };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
   };
   attributes: {
     attendanceSubmitted: Schema.Attribute.Boolean &
@@ -9485,7 +8342,7 @@ export interface ApiTestimonialTestimonial extends Struct.CollectionTypeSchema {
   collectionName: 'testimonials';
   info: {
     description: 'Parent, student, and alumni testimonials';
-    displayName: '[F] Testimonial';
+    displayName: '4. Website - Testimonial';
     pluralName: 'testimonials';
     singularName: 'testimonial';
   };
@@ -9493,6 +8350,9 @@ export interface ApiTestimonialTestimonial extends Struct.CollectionTypeSchema {
     draftAndPublish: true;
   };
   pluginOptions: {
+    'content-manager': {
+      visible: true;
+    };
     i18n: {
       localized: true;
     };
@@ -9549,12 +8409,17 @@ export interface ApiTimetableSlotTimetableSlot
   extends Struct.CollectionTypeSchema {
   collectionName: 'timetable_slots';
   info: {
-    displayName: 'Timetable Slot';
+    displayName: '2. Academic - Timetable Slot';
     pluralName: 'timetable-slots';
     singularName: 'timetable-slot';
   };
   options: {
     draftAndPublish: false;
+  };
+  pluginOptions: {
+    'content-manager': {
+      visible: true;
+    };
   };
   attributes: {
     academicTerm: Schema.Attribute.Relation<
@@ -9622,6 +8487,11 @@ export interface ApiTopicTopic extends Struct.CollectionTypeSchema {
   options: {
     draftAndPublish: false;
   };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
+  };
   attributes: {
     attachments: Schema.Attribute.Media<
       'files' | 'images' | 'videos' | 'audios',
@@ -9665,6 +8535,11 @@ export interface ApiTranscriptVersionTranscriptVersion
   options: {
     draftAndPublish: false;
   };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
+  };
   attributes: {
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
@@ -9703,6 +8578,11 @@ export interface ApiVendorVendor extends Struct.CollectionTypeSchema {
   };
   options: {
     draftAndPublish: false;
+  };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
   };
   attributes: {
     bankAccountDetails: Schema.Attribute.Text;
@@ -9746,6 +8626,11 @@ export interface ApiWalletTransactionWalletTransaction
   };
   options: {
     draftAndPublish: false;
+  };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
   };
   attributes: {
     amount: Schema.Attribute.Decimal;
@@ -9793,25 +8678,20 @@ export interface ApiWorkerWorker extends Struct.CollectionTypeSchema {
   collectionName: 'workers';
   info: {
     description: 'Support staff profiles (Security, Cleaners, Cooks, Drivers, ICT, Mosque Caretakers)';
-    displayName: 'Worker Management';
+    displayName: '1. Profiles - Staff & Worker';
     pluralName: 'workers';
     singularName: 'worker';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   pluginOptions: {
-    i18n: {
-      localized: true;
+    'content-manager': {
+      visible: true;
     };
   };
   attributes: {
-    address: Schema.Attribute.Text &
-      Schema.Attribute.SetPluginOptions<{
-        i18n: {
-          localized: true;
-        };
-      }>;
+    address: Schema.Attribute.Text;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -9835,25 +8715,17 @@ export interface ApiWorkerWorker extends Struct.CollectionTypeSchema {
       ]
     > &
       Schema.Attribute.DefaultTo<'active'>;
-    locale: Schema.Attribute.String;
-    localizations: Schema.Attribute.Relation<'oneToMany', 'api::worker.worker'>;
-    name: Schema.Attribute.String &
-      Schema.Attribute.Required &
-      Schema.Attribute.SetPluginOptions<{
-        i18n: {
-          localized: true;
-        };
-      }>;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::worker.worker'
+    > &
+      Schema.Attribute.Private;
+    name: Schema.Attribute.String & Schema.Attribute.Required;
     phone: Schema.Attribute.String & Schema.Attribute.Required;
     photo: Schema.Attribute.Media<'images'>;
     publishedAt: Schema.Attribute.DateTime;
-    role: Schema.Attribute.String &
-      Schema.Attribute.Required &
-      Schema.Attribute.SetPluginOptions<{
-        i18n: {
-          localized: true;
-        };
-      }>;
+    role: Schema.Attribute.String & Schema.Attribute.Required;
     salaryGrade: Schema.Attribute.String;
     schoolId: Schema.Attribute.String & Schema.Attribute.Unique;
     updatedAt: Schema.Attribute.DateTime;
@@ -10417,12 +9289,8 @@ declare module '@strapi/strapi' {
       'api::about-page.about-page': ApiAboutPageAboutPage;
       'api::academic-appeal.academic-appeal': ApiAcademicAppealAcademicAppeal;
       'api::academic-audit-log.academic-audit-log': ApiAcademicAuditLogAcademicAuditLog;
-      'api::academic-calendar-event.academic-calendar-event': ApiAcademicCalendarEventAcademicCalendarEvent;
-      'api::academic-calendar.academic-calendar': ApiAcademicCalendarAcademicCalendar;
-      'api::academic-certificate-template.academic-certificate-template': ApiAcademicCertificateTemplateAcademicCertificateTemplate;
       'api::academic-certificate.academic-certificate': ApiAcademicCertificateAcademicCertificate;
       'api::academic-clearance.academic-clearance': ApiAcademicClearanceAcademicClearance;
-      'api::academic-regulation.academic-regulation': ApiAcademicRegulationAcademicRegulation;
       'api::academic-resource.academic-resource': ApiAcademicResourceAcademicResource;
       'api::academic-term.academic-term': ApiAcademicTermAcademicTerm;
       'api::academic-transcript.academic-transcript': ApiAcademicTranscriptAcademicTranscript;
@@ -10430,8 +9298,6 @@ declare module '@strapi/strapi' {
       'api::admission-application.admission-application': ApiAdmissionApplicationAdmissionApplication;
       'api::announcement.announcement': ApiAnnouncementAnnouncement;
       'api::assessment-blueprint.assessment-blueprint': ApiAssessmentBlueprintAssessmentBlueprint;
-      'api::assessment-category.assessment-category': ApiAssessmentCategoryAssessmentCategory;
-      'api::assessment-type.assessment-type': ApiAssessmentTypeAssessmentType;
       'api::attendance-record.attendance-record': ApiAttendanceRecordAttendanceRecord;
       'api::audit-log.audit-log': ApiAuditLogAuditLog;
       'api::campus.campus': ApiCampusCampus;
@@ -10446,12 +9312,10 @@ declare module '@strapi/strapi' {
       'api::department.department': ApiDepartmentDepartment;
       'api::donation-campaign.donation-campaign': ApiDonationCampaignDonationCampaign;
       'api::donation-setting.donation-setting': ApiDonationSettingDonationSetting;
-      'api::download-item.download-item': ApiDownloadItemDownloadItem;
       'api::event.event': ApiEventEvent;
       'api::exam-room.exam-room': ApiExamRoomExamRoom;
       'api::exam-schedule.exam-schedule': ApiExamScheduleExamSchedule;
       'api::exam-session.exam-session': ApiExamSessionExamSession;
-      'api::exam-timetable.exam-timetable': ApiExamTimetableExamTimetable;
       'api::examination.examination': ApiExaminationExamination;
       'api::faq.faq': ApiFaqFaq;
       'api::finance-account.finance-account': ApiFinanceAccountFinanceAccount;
@@ -10461,7 +9325,6 @@ declare module '@strapi/strapi' {
       'api::finance-exchange-rate.finance-exchange-rate': ApiFinanceExchangeRateFinanceExchangeRate;
       'api::finance-expense.finance-expense': ApiFinanceExpenseFinanceExpense;
       'api::finance-fee-structure.finance-fee-structure': ApiFinanceFeeStructureFinanceFeeStructure;
-      'api::finance-financial-statement.finance-financial-statement': ApiFinanceFinancialStatementFinanceFinancialStatement;
       'api::finance-hold.finance-hold': ApiFinanceHoldFinanceHold;
       'api::finance-invoice.finance-invoice': ApiFinanceInvoiceFinanceInvoice;
       'api::finance-journal-entry.finance-journal-entry': ApiFinanceJournalEntryFinanceJournalEntry;
@@ -10469,17 +9332,14 @@ declare module '@strapi/strapi' {
       'api::finance-payroll.finance-payroll': ApiFinancePayrollFinancePayroll;
       'api::finance-receipt.finance-receipt': ApiFinanceReceiptFinanceReceipt;
       'api::finance-scholarship.finance-scholarship': ApiFinanceScholarshipFinanceScholarship;
-      'api::finance-sequence-counter.finance-sequence-counter': ApiFinanceSequenceCounterFinanceSequenceCounter;
       'api::fixed-asset.fixed-asset': ApiFixedAssetFixedAsset;
       'api::footer-config.footer-config': ApiFooterConfigFooterConfig;
       'api::gallery-item.gallery-item': ApiGalleryItemGalleryItem;
       'api::gpa-configuration.gpa-configuration': ApiGpaConfigurationGpaConfiguration;
-      'api::gpa-history.gpa-history': ApiGpaHistoryGpaHistory;
       'api::grade-approval-history.grade-approval-history': ApiGradeApprovalHistoryGradeApprovalHistory;
       'api::grade-approval.grade-approval': ApiGradeApprovalGradeApproval;
       'api::grade-band.grade-band': ApiGradeBandGradeBand;
       'api::grade-level.grade-level': ApiGradeLevelGradeLevel;
-      'api::grade-moderation.grade-moderation': ApiGradeModerationGradeModeration;
       'api::gradebook-entry.gradebook-entry': ApiGradebookEntryGradebookEntry;
       'api::grading-policy.grading-policy': ApiGradingPolicyGradingPolicy;
       'api::grading-scheme.grading-scheme': ApiGradingSchemeGradingScheme;
@@ -10487,10 +9347,8 @@ declare module '@strapi/strapi' {
       'api::graduation-record.graduation-record': ApiGraduationRecordGraduationRecord;
       'api::halaqah.halaqah': ApiHalaqahHalaqah;
       'api::homepage.homepage': ApiHomepageHomepage;
-      'api::homeroom.homeroom': ApiHomeroomHomeroom;
       'api::homework-submission.homework-submission': ApiHomeworkSubmissionHomeworkSubmission;
       'api::homework.homework': ApiHomeworkHomework;
-      'api::honor-roll.honor-roll': ApiHonorRollHonorRoll;
       'api::hostel-allocation.hostel-allocation': ApiHostelAllocationHostelAllocation;
       'api::hostel-attendance.hostel-attendance': ApiHostelAttendanceHostelAttendance;
       'api::hostel-audit-log.hostel-audit-log': ApiHostelAuditLogHostelAuditLog;
@@ -10504,56 +9362,41 @@ declare module '@strapi/strapi' {
       'api::hostel-maintenance-ticket.hostel-maintenance-ticket': ApiHostelMaintenanceTicketHostelMaintenanceTicket;
       'api::hostel-payment.hostel-payment': ApiHostelPaymentHostelPayment;
       'api::hostel-room.hostel-room': ApiHostelRoomHostelRoom;
-      'api::hostel-setting.hostel-setting': ApiHostelSettingHostelSetting;
       'api::hostel-vacation.hostel-vacation': ApiHostelVacationHostelVacation;
       'api::hostel-visitor.hostel-visitor': ApiHostelVisitorHostelVisitor;
       'api::hostel-warden.hostel-warden': ApiHostelWardenHostelWarden;
       'api::inventory-item.inventory-item': ApiInventoryItemInventoryItem;
       'api::inventory-movement.inventory-movement': ApiInventoryMovementInventoryMovement;
       'api::inventory-warehouse.inventory-warehouse': ApiInventoryWarehouseInventoryWarehouse;
-      'api::islamic-extension.islamic-extension': ApiIslamicExtensionIslamicExtension;
       'api::language-achievement.language-achievement': ApiLanguageAchievementLanguageAchievement;
-      'api::language-certificate.language-certificate': ApiLanguageCertificateLanguageCertificate;
       'api::language-competition.language-competition': ApiLanguageCompetitionLanguageCompetition;
-      'api::language-level.language-level': ApiLanguageLevelLanguageLevel;
       'api::language-portfolio.language-portfolio': ApiLanguagePortfolioLanguagePortfolio;
       'api::language-program.language-program': ApiLanguageProgramLanguageProgram;
-      'api::lesson-delivery.lesson-delivery': ApiLessonDeliveryLessonDelivery;
       'api::lesson-plan.lesson-plan': ApiLessonPlanLessonPlan;
       'api::library-book.library-book': ApiLibraryBookLibraryBook;
       'api::library-borrow-record.library-borrow-record': ApiLibraryBorrowRecordLibraryBorrowRecord;
       'api::login-page.login-page': ApiLoginPageLoginPage;
-      'api::marks-entry.marks-entry': ApiMarksEntryMarksEntry;
       'api::memorization.memorization': ApiMemorizationMemorization;
       'api::murajaah.murajaah': ApiMurajaahMurajaah;
       'api::navigation-menu.navigation-menu': ApiNavigationMenuNavigationMenu;
       'api::news-page.news-page': ApiNewsPageNewsPage;
       'api::newsletter-subscriber.newsletter-subscriber': ApiNewsletterSubscriberNewsletterSubscriber;
       'api::notification.notification': ApiNotificationNotification;
-      'api::observation-journal.observation-journal': ApiObservationJournalObservationJournal;
       'api::online-course.online-course': ApiOnlineCourseOnlineCourse;
       'api::online-learning-page.online-learning-page': ApiOnlineLearningPageOnlineLearningPage;
       'api::page.page': ApiPagePage;
       'api::parent.parent': ApiParentParent;
-      'api::partner.partner': ApiPartnerPartner;
       'api::placement-test.placement-test': ApiPlacementTestPlacementTest;
       'api::privacy-page.privacy-page': ApiPrivacyPagePrivacyPage;
       'api::program.program': ApiProgramProgram;
-      'api::promotion-record.promotion-record': ApiPromotionRecordPromotionRecord;
       'api::purchase-order.purchase-order': ApiPurchaseOrderPurchaseOrder;
       'api::pursuit-cta.pursuit-cta': ApiPursuitCtaPursuitCta;
       'api::question-pool.question-pool': ApiQuestionPoolQuestionPool;
       'api::question.question': ApiQuestionQuestion;
       'api::quran-achievement.quran-achievement': ApiQuranAchievementQuranAchievement;
-      'api::quran-assessment.quran-assessment': ApiQuranAssessmentQuranAssessment;
-      'api::quran-attendance.quran-attendance': ApiQuranAttendanceQuranAttendance;
       'api::quran-certificate.quran-certificate': ApiQuranCertificateQuranCertificate;
-      'api::quran-competition.quran-competition': ApiQuranCompetitionQuranCompetition;
       'api::quran-group.quran-group': ApiQuranGroupQuranGroup;
       'api::quran-program.quran-program': ApiQuranProgramQuranProgram;
-      'api::report-card.report-card': ApiReportCardReportCard;
-      'api::report-template.report-template': ApiReportTemplateReportTemplate;
-      'api::rubric.rubric': ApiRubricRubric;
       'api::school-academic-program.school-academic-program': ApiSchoolAcademicProgramSchoolAcademicProgram;
       'api::school-academic-programs-page.school-academic-programs-page': ApiSchoolAcademicProgramsPageSchoolAcademicProgramsPage;
       'api::school-id-sequence.school-id-sequence': ApiSchoolIdSequenceSchoolIdSequence;
@@ -10563,8 +9406,6 @@ declare module '@strapi/strapi' {
       'api::staff-member.staff-member': ApiStaffMemberStaffMember;
       'api::student-enrollment.student-enrollment': ApiStudentEnrollmentStudentEnrollment;
       'api::student-grade.student-grade': ApiStudentGradeStudentGrade;
-      'api::student-ranking.student-ranking': ApiStudentRankingStudentRanking;
-      'api::student-result.student-result': ApiStudentResultStudentResult;
       'api::student.student': ApiStudentStudent;
       'api::subject.subject': ApiSubjectSubject;
       'api::tajweed-evaluation.tajweed-evaluation': ApiTajweedEvaluationTajweedEvaluation;
