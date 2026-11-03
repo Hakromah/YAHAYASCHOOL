@@ -136,11 +136,10 @@ export async function seedPublicPermissions(strapi: Core.Strapi): Promise<void> 
 }
 
 export async function seedRolePermissions(strapi: Core.Strapi): Promise<void> {
-  strapi.log.info('[YAHAYASCOOL] Seeding complete API and user permissions for all non-public roles...');
+  strapi.log.info('[YAHAYASCOOL] Seeding complete API and user permissions for all roles...');
 
   try {
-    const roles = await strapi.db.query('plugin::users-permissions.role').findMany({});
-    const targetRoles = roles.filter((r: any) => r.type !== 'public');
+    const targetRoles = await strapi.db.query('plugin::users-permissions.role').findMany({});
 
     // Dynamically discover all active API folders in src/api
     const apiDir = path.resolve(__dirname, '..', 'api');
