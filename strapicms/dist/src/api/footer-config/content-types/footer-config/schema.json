@@ -4,7 +4,7 @@
     "info": {
         "singularName": "footer-config",
         "pluralName": "footer-configs",
-        "displayName": "[F] Footer Configuration",
+        "displayName": "2. Website - Footer Configuration",
         "description": "Dynamic website footer columns, copyright, and newsletter links"
     },
     "options": {
@@ -13,6 +13,9 @@
     "pluginOptions": {
         "i18n": {
             "localized": true
+        },
+        "content-manager": {
+            "visible": true
         }
     },
     "attributes": {
@@ -35,7 +38,12 @@
             "type": "media",
             "multiple": false,
             "required": false,
-            "allowedTypes": ["images", "files", "videos", "audios"]
+            "allowedTypes": [
+                "images",
+                "files",
+                "videos",
+                "audios"
+            ]
         },
         "email": {
             "type": "string"
@@ -50,19 +58,35 @@
         },
         "brandName": {
             "type": "string",
-            "pluginOptions": { "i18n": { "localized": true } }
+            "pluginOptions": {
+                "i18n": {
+                    "localized": true
+                }
+            }
         },
         "brandTagline1": {
             "type": "string",
-            "pluginOptions": { "i18n": { "localized": true } }
+            "pluginOptions": {
+                "i18n": {
+                    "localized": true
+                }
+            }
         },
         "brandTagline2": {
             "type": "string",
-            "pluginOptions": { "i18n": { "localized": true } }
+            "pluginOptions": {
+                "i18n": {
+                    "localized": true
+                }
+            }
         },
         "brandDescription": {
             "type": "text",
-            "pluginOptions": { "i18n": { "localized": true } }
+            "pluginOptions": {
+                "i18n": {
+                    "localized": true
+                }
+            }
         },
         "pills": {
             "type": "component",
@@ -71,38 +95,70 @@
         },
         "termsLabel": {
             "type": "string",
-            "pluginOptions": { "i18n": { "localized": true } }
+            "pluginOptions": {
+                "i18n": {
+                    "localized": true
+                }
+            }
         },
         "privacyUrl": {
             "type": "string"
         },
         "privacyLabel": {
             "type": "string",
-            "pluginOptions": { "i18n": { "localized": true } }
+            "pluginOptions": {
+                "i18n": {
+                    "localized": true
+                }
+            }
         },
         "socialsLabel": {
             "type": "string",
-            "pluginOptions": { "i18n": { "localized": true } }
+            "pluginOptions": {
+                "i18n": {
+                    "localized": true
+                }
+            }
         },
         "emailLabel": {
             "type": "string",
-            "pluginOptions": { "i18n": { "localized": true } }
+            "pluginOptions": {
+                "i18n": {
+                    "localized": true
+                }
+            }
         },
         "phoneLabel": {
             "type": "string",
-            "pluginOptions": { "i18n": { "localized": true } }
+            "pluginOptions": {
+                "i18n": {
+                    "localized": true
+                }
+            }
         },
         "quickLinksTitle": {
             "type": "string",
-            "pluginOptions": { "i18n": { "localized": true } }
+            "pluginOptions": {
+                "i18n": {
+                    "localized": true
+                }
+            }
         },
         "academicsTitle": {
             "type": "string",
-            "pluginOptions": { "i18n": { "localized": true } }
+            "pluginOptions": {
+                "i18n": {
+                    "localized": true
+                }
+            }
         },
         "supportTitle": {
             "type": "string",
-            "pluginOptions": { "i18n": { "localized": true } }
+            "pluginOptions": {
+                "i18n": {
+                    "localized": true
+                }
+            }
         },
         "contactText": {
             "pluginOptions": {

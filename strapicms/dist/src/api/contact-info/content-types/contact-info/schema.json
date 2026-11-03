@@ -4,7 +4,7 @@
     "info": {
         "singularName": "contact-info",
         "pluralName": "contact-infos",
-        "displayName": "[F] Contact Information",
+        "displayName": "2. Website - Contact Information",
         "description": "School contact details, office hours, and maps"
     },
     "options": {
@@ -13,6 +13,9 @@
     "pluginOptions": {
         "i18n": {
             "localized": true
+        },
+        "content-manager": {
+            "visible": true
         }
     },
     "attributes": {

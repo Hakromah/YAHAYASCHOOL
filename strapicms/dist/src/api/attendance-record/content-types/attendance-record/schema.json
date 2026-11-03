@@ -4,7 +4,7 @@
     "info": {
         "singularName": "attendance-record",
         "pluralName": "attendance-records",
-        "displayName": "Attendance Record"
+        "displayName": "3. ERP - Attendance Record"
     },
     "options": {
         "draftAndPublish": false
@@ -65,6 +65,11 @@
             "type": "relation",
             "relation": "manyToOne",
             "target": "api::course-offering.course-offering"
+        }
+    },
+    "pluginOptions": {
+        "content-manager": {
+            "visible": true
         }
     }
 }

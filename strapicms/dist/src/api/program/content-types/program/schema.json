@@ -4,7 +4,7 @@
     "info": {
         "singularName": "program",
         "pluralName": "programs",
-        "displayName": "[F] Program",
+        "displayName": "2. Academic - Program",
         "description": "Academic and specialized programs (e.g. Qur'an Memorization, Sciences, Languages)"
     },
     "options": {
@@ -13,6 +13,9 @@
     "pluginOptions": {
         "i18n": {
             "localized": true
+        },
+        "content-manager": {
+            "visible": true
         }
     },
     "attributes": {

@@ -4,7 +4,7 @@
   "info": {
     "singularName": "online-learning-page",
     "pluralName": "online-learning-pages",
-    "displayName": "[F] Online Learning Page",
+    "displayName": "2. Website - Online Learning Page",
     "description": "Online Learning page (/online-learning)"
   },
   "options": {
@@ -13,6 +13,9 @@
   "pluginOptions": {
     "i18n": {
       "localized": true
+    },
+    "content-manager": {
+      "visible": true
     }
   },
   "attributes": {
@@ -74,7 +77,9 @@
       "type": "media",
       "multiple": false,
       "required": false,
-      "allowedTypes": ["images"]
+      "allowedTypes": [
+        "images"
+      ]
     },
     "liveLessonButtonText": {
       "pluginOptions": {
@@ -138,7 +143,9 @@
       "type": "media",
       "multiple": false,
       "required": false,
-      "allowedTypes": ["images"]
+      "allowedTypes": [
+        "images"
+      ]
     },
     "approachStatValue": {
       "pluginOptions": {

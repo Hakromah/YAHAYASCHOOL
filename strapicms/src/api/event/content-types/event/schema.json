@@ -4,7 +4,7 @@
   "info": {
     "singularName": "event",
     "pluralName": "events",
-    "displayName": "[F] Event",
+    "displayName": "4. Website - Event",
     "description": "School calendar activities, sports, lectures, and parent gatherings"
   },
   "options": {
@@ -13,6 +13,9 @@
   "pluginOptions": {
     "i18n": {
       "localized": true
+    },
+    "content-manager": {
+      "visible": true
     }
   },
   "attributes": {

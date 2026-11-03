@@ -4,7 +4,7 @@
   "info": {
     "singularName": "staff-member",
     "pluralName": "staff-members",
-    "displayName": "[F] Staff Member",
+    "displayName": "4. Website - Public Staff Member",
     "description": "Faculty and staff members"
   },
   "options": {
@@ -13,6 +13,9 @@
   "pluginOptions": {
     "i18n": {
       "localized": true
+    },
+    "content-manager": {
+      "visible": true
     }
   },
   "attributes": {

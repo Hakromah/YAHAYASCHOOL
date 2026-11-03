@@ -70,5 +70,10 @@
             "relation": "manyToOne",
             "target": "api::grade-level.grade-level"
         }
+    },
+    "pluginOptions": {
+        "content-manager": {
+            "visible": false
+        }
     }
 }

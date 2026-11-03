@@ -4,7 +4,7 @@
     "info": {
         "singularName": "career-setting",
         "pluralName": "career-settings",
-        "displayName": "[F] Available Positions Header",
+        "displayName": "2. Website - Career Header",
         "description": "The title and description that appears above the list of positions."
     },
     "options": {
@@ -13,6 +13,9 @@
     "pluginOptions": {
         "i18n": {
             "localized": true
+        },
+        "content-manager": {
+            "visible": true
         }
     },
     "attributes": {
@@ -88,7 +91,9 @@
             "type": "media",
             "multiple": false,
             "required": false,
-            "allowedTypes": ["images"]
+            "allowedTypes": [
+                "images"
+            ]
         }
     }
 }

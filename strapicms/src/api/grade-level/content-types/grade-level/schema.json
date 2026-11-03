@@ -4,7 +4,7 @@
   "info": {
     "singularName": "grade-level",
     "pluralName": "grade-levels",
-    "displayName": "Grade Level",
+    "displayName": "2. Academic - Grade Level",
     "description": "Independent Grade Level entity — shared globally across all Academic Sections"
   },
   "options": {
@@ -50,12 +50,11 @@
       "relation": "oneToMany",
       "target": "api::course-offering.course-offering",
       "mappedBy": "gradeLevel"
-    },
-    "homerooms": {
-      "type": "relation",
-      "relation": "oneToMany",
-      "target": "api::homeroom.homeroom",
-      "mappedBy": "gradeLevel"
+    }
+  },
+  "pluginOptions": {
+    "content-manager": {
+      "visible": true
     }
   }
 }

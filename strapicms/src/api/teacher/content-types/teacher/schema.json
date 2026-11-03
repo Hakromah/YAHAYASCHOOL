@@ -4,15 +4,15 @@
   "info": {
     "singularName": "teacher",
     "pluralName": "teachers",
-    "displayName": "Teacher Management",
+    "displayName": "1. Profiles - Teacher",
     "description": "Faculty, Sheikhs, and teaching staff profiles"
   },
   "options": {
-    "draftAndPublish": true
+    "draftAndPublish": false
   },
   "pluginOptions": {
-    "i18n": {
-      "localized": true
+    "content-manager": {
+      "visible": true
     }
   },
   "attributes": {
@@ -30,11 +30,6 @@
       ]
     },
     "name": {
-      "pluginOptions": {
-        "i18n": {
-          "localized": true
-        }
-      },
       "type": "string",
       "required": true
     },
@@ -46,19 +41,9 @@
       ]
     },
     "qualifications": {
-      "pluginOptions": {
-        "i18n": {
-          "localized": true
-        }
-      },
       "type": "string"
     },
     "specializations": {
-      "pluginOptions": {
-        "i18n": {
-          "localized": true
-        }
-      },
       "type": "string"
     },
     "experienceYears": {
@@ -76,11 +61,6 @@
       "type": "email"
     },
     "address": {
-      "pluginOptions": {
-        "i18n": {
-          "localized": true
-        }
-      },
       "type": "text"
     },
     "employmentDate": {
@@ -103,11 +83,6 @@
       "type": "string"
     },
     "biography": {
-      "pluginOptions": {
-        "i18n": {
-          "localized": true
-        }
-      },
       "type": "richtext"
     },
     "emergencyContact": {

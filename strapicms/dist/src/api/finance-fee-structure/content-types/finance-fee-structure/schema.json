@@ -4,13 +4,17 @@
     "info": {
         "singularName": "finance-fee-structure",
         "pluralName": "finance-fee-structures",
-        "displayName": "Finance Fee Structure",
+        "displayName": "3. ERP - Fee Structure",
         "description": "Institutional fee schedules, tuition templates, and grade-level billing matrices"
     },
     "options": {
         "draftAndPublish": false
     },
-    "pluginOptions": {},
+    "pluginOptions": {
+        "content-manager": {
+            "visible": true
+        }
+    },
     "attributes": {
         "title": {
             "type": "string",

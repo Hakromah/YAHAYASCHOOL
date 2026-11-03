@@ -4,7 +4,7 @@
     "info": {
         "singularName": "teacher-assignment",
         "pluralName": "teacher-assignments",
-        "displayName": "Teacher Assignment",
+        "displayName": "2. Academic - Teacher Assignment",
         "description": "Teacher workloads per Course Offering"
     },
     "options": {
@@ -28,6 +28,11 @@
         },
         "workload": {
             "type": "decimal"
+        }
+    },
+    "pluginOptions": {
+        "content-manager": {
+            "visible": true
         }
     }
 }

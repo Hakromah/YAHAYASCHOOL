@@ -4,24 +4,19 @@
     "info": {
         "singularName": "academic-year",
         "pluralName": "academic-years",
-        "displayName": "Academic Year",
+        "displayName": "2. Academic - Academic Year",
         "description": "School academic calendar year with terms and enrollments"
     },
     "options": {
         "draftAndPublish": false
     },
     "pluginOptions": {
-        "i18n": {
-            "localized": true
+        "content-manager": {
+            "visible": true
         }
     },
     "attributes": {
         "name": {
-            "pluginOptions": {
-                "i18n": {
-                    "localized": true
-                }
-            },
             "type": "string",
             "required": true
         },

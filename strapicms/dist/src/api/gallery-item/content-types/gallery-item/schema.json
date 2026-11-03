@@ -4,7 +4,7 @@
     "info": {
         "singularName": "gallery-item",
         "pluralName": "gallery-items",
-        "displayName": "[F] Gallery Item",
+        "displayName": "4. Website - Gallery Item",
         "description": "Photo and video albums for school gallery"
     },
     "options": {
@@ -13,6 +13,9 @@
     "pluginOptions": {
         "i18n": {
             "localized": true
+        },
+        "content-manager": {
+            "visible": true
         }
     },
     "attributes": {

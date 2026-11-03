@@ -4,7 +4,7 @@
   "info": {
     "singularName": "school-academic-programs-page",
     "pluralName": "school-academic-programs-pages",
-    "displayName": "[F] School Academic Programs Page",
+    "displayName": "2. Website - Academic Programs Page",
     "description": "Main Academic Programs listing page (/programs)"
   },
   "options": {
@@ -13,6 +13,9 @@
   "pluginOptions": {
     "i18n": {
       "localized": true
+    },
+    "content-manager": {
+      "visible": true
     }
   },
   "attributes": {
@@ -74,7 +77,9 @@
       "type": "media",
       "multiple": false,
       "required": false,
-      "allowedTypes": ["images"]
+      "allowedTypes": [
+        "images"
+      ]
     },
     "approachTagline": {
       "pluginOptions": {
@@ -98,7 +103,9 @@
       "type": "media",
       "multiple": false,
       "required": false,
-      "allowedTypes": ["images"]
+      "allowedTypes": [
+        "images"
+      ]
     },
     "approachStatValue": {
       "pluginOptions": {

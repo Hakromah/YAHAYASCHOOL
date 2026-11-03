@@ -4,7 +4,7 @@
     "info": {
         "singularName": "donation-setting",
         "pluralName": "donation-settings",
-        "displayName": "[F] Donation Settings",
+        "displayName": "2. Website - Donation Settings",
         "description": "Global settings for the donation page (Bank Accounts, Form Options)"
     },
     "options": {
@@ -13,6 +13,9 @@
     "pluginOptions": {
         "i18n": {
             "localized": true
+        },
+        "content-manager": {
+            "visible": true
         }
     },
     "attributes": {
@@ -30,13 +33,21 @@
             "type": "component",
             "repeatable": false,
             "component": "shared.targeted-giving-settings",
-            "pluginOptions": { "i18n": { "localized": true } }
+            "pluginOptions": {
+                "i18n": {
+                    "localized": true
+                }
+            }
         },
         "wallOfGratitude": {
             "type": "component",
             "repeatable": false,
             "component": "shared.wall-of-gratitude",
-            "pluginOptions": { "i18n": { "localized": true } }
+            "pluginOptions": {
+                "i18n": {
+                    "localized": true
+                }
+            }
         },
         "amounts": {
             "type": "component",

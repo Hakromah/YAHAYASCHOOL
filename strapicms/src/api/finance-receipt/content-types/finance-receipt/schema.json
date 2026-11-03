@@ -4,13 +4,17 @@
   "info": {
     "singularName": "finance-receipt",
     "pluralName": "finance-receipts",
-    "displayName": "Finance Receipt",
+    "displayName": "3. ERP - Payment Receipt",
     "description": ""
   },
   "options": {
     "draftAndPublish": false
   },
-  "pluginOptions": {},
+  "pluginOptions": {
+    "content-manager": {
+      "visible": true
+    }
+  },
   "attributes": {
     "student": {
       "type": "relation",

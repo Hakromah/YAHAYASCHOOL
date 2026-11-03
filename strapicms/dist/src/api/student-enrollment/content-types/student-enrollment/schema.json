@@ -4,7 +4,7 @@
     "info": {
         "singularName": "student-enrollment",
         "pluralName": "student-enrollments",
-        "displayName": "Student Enrollment",
+        "displayName": "2. Academic - Student Enrollment",
         "description": "Enrollment mapping a student to a Course Offering"
     },
     "options": {
@@ -45,6 +45,11 @@
                 "pending"
             ],
             "default": "pending"
+        }
+    },
+    "pluginOptions": {
+        "content-manager": {
+            "visible": true
         }
     }
 }

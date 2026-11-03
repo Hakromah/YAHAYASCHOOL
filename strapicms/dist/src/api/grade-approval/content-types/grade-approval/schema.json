@@ -42,5 +42,10 @@
             "relation": "manyToOne",
             "target": "plugin::users-permissions.user"
         }
+    },
+    "pluginOptions": {
+        "content-manager": {
+            "visible": false
+        }
     }
 }

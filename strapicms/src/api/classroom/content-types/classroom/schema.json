@@ -4,7 +4,7 @@
   "info": {
     "singularName": "classroom",
     "pluralName": "classrooms",
-    "displayName": "Classroom"
+    "displayName": "2. Academic - Classroom"
   },
   "options": {
     "draftAndPublish": false
@@ -57,6 +57,11 @@
       "type": "relation",
       "relation": "manyToOne",
       "target": "api::campus.campus"
+    }
+  },
+  "pluginOptions": {
+    "content-manager": {
+      "visible": true
     }
   }
 }

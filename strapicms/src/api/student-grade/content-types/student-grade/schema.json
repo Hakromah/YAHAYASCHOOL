@@ -11,8 +11,8 @@
     "draftAndPublish": false
   },
   "pluginOptions": {
-    "i18n": {
-      "localized": true
+    "content-manager": {
+      "visible": false
     }
   },
   "attributes": {
@@ -73,11 +73,6 @@
       "type": "relation",
       "relation": "manyToOne",
       "target": "api::exam-session.exam-session"
-    },
-    "assessment_category": {
-      "type": "relation",
-      "relation": "manyToOne",
-      "target": "api::assessment-category.assessment-category"
     }
   }
 }

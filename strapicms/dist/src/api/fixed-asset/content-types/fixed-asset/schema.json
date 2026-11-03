@@ -6,10 +6,19 @@
         "pluralName": "fixed-assets",
         "displayName": "Fixed Asset"
     },
-    "options": { "draftAndPublish": false },
+    "options": {
+        "draftAndPublish": false
+    },
     "attributes": {
-        "assetTag": { "type": "string", "required": true, "unique": true },
-        "name": { "type": "string", "required": true },
+        "assetTag": {
+            "type": "string",
+            "required": true,
+            "unique": true
+        },
+        "name": {
+            "type": "string",
+            "required": true
+        },
         "category": {
             "type": "enumeration",
             "enum": [
@@ -23,25 +32,63 @@
             ],
             "required": true
         },
-        "purchaseDate": { "type": "date" },
-        "purchaseCost": { "type": "decimal", "default": 0 },
-        "salvageValue": { "type": "decimal", "default": 0 },
-        "usefulLifeYears": { "type": "integer", "default": 5 },
-        "currentBookValue": { "type": "decimal", "default": 0 },
-        "accumulatedDepreciation": { "type": "decimal", "default": 0 },
+        "purchaseDate": {
+            "type": "date"
+        },
+        "purchaseCost": {
+            "type": "decimal",
+            "default": 0
+        },
+        "salvageValue": {
+            "type": "decimal",
+            "default": 0
+        },
+        "usefulLifeYears": {
+            "type": "integer",
+            "default": 5
+        },
+        "currentBookValue": {
+            "type": "decimal",
+            "default": 0
+        },
+        "accumulatedDepreciation": {
+            "type": "decimal",
+            "default": 0
+        },
         "depreciationMethod": {
             "type": "enumeration",
-            "enum": ["Straight Line", "Declining Balance"],
+            "enum": [
+                "Straight Line",
+                "Declining Balance"
+            ],
             "default": "Straight Line"
         },
-        "location": { "type": "string" },
-        "assignedDepartment": { "type": "string" },
-        "assignedStaffName": { "type": "string" },
-        "barcode": { "type": "string" },
+        "location": {
+            "type": "string"
+        },
+        "assignedDepartment": {
+            "type": "string"
+        },
+        "assignedStaffName": {
+            "type": "string"
+        },
+        "barcode": {
+            "type": "string"
+        },
         "status": {
             "type": "enumeration",
-            "enum": ["active", "in_repair", "disposed", "impaired"],
+            "enum": [
+                "active",
+                "in_repair",
+                "disposed",
+                "impaired"
+            ],
             "default": "active"
+        }
+    },
+    "pluginOptions": {
+        "content-manager": {
+            "visible": false
         }
     }
 }

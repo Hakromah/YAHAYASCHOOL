@@ -4,7 +4,7 @@
   "info": {
     "singularName": "homepage",
     "pluralName": "homepages",
-    "displayName": "[F] Homepage",
+    "displayName": "2. Website - Homepage",
     "description": "Unified homepage content covering all 7 sections"
   },
   "options": {
@@ -13,6 +13,9 @@
   "pluginOptions": {
     "i18n": {
       "localized": true
+    },
+    "content-manager": {
+      "visible": true
     }
   },
   "attributes": {
@@ -117,7 +120,9 @@
       "type": "media",
       "multiple": false,
       "required": false,
-      "allowedTypes": ["images"]
+      "allowedTypes": [
+        "images"
+      ]
     },
     "aboutCaption": {
       "pluginOptions": {
@@ -271,7 +276,9 @@
       "type": "media",
       "multiple": false,
       "required": false,
-      "allowedTypes": ["images"]
+      "allowedTypes": [
+        "images"
+      ]
     },
     "activitiesCtaText": {
       "pluginOptions": {

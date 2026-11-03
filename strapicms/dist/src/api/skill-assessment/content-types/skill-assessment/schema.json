@@ -8,9 +8,13 @@
         "description": "Schema for Skill Assessment"
     },
     "options": {
-        "draftAndPublish": true
+        "draftAndPublish": false
     },
-    "pluginOptions": {},
+    "pluginOptions": {
+        "content-manager": {
+            "visible": false
+        }
+    },
     "attributes": {
         "skillType": {
             "type": "enumeration",

@@ -54,5 +54,10 @@
         "audios"
       ]
     }
+  },
+  "pluginOptions": {
+    "content-manager": {
+      "visible": false
+    }
   }
 }

@@ -38,5 +38,10 @@
       "type": "decimal",
       "default": 50
     }
+  },
+  "pluginOptions": {
+    "content-manager": {
+      "visible": false
+    }
   }
 }

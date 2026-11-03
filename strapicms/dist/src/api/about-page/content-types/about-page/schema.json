@@ -4,7 +4,7 @@
     "info": {
         "singularName": "about-page",
         "pluralName": "about-pages",
-        "displayName": "[F] About Page",
+        "displayName": "2. Website - About Page",
         "description": "The About Us page content"
     },
     "options": {
@@ -13,6 +13,9 @@
     "pluginOptions": {
         "i18n": {
             "localized": true
+        },
+        "content-manager": {
+            "visible": true
         }
     },
     "attributes": {

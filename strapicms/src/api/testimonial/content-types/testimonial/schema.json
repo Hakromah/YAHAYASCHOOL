@@ -4,7 +4,7 @@
   "info": {
     "singularName": "testimonial",
     "pluralName": "testimonials",
-    "displayName": "[F] Testimonial",
+    "displayName": "4. Website - Testimonial",
     "description": "Parent, student, and alumni testimonials"
   },
   "options": {
@@ -13,6 +13,9 @@
   "pluginOptions": {
     "i18n": {
       "localized": true
+    },
+    "content-manager": {
+      "visible": true
     }
   },
   "attributes": {

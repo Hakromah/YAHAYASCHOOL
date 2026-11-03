@@ -58,5 +58,10 @@
             "type": "boolean",
             "default": false
         }
+    },
+    "pluginOptions": {
+        "content-manager": {
+            "visible": false
+        }
     }
 }

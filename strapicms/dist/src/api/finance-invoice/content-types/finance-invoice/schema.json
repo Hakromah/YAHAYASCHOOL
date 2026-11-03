@@ -4,13 +4,17 @@
     "info": {
         "singularName": "finance-invoice",
         "pluralName": "finance-invoices",
-        "displayName": "Finance Invoice",
+        "displayName": "3. ERP - Tuition Invoice",
         "description": ""
     },
     "options": {
         "draftAndPublish": false
     },
-    "pluginOptions": {},
+    "pluginOptions": {
+        "content-manager": {
+            "visible": true
+        }
+    },
     "attributes": {
         "student": {
             "type": "relation",

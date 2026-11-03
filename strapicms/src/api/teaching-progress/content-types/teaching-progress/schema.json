@@ -42,5 +42,10 @@
       "relation": "manyToOne",
       "target": "api::course-offering.course-offering"
     }
+  },
+  "pluginOptions": {
+    "content-manager": {
+      "visible": false
+    }
   }
 }

@@ -4,24 +4,19 @@
     "info": {
         "singularName": "section",
         "pluralName": "sections",
-        "displayName": "Academic Section",
+        "displayName": "2. Academic - Academic Section",
         "description": "Multi-purpose academic sections, groups, levels, or boarding tracks"
     },
     "options": {
-        "draftAndPublish": true
+        "draftAndPublish": false
     },
     "pluginOptions": {
-        "i18n": {
-            "localized": true
+        "content-manager": {
+            "visible": true
         }
     },
     "attributes": {
         "name": {
-            "pluginOptions": {
-                "i18n": {
-                    "localized": true
-                }
-            },
             "type": "string",
             "required": true
         },
@@ -34,11 +29,6 @@
             "default": 35
         },
         "description": {
-            "pluginOptions": {
-                "i18n": {
-                    "localized": true
-                }
-            },
             "type": "text"
         },
         "active": {

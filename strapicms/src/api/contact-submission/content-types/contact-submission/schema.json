@@ -4,7 +4,7 @@
   "info": {
     "singularName": "contact-submission",
     "pluralName": "contact-submissions",
-    "displayName": "Contact Submission",
+    "displayName": "4. Website - Contact Submission",
     "description": "Inquiries submitted via website contact form"
   },
   "options": {
@@ -41,6 +41,11 @@
         "Archived"
       ],
       "default": "New"
+    }
+  },
+  "pluginOptions": {
+    "content-manager": {
+      "visible": true
     }
   }
 }

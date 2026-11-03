@@ -4,7 +4,7 @@
     "info": {
         "singularName": "admission-application",
         "pluralName": "admission-applications",
-        "displayName": "Admission Application",
+        "displayName": "3. ERP - Admission Application",
         "description": "Student online admission applications submitted via website registration portal"
     },
     "options": {
@@ -132,6 +132,11 @@
         },
         "reviewNotes": {
             "type": "text"
+        }
+    },
+    "pluginOptions": {
+        "content-manager": {
+            "visible": true
         }
     }
 }

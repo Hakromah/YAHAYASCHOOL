@@ -10364,6 +10364,7 @@ export interface PluginUsersPermissionsUser
       Schema.Attribute.SetMinMaxLength<{
         maxLength: 100;
       }>;
+    parent: Schema.Attribute.Relation<'oneToOne', 'api::parent.parent'>;
     password: Schema.Attribute.Password &
       Schema.Attribute.Private &
       Schema.Attribute.SetMinMaxLength<{
@@ -10387,6 +10388,8 @@ export interface PluginUsersPermissionsUser
       Schema.Attribute.SetMinMaxLength<{
         maxLength: 11;
       }>;
+    student: Schema.Attribute.Relation<'oneToOne', 'api::student.student'>;
+    teacher: Schema.Attribute.Relation<'oneToOne', 'api::teacher.teacher'>;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -10396,6 +10399,7 @@ export interface PluginUsersPermissionsUser
       Schema.Attribute.SetMinMaxLength<{
         minLength: 3;
       }>;
+    worker: Schema.Attribute.Relation<'oneToOne', 'api::worker.worker'>;
   };
 }
 

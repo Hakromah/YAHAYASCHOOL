@@ -4,7 +4,7 @@
   "info": {
     "singularName": "subject",
     "pluralName": "subjects",
-    "displayName": "Subject",
+    "displayName": "2. Academic - Subject",
     "description": "Academic Subjects"
   },
   "options": {
@@ -94,6 +94,11 @@
       "relation": "oneToMany",
       "target": "api::course-offering.course-offering",
       "mappedBy": "subject"
+    }
+  },
+  "pluginOptions": {
+    "content-manager": {
+      "visible": true
     }
   }
 }

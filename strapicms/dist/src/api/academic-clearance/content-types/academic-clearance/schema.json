@@ -35,5 +35,10 @@
             "relation": "manyToOne",
             "target": "api::student.student"
         }
+    },
+    "pluginOptions": {
+        "content-manager": {
+            "visible": false
+        }
     }
 }

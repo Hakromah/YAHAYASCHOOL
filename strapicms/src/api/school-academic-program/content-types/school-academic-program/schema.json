@@ -4,7 +4,7 @@
   "info": {
     "singularName": "school-academic-program",
     "pluralName": "school-academic-programs",
-    "displayName": "[F] School Academic Program",
+    "displayName": "4. Website - Academic Program Card",
     "description": "Public school academic program offering (English, Arabic, Qur'an Memorization, etc.)"
   },
   "options": {
@@ -13,6 +13,9 @@
   "pluginOptions": {
     "i18n": {
       "localized": true
+    },
+    "content-manager": {
+      "visible": true
     }
   },
   "attributes": {
@@ -81,7 +84,9 @@
       "type": "media",
       "multiple": false,
       "required": false,
-      "allowedTypes": ["images"]
+      "allowedTypes": [
+        "images"
+      ]
     },
     "primaryButtonText": {
       "pluginOptions": {
@@ -100,7 +105,9 @@
       "type": "media",
       "multiple": false,
       "required": false,
-      "allowedTypes": ["files"]
+      "allowedTypes": [
+        "files"
+      ]
     },
     "downloadButtonText": {
       "pluginOptions": {
@@ -137,25 +144,33 @@
       "type": "media",
       "multiple": false,
       "required": false,
-      "allowedTypes": ["images"]
+      "allowedTypes": [
+        "images"
+      ]
     },
     "pathwayImageTop": {
       "type": "media",
       "multiple": false,
       "required": false,
-      "allowedTypes": ["images"]
+      "allowedTypes": [
+        "images"
+      ]
     },
     "pathwayImageBottom": {
       "type": "media",
       "multiple": false,
       "required": false,
-      "allowedTypes": ["images"]
+      "allowedTypes": [
+        "images"
+      ]
     },
     "pathwayImages": {
       "type": "media",
       "multiple": true,
       "required": false,
-      "allowedTypes": ["images"]
+      "allowedTypes": [
+        "images"
+      ]
     },
     "order": {
       "type": "integer",

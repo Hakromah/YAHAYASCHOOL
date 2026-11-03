@@ -4,7 +4,7 @@
     "info": {
         "singularName": "pursuit-cta",
         "pluralName": "pursuit-ctas",
-        "displayName": "[F] Pursuit CTA Banner",
+        "displayName": "2. Website - Pursuit CTA Banner",
         "description": "Call to action banner ('In Pursuit of Exceptional Education') used on About and Staff pages"
     },
     "options": {
@@ -13,6 +13,9 @@
     "pluginOptions": {
         "i18n": {
             "localized": true
+        },
+        "content-manager": {
+            "visible": true
         }
     },
     "attributes": {

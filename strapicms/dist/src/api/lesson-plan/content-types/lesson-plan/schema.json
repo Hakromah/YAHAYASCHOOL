@@ -82,5 +82,10 @@
         "rejectionReason": {
             "type": "text"
         }
+    },
+    "pluginOptions": {
+        "content-manager": {
+            "visible": false
+        }
     }
 }

@@ -8,11 +8,11 @@
         "description": "Tracking for school graduates and alumni transition"
     },
     "options": {
-        "draftAndPublish": true
+        "draftAndPublish": false
     },
     "pluginOptions": {
-        "i18n": {
-            "localized": true
+        "content-manager": {
+            "visible": false
         }
     },
     "attributes": {

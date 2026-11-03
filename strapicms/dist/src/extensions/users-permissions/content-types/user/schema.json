@@ -107,6 +107,30 @@
         },
         "address": {
             "type": "text"
+        },
+        "teacher": {
+            "type": "relation",
+            "relation": "oneToOne",
+            "target": "api::teacher.teacher",
+            "mappedBy": "user"
+        },
+        "student": {
+            "type": "relation",
+            "relation": "oneToOne",
+            "target": "api::student.student",
+            "mappedBy": "user"
+        },
+        "parent": {
+            "type": "relation",
+            "relation": "oneToOne",
+            "target": "api::parent.parent",
+            "mappedBy": "user"
+        },
+        "worker": {
+            "type": "relation",
+            "relation": "oneToOne",
+            "target": "api::worker.worker",
+            "mappedBy": "user"
         }
     }
 }

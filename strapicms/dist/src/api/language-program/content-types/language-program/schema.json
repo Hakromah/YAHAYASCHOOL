@@ -4,13 +4,17 @@
     "info": {
         "singularName": "language-program",
         "pluralName": "language-programs",
-        "displayName": "Language Program",
+        "displayName": "3. ERP - Language Program",
         "description": "Schema for Language Program"
     },
     "options": {
-        "draftAndPublish": true
+        "draftAndPublish": false
     },
-    "pluginOptions": {},
+    "pluginOptions": {
+        "content-manager": {
+            "visible": true
+        }
+    },
     "attributes": {
         "name": {
             "type": "string",

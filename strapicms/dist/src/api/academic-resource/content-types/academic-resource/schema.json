@@ -72,5 +72,10 @@
             "relation": "manyToOne",
             "target": "api::teacher.teacher"
         }
+    },
+    "pluginOptions": {
+        "content-manager": {
+            "visible": false
+        }
     }
 }

@@ -4,7 +4,7 @@
     "info": {
         "singularName": "navigation-menu",
         "pluralName": "navigation-menus",
-        "displayName": "[F] Navigation Menu",
+        "displayName": "4. Website - Navigation Menu",
         "description": "Dynamic website menus supporting nested children and multi-language links"
     },
     "options": {
@@ -13,6 +13,9 @@
     "pluginOptions": {
         "i18n": {
             "localized": true
+        },
+        "content-manager": {
+            "visible": true
         }
     },
     "attributes": {

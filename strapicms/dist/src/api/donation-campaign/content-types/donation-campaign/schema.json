@@ -4,7 +4,7 @@
     "info": {
         "singularName": "donation-campaign",
         "pluralName": "donation-campaigns",
-        "displayName": "[F] Donation Campaign",
+        "displayName": "4. Website - Donation Campaign",
         "description": "School development, waqf, laboratory, and scholarship fundraising campaigns"
     },
     "options": {
@@ -13,22 +13,37 @@
     "pluginOptions": {
         "i18n": {
             "localized": true
+        },
+        "content-manager": {
+            "visible": true
         }
     },
     "attributes": {
         "title": {
-            "pluginOptions": { "i18n": { "localized": true } },
+            "pluginOptions": {
+                "i18n": {
+                    "localized": true
+                }
+            },
             "type": "string",
             "required": true
         },
         "slug": {
-            "pluginOptions": { "i18n": { "localized": true } },
+            "pluginOptions": {
+                "i18n": {
+                    "localized": true
+                }
+            },
             "type": "uid",
             "targetField": "title",
             "required": true
         },
         "description": {
-            "pluginOptions": { "i18n": { "localized": true } },
+            "pluginOptions": {
+                "i18n": {
+                    "localized": true
+                }
+            },
             "type": "richtext",
             "required": true
         },
@@ -45,25 +60,43 @@
         },
         "categoryTag": {
             "type": "string",
-            "pluginOptions": { "i18n": { "localized": true } }
+            "pluginOptions": {
+                "i18n": {
+                    "localized": true
+                }
+            }
         },
         "buttonText": {
             "type": "string",
-            "pluginOptions": { "i18n": { "localized": true } }
+            "pluginOptions": {
+                "i18n": {
+                    "localized": true
+                }
+            }
         },
         "raisedLabel": {
             "type": "string",
-            "pluginOptions": { "i18n": { "localized": true } }
+            "pluginOptions": {
+                "i18n": {
+                    "localized": true
+                }
+            }
         },
         "goalLabel": {
             "type": "string",
-            "pluginOptions": { "i18n": { "localized": true } }
+            "pluginOptions": {
+                "i18n": {
+                    "localized": true
+                }
+            }
         },
         "banner": {
             "type": "media",
             "multiple": false,
             "required": false,
-            "allowedTypes": ["images"]
+            "allowedTypes": [
+                "images"
+            ]
         },
         "isFeatured": {
             "type": "boolean",

@@ -4,20 +4,19 @@
     "info": {
         "singularName": "academic-term",
         "pluralName": "academic-terms",
-        "displayName": "Academic Term",
+        "displayName": "2. Academic - Academic Term",
         "description": "Specific terms within an academic year (e.g., First Term)"
     },
     "options": {
-        "draftAndPublish": true
+        "draftAndPublish": false
     },
     "pluginOptions": {
-        "i18n": {
-            "localized": true
+        "content-manager": {
+            "visible": true
         }
     },
     "attributes": {
         "name": {
-            "pluginOptions": { "i18n": { "localized": true } },
             "type": "string",
             "required": true
         },

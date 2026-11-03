@@ -4,13 +4,17 @@
     "info": {
         "singularName": "quran-group",
         "pluralName": "quran-groups",
-        "displayName": "Quran Group",
+        "displayName": "3. ERP - Quran Group",
         "description": "Schema for Quran Group"
     },
     "options": {
-        "draftAndPublish": true
+        "draftAndPublish": false
     },
-    "pluginOptions": {},
+    "pluginOptions": {
+        "content-manager": {
+            "visible": true
+        }
+    },
     "attributes": {
         "name": {
             "type": "string",

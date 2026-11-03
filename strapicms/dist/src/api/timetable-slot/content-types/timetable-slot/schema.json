@@ -4,7 +4,7 @@
     "info": {
         "singularName": "timetable-slot",
         "pluralName": "timetable-slots",
-        "displayName": "Timetable Slot"
+        "displayName": "2. Academic - Timetable Slot"
     },
     "options": {
         "draftAndPublish": false
@@ -82,6 +82,11 @@
             "type": "relation",
             "relation": "manyToOne",
             "target": "api::course-offering.course-offering"
+        }
+    },
+    "pluginOptions": {
+        "content-manager": {
+            "visible": true
         }
     }
 }

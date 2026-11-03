@@ -4,7 +4,7 @@
     "info": {
         "singularName": "faq",
         "pluralName": "faqs",
-        "displayName": "[F] FAQ",
+        "displayName": "4. Website - FAQ",
         "description": "Frequently asked questions categorized by topic"
     },
     "options": {
@@ -13,6 +13,9 @@
     "pluginOptions": {
         "i18n": {
             "localized": true
+        },
+        "content-manager": {
+            "visible": true
         }
     },
     "attributes": {

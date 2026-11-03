@@ -4,7 +4,7 @@
   "info": {
     "singularName": "online-course",
     "pluralName": "online-courses",
-    "displayName": "[F] Online Course",
+    "displayName": "4. Website - Online Course",
     "description": "Public online course offering for enrollment"
   },
   "options": {
@@ -13,6 +13,9 @@
   "pluginOptions": {
     "i18n": {
       "localized": true
+    },
+    "content-manager": {
+      "visible": true
     }
   },
   "attributes": {
@@ -63,7 +66,9 @@
       "type": "media",
       "multiple": false,
       "required": false,
-      "allowedTypes": ["images"]
+      "allowedTypes": [
+        "images"
+      ]
     },
     "price": {
       "type": "decimal",

@@ -4,7 +4,7 @@
   "info": {
     "singularName": "career-position",
     "pluralName": "career-positions",
-    "displayName": "[F] Available Positions",
+    "displayName": "4. Website - Career Position",
     "description": "Join our mission of nurturing global leadership."
   },
   "options": {
@@ -13,6 +13,9 @@
   "pluginOptions": {
     "i18n": {
       "localized": true
+    },
+    "content-manager": {
+      "visible": true
     }
   },
   "attributes": {

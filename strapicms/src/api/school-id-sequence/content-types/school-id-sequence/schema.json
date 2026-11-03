@@ -11,7 +11,11 @@
     "draftAndPublish": false,
     "comment": ""
   },
-  "pluginOptions": {},
+  "pluginOptions": {
+    "content-manager": {
+      "visible": false
+    }
+  },
   "attributes": {
     "initials": {
       "type": "string",

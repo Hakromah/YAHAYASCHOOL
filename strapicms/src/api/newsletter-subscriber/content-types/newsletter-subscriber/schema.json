@@ -4,7 +4,7 @@
   "info": {
     "singularName": "newsletter-subscriber",
     "pluralName": "newsletter-subscribers",
-    "displayName": "Newsletter Subscriber",
+    "displayName": "4. Website - Newsletter Subscriber",
     "description": "Subscribers to school newsletter"
   },
   "options": {
@@ -26,6 +26,11 @@
         "unsubscribed"
       ],
       "default": "active"
+    }
+  },
+  "pluginOptions": {
+    "content-manager": {
+      "visible": true
     }
   }
 }

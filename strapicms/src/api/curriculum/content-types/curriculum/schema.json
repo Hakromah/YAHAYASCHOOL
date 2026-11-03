@@ -4,15 +4,15 @@
   "info": {
     "singularName": "curriculum",
     "pluralName": "curriculums",
-    "displayName": "Curriculum",
+    "displayName": "2. Academic - Curriculum",
     "description": "Updated curriculum syllabus records"
   },
   "options": {
     "draftAndPublish": false
   },
   "pluginOptions": {
-    "i18n": {
-      "localized": true
+    "content-manager": {
+      "visible": true
     }
   },
   "attributes": {

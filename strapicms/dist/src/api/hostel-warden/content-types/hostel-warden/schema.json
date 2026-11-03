@@ -10,7 +10,11 @@
     "options": {
         "draftAndPublish": false
     },
-    "pluginOptions": {},
+    "pluginOptions": {
+        "content-manager": {
+            "visible": false
+        }
+    },
     "attributes": {
         "employee": {
             "type": "string",
@@ -24,17 +28,32 @@
         },
         "status": {
             "type": "enumeration",
-            "enum": ["active", "inactive", "on_leave"],
+            "enum": [
+                "active",
+                "inactive",
+                "on_leave"
+            ],
             "default": "active"
         },
         "dutyShift": {
             "type": "enumeration",
-            "enum": ["morning", "afternoon", "evening", "night", "full_day"],
+            "enum": [
+                "morning",
+                "afternoon",
+                "evening",
+                "night",
+                "full_day"
+            ],
             "default": "full_day"
         },
         "role": {
             "type": "enumeration",
-            "enum": ["chief_warden", "warden", "assistant_warden", "resident_assistant"],
+            "enum": [
+                "chief_warden",
+                "warden",
+                "assistant_warden",
+                "resident_assistant"
+            ],
             "default": "warden"
         },
         "assignedBuilding": {

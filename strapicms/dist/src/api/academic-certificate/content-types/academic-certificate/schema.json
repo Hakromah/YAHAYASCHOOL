@@ -11,8 +11,8 @@
         "draftAndPublish": false
     },
     "pluginOptions": {
-        "i18n": {
-            "localized": true
+        "content-manager": {
+            "visible": false
         }
     },
     "attributes": {
@@ -66,11 +66,6 @@
             "type": "relation",
             "relation": "manyToOne",
             "target": "api::student.student"
-        },
-        "template": {
-            "type": "relation",
-            "relation": "manyToOne",
-            "target": "api::academic-certificate-template.academic-certificate-template"
         }
     }
 }

@@ -4,7 +4,7 @@
   "info": {
     "singularName": "announcement",
     "pluralName": "announcements",
-    "displayName": "[F] Announcement",
+    "displayName": "4. Website - Announcement",
     "description": "Public and internal school announcements or ticker alerts"
   },
   "options": {
@@ -13,6 +13,9 @@
   "pluginOptions": {
     "i18n": {
       "localized": true
+    },
+    "content-manager": {
+      "visible": true
     }
   },
   "attributes": {

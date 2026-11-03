@@ -4,7 +4,7 @@
     "info": {
         "singularName": "news-page",
         "pluralName": "news-pages",
-        "displayName": "[F] News Page",
+        "displayName": "2. Website - News Page",
         "description": "The News page content"
     },
     "options": {
@@ -13,6 +13,9 @@
     "pluginOptions": {
         "i18n": {
             "localized": true
+        },
+        "content-manager": {
+            "visible": true
         }
     },
     "attributes": {

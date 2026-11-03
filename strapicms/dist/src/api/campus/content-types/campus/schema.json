@@ -4,24 +4,19 @@
     "info": {
         "singularName": "campus",
         "pluralName": "campuses",
-        "displayName": "Campus",
+        "displayName": "2. Academic - Campus",
         "description": "School campuses and facilities management"
     },
     "options": {
         "draftAndPublish": false
     },
     "pluginOptions": {
-        "i18n": {
-            "localized": true
+        "content-manager": {
+            "visible": true
         }
     },
     "attributes": {
         "name": {
-            "pluginOptions": {
-                "i18n": {
-                    "localized": true
-                }
-            },
             "type": "string",
             "required": true
         },
@@ -31,11 +26,6 @@
             "unique": true
         },
         "address": {
-            "pluginOptions": {
-                "i18n": {
-                    "localized": true
-                }
-            },
             "type": "text"
         },
         "phone": {
@@ -45,11 +35,6 @@
             "type": "email"
         },
         "principalName": {
-            "pluginOptions": {
-                "i18n": {
-                    "localized": true
-                }
-            },
             "type": "string"
         },
         "recordStatus": {

@@ -4,15 +4,15 @@
     "info": {
         "singularName": "course-offering",
         "pluralName": "course-offerings",
-        "displayName": "Course Offering",
+        "displayName": "2. Academic - Course Offering",
         "description": "Specific scheduled course instance"
     },
     "options": {
         "draftAndPublish": false
     },
     "pluginOptions": {
-        "i18n": {
-            "localized": false
+        "content-manager": {
+            "visible": true
         }
     },
     "attributes": {

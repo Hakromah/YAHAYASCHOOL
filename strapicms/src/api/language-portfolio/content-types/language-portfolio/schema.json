@@ -8,9 +8,13 @@
     "description": "Schema for Language Portfolio"
   },
   "options": {
-    "draftAndPublish": true
+    "draftAndPublish": false
   },
-  "pluginOptions": {},
+  "pluginOptions": {
+    "content-manager": {
+      "visible": false
+    }
+  },
   "attributes": {
     "title": {
       "type": "string",

@@ -4,7 +4,7 @@
   "info": {
     "singularName": "login-page",
     "pluralName": "login-pages",
-    "displayName": "[F] Login Page",
+    "displayName": "2. Website - Login Page",
     "description": "Portal login page branding, features, and form configuration"
   },
   "options": {
@@ -13,6 +13,9 @@
   "pluginOptions": {
     "i18n": {
       "localized": true
+    },
+    "content-manager": {
+      "visible": true
     }
   },
   "attributes": {
@@ -34,7 +37,9 @@
       "type": "media",
       "multiple": false,
       "required": false,
-      "allowedTypes": ["images"]
+      "allowedTypes": [
+        "images"
+      ]
     },
     "schoolName": {
       "pluginOptions": {

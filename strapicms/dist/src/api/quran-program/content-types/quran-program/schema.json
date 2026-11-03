@@ -4,13 +4,17 @@
     "info": {
         "singularName": "quran-program",
         "pluralName": "quran-programs",
-        "displayName": "Quran Program",
+        "displayName": "3. ERP - Quran Program",
         "description": "Schema for Quran Program"
     },
     "options": {
-        "draftAndPublish": true
+        "draftAndPublish": false
     },
-    "pluginOptions": {},
+    "pluginOptions": {
+        "content-manager": {
+            "visible": true
+        }
+    },
     "attributes": {
         "name": {
             "type": "string",

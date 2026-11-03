@@ -4,15 +4,15 @@
     "info": {
         "singularName": "student",
         "pluralName": "students",
-        "displayName": "Student Profile",
+        "displayName": "1. Profiles - Student",
         "description": "Comprehensive Student Information System (SIS) profile entity"
     },
     "options": {
         "draftAndPublish": false
     },
     "pluginOptions": {
-        "i18n": {
-            "localized": true
+        "content-manager": {
+            "visible": true
         }
     },
     "attributes": {
@@ -35,28 +35,13 @@
             ]
         },
         "firstName": {
-            "pluginOptions": {
-                "i18n": {
-                    "localized": true
-                }
-            },
             "type": "string",
             "required": true
         },
         "middleName": {
-            "pluginOptions": {
-                "i18n": {
-                    "localized": true
-                }
-            },
             "type": "string"
         },
         "lastName": {
-            "pluginOptions": {
-                "i18n": {
-                    "localized": true
-                }
-            },
             "type": "string",
             "required": true
         },
@@ -72,28 +57,13 @@
             "type": "date"
         },
         "nationality": {
-            "pluginOptions": {
-                "i18n": {
-                    "localized": true
-                }
-            },
             "type": "string"
         },
         "religion": {
-            "pluginOptions": {
-                "i18n": {
-                    "localized": true
-                }
-            },
             "type": "string",
             "default": "Islam"
         },
         "placeOfBirth": {
-            "pluginOptions": {
-                "i18n": {
-                    "localized": true
-                }
-            },
             "type": "string"
         },
         "nationalId": {
@@ -109,35 +79,15 @@
             "type": "email"
         },
         "address": {
-            "pluginOptions": {
-                "i18n": {
-                    "localized": true
-                }
-            },
             "type": "text"
         },
         "city": {
-            "pluginOptions": {
-                "i18n": {
-                    "localized": true
-                }
-            },
             "type": "string"
         },
         "county": {
-            "pluginOptions": {
-                "i18n": {
-                    "localized": true
-                }
-            },
             "type": "string"
         },
         "country": {
-            "pluginOptions": {
-                "i18n": {
-                    "localized": true
-                }
-            },
             "type": "string"
         },
         "admissionDate": {
@@ -161,19 +111,9 @@
             "default": "active"
         },
         "biography": {
-            "pluginOptions": {
-                "i18n": {
-                    "localized": true
-                }
-            },
             "type": "richtext"
         },
         "generalNotes": {
-            "pluginOptions": {
-                "i18n": {
-                    "localized": true
-                }
-            },
             "type": "richtext"
         },
         "emergencyContacts": {
@@ -259,7 +199,8 @@
         "user": {
             "type": "relation",
             "relation": "oneToOne",
-            "target": "plugin::users-permissions.user"
+            "target": "plugin::users-permissions.user",
+            "inversedBy": "student"
         },
         "advanceBalance": {
             "type": "decimal",
