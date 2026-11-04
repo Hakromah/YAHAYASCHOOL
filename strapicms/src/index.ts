@@ -9,9 +9,7 @@ import {
   seedDefaultUsers,
 } from './bootstrap/permissions';
 import {
-  seedAcademicDefaults,
   seedGradingPoliciesAndBlueprints,
-  seedQuranData,
   syncContentManagerMainFields,
 } from './bootstrap/erp-seeds';
 import { seedWebsiteCMS } from './bootstrap/cms-seeds';
@@ -37,10 +35,9 @@ export default {
     // 2. Deduplicate legacy ERP rows & synchronize all User <-> Profile links
     await deduplicateAndSyncAllUsers(strapi);
 
-    // 3. Seed ERP defaults (Curriculum, Sections, Grading Policies, Blueprints, QMS) & sync Admin mainFields
-    await seedAcademicDefaults(strapi);
+    // 3. Seed grading defaults & sync Admin display fields
+    //    (Academic Sections, Curriculums and Quran Programs/Groups are managed by the administration only)
     await seedGradingPoliciesAndBlueprints(strapi);
-    await seedQuranData(strapi);
     await syncContentManagerMainFields(strapi);
 
     // 4. Seed Public Website CMS Pages
