@@ -13,7 +13,7 @@ import { SectionSubNav } from "@/components/shared/layout/SectionSubNav";
 import { PageContainer } from "@/components/shared/layout/PageContainer";
 import { apiClient } from "@/services/api.service";
 import { Search, Book, ExternalLink, ChevronDown, ChevronRight, Users } from "lucide-react";
-import Link from "next/link";
+import { Link } from "@/i18n/routing";
 
 interface Subject {
   documentId: string;

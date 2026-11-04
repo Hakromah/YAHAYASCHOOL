@@ -13,7 +13,7 @@ import { SectionSubNav } from "@/components/shared/layout/SectionSubNav";
 import { PageContainer } from "@/components/shared/layout/PageContainer";
 import { apiClient } from "@/services/api.service";
 import { Layers, Search, ExternalLink, Calendar, Users, MapPin, Clock } from "lucide-react";
-import Link from "next/link";
+import { Link } from "@/i18n/routing";
 
 interface CourseOffering {
   documentId: string;

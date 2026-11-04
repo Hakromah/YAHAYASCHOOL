@@ -13,7 +13,7 @@ import { SectionSubNav } from "@/components/shared/layout/SectionSubNav";
 import { PageContainer } from "@/components/shared/layout/PageContainer";
 import { apiClient } from "@/services/api.service";
 import { Award, ExternalLink, ChevronDown, ChevronRight, Users } from "lucide-react";
-import Link from "next/link";
+import { Link } from "@/i18n/routing";
 import { cn } from "@/lib/utils";
 
 interface GradingPolicy {

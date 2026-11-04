@@ -17,7 +17,7 @@ import {
   Hash, ChevronRight, Users, Search, X,
   GraduationCap, BarChart3, CheckCircle2, Award,
 } from "lucide-react";
-import Link from "next/link";
+import { Link } from "@/i18n/routing";
 import { cn } from "@/lib/utils";
 
 // ─────────────────────────────────────────────────────────────────────────────

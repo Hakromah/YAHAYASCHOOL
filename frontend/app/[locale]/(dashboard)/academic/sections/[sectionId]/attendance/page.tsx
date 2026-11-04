@@ -13,7 +13,7 @@ import { SectionSubNav } from "@/components/shared/layout/SectionSubNav";
 import { PageContainer } from "@/components/shared/layout/PageContainer";
 import { apiClient } from "@/services/api.service";
 import { ClipboardList, Calendar, ExternalLink, CheckCircle, XCircle, Clock } from "lucide-react";
-import Link from "next/link";
+import { Link } from "@/i18n/routing";
 
 interface AttendanceRecord {
   documentId: string;
@@ -72,10 +72,10 @@ const params = useParams();
 
   const getStatusBadge = (status: string) => {
     switch((status ?? '').toLowerCase()) {
-      case 'present': return <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 dark:bg-emerald-900/30 px-2.5 py-0.5 text-xs font-medium text-emerald-700 dark:text-emerald-400"><CheckCircle className="h-3 w-3"/> Present</span>;
-      case 'absent': return <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-50 dark:bg-rose-900/30 px-2.5 py-0.5 text-xs font-medium text-rose-700 dark:text-rose-400"><XCircle className="h-3 w-3"/> Absent</span>;
-      case 'late': return <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 dark:bg-amber-900/30 px-2.5 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400"><Clock className="h-3 w-3"/> Late</span>;
-      case 'excused': return <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 dark:bg-blue-900/30 px-2.5 py-0.5 text-xs font-medium text-blue-700 dark:text-blue-400">Excused</span>;
+      case 'present': return <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 dark:bg-emerald-900/30 px-2.5 py-0.5 text-xs font-medium text-emerald-700 dark:text-emerald-400"><CheckCircle className="h-3 w-3"/> {t('Present', locale)}</span>;
+      case 'absent': return <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-50 dark:bg-rose-900/30 px-2.5 py-0.5 text-xs font-medium text-rose-700 dark:text-rose-400"><XCircle className="h-3 w-3"/> {t('Absent', locale)}</span>;
+      case 'late': return <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 dark:bg-amber-900/30 px-2.5 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400"><Clock className="h-3 w-3"/> {t('Late', locale)}</span>;
+      case 'excused': return <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 dark:bg-blue-900/30 px-2.5 py-0.5 text-xs font-medium text-blue-700 dark:text-blue-400">{t('Excused', locale)}</span>;
       default: return <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-50 dark:bg-slate-800 px-2.5 py-0.5 text-xs font-medium text-slate-700 dark:text-slate-400">{status}</span>;
     }
   };
@@ -87,10 +87,10 @@ const params = useParams();
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
               <ClipboardList className="h-6 w-6 text-indigo-500" />
-              Attendance Records
+              {t('Attendance Records', locale)}
             </h1>
             <p className="text-slate-500 dark:text-slate-400 mt-1">
-              Recent attendance logs for {section?.name || "this section"}.
+              {t('Recent attendance logs for', locale)} {section?.name || t('this section', locale)}.
             </p>
           </div>
           <Link
@@ -98,7 +98,7 @@ const params = useParams();
             className="inline-flex items-center justify-center rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 transition-colors"
           >
             <ExternalLink className="h-4 w-4 mr-2" />
-            Record Attendance
+            {t('Record Attendance', locale)}
           </Link>
         </div>
 
@@ -109,7 +109,7 @@ const params = useParams();
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-4 shadow-sm flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">Present</p>
+                <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">{t('Present', locale)}</p>
                 <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1">{getPercent(stats.present)}%</p>
               </div>
               <div className="h-10 w-10 rounded-full bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
@@ -118,7 +118,7 @@ const params = useParams();
             </div>
             <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-4 shadow-sm flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-rose-600 dark:text-rose-400">Absent</p>
+                <p className="text-sm font-medium text-rose-600 dark:text-rose-400">{t('Absent', locale)}</p>
                 <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1">{getPercent(stats.absent)}%</p>
               </div>
               <div className="h-10 w-10 rounded-full bg-rose-50 dark:bg-rose-900/30 flex items-center justify-center text-rose-600 dark:text-rose-400">
@@ -127,7 +127,7 @@ const params = useParams();
             </div>
             <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-4 shadow-sm flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-amber-600 dark:text-amber-400">Late</p>
+                <p className="text-sm font-medium text-amber-600 dark:text-amber-400">{t('Late', locale)}</p>
                 <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1">{getPercent(stats.late)}%</p>
               </div>
               <div className="h-10 w-10 rounded-full bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center text-amber-600 dark:text-amber-400">
@@ -136,7 +136,7 @@ const params = useParams();
             </div>
             <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-4 shadow-sm flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-blue-600 dark:text-blue-400">Excused</p>
+                <p className="text-sm font-medium text-blue-600 dark:text-blue-400">{t('Excused', locale)}</p>
                 <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1">{getPercent(stats.excused)}%</p>
               </div>
               <div className="h-10 w-10 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400">
@@ -170,7 +170,7 @@ const params = useParams();
                   <tr>
                     <th className="px-6 py-4 font-medium">Date</th>
                     <th className="px-6 py-4 font-medium">Student</th>
-                    <th className="px-6 py-4 font-medium">Subject</th>
+                    <th className="px-6 py-4 font-medium">{t('Subject', locale)}</th>
                     <th className="px-6 py-4 font-medium">Status</th>
                     <th className="px-6 py-4 font-medium">Teacher</th>
                   </tr>
