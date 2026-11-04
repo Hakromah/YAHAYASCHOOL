@@ -248,3 +248,141 @@ export async function seedQuranData(strapi: Core.Strapi): Promise<void> {
     strapi.log.error('[YAHAYASCOOL] Failed to seed Quran data: ' + err.message);
   }
 }
+
+export async function syncContentManagerMainFields(strapi: Core.Strapi): Promise<void> {
+  try {
+    const knex = strapi.db.connection;
+
+    // 1. Backfill missing or placeholder names on Course Offerings, Student Enrollments, and Teacher Assignments
+    const offerings = await strapi.db.query('api::course-offering.course-offering').findMany({
+      populate: ['subject', 'gradeLevel', 'academicSection', 'academicYear'],
+    });
+    for (const co of offerings) {
+      if (!co.name || co.name === '-' || co.name.trim() === '') {
+        const parts = [co.subject?.name, co.gradeLevel?.name, co.academicSection?.name].filter(Boolean);
+        const newName =
+          parts.length > 0
+            ? co.academicYear?.name
+              ? `${parts.join(' - ')} (${co.academicYear.name})`
+              : parts.join(' - ')
+            : `Course Offering #${co.id}`;
+        await knex('course_offerings').where({ id: co.id }).update({ name: newName });
+      }
+    }
+
+    const enrollments = await strapi.db.query('api::student-enrollment.student-enrollment').findMany({
+      populate: ['student', 'courseOffering'],
+    });
+    for (const se of enrollments) {
+      if (!se.name || se.name === '-' || se.name.trim() === '') {
+        const studentLabel =
+          [se.student?.firstName, se.student?.lastName].filter(Boolean).join(' ') ||
+          se.student?.schoolId ||
+          'Student';
+        const courseLabel = se.courseOffering?.name || 'Course';
+        await knex('student_enrollments')
+          .where({ id: se.id })
+          .update({ name: `${studentLabel} - ${courseLabel}` });
+      }
+    }
+
+    const assignments = await strapi.db.query('api::teacher-assignment.teacher-assignment').findMany({
+      populate: ['teacher', 'courseOffering'],
+    });
+    for (const ta of assignments) {
+      if (!ta.name || ta.name === '-' || ta.name.trim() === '') {
+        const teacherLabel = ta.teacher?.name || ta.teacher?.schoolId || 'Teacher';
+        const courseLabel = ta.courseOffering?.name || 'Course';
+        await knex('teacher_assignments')
+          .where({ id: ta.id })
+          .update({ name: `${teacherLabel} - ${courseLabel}` });
+      }
+    }
+
+    // 2. Ensure Strapi Content Manager displays human-readable mainField for all relations and lists
+    const preferredOrder = [
+      'name', 'fullName', 'title', 'budgetTitle', 'subjectName',
+      'componentName', 'gradeName', 'firstName',
+      'invoiceNumber', 'receiptNumber', 'journalNumber', 'voucherNumber',
+      'applicationNumber', 'certificateNumber', 'transcriptNumber',
+      'routeName', 'buildingName', 'roomNumber', 'code', 'email', 'schoolId',
+    ];
+
+    const bestMainFieldByUid: Record<string, string> = {
+      'plugin::users-permissions.user': 'username',
+      'plugin::users-permissions.role': 'name',
+    };
+
+    for (const [uid, ct] of Object.entries(strapi.contentTypes as Record<string, any>)) {
+      if (!uid.startsWith('api::')) continue;
+      const attrs = ct.attributes || {};
+      let chosen = 'documentId';
+      for (const cand of preferredOrder) {
+        if (attrs[cand] && ['string', 'uid', 'email'].includes(attrs[cand].type)) {
+          chosen = cand;
+          break;
+        }
+      }
+      bestMainFieldByUid[uid] = chosen;
+    }
+
+    const cmRows = await knex('strapi_core_store_settings')
+      .where('key', 'like', 'plugin_content_manager_configuration_content_types::api::%')
+      .select('id', 'key', 'value');
+
+    for (const row of cmRows) {
+      const uid = row.key.replace('plugin_content_manager_configuration_content_types::', '');
+      const targetMain = bestMainFieldByUid[uid];
+      const ct = (strapi.contentTypes as Record<string, any>)[uid];
+      if (!targetMain || !ct) continue;
+
+      let val: any;
+      try {
+        val = JSON.parse(row.value);
+      } catch {
+        continue;
+      }
+
+      let changed = false;
+      if (
+        val.settings &&
+        ['documentId', 'id', 'schoolId'].includes(val.settings.mainField) &&
+        targetMain !== val.settings.mainField
+      ) {
+        val.settings.mainField = targetMain;
+        if (['documentId', 'id', 'schoolId'].includes(val.settings.defaultSortBy)) {
+          val.settings.defaultSortBy = targetMain;
+        }
+        changed = true;
+      }
+
+      if (uid === 'api::course-offering.course-offering' && val.layouts) {
+        if (Array.isArray(val.layouts.list) && !val.layouts.list.includes('name')) {
+          val.layouts.list = ['id', 'name', 'subject', 'gradeLevel', 'academicSection', 'teacher'];
+          changed = true;
+        }
+      }
+
+      const attrs = ct.attributes || {};
+      for (const [fieldName, meta] of Object.entries((val.metadatas || {}) as Record<string, any>)) {
+        const attrDef = attrs[fieldName];
+        if (attrDef?.type === 'relation' && attrDef.target && bestMainFieldByUid[attrDef.target]) {
+          const relTargetBest = bestMainFieldByUid[attrDef.target];
+          const curEditMain = meta?.edit?.mainField;
+          if (curEditMain && curEditMain !== relTargetBest && ['documentId', 'id', 'schoolId'].includes(curEditMain)) {
+            meta.edit.mainField = relTargetBest;
+            changed = true;
+          }
+        }
+      }
+
+      if (changed) {
+        await knex('strapi_core_store_settings')
+          .where({ id: row.id })
+          .update({ value: JSON.stringify(val) });
+      }
+    }
+  } catch (err: any) {
+    strapi.log.warn('[YAHAYASCOOL] Content Manager mainField sync notice: ' + err.message);
+  }
+}

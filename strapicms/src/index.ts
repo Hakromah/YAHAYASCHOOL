@@ -12,6 +12,7 @@ import {
   seedAcademicDefaults,
   seedGradingPoliciesAndBlueprints,
   seedQuranData,
+  syncContentManagerMainFields,
 } from './bootstrap/erp-seeds';
 import { seedWebsiteCMS } from './bootstrap/cms-seeds';
 
@@ -36,10 +37,11 @@ export default {
     // 2. Deduplicate legacy ERP rows & synchronize all User <-> Profile links
     await deduplicateAndSyncAllUsers(strapi);
 
-    // 3. Seed ERP defaults (Curriculum, Sections, Grading Policies, Blueprints, QMS)
+    // 3. Seed ERP defaults (Curriculum, Sections, Grading Policies, Blueprints, QMS) & sync Admin mainFields
     await seedAcademicDefaults(strapi);
     await seedGradingPoliciesAndBlueprints(strapi);
     await seedQuranData(strapi);
+    await syncContentManagerMainFields(strapi);
 
     // 4. Seed Public Website CMS Pages
     await seedWebsiteCMS(strapi);
