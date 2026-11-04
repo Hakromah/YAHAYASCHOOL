@@ -27,6 +27,7 @@ const LOCALES_TO_SEED = [
   { code: 'en', name: 'English (en)' },
   { code: 'fr', name: 'French (fr)' },
   { code: 'ar', name: 'Arabic (ar)' },
+  { code: 'tr', name: 'Turkish (tr)' },
 ];
 
 export async function seedRoles(strapi: Core.Strapi): Promise<void> {

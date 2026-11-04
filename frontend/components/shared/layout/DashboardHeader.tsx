@@ -1,8 +1,7 @@
 'use client';
 
 import React from 'react';
-import Link from 'next/link';
-import { usePathname, useRouter } from '@/i18n/routing';
+import { Link, usePathname, useRouter } from '@/i18n/routing';
 import type { Locale } from '@/i18n/routing';
 import { useLocale } from 'next-intl';
 import { Globe } from 'lucide-react';
@@ -21,6 +20,9 @@ export function DashboardHeader() {
 
   const handleLocaleChange = (newLocale: string) => {
     if (newLocale === currentLocale) return;
+    if (typeof document !== 'undefined') {
+      document.cookie = `NEXT_LOCALE=${newLocale}; path=/; max-age=${365 * 24 * 3600}; SameSite=Lax`;
+    }
     router.push(pathname, { locale: newLocale as Locale });
   };
 

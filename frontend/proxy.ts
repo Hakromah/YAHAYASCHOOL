@@ -84,9 +84,11 @@ export function proxy(request: NextRequest) {
   const hasLocale = !!localeMatch;
   const localePrefix = hasLocale ? localeMatch[0] : '';
 
-  // ── Redirect requests lacking a locale prefix to default /en prefix ──
+  // ── Redirect requests lacking a locale prefix to active cookie locale or default /en ──
   if (!hasLocale) {
-    const redirectUrl = new URL(`/en${pathname === '/' ? '' : pathname}`, request.url);
+    const cookieLocale = request.cookies.get('NEXT_LOCALE')?.value;
+    const targetLocale = (cookieLocale && ['en', 'ar', 'fr', 'tr'].includes(cookieLocale)) ? cookieLocale : 'en';
+    const redirectUrl = new URL(`/${targetLocale}${pathname === '/' ? '' : pathname}`, request.url);
     redirectUrl.search = request.nextUrl.search;
     return NextResponse.redirect(redirectUrl);
   }

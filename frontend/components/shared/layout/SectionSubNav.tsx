@@ -1,6 +1,8 @@
 'use client';
 
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
+import { useLocale } from 'next-intl';
+import { t } from '@/lib/i18n-dict';
 import {
   BarChart3, Layers, BookOpen, BookMarked, Users, UserCheck,
   CalendarCheck, ClipboardList, FileText, Clock, Award, TrendingUp,
@@ -35,6 +37,8 @@ interface SectionSubNavProps {
 }
 
 export function SectionSubNav({ sectionId, activeTab }: SectionSubNavProps) {
+  const locale = useLocale();
+
   return (
     <div className="w-full border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 sticky top-0 z-10">
       <div className="flex items-center gap-0.5 px-4 overflow-x-auto scrollbar-hide">
@@ -53,7 +57,7 @@ export function SectionSubNav({ sectionId, activeTab }: SectionSubNavProps) {
               }`}
             >
               <Icon className="w-3.5 h-3.5" />
-              {tab.label}
+              {t(tab.label, locale)}
             </Link>
           );
         })}
