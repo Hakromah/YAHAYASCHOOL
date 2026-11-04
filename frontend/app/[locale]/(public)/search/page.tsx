@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 import { Search, ArrowRight, BookOpen, GraduationCap, Newspaper, Calendar, Building2 } from 'lucide-react';
 import { cmsService } from '@/services/cms.service';
 import type { NewsFeaturedEventComponent, Program, Department, Event } from '@/types/cms.types';

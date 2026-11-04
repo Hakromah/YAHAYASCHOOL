@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 import { ArrowRight, ChevronRight } from 'lucide-react';
 import { LeafImage } from '@/components/public/shared/LeafImage';
 import { EnrollmentModal } from '@/components/public/online/EnrollmentModal';

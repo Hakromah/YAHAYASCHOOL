@@ -7,13 +7,13 @@ import { t as i18nT } from '@/lib/i18n-dict';
 const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useParams, useSearchParams } from 'next/navigation';
 import { useSection } from "@/providers/SectionContext";
 import { SectionSubNav } from "@/components/shared/layout/SectionSubNav";
 import { PageContainer } from "@/components/shared/layout/PageContainer";
 import { apiClient } from "@/services/api.service";
 import { BookOpen, Users, Plus, ArrowRight, GraduationCap } from "lucide-react";
-import { Link } from "@/i18n/routing";
+import { Link, useRouter } from '@/i18n/routing';
 
 interface GradeLevel {
   documentId: string;

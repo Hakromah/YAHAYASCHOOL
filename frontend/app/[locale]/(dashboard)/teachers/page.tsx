@@ -8,7 +8,8 @@ import { t as i18nT } from '@/lib/i18n-dict';
 const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
+import { useRouter } from '@/i18n/routing';
 import {
   UserCheck, Search, Upload, Download, ArrowRight,
   Filter, Layers, RefreshCw, Award, Mail, Phone, Eye,
@@ -430,7 +431,7 @@ const params = useParams();
         label: 'Timetable',
         icon: <Clock className="w-3.5 h-3.5" />,
         onClick: (record: any) => {
-          router.push(`/${locale}/lms/timetables`);
+          router.push('/lms/timetables');
           toast.info(`Redirected to Timetables.`);
         }
       },

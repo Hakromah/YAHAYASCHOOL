@@ -372,9 +372,9 @@ export default function SuperAdminDashboardPage() {
                 <Activity className="w-4 h-4 text-primary" />
                 <span>{t('Live System Audit Trail')}</span>
               </h2>
-              <a href="/audit-logs" className="text-xs font-semibold text-primary hover:underline">
+              <Link href="/audit-logs" className="text-xs font-semibold text-primary hover:underline">
                 {t('View all logs →')}
-              </a>
+              </Link>
             </div>
             <div className="divide-y divide-border max-h-[380px] overflow-y-auto">
               {isLoading ? (
@@ -416,9 +416,9 @@ export default function SuperAdminDashboardPage() {
                 <Bell className="w-4 h-4 text-amber-500" />
                 <span>{t('Live Announcements')}</span>
               </h2>
-              <a href="/announcements" className="text-xs font-semibold text-primary hover:underline">
+              <Link href="/announcements" className="text-xs font-semibold text-primary hover:underline">
                 {t('New +')}
-              </a>
+              </Link>
             </div>
             <div className="p-4 space-y-3 flex-1 overflow-y-auto">
               {isLoading ? (

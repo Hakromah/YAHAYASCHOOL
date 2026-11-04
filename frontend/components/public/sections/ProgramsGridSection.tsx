@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 import { motion, type Variants } from 'framer-motion';
 import { ArrowRight, BookOpen, BookOpenText, GraduationCap, Laptop } from 'lucide-react';
 import { Swiper, SwiperSlide } from 'swiper/react';

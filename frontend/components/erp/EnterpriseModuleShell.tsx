@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { ChevronRight, Calendar, Clock, Filter } from 'lucide-react';
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 import { cn } from '@/lib/utils';
 import { useLocale } from 'next-intl';
 import { i18nDict } from '@/lib/i18n-dict';

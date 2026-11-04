@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 import Image from 'next/image';
 import { usePathname } from '@/i18n/routing';
 import { ChevronDown, ChevronRight, ArrowRight, User, HandHeart, GraduationCap } from 'lucide-react';

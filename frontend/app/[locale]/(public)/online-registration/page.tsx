@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 import { GraduationCap, ArrowRight, CheckCircle2, ShieldCheck, UserCheck, Calendar, FileText, Send, Sparkles } from 'lucide-react';
 import { cmsService } from '@/services/cms.service';
 import type { AdmissionApplicationPayload } from '@/types/cms.types';

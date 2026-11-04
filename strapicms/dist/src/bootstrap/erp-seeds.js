@@ -1,50 +1,12 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.seedAcademicDefaults = seedAcademicDefaults;
 exports.seedGradingPoliciesAndBlueprints = seedGradingPoliciesAndBlueprints;
-exports.seedQuranData = seedQuranData;
+exports.syncContentManagerMainFields = syncContentManagerMainFields;
 // ─────────────────────────────────────────────────────────────────────────────
-// Bootstrap: Academic Defaults, Grading Policies, Assessment Blueprints & Quran Data
+// Bootstrap: Grading Policies, Assessment Blueprints & Content Manager display fields
+// NOTE: Academic Sections, Curriculums, Quran Programs and Quran Groups are NOT
+// seeded. They are created and managed exclusively by the school administration.
 // ─────────────────────────────────────────────────────────────────────────────
-async function seedAcademicDefaults(strapi) {
-    try {
-        let defaultCurriculum = await strapi.db.query('api::curriculum.curriculum').findOne({});
-        if (!defaultCurriculum) {
-            defaultCurriculum = await strapi.db.query('api::curriculum.curriculum').create({
-                data: {
-                    title: 'Standard Academic Curriculum',
-                    version: '1.0',
-                    recordStatus: 'Active',
-                },
-            });
-        }
-        const divisions = [
-            { name: 'Arabic Section', code: 'ARABIC', color: '#e11d48', icon: 'languages' },
-            { name: 'English Section', code: 'ENGLISH', color: '#2563eb', icon: 'book' },
-            { name: "Qur'an Memorization Section", code: 'QURAN', color: '#16a34a', icon: 'award' },
-            { name: 'General Sciences Section', code: 'SCIENCES', color: '#d97706', icon: 'atom' },
-        ];
-        for (const div of divisions) {
-            const existing = await strapi.db.query('api::section.section').findOne({
-                where: { code: div.code },
-            });
-            if (!existing) {
-                await strapi.db.query('api::section.section').create({
-                    data: {
-                        name: div.name,
-                        code: div.code,
-                        color: div.color,
-                        icon: div.icon,
-                        active: true,
-                    },
-                });
-            }
-        }
-    }
-    catch (err) {
-        strapi.log.warn('[YAHAYASCOOL] Academic defaults seed notice: ' + err.message);
-    }
-}
 async function seedGradingPoliciesAndBlueprints(strapi) {
     var _a, _b;
     try {
@@ -103,144 +65,128 @@ async function seedGradingPoliciesAndBlueprints(strapi) {
         strapi.log.error('[YAHAYASCOOL] Seeding grading policies/blueprints failed: ' + err.message);
     }
 }
-async function seedQuranData(strapi) {
-    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p;
+async function syncContentManagerMainFields(strapi) {
+    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m;
     try {
-        const students = await strapi.db.query('api::student.student').findMany({ limit: 10 });
-        const teachers = await strapi.db.query('api::teacher.teacher').findMany({ limit: 10 });
-        if (students.length === 0 || teachers.length === 0)
-            return;
-        const s1 = (_a = students[0]) === null || _a === void 0 ? void 0 : _a.id;
-        const s2 = ((_b = students[1]) === null || _b === void 0 ? void 0 : _b.id) || s1;
-        const s3 = ((_c = students[2]) === null || _c === void 0 ? void 0 : _c.id) || s1;
-        const t1 = (_d = teachers[0]) === null || _d === void 0 ? void 0 : _d.id;
-        const t2 = ((_e = teachers[1]) === null || _e === void 0 ? void 0 : _e.id) || t1;
-        const t3 = ((_f = teachers[2]) === null || _f === void 0 ? void 0 : _f.id) || t1;
-        const programCount = await strapi.db.query('api::quran-program.quran-program').count({});
-        if (programCount === 0) {
-            const programs = [
-                {
-                    name: 'Tajweed Mastery & Pronunciation (Tahsin)',
-                    code: 'PROG-TAHSIN-01',
-                    description: 'Comprehensive foundation covering Makharij, Sifaat, Ahkam Nun & Mim Sakinah, and Madd elongation rules.',
-                    durationMonths: 6,
-                    targetJuz: 1,
-                    ageGroup: 'All Ages',
-                    isActive: true,
-                    teachers: [t1, t2],
-                    students: [s1, s2, s3],
-                },
-                {
-                    name: 'Junior Hifz Intensive (Juz 1 to 5)',
-                    code: 'PROG-HIFZ-JR',
-                    description: 'Structured daily memorization and retention for young scholars covering Juz 26 to 30.',
-                    durationMonths: 12,
-                    targetJuz: 5,
-                    ageGroup: '6-12 Years',
-                    isActive: true,
-                    teachers: [t2, t3],
-                    students: [s2, s3],
-                },
-                {
-                    name: 'Senior Hifz Program (Juz 1 to 30)',
-                    code: 'PROG-HIFZ-SR',
-                    description: 'Full Quran memorization track with Sanad preparation and daily Murajaah.',
-                    durationMonths: 36,
-                    targetJuz: 30,
-                    ageGroup: '12-18 Years',
-                    isActive: true,
-                    teachers: [t1, t3],
-                    students: [s1, s2, s3],
-                },
-                {
-                    name: 'Murajaah & Retention Circle',
-                    code: 'PROG-MURAJ-01',
-                    description: 'Continuous revision cycle designed for Huffaz to maintain their memorization.',
-                    durationMonths: 12,
-                    targetJuz: 30,
-                    ageGroup: 'Huffaz',
-                    isActive: true,
-                    teachers: [t1],
-                    students: [s1, s3],
-                },
-                {
-                    name: "Qira'at & Classical Recitation",
-                    code: 'PROG-QIRAAT-01',
-                    description: 'Advanced study of the 10 Minor and Major Recitation Styles with scholarly Sanad.',
-                    durationMonths: 24,
-                    targetJuz: 30,
-                    ageGroup: 'Advanced',
-                    isActive: true,
-                    teachers: [t1, t2],
-                    students: [s1],
-                },
-            ];
-            for (const p of programs) {
-                await strapi.db.query('api::quran-program.quran-program').create({ data: p });
+        const knex = strapi.db.connection;
+        // 1. Backfill missing or placeholder names on Course Offerings, Student Enrollments, and Teacher Assignments
+        const offerings = await strapi.db.query('api::course-offering.course-offering').findMany({
+            populate: ['subject', 'gradeLevel', 'academicSection', 'academicYear'],
+        });
+        for (const co of offerings) {
+            if (!co.name || co.name === '-' || co.name.trim() === '') {
+                const parts = [(_a = co.subject) === null || _a === void 0 ? void 0 : _a.name, (_b = co.gradeLevel) === null || _b === void 0 ? void 0 : _b.name, (_c = co.academicSection) === null || _c === void 0 ? void 0 : _c.name].filter(Boolean);
+                const newName = parts.length > 0
+                    ? ((_d = co.academicYear) === null || _d === void 0 ? void 0 : _d.name)
+                        ? `${parts.join(' - ')} (${co.academicYear.name})`
+                        : parts.join(' - ')
+                    : `Course Offering #${co.id}`;
+                await knex('course_offerings').where({ id: co.id }).update({ name: newName });
             }
         }
-        const groupCount = await strapi.db.query('api::quran-group.quran-group').count({});
-        if (groupCount <= 2) {
-            const dbPrograms = await strapi.db.query('api::quran-program.quran-program').findMany({});
-            const progTahsin = ((_g = dbPrograms.find((p) => p.code === 'PROG-TAHSIN-01')) === null || _g === void 0 ? void 0 : _g.id) || ((_h = dbPrograms[0]) === null || _h === void 0 ? void 0 : _h.id);
-            const progJr = ((_j = dbPrograms.find((p) => p.code === 'PROG-HIFZ-JR')) === null || _j === void 0 ? void 0 : _j.id) || ((_k = dbPrograms[0]) === null || _k === void 0 ? void 0 : _k.id);
-            const progSr = ((_l = dbPrograms.find((p) => p.code === 'PROG-HIFZ-SR')) === null || _l === void 0 ? void 0 : _l.id) || ((_m = dbPrograms[0]) === null || _m === void 0 ? void 0 : _m.id);
-            const progMuraj = ((_o = dbPrograms.find((p) => p.code === 'PROG-MURAJ-01')) === null || _o === void 0 ? void 0 : _o.id) || ((_p = dbPrograms[0]) === null || _p === void 0 ? void 0 : _p.id);
-            const groups = [
-                {
-                    name: 'Halaqah Imam Nafi (Advanced Hifz)',
-                    code: 'GRP-NAFI-01',
-                    capacity: 15,
-                    meetingSchedule: 'Mon-Fri 07:30 - 09:30 AM',
-                    location: 'Main Quran Hall - Pillar 1',
-                    isActive: true,
-                    teacher: t1,
-                    quran_program: progSr,
-                    students: [s1, s2, s3],
-                },
-                {
-                    name: 'Halaqah Imam Asim (Beginner Tahsin)',
-                    code: 'GRP-ASIM-01',
-                    capacity: 20,
-                    meetingSchedule: 'Mon, Wed, Fri 10:00 - 11:30 AM',
-                    location: 'Tahsin Lab B',
-                    isActive: true,
-                    teacher: t2,
-                    quran_program: progTahsin,
-                    students: [s1, s2],
-                },
-                {
-                    name: 'Halaqah Imam Warsh (Junior Hifz)',
-                    code: 'GRP-WARSH-01',
-                    capacity: 12,
-                    meetingSchedule: 'Mon-Thu 02:00 - 04:00 PM',
-                    location: 'West Wing Hifz Suite',
-                    isActive: true,
-                    teacher: t3,
-                    quran_program: progJr,
-                    students: [s2, s3],
-                },
-                {
-                    name: 'Halaqah Ibn Kathir (Evening Revision Circle)',
-                    code: 'GRP-KATHIR-01',
-                    capacity: 25,
-                    meetingSchedule: 'Sat-Sun 04:30 - 06:30 PM',
-                    location: 'Central Musalla',
-                    isActive: true,
-                    teacher: t1,
-                    quran_program: progMuraj,
-                    students: [s1, s3],
-                },
-            ];
-            for (const g of groups) {
-                const exist = await strapi.db.query('api::quran-group.quran-group').findOne({ where: { code: g.code } });
-                if (!exist) {
-                    await strapi.db.query('api::quran-group.quran-group').create({ data: g });
+        const enrollments = await strapi.db.query('api::student-enrollment.student-enrollment').findMany({
+            populate: ['student', 'courseOffering'],
+        });
+        for (const se of enrollments) {
+            if (!se.name || se.name === '-' || se.name.trim() === '') {
+                const studentLabel = [(_e = se.student) === null || _e === void 0 ? void 0 : _e.firstName, (_f = se.student) === null || _f === void 0 ? void 0 : _f.lastName].filter(Boolean).join(' ') ||
+                    ((_g = se.student) === null || _g === void 0 ? void 0 : _g.schoolId) ||
+                    'Student';
+                const courseLabel = ((_h = se.courseOffering) === null || _h === void 0 ? void 0 : _h.name) || 'Course';
+                await knex('student_enrollments')
+                    .where({ id: se.id })
+                    .update({ name: `${studentLabel} - ${courseLabel}` });
+            }
+        }
+        const assignments = await strapi.db.query('api::teacher-assignment.teacher-assignment').findMany({
+            populate: ['teacher', 'courseOffering'],
+        });
+        for (const ta of assignments) {
+            if (!ta.name || ta.name === '-' || ta.name.trim() === '') {
+                const teacherLabel = ((_j = ta.teacher) === null || _j === void 0 ? void 0 : _j.name) || ((_k = ta.teacher) === null || _k === void 0 ? void 0 : _k.schoolId) || 'Teacher';
+                const courseLabel = ((_l = ta.courseOffering) === null || _l === void 0 ? void 0 : _l.name) || 'Course';
+                await knex('teacher_assignments')
+                    .where({ id: ta.id })
+                    .update({ name: `${teacherLabel} - ${courseLabel}` });
+            }
+        }
+        // 2. Ensure Strapi Content Manager displays human-readable mainField for all relations and lists
+        const preferredOrder = [
+            'name', 'fullName', 'title', 'budgetTitle', 'subjectName',
+            'componentName', 'gradeName', 'firstName',
+            'invoiceNumber', 'receiptNumber', 'journalNumber', 'voucherNumber',
+            'applicationNumber', 'certificateNumber', 'transcriptNumber',
+            'routeName', 'buildingName', 'roomNumber', 'code', 'email', 'schoolId',
+        ];
+        const bestMainFieldByUid = {
+            'plugin::users-permissions.user': 'username',
+            'plugin::users-permissions.role': 'name',
+        };
+        for (const [uid, ct] of Object.entries(strapi.contentTypes)) {
+            if (!uid.startsWith('api::'))
+                continue;
+            const attrs = ct.attributes || {};
+            let chosen = 'documentId';
+            for (const cand of preferredOrder) {
+                if (attrs[cand] && ['string', 'uid', 'email'].includes(attrs[cand].type)) {
+                    chosen = cand;
+                    break;
                 }
+            }
+            bestMainFieldByUid[uid] = chosen;
+        }
+        const cmRows = await knex('strapi_core_store_settings')
+            .where('key', 'like', 'plugin_content_manager_configuration_content_types::api::%')
+            .select('id', 'key', 'value');
+        for (const row of cmRows) {
+            const uid = row.key.replace('plugin_content_manager_configuration_content_types::', '');
+            const targetMain = bestMainFieldByUid[uid];
+            const ct = strapi.contentTypes[uid];
+            if (!targetMain || !ct)
+                continue;
+            let val;
+            try {
+                val = JSON.parse(row.value);
+            }
+            catch {
+                continue;
+            }
+            let changed = false;
+            if (val.settings &&
+                ['documentId', 'id', 'schoolId'].includes(val.settings.mainField) &&
+                targetMain !== val.settings.mainField) {
+                val.settings.mainField = targetMain;
+                if (['documentId', 'id', 'schoolId'].includes(val.settings.defaultSortBy)) {
+                    val.settings.defaultSortBy = targetMain;
+                }
+                changed = true;
+            }
+            if (uid === 'api::course-offering.course-offering' && val.layouts) {
+                if (Array.isArray(val.layouts.list) && !val.layouts.list.includes('name')) {
+                    val.layouts.list = ['id', 'name', 'subject', 'gradeLevel', 'academicSection', 'teacher'];
+                    changed = true;
+                }
+            }
+            const attrs = ct.attributes || {};
+            for (const [fieldName, meta] of Object.entries((val.metadatas || {}))) {
+                const attrDef = attrs[fieldName];
+                if ((attrDef === null || attrDef === void 0 ? void 0 : attrDef.type) === 'relation' && attrDef.target && bestMainFieldByUid[attrDef.target]) {
+                    const relTargetBest = bestMainFieldByUid[attrDef.target];
+                    const curEditMain = (_m = meta === null || meta === void 0 ? void 0 : meta.edit) === null || _m === void 0 ? void 0 : _m.mainField;
+                    if (curEditMain && curEditMain !== relTargetBest && ['documentId', 'id', 'schoolId'].includes(curEditMain)) {
+                        meta.edit.mainField = relTargetBest;
+                        changed = true;
+                    }
+                }
+            }
+            if (changed) {
+                await knex('strapi_core_store_settings')
+                    .where({ id: row.id })
+                    .update({ value: JSON.stringify(val) });
             }
         }
     }
     catch (err) {
-        strapi.log.error('[YAHAYASCOOL] Failed to seed Quran data: ' + err.message);
+        strapi.log.warn('[YAHAYASCOOL] Content Manager mainField sync notice: ' + err.message);
     }
 }

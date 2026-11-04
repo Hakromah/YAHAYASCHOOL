@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 import { motion, type Variants } from 'framer-motion';
 import { Briefcase, ArrowRight, BookOpen, Users, Building2 } from 'lucide-react';
 import type { DepartmentsGridSectionComponent, DepartmentEntity } from '../../../types/cms.types';

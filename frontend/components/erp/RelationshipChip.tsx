@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 import { Users, BookOpen, Building2, User, Award, Layers } from 'lucide-react';
 
 interface RelationshipChipProps {

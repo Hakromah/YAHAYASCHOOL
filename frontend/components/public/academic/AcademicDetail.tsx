@@ -1,5 +1,5 @@
 import React from 'react';
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 import { ArrowRight, BookOpen, CheckCircle2, ChevronRight, Download } from 'lucide-react';
 import type { SchoolAcademicProgramEntity, ProgramEntity } from '@/types/cms.types';
 import { getStrapiMediaUrl } from '@/services/cms.service';

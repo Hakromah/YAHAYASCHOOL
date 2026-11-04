@@ -6,7 +6,7 @@ import { useLenis } from 'lenis/react';
 import PhoneInput from 'react-phone-input-2';
 import 'react-phone-input-2/lib/style.css';
 import { useTranslations, useLocale } from 'next-intl';
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 import type { OnlineCourseEntity, OnlineLearningPageEntity } from '@/types/cms.types';
 
 // We only define length here; actual titles come from onlineLearningPage namespace

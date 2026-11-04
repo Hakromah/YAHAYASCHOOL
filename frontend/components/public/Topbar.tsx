@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 import { usePathname, useRouter } from '@/i18n/routing';
 import { Phone, Mail, Globe, LogIn, UserPlus } from 'lucide-react';
 import type { Locale } from '@/i18n/routing';

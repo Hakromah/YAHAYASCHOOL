@@ -8,7 +8,7 @@ const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
 
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 import {
   Layers, Building2, Calendar, BookOpen, CheckCircle2,
   Users, RefreshCw, Plus, ArrowRight, ExternalLink, GraduationCap

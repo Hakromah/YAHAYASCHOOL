@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 import { Calendar, MapPin, Clock, ArrowRight, Sparkles } from 'lucide-react';
 import type { EventsGridSectionComponent, EventEntity } from '../../../types/cms.types';
 import { cmsService } from '../../../services/cms.service';

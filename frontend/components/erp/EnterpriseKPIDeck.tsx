@@ -3,7 +3,7 @@
 import React from 'react';
 import { ArrowUpRight, ArrowDownRight, Minus, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 import { useLocale } from 'next-intl';
 import { getTranslation } from './EnterpriseModuleShell';
 

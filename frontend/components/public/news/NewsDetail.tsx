@@ -1,5 +1,5 @@
 import React from 'react';
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 import { ArrowRight, CalendarDays, CheckCircle2, ChevronRight } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
 import { NewsletterCard } from '@/components/public/news/NewsletterCard';

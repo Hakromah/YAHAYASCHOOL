@@ -1,5 +1,5 @@
 import React from 'react';
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { cmsService } from '@/services/cms.service';
 

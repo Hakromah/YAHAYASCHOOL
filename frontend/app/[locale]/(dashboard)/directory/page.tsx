@@ -2,7 +2,8 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
+import { useRouter } from '@/i18n/routing';
 import {
   Users, GraduationCap, UserCheck, Heart, Clipboard, Search, Filter,
   Download, Upload, RefreshCw, Eye, Mail, Phone, Building, FileText,
@@ -110,10 +111,10 @@ export default function PeopleDirectoryPage() {
   };
 
   const handleCreateRedirect = () => {
-    let path = `/${locale}/students`;
-    if (activeTab === 'teachers') path = `/${locale}/teachers`;
-    else if (activeTab === 'parents') path = `/${locale}/parents`;
-    else if (activeTab === 'workers') path = `/${locale}/workers`;
+    let path = '/students';
+    if (activeTab === 'teachers') path = '/teachers';
+    else if (activeTab === 'parents') path = '/parents';
+    else if (activeTab === 'workers') path = '/workers';
     router.push(path);
     toast.info(`Redirecting to ${activeTab} management workspace.`);
   };

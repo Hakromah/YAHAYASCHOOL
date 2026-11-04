@@ -1,5 +1,5 @@
 import React from 'react';
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 import { ArrowRight, Download, CheckCircle2, GraduationCap } from 'lucide-react';
 import { Container } from '@/components/ui/Container';
 import { LearningApproachSection } from '@/components/public/academics/LearningApproachSection';

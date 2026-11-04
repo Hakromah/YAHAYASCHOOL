@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 import {
   ArrowLeft, ArrowRight, Building2, CheckCircle2, ChevronDown, ChevronRight,
   Copy, Globe, HeartHandshake, ShieldCheck, Star,

@@ -33,6 +33,7 @@ const LOCALES_TO_SEED = [
     { code: 'en', name: 'English (en)' },
     { code: 'fr', name: 'French (fr)' },
     { code: 'ar', name: 'Arabic (ar)' },
+    { code: 'tr', name: 'Turkish (tr)' },
 ];
 async function seedRoles(strapi) {
     strapi.log.info('[YAHAYASCOOL] Verifying RBAC roles...');
@@ -216,11 +217,7 @@ async function seedDefaultUsers(strapi) {
         });
         const hassanUser = await knex('up_users').where({ email: 'hassan@gmail.com' }).first();
         if (hassanUser) {
-            await knex('up_users').where({ id: hassanUser.id }).update({
-                password: defaultPasswordHash,
-                confirmed: true,
-                blocked: false,
-            });
+            // Never reset the existing password or blocked status — only ensure the Super Admin role link exists.
             if (superAdminRole) {
                 const link = await knex('up_users_role_lnk').where({ user_id: hassanUser.id }).first();
                 if (!link) {
@@ -246,7 +243,11 @@ async function seedDefaultUsers(strapi) {
                 await knex('up_users_role_lnk').insert({ user_id: idVal, role_id: superAdminRole.id });
             }
         }
-        await knex('up_users').where({ provider: 'local' }).update({ confirmed: true, blocked: false });
+        // Confirm local accounts so admin-created users can log in, but respect the administration's "blocked" decision.
+        await knex('up_users')
+            .where({ provider: 'local' })
+            .andWhere((qb) => qb.where({ confirmed: false }).orWhereNull('confirmed'))
+            .update({ confirmed: true });
     }
     catch (err) {
         strapi.log.error('[YAHAYASCOOL] Error seeding default users:', err.message);

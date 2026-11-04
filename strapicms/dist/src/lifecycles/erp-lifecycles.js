@@ -160,6 +160,16 @@ function registerERPLifecycles(strapi) {
             }
         },
     });
+    // Automatically sync/generate name fields for Course Offerings
+    strapi.db.lifecycles.subscribe({
+        models: ['api::course-offering.course-offering'],
+        async beforeCreate(event) {
+            await updateCourseOfferingName(event, strapi);
+        },
+        async beforeUpdate(event) {
+            await updateCourseOfferingName(event, strapi);
+        },
+    });
     // Automatically sync/generate name fields for Student Enrollments
     strapi.db.lifecycles.subscribe({
         models: ['api::student-enrollment.student-enrollment'],
@@ -192,41 +202,92 @@ function registerERPLifecycles(strapi) {
     });
     strapi.log.info('[YAHAYASCOOL] ERP lifecycle hooks registered.');
 }
-async function validateAcademicHeadRole(event, strapi) {
+async function resolveRelationRecord(strapi, modelUid, relVal, populate) {
+    var _a, _b, _c;
+    if (!relVal)
+        return null;
+    let queryWhere = null;
+    if (typeof relVal === 'number' || (typeof relVal === 'string' && /^\d+$/.test(relVal))) {
+        queryWhere = { id: Number(relVal) };
+    }
+    else if (typeof relVal === 'string') {
+        queryWhere = { documentId: relVal };
+    }
+    else if (typeof relVal === 'object') {
+        const item = ((_a = relVal.connect) === null || _a === void 0 ? void 0 : _a[0]) || ((_b = relVal.set) === null || _b === void 0 ? void 0 : _b[0]) || relVal;
+        const idOrDoc = (_c = item === null || item === void 0 ? void 0 : item.id) !== null && _c !== void 0 ? _c : item === null || item === void 0 ? void 0 : item.documentId;
+        if (typeof idOrDoc === 'number' || (typeof idOrDoc === 'string' && /^\d+$/.test(idOrDoc))) {
+            queryWhere = { id: Number(idOrDoc) };
+        }
+        else if (typeof idOrDoc === 'string') {
+            queryWhere = { documentId: idOrDoc };
+        }
+    }
+    if (!queryWhere)
+        return null;
+    try {
+        return await strapi.db.query(modelUid).findOne({
+            where: queryWhere,
+            ...(populate ? { populate } : {}),
+        });
+    }
+    catch {
+        return null;
+    }
+}
+async function updateCourseOfferingName(event, strapi) {
     var _a, _b, _c, _d;
+    const { data, where } = event.params || {};
+    if (!data)
+        return;
+    if (data.name && typeof data.name === 'string' && data.name.trim() !== '' && data.name.trim() !== '-') {
+        return;
+    }
+    let subjectVal = data.subject;
+    let gradeVal = data.gradeLevel;
+    let sectionVal = data.academicSection;
+    let yearVal = data.academicYear;
+    if ((where === null || where === void 0 ? void 0 : where.id) && (!subjectVal || !gradeVal || !sectionVal)) {
+        try {
+            const existing = await strapi.db.query('api::course-offering.course-offering').findOne({
+                where: { id: where.id },
+                populate: ['subject', 'gradeLevel', 'academicSection', 'academicYear'],
+            });
+            if (existing) {
+                if (!subjectVal)
+                    subjectVal = (_a = existing.subject) === null || _a === void 0 ? void 0 : _a.id;
+                if (!gradeVal)
+                    gradeVal = (_b = existing.gradeLevel) === null || _b === void 0 ? void 0 : _b.id;
+                if (!sectionVal)
+                    sectionVal = (_c = existing.academicSection) === null || _c === void 0 ? void 0 : _c.id;
+                if (!yearVal)
+                    yearVal = (_d = existing.academicYear) === null || _d === void 0 ? void 0 : _d.id;
+            }
+        }
+        catch { }
+    }
+    const subject = await resolveRelationRecord(strapi, 'api::subject.subject', subjectVal);
+    const grade = await resolveRelationRecord(strapi, 'api::grade-level.grade-level', gradeVal);
+    const section = await resolveRelationRecord(strapi, 'api::section.section', sectionVal);
+    const year = await resolveRelationRecord(strapi, 'api::academic-year.academic-year', yearVal);
+    const mainParts = [subject === null || subject === void 0 ? void 0 : subject.name, grade === null || grade === void 0 ? void 0 : grade.name, section === null || section === void 0 ? void 0 : section.name].filter(Boolean);
+    if (mainParts.length > 0) {
+        data.name = (year === null || year === void 0 ? void 0 : year.name) ? `${mainParts.join(' - ')} (${year.name})` : mainParts.join(' - ');
+    }
+    else if (!data.name) {
+        data.name = `Course Offering #${Date.now()}`;
+    }
+}
+async function validateAcademicHeadRole(event, strapi) {
+    var _a, _b;
     const { data } = event.params || {};
     if (!data || !data.academicHead)
         return;
     try {
-        const academicHeadVal = data.academicHead;
-        let queryWhere = {};
-        if (typeof academicHeadVal === 'object' && academicHeadVal !== null) {
-            const docId = ((_b = (_a = academicHeadVal.connect) === null || _a === void 0 ? void 0 : _a[0]) === null || _b === void 0 ? void 0 : _b.documentId) || academicHeadVal.id || academicHeadVal.documentId;
-            if (!docId)
-                return;
-            if (typeof docId === 'number' || (typeof docId === 'string' && /^\d+$/.test(docId))) {
-                queryWhere = { id: Number(docId) };
-            }
-            else {
-                queryWhere = { documentId: docId };
-            }
-        }
-        else if (typeof academicHeadVal === 'number' || (typeof academicHeadVal === 'string' && /^\d+$/.test(academicHeadVal))) {
-            queryWhere = { id: Number(academicHeadVal) };
-        }
-        else if (typeof academicHeadVal === 'string') {
-            queryWhere = { documentId: academicHeadVal };
-        }
-        else {
-            return;
-        }
-        const teacherLink = await strapi.db.query('api::teacher.teacher').findOne({
-            where: queryWhere,
-            populate: ['user.role'],
-        });
+        const teacherLink = await resolveRelationRecord(strapi, 'api::teacher.teacher', data.academicHead, ['user.role']);
         if (!teacherLink)
             return;
-        const roleType = (_d = (_c = teacherLink.user) === null || _c === void 0 ? void 0 : _c.role) === null || _d === void 0 ? void 0 : _d.type;
+        const roleType = (_b = (_a = teacherLink.user) === null || _a === void 0 ? void 0 : _a.role) === null || _b === void 0 ? void 0 : _b.type;
         if (roleType && !['section-head', 'teacher', 'director', 'super-administrator', 'authenticated'].includes(roleType)) {
             const { errors } = require('@strapi/utils');
             throw new errors.ValidationError(`The selected teacher (${teacherLink.name}) must have a faculty or leadership role.`);
@@ -244,99 +305,60 @@ async function updateStudentEnrollmentName(event, strapi) {
     const { data, where } = event.params || {};
     if (!data)
         return;
-    let studentId = data.student;
-    let courseOfferingId = data.courseOffering;
-    if ((where === null || where === void 0 ? void 0 : where.id) && (!studentId || !courseOfferingId)) {
+    let studentVal = data.student;
+    let courseOfferingVal = data.courseOffering;
+    if ((where === null || where === void 0 ? void 0 : where.id) && (!studentVal || !courseOfferingVal)) {
         try {
             const existing = await strapi.db.query('api::student-enrollment.student-enrollment').findOne({
                 where: { id: where.id },
                 populate: ['student', 'courseOffering'],
             });
             if (existing) {
-                if (!studentId)
-                    studentId = (_a = existing.student) === null || _a === void 0 ? void 0 : _a.id;
-                if (!courseOfferingId)
-                    courseOfferingId = (_b = existing.courseOffering) === null || _b === void 0 ? void 0 : _b.id;
+                if (!studentVal)
+                    studentVal = (_a = existing.student) === null || _a === void 0 ? void 0 : _a.id;
+                if (!courseOfferingVal)
+                    courseOfferingVal = (_b = existing.courseOffering) === null || _b === void 0 ? void 0 : _b.id;
             }
         }
         catch { }
     }
-    let studentName = '';
-    let courseName = '';
-    if (studentId) {
-        try {
-            const student = await strapi.db.query('api::student.student').findOne({
-                where: { id: studentId },
-            });
-            if (student) {
-                studentName = student.firstName ? `${student.firstName} ${student.lastName}` : student.schoolId || '';
-            }
-        }
-        catch { }
-    }
-    if (courseOfferingId) {
-        try {
-            const course = await strapi.db.query('api::course-offering.course-offering').findOne({
-                where: { id: courseOfferingId },
-                populate: ['subject'],
-            });
-            if (course) {
-                courseName = course.name || ((_c = course.subject) === null || _c === void 0 ? void 0 : _c.name) || '';
-            }
-        }
-        catch { }
-    }
-    data.name = `${studentName} - ${courseName}`.trim() || `Enrollment #${Date.now()}`;
+    const student = await resolveRelationRecord(strapi, 'api::student.student', studentVal);
+    const course = await resolveRelationRecord(strapi, 'api::course-offering.course-offering', courseOfferingVal, ['subject']);
+    const studentName = student
+        ? [student.firstName, student.lastName].filter(Boolean).join(' ') || student.schoolId || ''
+        : '';
+    const courseName = course ? course.name || ((_c = course.subject) === null || _c === void 0 ? void 0 : _c.name) || '' : '';
+    const parts = [studentName, courseName].filter(Boolean);
+    data.name = parts.length > 0 ? parts.join(' - ') : `Enrollment #${Date.now()}`;
 }
 async function updateTeacherAssignmentName(event, strapi) {
     var _a, _b, _c;
     const { data, where } = event.params || {};
     if (!data)
         return;
-    let teacherId = data.teacher;
-    let courseOfferingId = data.courseOffering;
-    if ((where === null || where === void 0 ? void 0 : where.id) && (!teacherId || !courseOfferingId)) {
+    let teacherVal = data.teacher;
+    let courseOfferingVal = data.courseOffering;
+    if ((where === null || where === void 0 ? void 0 : where.id) && (!teacherVal || !courseOfferingVal)) {
         try {
             const existing = await strapi.db.query('api::teacher-assignment.teacher-assignment').findOne({
                 where: { id: where.id },
                 populate: ['teacher', 'courseOffering'],
             });
             if (existing) {
-                if (!teacherId)
-                    teacherId = (_a = existing.teacher) === null || _a === void 0 ? void 0 : _a.id;
-                if (!courseOfferingId)
-                    courseOfferingId = (_b = existing.courseOffering) === null || _b === void 0 ? void 0 : _b.id;
+                if (!teacherVal)
+                    teacherVal = (_a = existing.teacher) === null || _a === void 0 ? void 0 : _a.id;
+                if (!courseOfferingVal)
+                    courseOfferingVal = (_b = existing.courseOffering) === null || _b === void 0 ? void 0 : _b.id;
             }
         }
         catch { }
     }
-    let teacherName = '';
-    let courseName = '';
-    if (teacherId) {
-        try {
-            const teacher = await strapi.db.query('api::teacher.teacher').findOne({
-                where: { id: teacherId },
-            });
-            if (teacher) {
-                teacherName =
-                    teacher.displayName ||
-                        teacher.name ||
-                        (teacher.firstName ? `${teacher.firstName} ${teacher.lastName}` : teacher.schoolId || '');
-            }
-        }
-        catch { }
-    }
-    if (courseOfferingId) {
-        try {
-            const course = await strapi.db.query('api::course-offering.course-offering').findOne({
-                where: { id: courseOfferingId },
-                populate: ['subject'],
-            });
-            if (course) {
-                courseName = course.name || ((_c = course.subject) === null || _c === void 0 ? void 0 : _c.name) || '';
-            }
-        }
-        catch { }
-    }
-    data.name = `${teacherName} - ${courseName}`.trim() || `Assignment #${Date.now()}`;
+    const teacher = await resolveRelationRecord(strapi, 'api::teacher.teacher', teacherVal);
+    const course = await resolveRelationRecord(strapi, 'api::course-offering.course-offering', courseOfferingVal, ['subject']);
+    const teacherName = teacher
+        ? teacher.displayName || teacher.name || [teacher.firstName, teacher.lastName].filter(Boolean).join(' ') || teacher.schoolId || ''
+        : '';
+    const courseName = course ? course.name || ((_c = course.subject) === null || _c === void 0 ? void 0 : _c.name) || '' : '';
+    const parts = [teacherName, courseName].filter(Boolean);
+    data.name = parts.length > 0 ? parts.join(' - ') : `Assignment #${Date.now()}`;
 }

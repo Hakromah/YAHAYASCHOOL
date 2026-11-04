@@ -22,10 +22,10 @@ exports.default = {
         await (0, permissions_1.seedDefaultUsers)(strapi);
         // 2. Deduplicate legacy ERP rows & synchronize all User <-> Profile links
         await (0, user_profile_sync_1.deduplicateAndSyncAllUsers)(strapi);
-        // 3. Seed ERP defaults (Curriculum, Sections, Grading Policies, Blueprints, QMS)
-        await (0, erp_seeds_1.seedAcademicDefaults)(strapi);
+        // 3. Seed grading defaults & sync Admin display fields
+        //    (Academic Sections, Curriculums and Quran Programs/Groups are managed by the administration only)
         await (0, erp_seeds_1.seedGradingPoliciesAndBlueprints)(strapi);
-        await (0, erp_seeds_1.seedQuranData)(strapi);
+        await (0, erp_seeds_1.syncContentManagerMainFields)(strapi);
         // 4. Seed Public Website CMS Pages
         await (0, cms_seeds_1.seedWebsiteCMS)(strapi);
     },

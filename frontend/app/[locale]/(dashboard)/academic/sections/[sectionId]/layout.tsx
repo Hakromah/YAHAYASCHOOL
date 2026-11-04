@@ -1,12 +1,9 @@
 'use client';
 
-import { useLocale } from 'next-intl';
-import { t as i18nT } from '@/lib/i18n-dict';
-
-// module-level i18n fallback
-const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
-
 import React from 'react';
+import { useLocale } from 'next-intl';
+import { Link } from '@/i18n/routing';
+import { t as i18nT } from '@/lib/i18n-dict';
 import { SectionProvider, useSection } from '@/providers/SectionContext';
 import { useAuth } from '@/hooks/useAuth';
 import { ShieldAlert } from 'lucide-react';
@@ -17,6 +14,8 @@ interface SectionWorkspaceLayoutProps {
 }
 
 function SectionWorkspaceGuard({ children }: { children: React.ReactNode }) {
+  const locale = useLocale();
+  const t = (key: string, loc?: string) => i18nT(key, loc || locale);
   const { user, isLoading: authLoading, role } = useAuth();
   const { section, isLoading: sectionLoading } = useSection();
 
@@ -24,7 +23,7 @@ function SectionWorkspaceGuard({ children }: { children: React.ReactNode }) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center min-h-[400px]">
         <div className="w-10 h-10 rounded-full border-2 border-indigo-600 border-t-transparent animate-spin mb-3" />
-        <p className="text-xs text-slate-400 font-semibold">Validating security clearance...</p>
+        <p className="text-xs text-slate-400 font-semibold">{t('Validating security clearance...')}</p>
       </div>
     );
   }
@@ -47,18 +46,17 @@ function SectionWorkspaceGuard({ children }: { children: React.ReactNode }) {
           <div className="w-16 h-16 bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 rounded-full flex items-center justify-center mx-auto animate-bounce">
             <ShieldAlert className="w-8 h-8" />
           </div>
-          <h2 className="text-xl font-extrabold text-slate-900 dark:text-white">Security Clearance Required</h2>
+          <h2 className="text-xl font-extrabold text-slate-900 dark:text-white">{t('Security Clearance Required')}</h2>
           <p className="text-xs text-slate-500 leading-relaxed">
-            As a Section Head, your workspace is restricted to your assigned Academic Section. 
-            You do not have administrative clearance to access <strong>{section?.name ?? 'this section'}</strong>.
+            {t('As a Section Head, your workspace is restricted to your assigned Academic Section. You do not have administrative clearance to access this section.')}
           </p>
           <div className="pt-2">
-            <a
+            <Link
               href="/dashboard"
               className="inline-flex px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-xs shadow-md transition-all"
             >
-              Return to Dashboard
-            </a>
+              {t('Return to Dashboard')}
+            </Link>
           </div>
         </div>
       </div>

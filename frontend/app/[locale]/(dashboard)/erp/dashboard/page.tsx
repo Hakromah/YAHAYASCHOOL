@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Link } from '@/i18n/routing';
+import { Link, useRouter } from '@/i18n/routing';
 import { useTranslations, useLocale } from 'next-intl';
 import { t as i18nT } from '@/lib/i18n-dict';
 
@@ -18,6 +18,7 @@ import { StatusBadge } from '@/components/erp/StatusBadge';
 import { BulkImportModal } from '@/components/erp/BulkImportModal';
 
 export default function ERPDashboardPage() {
+  const router = useRouter();
   const locale = useLocale();
   const t = (key: string, loc?: string) => i18nT(key, loc || locale);
 const [studentsCount, setStudentsCount] = useState<number>(0);
@@ -78,19 +79,19 @@ const [studentsCount, setStudentsCount] = useState<number>(0);
           <div>
             <div className="flex items-center gap-2 mb-2">
               <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs font-bold uppercase tracking-wider">
-                Phase 2 Core School ERP
+                {t('Phase 2 Core School ERP')}
               </span>
               {currentYear && (
                 <span className="px-3 py-1 rounded-full bg-slate-800 text-slate-300 text-xs font-mono">
-                  Calendar: {currentYear.name}
+                  {t('Calendar')}: {currentYear.name}
                 </span>
               )}
             </div>
             <h1 className="text-2xl md:text-3xl font-black text-white">
-              Central SIS & Academic Console
+              {t('Central SIS & Academic Console')}
             </h1>
             <p className="text-sm text-slate-300 mt-1 max-w-2xl">
-              Unified database architecture managing students, faculty, sections, attendance tracks, and cross-departmental relationships across Yahaya International High School.
+              {t('Unified database architecture managing students, faculty, sections, attendance tracks, and cross-departmental relationships across Yahaya International High School.')}
             </p>
           </div>
 
@@ -100,14 +101,14 @@ const [studentsCount, setStudentsCount] = useState<number>(0);
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-lg shadow-emerald-600/30 transition-all"
             >
               <Users className="w-4 h-4" />
-              <span>People Directory</span>
+              <span>{t('People Directory')}</span>
             </Link>
             <button
               onClick={() => openImport('student')}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold text-xs transition-all"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold text-xs transition-all cursor-pointer"
             >
               <Upload className="w-4 h-4 text-emerald-400" />
-              <span>Bulk Import</span>
+              <span>{t('Bulk Import')}</span>
             </button>
           </div>
         </div>
@@ -117,7 +118,7 @@ const [studentsCount, setStudentsCount] = useState<number>(0);
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         <Link href="/students" className="group rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 hover:border-emerald-500/50 hover:shadow-md transition-all">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Total Students</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">{t('Total Students')}</span>
             <div className="p-2.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform">
               <GraduationCap className="w-6 h-6" />
             </div>
@@ -125,14 +126,14 @@ const [studentsCount, setStudentsCount] = useState<number>(0);
           <div className="flex items-baseline justify-between">
             <span className="text-3xl font-black text-slate-900 dark:text-white">{loading ? '...' : studentsCount}</span>
             <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
-              Active SIS <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+              {t('Active SIS')} <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
             </span>
           </div>
         </Link>
 
         <Link href="/teachers" className="group rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 hover:border-amber-500/50 hover:shadow-md transition-all">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Faculty & Sheikhs</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">{t('Faculty & Sheikhs')}</span>
             <div className="p-2.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-600 dark:text-amber-400 group-hover:scale-110 transition-transform">
               <UserCheck className="w-6 h-6" />
             </div>
@@ -140,14 +141,14 @@ const [studentsCount, setStudentsCount] = useState<number>(0);
           <div className="flex items-baseline justify-between">
             <span className="text-3xl font-black text-slate-900 dark:text-white">{loading ? '...' : teachersCount}</span>
             <span className="text-xs text-amber-600 dark:text-amber-400 font-semibold flex items-center gap-1">
-              Teaching Staff <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+              {t('Teaching Staff')} <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
             </span>
           </div>
         </Link>
 
         <Link href="/parents" className="group rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 hover:border-purple-500/50 hover:shadow-md transition-all">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Registered Parents</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">{t('Registered Parents')}</span>
             <div className="p-2.5 rounded-xl bg-purple-500/15 border border-purple-500/30 text-purple-600 dark:text-purple-400 group-hover:scale-110 transition-transform">
               <Users className="w-6 h-6" />
             </div>
@@ -155,14 +156,14 @@ const [studentsCount, setStudentsCount] = useState<number>(0);
           <div className="flex items-baseline justify-between">
             <span className="text-3xl font-black text-slate-900 dark:text-white">{loading ? '...' : parentsCount}</span>
             <span className="text-xs text-purple-600 dark:text-purple-400 font-semibold flex items-center gap-1">
-              Guardians <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+              {t('Guardians')} <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
             </span>
           </div>
         </Link>
 
         <Link href="/academic-structure" className="group rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 hover:border-sky-500/50 hover:shadow-md transition-all">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Active Sections</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">{t('Active Sections')}</span>
             <div className="p-2.5 rounded-xl bg-sky-500/15 border border-sky-500/30 text-sky-600 dark:text-sky-400 group-hover:scale-110 transition-transform">
               <Layers className="w-6 h-6" />
             </div>
@@ -170,7 +171,7 @@ const [studentsCount, setStudentsCount] = useState<number>(0);
           <div className="flex items-baseline justify-between">
             <span className="text-3xl font-black text-slate-900 dark:text-white">{loading ? '...' : sections.length}</span>
             <span className="text-xs text-sky-600 dark:text-sky-400 font-semibold flex items-center gap-1">
-              Sections & Levels <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+              {t('Sections & Levels')} <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
             </span>
           </div>
         </Link>
@@ -184,33 +185,33 @@ const [studentsCount, setStudentsCount] = useState<number>(0);
             <div>
               <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                 <GraduationCap className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-                <span>Recently Enrolled Student Profiles</span>
+                <span>{t('Recently Enrolled Student Profiles')}</span>
               </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Click on any student row to view their full 360° SIS dossier</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">{t('Click on any student row to view their full 360° SIS dossier')}</p>
             </div>
             <Link
               href="/students"
               className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1"
             >
-              <span>View All ({studentsCount})</span>
+              <span>{t('View All')} ({studentsCount})</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
 
           {loading ? (
-            <div className="py-12 text-center text-slate-500 dark:text-slate-400 text-sm animate-pulse">Loading recent student profiles...</div>
+            <div className="py-12 text-center text-slate-500 dark:text-slate-400 text-sm animate-pulse">{t('Loading recent student profiles...')}</div>
           ) : recentStudents.length === 0 ? (
-            <div className="py-12 text-center text-slate-500 dark:text-slate-400 text-sm">No students found. Use Bulk Import to seed records.</div>
+            <div className="py-12 text-center text-slate-500 dark:text-slate-400 text-sm">{t('No students found. Use Bulk Import to seed records.')}</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800">
                   <tr>
-                    <th className="py-3 px-4 font-semibold">School ID</th>
-                    <th className="py-3 px-4 font-semibold">Student Name</th>
-                    <th className="py-3 px-4 font-semibold">Gender</th>
-                    <th className="py-3 px-4 font-semibold">Assigned Section</th>
-                    <th className="py-3 px-4 font-semibold">Status</th>
+                    <th className="py-3 px-4 font-semibold">{t('School ID')}</th>
+                    <th className="py-3 px-4 font-semibold">{t('Student Name')}</th>
+                    <th className="py-3 px-4 font-semibold">{t('Gender')}</th>
+                    <th className="py-3 px-4 font-semibold">{t('Assigned Section')}</th>
+                    <th className="py-3 px-4 font-semibold">{t('Status')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60 text-slate-700 dark:text-slate-300">
@@ -218,7 +219,7 @@ const [studentsCount, setStudentsCount] = useState<number>(0);
                     <tr
                       key={st.id}
                       className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors cursor-pointer"
-                      onClick={() => window.location.href = `/students/${st.documentId || st.id}`}
+                      onClick={() => router.push(`/students/${st.documentId || st.id}`)}
                     >
                       <td className="py-3 px-4 font-mono font-bold text-emerald-600 dark:text-emerald-400">
                         {st.schoolId || st.admissionNumber || `#${st.id}`}
@@ -233,7 +234,7 @@ const [studentsCount, setStudentsCount] = useState<number>(0);
                             {st.sections[0].code}
                           </span>
                         ) : (
-                          <span className="text-slate-400 italic">Unassigned</span>
+                          <span className="text-slate-400 italic">{t('Unassigned')}</span>
                         )}
                       </td>
                       <td className="py-3 px-4">
@@ -252,19 +253,19 @@ const [studentsCount, setStudentsCount] = useState<number>(0);
           <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
             <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mb-4 flex items-center gap-2">
               <Activity className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-              <span>Quick Management Actions</span>
+              <span>{t('Quick Management Actions')}</span>
             </h3>
 
             <div className="grid grid-cols-1 gap-3">
               <button
                 onClick={() => openImport('student')}
-                className="flex items-center justify-between p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-left transition-all group"
+                className="flex items-center justify-between p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-left transition-all group cursor-pointer"
               >
                 <div className="flex items-center gap-3">
                   <Upload className="w-5 h-5 text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform" />
                   <div>
-                    <span className="text-xs font-bold text-slate-900 dark:text-slate-200 block">Batch Import Students</span>
-                    <span className="text-[11px] text-slate-500 dark:text-slate-400">Upload CSV with SIS attributes</span>
+                    <span className="text-xs font-bold text-slate-900 dark:text-slate-200 block">{t('Batch Import Students')}</span>
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400">{t('Upload CSV with SIS attributes')}</span>
                   </div>
                 </div>
                 <ArrowRight className="w-4 h-4 text-slate-400 group-hover:translate-x-1 transition-transform" />
@@ -272,13 +273,13 @@ const [studentsCount, setStudentsCount] = useState<number>(0);
 
               <button
                 onClick={() => openImport('teacher')}
-                className="flex items-center justify-between p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-left transition-all group"
+                className="flex items-center justify-between p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-left transition-all group cursor-pointer"
               >
                 <div className="flex items-center gap-3">
                   <UserCheck className="w-5 h-5 text-amber-600 dark:text-amber-400 group-hover:scale-110 transition-transform" />
                   <div>
-                    <span className="text-xs font-bold text-slate-900 dark:text-slate-200 block">Batch Import Faculty</span>
-                    <span className="text-[11px] text-slate-500 dark:text-slate-400">Upload teacher rosters</span>
+                    <span className="text-xs font-bold text-slate-900 dark:text-slate-200 block">{t('Batch Import Faculty')}</span>
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400">{t('Upload teacher rosters')}</span>
                   </div>
                 </div>
                 <ArrowRight className="w-4 h-4 text-slate-400 group-hover:translate-x-1 transition-transform" />
@@ -286,13 +287,13 @@ const [studentsCount, setStudentsCount] = useState<number>(0);
 
               <Link
                 href="/academic-structure"
-                className="flex items-center justify-between p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-left transition-all group"
+                className="flex items-center justify-between p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-left transition-all group cursor-pointer"
               >
                 <div className="flex items-center gap-3">
                   <Layers className="w-5 h-5 text-sky-600 dark:text-sky-400 group-hover:scale-110 transition-transform" />
                   <div>
-                    <span className="text-xs font-bold text-slate-900 dark:text-slate-200 block">Configure Academic Tracks</span>
-                    <span className="text-[11px] text-slate-500 dark:text-slate-400">Manage Sections & Levels</span>
+                    <span className="text-xs font-bold text-slate-900 dark:text-slate-200 block">{t('Configure Academic Tracks')}</span>
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400">{t('Manage Sections & Levels')}</span>
                   </div>
                 </div>
                 <ArrowRight className="w-4 h-4 text-slate-400 group-hover:translate-x-1 transition-transform" />
@@ -304,7 +305,7 @@ const [studentsCount, setStudentsCount] = useState<number>(0);
           <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
             <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mb-4 flex items-center gap-2">
               <Building2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-              <span>Campus Infrastructure</span>
+              <span>{t('Campus Infrastructure')}</span>
             </h3>
 
             {campuses.length > 0 ? (
@@ -313,9 +314,9 @@ const [studentsCount, setStudentsCount] = useState<number>(0);
                   <div key={c.id} className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex items-start justify-between">
                     <div>
                       <h4 className="text-xs font-bold text-slate-900 dark:text-slate-200">{c.name}</h4>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 font-mono mt-0.5">Code: {c.code}</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 font-mono mt-0.5">{t('Code')}: {c.code}</p>
                       {c.principalName && (
-                        <p className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold mt-1">Head: {c.principalName}</p>
+                        <p className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold mt-1">{t('Head')}: {c.principalName}</p>
                       )}
                     </div>
                     <StatusBadge status={(c as any).status} size="sm" />
@@ -323,7 +324,7 @@ const [studentsCount, setStudentsCount] = useState<number>(0);
                 ))}
               </div>
             ) : (
-              <p className="text-xs text-slate-500 italic">No campuses registered.</p>
+              <p className="text-xs text-slate-500 italic">{t('No campuses registered.')}</p>
             )}
           </div>
         </div>

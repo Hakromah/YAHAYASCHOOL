@@ -4,7 +4,7 @@ import React, { useId, useState } from 'react';
 import { Clock, Mail, MapPin, Phone, Send } from 'lucide-react';
 import PhoneInput from 'react-phone-input-2';
 import 'react-phone-input-2/lib/style.css';
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 
 import { useTranslations, useLocale } from 'next-intl';
 

@@ -3,7 +3,7 @@
 import React, { useCallback, useRef } from 'react';
 import { useScrollProgress } from '@/hooks/useScrollProgress';
 import { useTranslations } from 'next-intl';
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 import { ArrowRight } from 'lucide-react';
 
 /**

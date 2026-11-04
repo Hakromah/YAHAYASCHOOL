@@ -1,5 +1,5 @@
 import React from 'react';
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 import type { SchoolAcademicProgramEntity, SchoolAcademicProgramsPageEntity } from '@/types/cms.types';
 import { LeafImage } from '@/components/public/shared/LeafImage';
 import { ParallaxImage } from '@/components/public/shared/ParallaxImage';

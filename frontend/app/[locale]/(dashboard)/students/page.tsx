@@ -8,7 +8,8 @@ import { t as i18nT } from '@/lib/i18n-dict';
 const t = (key: string, loc?: string) => i18nT(key, loc || 'en');
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
+import { useRouter } from '@/i18n/routing';
 import {
   GraduationCap, Search, Upload, Download, ArrowRight,
   Filter, Layers, RefreshCw, UserPlus, Grid, List, Eye,

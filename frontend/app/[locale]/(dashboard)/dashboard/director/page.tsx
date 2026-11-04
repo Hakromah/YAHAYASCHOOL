@@ -1,3 +1,4 @@
+import { Link } from '@/i18n/routing';
 'use client';
 
 import { useLocale } from 'next-intl';
@@ -198,9 +199,9 @@ const [data, setData] = useState<DirectorDashboardData | null>(null);
               <Activity className="w-4 h-4 text-primary" />
               <span>Directives & Announcements</span>
             </h2>
-            <a href="/announcements" className="text-xs font-semibold text-primary hover:underline">
+            <Link href="/announcements" className="text-xs font-semibold text-primary hover:underline">
               Manage Announcements →
-            </a>
+            </Link>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {(data?.recentAnnouncements && data.recentAnnouncements.length > 0) ? (

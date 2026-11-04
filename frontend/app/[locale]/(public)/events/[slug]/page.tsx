@@ -1,7 +1,7 @@
 import React from 'react';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 import { cmsService } from '@/services/cms.service';
 import { ArrowLeft, Calendar, MapPin, Clock, Users, CheckCircle2 } from 'lucide-react';
 

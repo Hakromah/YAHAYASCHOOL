@@ -180,7 +180,7 @@ const createApiClient = (): AxiosInstance => {
           // Clear auth state and redirect to login
           document.cookie = `${COOKIE_NAMES.JWT}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
           if (typeof window !== 'undefined') {
-            window.location.href = '/login';
+            const locMatch = window.location.pathname.match(/^\/(ar|fr|tr)\b/); window.location.href = locMatch ? `/${locMatch[1]}/login` : '/login';
           }
           return Promise.reject(refreshError);
         } finally {

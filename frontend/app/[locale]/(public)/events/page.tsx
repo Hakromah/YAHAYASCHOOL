@@ -1,6 +1,6 @@
 import React from 'react';
 import type { Metadata } from 'next';
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 import { cmsService } from '@/services/cms.service';
 import { HomepageBuilder } from '@/components/public/HomepageBuilder';
 import { EventsGridSection } from '@/components/public/sections/EventsGridSection';
