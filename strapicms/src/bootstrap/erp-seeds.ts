@@ -17,27 +17,24 @@ export async function seedAcademicDefaults(strapi: Core.Strapi): Promise<void> {
       });
     }
 
-    const divisions = [
-      { name: 'Arabic Section', code: 'ARABIC', color: '#e11d48', icon: 'languages' },
-      { name: 'English Section', code: 'ENGLISH', color: '#2563eb', icon: 'book' },
-      { name: "Qur'an Memorization Section", code: 'QURAN', color: '#16a34a', icon: 'award' },
-      { name: 'General Sciences Section', code: 'SCIENCES', color: '#d97706', icon: 'atom' },
-    ];
-
-    for (const div of divisions) {
-      const existing = await strapi.db.query('api::section.section').findOne({
-        where: { code: div.code },
-      });
-      if (!existing) {
-        await strapi.db.query('api::section.section').create({
-          data: {
-            name: div.name,
-            code: div.code,
-            color: div.color,
-            icon: div.icon,
-            active: true,
-          },
-        });
+    // Clean up any previously auto-generated empty default sections (capacity 35, codes ARABIC/ENGLISH/SCIENCES)
+    // Academic Sections are managed exclusively by school administration.
+    const autoSeeded = await strapi.db.query('api::section.section').findMany({
+      where: {
+        code: { $in: ['ARABIC', 'ENGLISH', 'SCIENCES'] },
+        capacity: 35,
+      },
+      populate: ['students', 'courseOfferings', 'gradeLevels', 'teachers'],
+    });
+    for (const sec of autoSeeded) {
+      const hasRelations =
+        (sec.students?.length || 0) > 0 ||
+        (sec.courseOfferings?.length || 0) > 0 ||
+        (sec.gradeLevels?.length || 0) > 0 ||
+        (sec.teachers?.length || 0) > 0;
+      if (!hasRelations) {
+        await strapi.db.query('api::section.section').delete({ where: { id: sec.id } });
+        strapi.log.info(`[YAHAYASCOOL] Removed auto-generated empty section: ${sec.name} (${sec.code})`);
       }
     }
   } catch (err: any) {
