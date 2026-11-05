@@ -1,5 +1,6 @@
-import { Link } from '@/i18n/routing';
 'use client';
+
+import { Link } from '@/i18n/routing';
 
 import { useLocale } from 'next-intl';
 import { t as i18nT } from '@/lib/i18n-dict';
